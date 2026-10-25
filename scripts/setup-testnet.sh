@@ -228,7 +228,7 @@ admin_passphrase() {
 	if [[ -z "$value" ]]; then
 		value="$(head -c 18 /dev/urandom | base64 | tr -d '/+=')"
 		printf 'ADMIN_PASSPHRASE=%s\n' "$value" >>"$env_file"
-		say "  ℹ New demo-admin passphrase saved to app/.env.local (gitignored)."
+		say "  ℹ New demo-admin passphrase saved to app/.env.local (gitignored)." >&2
 	fi
 	printf '%s' "$value"
 }
