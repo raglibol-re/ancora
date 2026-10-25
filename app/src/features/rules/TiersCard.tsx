@@ -59,7 +59,7 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 							<li key={tier.upTo ?? "unbounded"} className={styles.tier}>
 								<div className={styles.range}>
 									{tier.upTo === null ? (
-										<span>Above {formatMoney(previous?.upTo ?? 0)}</span>
+										<span>Above {formatMoney(previous?.upTo ?? 0, account.currency)}</span>
 									) : (
 										<label>
 											Up to €

@@ -1,6 +1,7 @@
 import type { OrgAccount } from "../../domain/account.ts";
 import type { ApprovalRequest } from "../../domain/rules/requests.ts";
 import { Card } from "../../ui/Card.tsx";
+import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ExpertDetails.module.css";
@@ -29,9 +30,25 @@ export function ExpertDetails({
 						? "Strictest tier (membership or rule change)"
 						: `Tier ${request.evaluation.tierIndex + 1} of ${account.org.policy.tiers.length}`}
 				</dd>
+				{account.onchain && (
+					<>
+						<dt>Smart account</dt>
+						<dd>
+							<ExplorerLink target={account.onchain.contractId}>
+								{account.onchain.contractId}
+							</ExplorerLink>
+						</dd>
+					</>
+				)}
 				<dt>On-chain reference</dt>
 				<dd>
-					{sample ? "None: this is sample data, nothing was sent to the Stellar testnet." : "—"}
+					{request.executionRef ? (
+						<ExplorerLink target={request.executionRef}>{request.executionRef}</ExplorerLink>
+					) : sample ? (
+						"None: this is sample data, nothing was sent to the Stellar testnet."
+					) : (
+						"Not sent yet. Approvals are recorded in the app until the rules move on-chain."
+					)}
 				</dd>
 			</dl>
 		</Card>

@@ -43,6 +43,10 @@ export default defineConfig({
 			},
 		}),
 	],
+	build: {
+		// The lazily loaded testnet chunk carries the Stellar SDK (~1 MB); the main bundle stays small.
+		chunkSizeWarningLimit: 1500,
+	},
 	test: {
 		include: ["src/**/*.test.ts", "api/**/*.test.ts"],
 	},

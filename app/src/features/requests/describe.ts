@@ -71,7 +71,7 @@ export function requestTitle(
 ): string {
 	if (request.kind === "governance") return describeChange(account.org, request.change, nameOf);
 	const payee = account.payees.find((p) => p.id === request.recipientId);
-	return `${formatMoney(request.amount)} to ${payee?.name ?? "a recipient"}`;
+	return `${formatMoney(request.amount, account.currency)} to ${payee?.name ?? "a recipient"}`;
 }
 
 export const statusLabels: Readonly<Record<RequestStatus, string>> = {

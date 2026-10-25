@@ -13,7 +13,8 @@ const DAY = 24 * HOUR;
 
 export const SAMPLE_DEFAULT_PERSON = "ines";
 
-const people: Person[] = [
+/** Fictional people, shared with the testnet adapter as its directory of invitable people. */
+export const samplePeople: readonly Person[] = [
 	{ id: "ines", name: "Inês Duarte" },
 	{ id: "tomas", name: "Tomás Ferreira" },
 	{ id: "marta", name: "Marta Silva" },
@@ -30,7 +31,7 @@ function account(
 	name: string,
 	templateId: TemplateId,
 	members: [string, RoleId][],
-	rest: Omit<OrgAccount, "org">,
+	rest: Omit<OrgAccount, "org" | "currency" | "onchain">,
 ): OrgAccount {
 	const template = templates[templateId];
 	const memberList: Member[] = members.map(([personId, roleId]) => ({ personId, roleId }));
@@ -44,6 +45,8 @@ function account(
 			policy: template.policy,
 			founderId: members[0]?.[0] ?? "",
 		},
+		currency: "EUR",
+		onchain: null,
 		...rest,
 	};
 }
@@ -64,6 +67,7 @@ function payment(templateId: TemplateId, fields: SeedPayment): PaymentRequest {
 		sealedBy: null,
 		declinedBy: null,
 		failure: null,
+		executionRef: null,
 		...fields,
 	};
 }
@@ -137,6 +141,7 @@ export function seedWorkspace(now: number): Workspace {
 					kind: "deposit",
 					amount: euros(2_400),
 					from: "Membership fees (SEPA)",
+					txHash: null,
 				}),
 				entry({
 					id: "a2",
@@ -145,6 +150,7 @@ export function seedWorkspace(now: number): Workspace {
 					kind: "payment-out",
 					amount: euros(180),
 					payeeId: "boat-supplies",
+					txHash: null,
 				}),
 				entry({
 					id: "a3",
@@ -211,6 +217,7 @@ export function seedWorkspace(now: number): Workspace {
 					kind: "deposit",
 					amount: euros(42_000),
 					from: "Client invoice 2026-031 (SEPA)",
+					txHash: null,
 				}),
 				entry({
 					id: "b2",
@@ -219,6 +226,7 @@ export function seedWorkspace(now: number): Workspace {
 					kind: "payment-out",
 					amount: euros(8_400),
 					payeeId: "studio-luz",
+					txHash: null,
 				}),
 				entry({ id: "b3", at: now - 1 * DAY, actorId: null, kind: "earnings", amount: 1_685 }),
 			],
@@ -262,6 +270,7 @@ export function seedWorkspace(now: number): Workspace {
 					kind: "deposit",
 					amount: euros(2_000),
 					from: "Sponsor grant",
+					txHash: null,
 				}),
 				entry({
 					id: "c2",
@@ -270,10 +279,11 @@ export function seedWorkspace(now: number): Workspace {
 					kind: "payment-out",
 					amount: euros(150),
 					payeeId: "hw-shop",
+					txHash: null,
 				}),
 			],
 		},
 	);
 
-	return { people, accounts: [club, company, team] };
+	return { people: samplePeople, accounts: [club, company, team] };
 }

@@ -33,7 +33,8 @@ export function RulePreview({ account, amount, recipientIsNew }: RulePreviewProp
 			)}
 			{short && (
 				<p className={styles.warning}>
-					Only {formatMoney(availableBalance(account))} is available on the main account.
+					Only {formatMoney(availableBalance(account), account.currency)} is available on the main
+					account.
 				</p>
 			)}
 		</div>

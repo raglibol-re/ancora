@@ -1,5 +1,6 @@
-import { explorerUrl, testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
+import { testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
 import { Card } from "../../ui/Card.tsx";
+import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import styles from "./TestnetDeployments.module.css";
 
 /** Expert mode: the testnet contracts ancora is wired to, verified by scripts/setup-testnet.sh. */
@@ -31,9 +32,7 @@ export function TestnetDeployments() {
 					<div key={label} className={styles.row}>
 						<dt>{label}</dt>
 						<dd>
-							<a href={explorerUrl(address)} target="_blank" rel="noreferrer">
-								{address}
-							</a>
+							<ExplorerLink target={address}>{address}</ExplorerLink>
 						</dd>
 					</div>
 				))}

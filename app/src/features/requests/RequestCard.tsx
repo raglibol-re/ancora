@@ -3,6 +3,7 @@ import type { OrgAccount } from "../../domain/account.ts";
 import type { ApprovalRequest } from "../../domain/rules/requests.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
+import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatRelative } from "../../ui/format.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { requestTitle } from "./describe.ts";
@@ -20,7 +21,10 @@ type RequestCardProps = {
 
 export function RequestCard({ account, request, showOrg = false }: RequestCardProps) {
 	const { personName, me } = useWorkspace();
-	const { allowed, busy, approve, seal, decline } = useRequestActions(account, request);
+	const { allowed, busy, approve, seal, decline, send, awaitingSignatureFrom } = useRequestActions(
+		account,
+		request,
+	);
 	const title = requestTitle(account, request, personName);
 	const requester = request.requesterId === me.id ? "you" : personName(request.requesterId);
 
@@ -42,8 +46,19 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 			</header>
 			{request.kind === "payment" && request.note && <p className={styles.note}>{request.note}</p>}
 			<RequestProgress account={account} request={request} />
-			{(allowed.approve || allowed.seal || allowed.decline) && (
+			{awaitingSignatureFrom.length > 0 && !allowed.send && (
+				<p className={styles.meta}>
+					Approved. Waiting for {awaitingSignatureFrom.join(" or ")} to sign and send it.
+				</p>
+			)}
+			{request.executionRef && <ExplorerLink target={request.executionRef} />}
+			{(allowed.approve || allowed.seal || allowed.decline || allowed.send) && (
 				<div className={styles.actions}>
+					{allowed.send && (
+						<button type="button" className={buttonClass()} onClick={send} disabled={busy}>
+							Sign and send
+						</button>
+					)}
 					{allowed.approve && (
 						<button type="button" className={buttonClass()} onClick={approve} disabled={busy}>
 							Approve

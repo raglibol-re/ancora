@@ -14,6 +14,7 @@ import styles from "./NewOrgPage.module.css";
 
 export function NewOrgPage() {
 	const { dataSource, me, updatePreferences } = useWorkspace();
+	const onTestnet = dataSource.kind === "testnet";
 	const { run, busy } = useCommand();
 	const navigate = useNavigate();
 	const [name, setName] = useState("");
@@ -49,7 +50,14 @@ export function NewOrgPage() {
 	};
 
 	return (
-		<Page title="New organization" lead="An account with your own approval rules, in a minute.">
+		<Page
+			title="New organization"
+			lead={
+				onTestnet
+					? "Creates a smart account on Stellar testnet. Your device will ask you to create a passkey for it; fees are sponsored."
+					: "An account with your own approval rules, in a minute."
+			}
+		>
 			<form className={styles.form} onSubmit={submit} noValidate>
 				<Card>
 					<Field label="Name" htmlFor="org-name" error={error}>

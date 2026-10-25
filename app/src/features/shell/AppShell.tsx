@@ -4,9 +4,9 @@ import { BrandMark } from "../../ui/BrandMark.tsx";
 import { SettingsIcon } from "../../ui/icons.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AppShell.module.css";
+import { DataSourceBanner } from "./DataSourceBanner.tsx";
 import { navItems } from "./navigation.tsx";
 import { OrgSwitcher } from "./OrgSwitcher.tsx";
-import { SampleBanner } from "./SampleBanner.tsx";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 	isActive ? `${styles.navLink} ${styles.active}` : styles.navLink;
@@ -27,7 +27,7 @@ export function AppShell() {
 
 	return (
 		<div className={styles.frame}>
-			<SampleBanner />
+			<DataSourceBanner />
 			<div className={styles.shell}>
 				<aside className={styles.sidebar}>
 					<Link to="/" className={styles.brandLink}>

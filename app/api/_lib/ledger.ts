@@ -1,6 +1,5 @@
 import {
 	Account,
-	Address,
 	Contract,
 	type Keypair,
 	Operation,
@@ -8,11 +7,9 @@ import {
 	TransactionBuilder,
 	type xdr,
 } from "@stellar/stellar-sdk";
+import { SIMULATION_SOURCE } from "../../shared/tokenBalance.js";
 import { RequestError } from "./http.js";
 import type { ServerConfig } from "./serverConfig.js";
-
-// Simulation needs a syntactically valid source; it is never charged or required to exist.
-const SIMULATION_SOURCE = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
 const toHex = (bytes: Uint8Array) =>
 	Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -53,27 +50,6 @@ export async function simulatedResourceFee(
 		throw new RequestError("The transaction would fail on the network, so it was not sent.");
 	}
 	return BigInt(simulation.minResourceFee);
-}
-
-/** Reads a token balance (in stroops) by simulating `balance(id)`. */
-export async function tokenBalance(
-	config: ServerConfig,
-	token: string,
-	holder: string,
-): Promise<bigint> {
-	const tx = new TransactionBuilder(new Account(SIMULATION_SOURCE, "0"), {
-		fee: "100",
-		networkPassphrase: config.networkPassphrase,
-	})
-		.addOperation(new Contract(token).call("balance", new Address(holder).toScVal()))
-		.setTimeout(30)
-		.build();
-	const simulation = await new rpc.Server(config.rpcUrl).simulateTransaction(tx);
-	if (!rpc.Api.isSimulationSuccess(simulation) || !simulation.result) return 0n;
-	const value = simulation.result.retval;
-	return value.switch().name === "scvI128"
-		? (BigInt(value.i128().hi().toString()) << 64n) + BigInt(value.i128().lo().toString())
-		: 0n;
 }
 
 /** Signs and submits a contract call from a server-held key, waiting for the result. */

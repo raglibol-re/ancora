@@ -34,6 +34,8 @@ type RequestBase = {
 	executeAfter: Timestamp | null;
 	declinedBy: PersonId | null;
 	failure: RuleError | null;
+	/** Transaction hash once executed on-chain; null for sample data and governance changes. */
+	executionRef: string | null;
 };
 
 export type PaymentRequest = RequestBase & {
@@ -65,6 +67,7 @@ const blank = (id: string, requesterId: PersonId, now: Timestamp, evaluation: Ev
 	executeAfter: null,
 	declinedBy: null,
 	failure: null,
+	executionRef: null,
 });
 
 const notMember = () =>

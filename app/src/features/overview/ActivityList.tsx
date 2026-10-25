@@ -1,5 +1,6 @@
 import { balanceEffect, type OrgAccount } from "../../domain/account.ts";
 import { Card } from "../../ui/Card.tsx";
+import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatDateTime, formatMoney, formatSignedMoney } from "../../ui/format.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ActivityList.module.css";
@@ -28,10 +29,15 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 										{formatDateTime(entry.at)}
 										{entry.actorId && ` · ${personName(entry.actorId)}`}
 									</span>
+									{"txHash" in entry && entry.txHash && (
+										<ExplorerLink target={entry.txHash}>View transaction</ExplorerLink>
+									)}
 								</span>
 								{amount !== 0 && (
 									<span className={effect > 0 ? styles.positive : styles.amount}>
-										{effect === 0 ? formatMoney(amount) : formatSignedMoney(effect)}
+										{effect === 0
+											? formatMoney(amount, account.currency)
+											: formatSignedMoney(effect, account.currency)}
 									</span>
 								)}
 							</li>

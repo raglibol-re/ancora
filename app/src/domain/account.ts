@@ -25,8 +25,8 @@ export type Payee = {
 
 /** Structured history; the UI turns entries into words. */
 export type ActivityEntry = { id: string; at: number; actorId: PersonId | null } & (
-	| { kind: "payment-out"; amount: Cents; payeeId: string }
-	| { kind: "deposit"; amount: Cents; from: string }
+	| { kind: "payment-out"; amount: Cents; payeeId: string; txHash: string | null }
+	| { kind: "deposit"; amount: Cents; from: string; txHash: string | null }
 	| { kind: "reserve-in" | "reserve-out" | "earnings"; amount: Cents }
 	| { kind: "governance"; change: GovernanceChange; viaRequest: boolean }
 	| { kind: "logo" }
@@ -38,9 +38,21 @@ export type AccountNumber = {
 	holder: string;
 };
 
+export type Currency = "EUR" | "USD";
+
+/** The organization's smart account on Stellar and which person holds which passkey signer. */
+export type OnchainAccount = {
+	contractId: string;
+	signers: readonly { personId: PersonId; credentialId: string }[];
+};
+
 /** Everything one organization's account holds: rules, money, requests and history. */
 export type OrgAccount = {
 	org: Org;
+	/** EURC accounts show euros; on testnet the account holds USDC, so it shows dollars. */
+	currency: Currency;
+	/** Null for sample data. */
+	onchain: OnchainAccount | null;
 	balance: Cents;
 	reserve: Cents;
 	/** Current variable annual rate of the Reserve vault, in basis points. */
@@ -136,24 +148,49 @@ export function withdrawFromReserve(
 }
 
 /**
- * Moves scheduled requests whose objection window has passed to ready, then executes every ready
- * request: payments leave the main balance, governance changes are applied to the org.
+ * Moves scheduled requests whose objection window has passed to ready, then executes ready
+ * requests: governance changes are applied to the org; payments leave the main balance unless
+ * `payments` is "manual" (on-chain accounts, where a signer must sign the transfer first).
  */
-export function settleAccount(account: OrgAccount, now: number): OrgAccount {
+export function settleAccount(
+	account: OrgAccount,
+	now: number,
+	payments: "auto" | "manual" = "auto",
+): OrgAccount {
 	let next: OrgAccount = {
 		...account,
 		requests: account.requests.map((r) => advanceRequest(r, now)),
 	};
 	for (const request of next.requests) {
-		if (request.status === "ready") next = execute(next, request, now);
+		if (request.status !== "ready") continue;
+		if (request.kind === "governance" || payments === "auto") {
+			next = execute(next, request, now, null);
+		}
 	}
 	return next;
 }
 
-function execute(account: OrgAccount, request: ApprovalRequest, now: number): OrgAccount {
+/** Records a payment that was signed and confirmed on-chain. */
+export function recordExecutedPayment(
+	account: OrgAccount,
+	requestId: string,
+	txHash: string,
+	now: number,
+): OrgAccount {
+	const request = account.requests.find((r) => r.id === requestId);
+	return request ? execute(account, request, now, txHash) : account;
+}
+
+function execute(
+	account: OrgAccount,
+	request: ApprovalRequest,
+	now: number,
+	txHash: string | null,
+): OrgAccount {
 	const executed = markExecuted(request);
 	if (!executed.ok) return account;
-	const requests = account.requests.map((r) => (r.id === request.id ? executed.value : r));
+	const done = { ...executed.value, executionRef: txHash };
+	const requests = account.requests.map((r) => (r.id === request.id ? done : r));
 	const base = { id: `act-${request.id}`, at: now, actorId: request.requesterId };
 
 	if (request.kind === "payment") {
@@ -162,6 +199,7 @@ function execute(account: OrgAccount, request: ApprovalRequest, now: number): Or
 			kind: "payment-out",
 			amount: request.amount,
 			payeeId: request.recipientId,
+			txHash,
 		};
 		return {
 			...account,

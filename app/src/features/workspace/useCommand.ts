@@ -3,9 +3,14 @@ import type { Result } from "../../domain/result.ts";
 import type { RuleError } from "../../domain/rules/model.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { type SignaturePrompt, useConfirmSignature } from "../passkey/PasskeyContext.ts";
+import { useWorkspace } from "./WorkspaceContext.ts";
 
 type CommandOptions<T> = {
-	/** Ask for a signature first; cancelling aborts without an error. */
+	/**
+	 * Ask for a signature first; cancelling aborts without an error. Shown as the simulated prompt
+	 * for sample data and for the security seal (task 8); on testnet the device's real passkey
+	 * prompt comes from the data source instead.
+	 */
 	signature?: SignaturePrompt;
 	success?: string | ((value: T) => string);
 };
@@ -17,6 +22,7 @@ type CommandOptions<T> = {
 export function useCommand() {
 	const confirm = useConfirmSignature();
 	const notify = useNotify();
+	const { dataSource } = useWorkspace();
 	const [busy, setBusy] = useState(false);
 
 	const run = useCallback(
@@ -24,7 +30,9 @@ export function useCommand() {
 			command: () => Promise<Result<T, RuleError>>,
 			options: CommandOptions<T> = {},
 		): Promise<Result<T, RuleError> | null> => {
-			if (options.signature && !(await confirm(options.signature))) return null;
+			const simulated =
+				options.signature && (dataSource.kind === "sample" || options.signature.kind === "seal");
+			if (simulated && options.signature && !(await confirm(options.signature))) return null;
 			setBusy(true);
 			const result = await command();
 			setBusy(false);
@@ -37,7 +45,7 @@ export function useCommand() {
 			}
 			return result;
 		},
-		[confirm, notify],
+		[confirm, notify, dataSource],
 	);
 
 	return { run, busy };

@@ -40,7 +40,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 		const found: Record<string, string> = {};
 		if (amount === null) found.amount = "Enter an amount like 450 or 1,250.50.";
 		if (isNew && !newName.trim()) found.name = "Enter the recipient's name.";
-		if (isNew && !newAccount.trim()) found.account = "Enter the recipient's IBAN.";
+		if (isNew && !newAccount.trim()) {
+			found.account = account.onchain
+				? "Enter the recipient's Stellar address."
+				: "Enter the recipient's IBAN.";
+		}
 		setErrors(found);
 		if (amount === null || Object.keys(found).length > 0) return;
 
@@ -51,7 +55,12 @@ function PayForm({ account }: { account: OrgAccount }) {
 					amount,
 					note,
 				}),
-			{ signature: { kind: "passkey", title: `Send ${formatMoney(amount)} to ${recipientName}` } },
+			{
+				signature: {
+					kind: "passkey",
+					title: `Send ${formatMoney(amount, account.currency)} to ${recipientName}`,
+				},
+			},
 		);
 		if (result?.ok) navigate(`/app/approvals/${result.value}`);
 	};
@@ -86,7 +95,12 @@ function PayForm({ account }: { account: OrgAccount }) {
 									onChange={(e) => setNewName(e.target.value)}
 								/>
 							</Field>
-							<Field label="IBAN" htmlFor="payee-account" error={errors.account}>
+							<Field
+								label={account.onchain ? "Stellar address" : "IBAN"}
+								htmlFor="payee-account"
+								error={errors.account}
+								hint={account.onchain ? "Starts with G or C. Payments go out as USDC." : undefined}
+							>
 								<input
 									id="payee-account"
 									className={controlClass}

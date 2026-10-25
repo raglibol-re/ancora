@@ -13,3 +13,9 @@
 .banner a {
 	font-weight: var(--weight-semibold);
 }
+
+.testnet {
+	background: var(--palette-tide);
+	color: var(--palette-starlight);
+	border-bottom: 1px solid var(--palette-brass);
+}

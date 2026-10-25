@@ -6,12 +6,13 @@ import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { InstallHint } from "../install/InstallHint.tsx";
 import type { ThemePreference } from "../workspace/preferences.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { DataSourceCard } from "./DataSourceCard.tsx";
 import { LogoCard } from "./LogoCard.tsx";
 import styles from "./SettingsPage.module.css";
 import { TestnetDeployments } from "./TestnetDeployments.tsx";
 
 export function SettingsPage() {
-	const { active, preferences, updatePreferences, dataSource, workspace, me } = useWorkspace();
+	const { active, preferences, updatePreferences, workspace, me } = useWorkspace();
 
 	return (
 		<Page title="Settings">
@@ -49,40 +50,32 @@ export function SettingsPage() {
 				<InstallHint />
 			</Card>
 
-			<Card title="Data source" action={dataSource.kind === "sample" ? <SimulatedTag /> : null}>
-				<p>
-					{dataSource.kind === "sample"
-						? "Sample data: realistic organizations that behave like the real thing, stored in this browser. Nothing is sent to the Stellar testnet."
-						: "Stellar testnet."}
-				</p>
-			</Card>
+			<DataSourceCard />
 
 			{preferences.expertMode && <TestnetDeployments />}
 
-			{dataSource.kind === "sample" && (
-				<div id="viewing-as">
-					<Card title="Viewing as" action={<SimulatedTag />}>
-						<Field
-							label="Person"
-							htmlFor="person"
-							hint="Switch people to approve requests from their side. Replaced by passkey sign-in on testnet."
+			<div id="viewing-as">
+				<Card title="Viewing as" action={<SimulatedTag label="Demo" />}>
+					<Field
+						label="Person"
+						htmlFor="person"
+						hint="Switch people to approve requests from their side. Signing always uses the passkeys on this device."
+					>
+						<select
+							id="person"
+							className={controlClass}
+							value={me.id}
+							onChange={(e) => updatePreferences({ personId: e.target.value, activeOrgId: null })}
 						>
-							<select
-								id="person"
-								className={controlClass}
-								value={me.id}
-								onChange={(e) => updatePreferences({ personId: e.target.value, activeOrgId: null })}
-							>
-								{workspace.people.map((person) => (
-									<option key={person.id} value={person.id}>
-										{person.name}
-									</option>
-								))}
-							</select>
-						</Field>
-					</Card>
-				</div>
-			)}
+							{workspace.people.map((person) => (
+								<option key={person.id} value={person.id}>
+									{person.name}
+								</option>
+							))}
+						</select>
+					</Field>
+				</Card>
+			</div>
 		</Page>
 	);
 }

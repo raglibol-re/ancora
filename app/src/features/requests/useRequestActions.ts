@@ -5,17 +5,32 @@ import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { requestTitle } from "./describe.ts";
 
-/** Approve / seal / decline for the current person, each behind the matching signature prompt. */
+/**
+ * Approve / seal / decline / send for the current person, each behind the matching signature
+ * prompt. "Send" exists only where a signer must sign the on-chain transfer (testnet).
+ */
 export function useRequestActions(account: OrgAccount, request: ApprovalRequest) {
 	const { dataSource, me, personName } = useWorkspace();
 	const { run, busy } = useCommand();
-	const allowed = availableActions(account.org, request, me.id);
+	const signers = account.onchain?.signers ?? [];
+	const awaitingSignature =
+		dataSource.payments === "manual" && request.kind === "payment" && request.status === "ready";
+	const allowed = {
+		...availableActions(account.org, request, me.id),
+		send: awaitingSignature && signers.some((s) => s.personId === me.id),
+	};
 	const title = requestTitle(account, request, personName);
 	const orgId = account.org.id;
 
 	return {
 		allowed,
 		busy,
+		/** Who can sign and send, when the payment is waiting for an on-chain signature. */
+		awaitingSignatureFrom: awaitingSignature ? signers.map((s) => personName(s.personId)) : [],
+		send: () =>
+			run(() => dataSource.executeRequest(orgId, request.id, me.id), {
+				success: "Sent. The payment is confirmed on Stellar.",
+			}),
 		approve: () =>
 			run(() => dataSource.approve(orgId, request.id, me.id), {
 				signature: { kind: "passkey", title: `Approve ${title}` },

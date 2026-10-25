@@ -1,0 +1,6 @@
+.link {
+	color: var(--color-accent-text);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+	overflow-wrap: anywhere;
+}

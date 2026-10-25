@@ -1,19 +1,23 @@
+import type { Currency } from "../domain/account.ts";
 import type { Cents } from "../domain/money.ts";
 
 // Formatting lives at the UI edge only; the domain works in integer cents and epoch milliseconds.
 
 const LOCALE = "en-IE";
 
-const money = new Intl.NumberFormat(LOCALE, { style: "currency", currency: "EUR" });
+const formatters = {
+	EUR: new Intl.NumberFormat(LOCALE, { style: "currency", currency: "EUR" }),
+	USD: new Intl.NumberFormat(LOCALE, { style: "currency", currency: "USD" }),
+};
 
-export function formatMoney(cents: Cents): string {
-	return money.format(cents / 100);
+export function formatMoney(cents: Cents, currency: Currency = "EUR"): string {
+	return formatters[currency].format(cents / 100);
 }
 
 /** "+€24.00" / "−€180.00" for signed amounts in lists. */
-export function formatSignedMoney(cents: Cents): string {
-	if (cents === 0) return formatMoney(0);
-	return `${cents > 0 ? "+" : "−"}${formatMoney(Math.abs(cents))}`;
+export function formatSignedMoney(cents: Cents, currency: Currency = "EUR"): string {
+	if (cents === 0) return formatMoney(0, currency);
+	return `${cents > 0 ? "+" : "−"}${formatMoney(Math.abs(cents), currency)}`;
 }
 
 export function formatRate(basisPoints: number): string {

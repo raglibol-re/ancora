@@ -16,5 +16,5 @@
 		"noUnusedParameters": true,
 		"erasableSyntaxOnly": true
 	},
-	"include": ["api"]
+	"include": ["api", "shared"]
 }

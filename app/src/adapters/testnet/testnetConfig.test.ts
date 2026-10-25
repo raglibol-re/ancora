@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { explorerUrl, readTestnetConfig } from "./testnetConfig.ts";
+import { readTestnetConfig } from "./testnetConfig.ts";
 
 const complete = {
 	VITE_STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",
@@ -27,12 +27,5 @@ describe("readTestnetConfig", () => {
 	it("returns null when any value is missing, so the app stays on sample data", () => {
 		expect(readTestnetConfig({ ...complete, VITE_DEFINDEX_VAULT: "" })).toBeNull();
 		expect(readTestnetConfig({})).toBeNull();
-	});
-});
-
-describe("explorerUrl", () => {
-	it("links contracts and accounts", () => {
-		expect(explorerUrl("CABC")).toBe("https://stellar.expert/explorer/testnet/contract/CABC");
-		expect(explorerUrl("GABC")).toBe("https://stellar.expert/explorer/testnet/account/GABC");
 	});
 });

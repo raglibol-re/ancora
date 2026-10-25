@@ -1,6 +1,7 @@
 import { Address, Contract, Keypair, nativeToScVal, StrKey } from "@stellar/stellar-sdk";
+import { tokenBalance } from "../shared/tokenBalance.js";
 import { postHandler, RequestError, readJsonObject } from "./_lib/http.js";
-import { invokeAsServer, isSmartAccount, tokenBalance } from "./_lib/ledger.js";
+import { invokeAsServer, isSmartAccount } from "./_lib/ledger.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
 
 // Testnet only: the demo operator sends test USDC from its float to an ancora smart account.

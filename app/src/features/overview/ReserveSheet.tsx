@@ -42,7 +42,7 @@ export function ReserveSheet({ account, direction, onClose }: ReserveSheetProps)
 			{
 				signature: {
 					kind: "passkey",
-					title: `Move ${formatMoney(amount)} ${toReserve ? "to the Reserve" : "to the main account"}`,
+					title: `Move ${formatMoney(amount, account.currency)} ${toReserve ? "to the Reserve" : "to the main account"}`,
 				},
 				success: "Done. The balances are updated.",
 			},
@@ -64,7 +64,7 @@ export function ReserveSheet({ account, direction, onClose }: ReserveSheetProps)
 				<Field
 					label="Amount"
 					htmlFor="reserve-amount"
-					hint={`Up to ${formatMoney(max)}`}
+					hint={`Up to ${formatMoney(max, account.currency)}`}
 					error={error}
 				>
 					<input

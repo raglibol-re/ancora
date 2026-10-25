@@ -42,9 +42,3 @@ export function readTestnetConfig(env: EnvSource): TestnetConfig | null {
 }
 
 export const testnetConfig = readTestnetConfig(import.meta.env);
-
-/** stellar.expert link for a contract (C…) or account (G…) on testnet. */
-export function explorerUrl(address: string): string {
-	const kind = address.startsWith("C") ? "contract" : "account";
-	return `https://stellar.expert/explorer/testnet/${kind}/${address}`;
-}
