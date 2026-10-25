@@ -48,7 +48,7 @@ Features never talk to the outside world directly. They use one `DataSource` int
 | Implementation | Where | Status |
 |----------------|-------|--------|
 | `SampleDataSource` | `app/src/adapters/sample/` | Labeled sample data; every command runs through the domain engine; persisted in browser storage. Stays as the demo fallback. |
-| Testnet adapter | `app/src/adapters/testnet/` *(task 4)* | Smart accounts, contracts and the relayer on Stellar testnet. |
+| Testnet adapter | `app/src/adapters/testnet/` | `testnetConfig.ts` reads the public IDs from `app/.env.testnet` (Vite `--mode testnet`). The adapter itself lands in task 4: smart accounts, contracts and the relayer on Stellar testnet. |
 
 UI state lives in `features/workspace` (snapshot via `useSyncExternalStore`, preferences, active org). `useCommand` gives every action the same UX: signature prompt → command → plain-language success or error.
 

@@ -8,13 +8,13 @@
     "node": "24.x"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --mode testnet",
+    "build": "tsc -b && vite build --mode testnet",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b",
     "check": "biome check .",
-    "verify": "biome ci . && tsc -b && vitest run && vite build",
+    "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet",
     "icons": "pnpm dlx @vite-pwa/assets-generator@1.0.2"
   },
   "dependencies": {

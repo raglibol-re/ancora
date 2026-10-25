@@ -8,6 +8,7 @@ import type { ThemePreference } from "../workspace/preferences.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { LogoCard } from "./LogoCard.tsx";
 import styles from "./SettingsPage.module.css";
+import { TestnetDeployments } from "./TestnetDeployments.tsx";
 
 export function SettingsPage() {
 	const { active, preferences, updatePreferences, dataSource, workspace, me } = useWorkspace();
@@ -55,6 +56,8 @@ export function SettingsPage() {
 						: "Stellar testnet."}
 				</p>
 			</Card>
+
+			{preferences.expertMode && <TestnetDeployments />}
 
 			{dataSource.kind === "sample" && (
 				<div id="viewing-as">

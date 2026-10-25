@@ -32,7 +32,7 @@ jobs:
       - name: Unit tests
         run: pnpm test
       - name: Build
-        run: pnpm exec vite build
+        run: pnpm exec vite build --mode testnet
 
   contracts:
     runs-on: ubuntu-latest

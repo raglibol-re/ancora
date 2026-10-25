@@ -9,8 +9,8 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 0 | Scaffold: PWA app shell, routing, tokens, CI, docs, Vercel | Done |
 | 1 | Approval rules engine (pure TS, tested) | Done |
 | 2 | App screens on sample data behind the data-source interface | Done |
-| 3 | Testnet setup script (keys, contract deploys, IDs) | Next |
-| 4 | Passkey smart accounts + fee-sponsoring relayer | Planned |
+| 3 | Testnet setup script (keys, contract deploys, IDs) | Done (own contracts join as they land) |
+| 4 | Passkey smart accounts + fee-sponsoring relayer | Next |
 | 5 | Demo admin: data-source fallback switch + health panel | Planned |
 | 6 | Approval rules on-chain (OZ policy + request contract, shared test vectors) | Planned |
 | 7 | Reserve on DeFindex testnet vault + chunked public/confidential split | Planned |
