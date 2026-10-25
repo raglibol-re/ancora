@@ -45,11 +45,13 @@ async function kit() {
 	return StellarWalletsKit;
 }
 
-/** Opens the wallet picker; the chosen wallet stays selected for this page. */
-export async function connectWallet(): Promise<Result<ConnectedWallet, RuleError>> {
+/** Opens the wallet picker (inside `container` when given); the chosen wallet stays selected. */
+export async function connectWallet(
+	container?: HTMLElement,
+): Promise<Result<ConnectedWallet, RuleError>> {
 	try {
 		const wallets = await kit();
-		const { address: account } = await wallets.authModal();
+		const { address: account } = await wallets.authModal(container ? { container } : undefined);
 		return ok({ address: account, walletName: wallets.selectedModule.productName });
 	} catch (error) {
 		return failed(describe(error, "No wallet was connected."));

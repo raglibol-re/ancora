@@ -27,7 +27,12 @@ export type ConnectedWallet = { address: string; walletName: string };
  * contract address, so the source builds the token transfer and the wallet signs it.
  */
 export interface FundingSupport {
-	connectWallet(): Promise<Result<ConnectedWallet, RuleError>>;
+	/**
+	 * Opens the wallet picker. When called from inside a modal `<dialog>`, pass an element inside
+	 * it as `container`: everything outside an open dialog is inert, so a picker mounted on the
+	 * body could not be clicked.
+	 */
+	connectWallet(container?: HTMLElement): Promise<Result<ConnectedWallet, RuleError>>;
 	disconnectWallet(): Promise<void>;
 	/** What the wallet holds of `token`, in cents. */
 	walletBalance(token: string, holder: string): Promise<Cents>;

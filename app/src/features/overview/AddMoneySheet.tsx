@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { type OrgAccount, shortAddress } from "../../domain/account.ts";
 import type { ConnectedWallet } from "../../domain/dataSource.ts";
 import { parseAmountInput } from "../../domain/money.ts";
@@ -34,6 +34,8 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 	const [assetName, setAssetName] = useState<string | null>(null);
 	const [input, setInput] = useState("");
 	const [error, setError] = useState<string | null>(null);
+	// The wallet picker must render inside this open <dialog>; outside of it the page is inert.
+	const pickerHost = useRef<HTMLDivElement>(null);
 	const amount = parseAmountInput(input);
 	const orgAddress = account.onchain?.contractId ?? account.org.id;
 
@@ -61,7 +63,7 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 
 	const connect = async () => {
 		if (!funding) return;
-		const result = await run(() => funding.connectWallet());
+		const result = await run(() => funding.connectWallet(pickerHost.current ?? undefined));
 		if (result?.ok) setWallet(result.value);
 	};
 
@@ -159,6 +161,7 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 								Connect wallet
 							</button>
 						)}
+						<div ref={pickerHost} className={styles.pickerHost} />
 					</section>
 				)}
 

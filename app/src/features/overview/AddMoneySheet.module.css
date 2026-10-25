@@ -52,3 +52,9 @@
 	font-size: var(--text-sm);
 	overflow-wrap: anywhere;
 }
+
+/* Stellar Wallets Kit mounts its picker here, inside the dialog's top layer. */
+.pickerHost {
+	position: relative;
+	z-index: 1;
+}

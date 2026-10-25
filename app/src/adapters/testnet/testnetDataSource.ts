@@ -73,7 +73,7 @@ export class TestnetDataSource implements DataSource {
 		// Stellar Wallets Kit and the wallet SDKs load only when someone funds from a wallet.
 		const funding = () => import("./walletFunding.ts");
 		this.funding = {
-			connectWallet: () => funding().then((f) => f.connectWallet()),
+			connectWallet: (container) => funding().then((f) => f.connectWallet(container)),
 			disconnectWallet: () => funding().then((f) => f.disconnectWallet()),
 			walletBalance: (token, holder) =>
 				funding().then((f) => f.walletBalance(config, token, holder)),
