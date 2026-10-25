@@ -73,6 +73,8 @@ enum DataKey {
     Committed(Address),
     /// What was moved into the Reserve of a token and not taken out again.
     ReservePrincipal(Address),
+    /// A member's spending limit (crew / agent allowance).
+    Limit(Address),
     Request(u64),
     Paid(Address),
 }
@@ -204,6 +206,27 @@ impl Organization {
             panic_with_error!(e, Error::NotFound);
         };
         hash
+    }
+
+    /// Spending limits currently granted, with what was spent in the running window.
+    ///
+    /// Auth: none (read).
+    pub fn spending_limits(e: &Env) -> Vec<MemberLimit> {
+        let info = load_info(e);
+        let mut result = Vec::new(e);
+        for (member, _) in ranked(e, &info.roles).iter() {
+            if let Some(limit) = e
+                .storage()
+                .persistent()
+                .get::<DataKey, SpendingLimit>(&DataKey::Limit(member.clone()))
+            {
+                result.push_back(MemberLimit {
+                    member,
+                    limit: current_window(e, limit),
+                });
+            }
+        }
+        result
     }
 
     /// Every member with their position, highest roles first.
@@ -395,7 +418,11 @@ impl Organization {
         }
         let policy = load_policy(e);
         let amount_in_base = (asset.currency == info.base_currency).then_some(amount);
-        let evaluation = rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to))?;
+        // Inside the requester's spending limit (rules' currency only) nothing needs approval.
+        let evaluation = match amount_in_base.and_then(|a| use_limit(e, &by, a)) {
+            Some(()) => rules::limit_evaluation(e),
+            None => rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to))?,
+        };
         let request = new_request(
             e,
             RequestKind::Payment(Payment {
@@ -862,6 +889,12 @@ fn plan_change(
                 return Err(Error::AssetInUse);
             }
         }
+        Change::SetSpendingLimit(who, amount, period) => {
+            rules::rank_of_member(members, who).ok_or(Error::NotMember)?;
+            if *amount < 0 || (*amount > 0 && *period == 0) {
+                return Err(Error::InvalidLimit);
+            }
+        }
     }
     let strictest = |p: &Policy| {
         p.tiers
@@ -892,6 +925,9 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
         }
         Change::RemoveMember(who) => {
             revoke_current_role(e, info, who);
+            e.storage()
+                .persistent()
+                .remove(&DataKey::Limit(who.clone()));
             registry.set_membership(&me, who, &false);
         }
         Change::ChangeRole(who, role) => {
@@ -919,8 +955,60 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
             }
             save_assets(e, &kept);
         }
+        Change::SetSpendingLimit(who, amount, period) => {
+            let key = DataKey::Limit(who.clone());
+            if *amount == 0 {
+                e.storage().persistent().remove(&key);
+            } else {
+                let limit = SpendingLimit {
+                    amount: *amount,
+                    period_seconds: *period,
+                    spent: 0,
+                    window_start: e.ledger().timestamp(),
+                };
+                e.storage().persistent().set(&key, &limit);
+                e.storage()
+                    .persistent()
+                    .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+            }
+        }
     }
     Ok(())
+}
+
+/// The limit with its window rolled forward to now (spent resets when a period has passed).
+fn current_window(e: &Env, limit: SpendingLimit) -> SpendingLimit {
+    let now = e.ledger().timestamp();
+    if now >= limit.window_start.saturating_add(limit.period_seconds) {
+        SpendingLimit {
+            spent: 0,
+            window_start: now,
+            ..limit
+        }
+    } else {
+        limit
+    }
+}
+
+/// Books `amount` against `by`'s spending limit if it fits; `None` when there is no limit or
+/// the window has no room left, in which case the normal rules apply.
+fn use_limit(e: &Env, by: &Address, amount: i128) -> Option<()> {
+    let key = DataKey::Limit(by.clone());
+    let limit = current_window(e, e.storage().persistent().get(&key)?);
+    if limit.spent.checked_add(amount)? > limit.amount {
+        return None;
+    }
+    e.storage().persistent().set(
+        &key,
+        &SpendingLimit {
+            spent: limit.spent + amount,
+            ..limit
+        },
+    );
+    e.storage()
+        .persistent()
+        .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+    Some(())
 }
 
 fn revoke_current_role(e: &Env, info: &OrgInfo, who: &Address) {

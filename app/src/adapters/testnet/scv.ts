@@ -93,6 +93,13 @@ export function changeToScVal(change: GovernanceChange, policyHashHex?: string):
 			]);
 		case "removeAsset":
 			return xdr.ScVal.scvVec([symbol("RemoveAsset"), address(change.token)]);
+		case "setSpendingLimit":
+			return xdr.ScVal.scvVec([
+				symbol("SetSpendingLimit"),
+				address(change.personId),
+				i128(toStroops(change.amount)),
+				u64(change.periodSeconds),
+			]);
 		case "switchTemplate":
 			return null;
 	}

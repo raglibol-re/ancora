@@ -26,9 +26,11 @@ export function ExpertDetails({
 				<dd>{account.org.id}</dd>
 				<dt>Rule tier</dt>
 				<dd>
-					{request.evaluation.tierIndex === null
-						? "Strictest tier (membership or rule change)"
-						: `Tier ${request.evaluation.tierIndex + 1} of ${account.org.policy.tiers.length}`}
+					{request.evaluation.withinLimit
+						? "Within the requester's spending limit (no tier)"
+						: request.evaluation.tierIndex === null
+							? "Strictest tier (membership or rule change)"
+							: `Tier ${request.evaluation.tierIndex + 1} of ${account.org.policy.tiers.length}`}
 				</dd>
 				{account.onchain && (
 					<>

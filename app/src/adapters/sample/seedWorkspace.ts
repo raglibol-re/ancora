@@ -387,5 +387,25 @@ export function seedWorkspace(now: number): Workspace {
 		},
 	);
 
-	return { people: samplePeople, accounts: [club, company, team] };
+	// João runs the boathouse shop: a small allowance so routine buys don't wait for the board.
+	const clubWithCrew: OrgAccount = {
+		...club,
+		org: {
+			...club.org,
+			members: club.org.members.map((m) =>
+				m.personId === "joao"
+					? {
+							...m,
+							limit: {
+								amount: euros(500),
+								periodSeconds: 30 * 86_400,
+								spent: euros(60),
+								windowStart: now - 5 * DAY,
+							},
+						}
+					: m,
+			),
+		},
+	};
+	return { people: samplePeople, accounts: [clubWithCrew, company, team] };
 }

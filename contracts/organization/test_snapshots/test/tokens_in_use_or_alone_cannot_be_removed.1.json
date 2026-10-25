@@ -681,6 +681,14 @@
                           "val": {
                             "u32": 0
                           }
+                        },
+                        {
+                          "key": {
+                            "symbol": "within_limit"
+                          },
+                          "val": {
+                            "bool": false
+                          }
                         }
                       ]
                     }

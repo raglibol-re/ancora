@@ -33,9 +33,19 @@ export type Policy = {
 	newRecipientApprovals: readonly Requirement[];
 };
 
+/** A crew or agent allowance: up to `amount` per rolling period goes out without approvals. */
+export type SpendingLimit = {
+	amount: Cents;
+	periodSeconds: number;
+	spent: Cents;
+	/** Start of the running window, ms; 0 until the first payment. */
+	windowStart: number;
+};
+
 export type Member = {
 	personId: PersonId;
 	roleId: RoleId;
+	limit?: SpendingLimit;
 };
 
 /** A stablecoin the organization accepts and the fiat currency it stands for. */
@@ -69,6 +79,8 @@ export type Evaluation = {
 	approvals: readonly Requirement[];
 	objectionWindowHours: number;
 	sealRequired: boolean;
+	/** The payment fit the requester's spending limit, so nothing needs approval. */
+	withinLimit?: boolean;
 };
 
 export type RuleErrorCode =
@@ -94,7 +106,8 @@ export type RuleErrorCode =
 	| "unknown-asset"
 	| "asset-exists"
 	| "asset-in-use"
-	| "last-asset";
+	| "last-asset"
+	| "invalid-limit";
 
 export type RuleError = {
 	code: RuleErrorCode;

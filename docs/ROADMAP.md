@@ -15,7 +15,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 6 | Approval rules on-chain: organization contract + registry, policy document hash, identities | Done (see below) |
 | 7 | Reserve on DeFindex testnet vault | Done for BlendUSDC (see below); confidential split moved to task 14 |
 | 8 | Security seal: ML-DSA verifier as OZ external signer (timebox 2h) | Verifier done and on testnet; device key + account wiring: next |
-| 9 | Crew / agent keys with OZ spending-limit policy | Planned |
+| 9 | Crew / agent keys with spending limits | Done, natively in the organization contract (see DECISIONS: why not OZ `spending_limit`) |
 | 10 | Euro in/out: SEP-24 test anchor (real), Bridge (simulated) | Planned |
 | 11 | Organization logo in Vercel Blob with the URL on the organization contract | Done |
 | 12 | Budgets and bookkeeping | Planned |

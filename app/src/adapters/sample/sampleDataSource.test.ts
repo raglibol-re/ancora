@@ -218,6 +218,31 @@ describe("SampleDataSource", () => {
 		});
 	});
 
+	it("lets a member with a spending limit pay inside it without approvals, and books it", async () => {
+		const ds = source();
+		const inside = await ds.requestPayment("tejo-rowing", "joao", {
+			payee: { id: "boat-supplies" },
+			token: "eurc",
+			amount: euros(300),
+			note: "Rope",
+		});
+		expect(inside.ok).toBe(true);
+		const account = accountOf(ds, "tejo-rowing");
+		expect(account.requests[0]).toMatchObject({
+			status: "executed",
+			evaluation: { withinLimit: true },
+		});
+		expect(account.org.members.find((m) => m.personId === "joao")?.limit?.spent).toBe(euros(360));
+		const beyond = await ds.requestPayment("tejo-rowing", "joao", {
+			payee: { id: "boat-supplies" },
+			token: "eurc",
+			amount: euros(300),
+			note: "Too much for the allowance",
+		});
+		expect(beyond.ok).toBe(true);
+		expect(accountOf(ds, "tejo-rowing").requests[0]).toMatchObject({ status: "pending" });
+	});
+
 	it("persists to storage and survives a reload", async () => {
 		const storage = memoryStorage();
 		const first = source(storage);
@@ -230,7 +255,7 @@ describe("SampleDataSource", () => {
 
 	it("falls back to the seed when stored data is corrupt", () => {
 		const storage = memoryStorage();
-		storage.setItem("ancora.sample.v4", "{not json");
+		storage.setItem("ancora.sample.v5", "{not json");
 		expect(source(storage).getSnapshot().accounts).toHaveLength(3);
 	});
 });

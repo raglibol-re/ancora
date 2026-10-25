@@ -87,6 +87,17 @@ export function evaluatePayment(policy: Policy, payment: PaymentFacts): Evaluati
 	};
 }
 
+/** A payment inside the requester's spending limit: nothing to approve, out it goes. */
+export function limitEvaluation(): Evaluation {
+	return {
+		tierIndex: null,
+		approvals: [],
+		objectionWindowHours: 0,
+		sealRequired: false,
+		withinLimit: true,
+	};
+}
+
 /** Membership and rule changes always use the strictest (last) tier, without the seal. */
 export function evaluateGovernance(policy: Policy): Evaluation {
 	const tier = strictestTier(policy);

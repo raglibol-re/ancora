@@ -1,15 +1,22 @@
 import { type FormEvent, useState } from "react";
 import type { OrgAccount } from "../../domain/account.ts";
+import { parseAmountInput } from "../../domain/money.ts";
+import { LIMIT_PERIODS, periodLabel, remainingAllowance } from "../../domain/rules/limits.ts";
+import type { Member } from "../../domain/rules/model.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
+import { currencySymbol, formatMoney } from "../../ui/format.ts";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./PeopleCard.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
 
-/** Members and their roles; adding, removing and role changes are proposals like any rule change. */
+/**
+ * Members, their roles and their spending limits (crew and agent allowances). Adding, removing,
+ * role changes and limits are proposals like any rule change.
+ */
 export function PeopleCard({ account }: { account: OrgAccount }) {
 	const { workspace, personOf, dataSource, me } = useWorkspace();
 	const { propose, busy } = useProposeChange(account);
@@ -19,6 +26,7 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 	const lowestRole = org.roles.at(-1)?.id ?? "";
 	const [inviteId, setInviteId] = useState(onTestnet ? "" : (outside[0]?.id ?? ""));
 	const [inviteRole, setInviteRole] = useState(lowestRole);
+	const [editingLimit, setEditingLimit] = useState<string | null>(null);
 
 	const invite = async (event: FormEvent) => {
 		event.preventDefault();
@@ -43,32 +51,47 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 				{org.members.map((member) => {
 					const person = personOf(member.personId);
 					return (
-						<li key={member.personId} className={styles.person}>
-							<Avatar name={person.name} imageUrl={person.avatarUrl} shape="circle" />
-							<span className={styles.name}>
-								{person.name}
-								{member.personId === me.id && <span className={styles.you}> (you)</span>}
-								{onTestnet && <span className={styles.id}>{member.personId}</span>}
-							</span>
-							<select
-								className={controlClass}
-								aria-label={`Role of ${person.name}`}
-								value={member.roleId}
-								disabled={busy}
-								onChange={(e) =>
-									propose({ type: "changeRole", personId: member.personId, roleId: e.target.value })
-								}
-							>
-								{roleOptions}
-							</select>
-							<button
-								type="button"
-								className={buttonClass("secondary")}
-								disabled={busy}
-								onClick={() => propose({ type: "removeMember", personId: member.personId })}
-							>
-								Remove
-							</button>
+						<li key={member.personId} className={styles.member}>
+							<div className={styles.person}>
+								<Avatar name={person.name} imageUrl={person.avatarUrl} shape="circle" />
+								<span className={styles.name}>
+									{person.name}
+									{member.personId === me.id && <span className={styles.you}> (you)</span>}
+									{onTestnet && <span className={styles.id}>{member.personId}</span>}
+								</span>
+								<select
+									className={controlClass}
+									aria-label={`Role of ${person.name}`}
+									value={member.roleId}
+									disabled={busy}
+									onChange={(e) =>
+										propose({
+											type: "changeRole",
+											personId: member.personId,
+											roleId: e.target.value,
+										})
+									}
+								>
+									{roleOptions}
+								</select>
+								<button
+									type="button"
+									className={buttonClass("secondary")}
+									disabled={busy}
+									onClick={() => propose({ type: "removeMember", personId: member.personId })}
+								>
+									Remove
+								</button>
+							</div>
+							<LimitRow
+								account={account}
+								member={member}
+								editing={editingLimit === member.personId}
+								busy={busy}
+								onEdit={() => setEditingLimit(member.personId)}
+								onDone={() => setEditingLimit(null)}
+								propose={propose}
+							/>
 						</li>
 					);
 				})}
@@ -80,7 +103,7 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 						<Field
 							label="Invite by ancora ID"
 							htmlFor="invite-person"
-							hint="Ask the person for the ID on their pass (starts with C). They sign in with their own passkey."
+							hint="Ask the person for the ID on their pass (starts with C). An agent's key works the same way: add it as a member and give it a spending limit."
 						>
 							<input
 								id="invite-person"
@@ -124,5 +147,110 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 				</form>
 			)}
 		</Card>
+	);
+}
+
+type LimitRowProps = {
+	account: OrgAccount;
+	member: Member;
+	editing: boolean;
+	busy: boolean;
+	onEdit: () => void;
+	onDone: () => void;
+	propose: ReturnType<typeof useProposeChange>["propose"];
+};
+
+/** A member's allowance: what's left this period, and a small editor for the top role to change it. */
+function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: LimitRowProps) {
+	const currency = account.org.baseCurrency;
+	const [amount, setAmount] = useState(member.limit ? String(member.limit.amount / 100) : "");
+	const [period, setPeriod] = useState(
+		member.limit?.periodSeconds ?? LIMIT_PERIODS[2]?.seconds ?? 30 * 86_400,
+	);
+
+	const save = async (event: FormEvent) => {
+		event.preventDefault();
+		const cents = parseAmountInput(amount);
+		if (cents === null) return;
+		const result = await propose({
+			type: "setSpendingLimit",
+			personId: member.personId,
+			amount: cents,
+			periodSeconds: period,
+		});
+		if (result?.ok) onDone();
+	};
+
+	const remove = async () => {
+		const result = await propose({
+			type: "setSpendingLimit",
+			personId: member.personId,
+			amount: 0,
+			periodSeconds: 0,
+		});
+		if (result?.ok) onDone();
+	};
+
+	if (editing) {
+		return (
+			<form className={styles.limitForm} onSubmit={save}>
+				<label className={styles.limitField}>
+					Up to {currencySymbol(currency)}
+					<input
+						className={`${controlClass} ${styles.small}`}
+						inputMode="decimal"
+						value={amount}
+						onChange={(e) => setAmount(e.target.value)}
+					/>
+				</label>
+				<label className={styles.limitField}>
+					per
+					<select
+						className={controlClass}
+						value={period}
+						onChange={(e) => setPeriod(Number(e.target.value))}
+					>
+						{LIMIT_PERIODS.map((p) => (
+							<option key={p.seconds} value={p.seconds}>
+								{p.label}
+							</option>
+						))}
+					</select>
+				</label>
+				<button type="submit" className={buttonClass()} disabled={busy || !amount.trim()}>
+					Save limit
+				</button>
+				{member.limit && (
+					<button
+						type="button"
+						className={buttonClass("secondary")}
+						disabled={busy}
+						onClick={remove}
+					>
+						Remove limit
+					</button>
+				)}
+				<button type="button" className={styles.linkButton} onClick={onDone}>
+					Cancel
+				</button>
+			</form>
+		);
+	}
+	return (
+		<p className={styles.limit}>
+			{member.limit ? (
+				<>
+					Spending limit {formatMoney(member.limit.amount, currency)} per{" "}
+					{periodLabel(member.limit.periodSeconds)} ·{" "}
+					{formatMoney(remainingAllowance(member.limit, Date.now()), currency)} left; payments
+					inside it need no approval.
+				</>
+			) : (
+				"No spending limit: every payment follows the rules."
+			)}{" "}
+			<button type="button" className={styles.linkButton} disabled={busy} onClick={onEdit}>
+				{member.limit ? "Change" : "Set a limit"}
+			</button>
+		</p>
 	);
 }

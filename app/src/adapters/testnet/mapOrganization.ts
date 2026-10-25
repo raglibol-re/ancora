@@ -15,6 +15,7 @@ import {
 	type Role,
 	type RuleErrorCode,
 	ruleError,
+	type SpendingLimit,
 	type TemplateId,
 } from "../../domain/rules/model.ts";
 import type { ApprovalRequest, RequestStatus } from "../../domain/rules/requests.ts";
@@ -37,6 +38,8 @@ export type OnchainSnapshot = {
 	balances: ReadonlyMap<string, bigint>;
 	/** Reserve value and principal per token that has a vault. */
 	reserves: ReadonlyMap<string, { value: bigint; principal: bigint }>;
+	/** Spending limits by member address. */
+	limits: ReadonlyMap<string, SpendingLimit>;
 	setupPhase: boolean;
 	policyHash: string;
 };
@@ -80,6 +83,7 @@ const ERROR_CODES: RuleErrorCode[] = [
 	"not-allowed",
 	"not-allowed",
 	"not-allowed",
+	"invalid-limit",
 ];
 
 export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
@@ -111,6 +115,7 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	26: "This asset has no Reserve yet.",
 	27: "Your role can't move money between the account and the Reserve.",
 	28: "Only the organization's highest role can change the logo.",
+	29: "A spending limit needs an amount above zero and a period.",
 };
 
 const variant = (value: unknown): [string, unknown[]] => {
@@ -149,6 +154,16 @@ function mapEvaluation(native: Native): Evaluation {
 		approvals: requirements(native.approvals),
 		objectionWindowHours: num(native.objection_window_hours),
 		sealRequired: Boolean(native.seal_required),
+		withinLimit: Boolean(native.within_limit),
+	};
+}
+
+export function mapLimit(native: Native): SpendingLimit {
+	return {
+		amount: toCents(big(native.amount)),
+		periodSeconds: num(native.period_seconds),
+		spent: toCents(big(native.spent)),
+		windowStart: seconds(native.window_start),
 	};
 }
 
@@ -193,6 +208,13 @@ function mapChange(value: unknown): GovernanceChange {
 		}
 		case "RemoveAsset":
 			return { type: "removeAsset", token: str(fields[0]) };
+		case "SetSpendingLimit":
+			return {
+				type: "setSpendingLimit",
+				personId: str(fields[0]),
+				amount: toCents(big(fields[1])),
+				periodSeconds: num(fields[2]),
+			};
 		default:
 			throw new Error(`Unknown change ${kind}`);
 	}
@@ -274,7 +296,10 @@ export function mapOrganization(
 		name: str(info.name),
 		templateId: templateId ?? "club",
 		roles,
-		members: snapshot.members.map((m) => ({ personId: str(m.address), roleId: str(m.role) })),
+		members: snapshot.members.map((m) => {
+			const limit = snapshot.limits.get(str(m.address));
+			return { personId: str(m.address), roleId: str(m.role), ...(limit ? { limit } : {}) };
+		}),
 		policy: mapPolicy(snapshot.policy),
 		founderId: str(info.founder),
 		baseCurrency: currency(info.base_currency),

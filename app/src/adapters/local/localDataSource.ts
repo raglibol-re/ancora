@@ -37,6 +37,7 @@ import {
 	type GovernanceChange,
 	isSetupPhase,
 } from "../../domain/rules/governance.ts";
+import { bookLimit } from "../../domain/rules/limits.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
 import {
 	type ApprovalRequest,
@@ -240,7 +241,11 @@ export class LocalDataSource implements DataSource {
 			const payees = account.payees.some((p) => p.id === payee.id)
 				? account.payees
 				: [...account.payees, payee];
-			return ok({ ...account, payees, requests: [created.value, ...account.requests] });
+			// A payment inside the requester's allowance is booked against it (the contract does the same).
+			const org = created.value.evaluation.withinLimit
+				? bookLimit(account.org, actorId, input.amount, this.clock())
+				: account.org;
+			return ok({ ...account, org, payees, requests: [created.value, ...account.requests] });
 		});
 		return result.ok ? ok(requestId) : result;
 	}

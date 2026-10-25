@@ -1,5 +1,7 @@
 import type { OrgAccount } from "../../domain/account.ts";
+import type { Currency } from "../../domain/money.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
+import { periodLabel } from "../../domain/rules/limits.ts";
 import type { Asset, Evaluation, Requirement, Role, RoleId } from "../../domain/rules/model.ts";
 import type { ApprovalRequest, RequestStatus } from "../../domain/rules/requests.ts";
 import { templates } from "../../domain/rules/templates.ts";
@@ -9,8 +11,8 @@ import { formatMoney } from "../../ui/format.ts";
 
 type NameOf = (personId: string) => string;
 
-/** An org or a template: anything that defines roles (and, for an org, assets). */
-type HasRoles = { roles: readonly Role[]; assets?: readonly Asset[] };
+/** An org or a template: anything that defines roles (and, for an org, assets and a currency). */
+type HasRoles = { roles: readonly Role[]; assets?: readonly Asset[]; baseCurrency?: Currency };
 
 export function roleLabel(org: HasRoles, roleId: RoleId, count = 1): string {
 	const role = org.roles.find((r) => r.id === roleId);
@@ -31,6 +33,9 @@ export function describeRequirements(org: HasRoles, requirements: readonly Requi
 /** The live rule preview: "Needs 2 board members, then a 48-hour objection window." */
 export function describeEvaluation(org: HasRoles, evaluation: Evaluation): string {
 	const { approvals, objectionWindowHours, sealRequired } = evaluation;
+	if (evaluation.withinLimit) {
+		return "Within the requester's spending limit. No approval needed, it goes out right away.";
+	}
 	const sentences: string[] = [];
 	if (approvals.length === 0 && objectionWindowHours === 0) {
 		sentences.push("No approval needed. It goes out right away.");
@@ -65,6 +70,10 @@ export function describeChange(org: HasRoles, change: GovernanceChange, nameOf: 
 			return `Accept ${change.asset.symbol}`;
 		case "removeAsset":
 			return `Stop accepting ${org.assets?.find((a) => a.token === change.token)?.symbol ?? "an asset"}`;
+		case "setSpendingLimit":
+			return change.amount === 0
+				? `Remove the spending limit of ${nameOf(change.personId)}`
+				: `Give ${nameOf(change.personId)} a spending limit of ${formatMoney(change.amount, org.baseCurrency ?? "EUR")} per ${periodLabel(change.periodSeconds)}`;
 	}
 }
 

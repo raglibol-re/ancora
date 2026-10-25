@@ -724,3 +724,95 @@ fn reserve_moves_require_the_movers_own_authorization() {
         .is_err());
     assert_eq!(w.org.available(&usdc), euros(1_000));
 }
+
+#[test]
+fn spending_limits_let_crew_pay_small_amounts_without_approvals() {
+    let w = club(5_000);
+    let bo = board_member(&w);
+    let max = Address::generate(&w.e);
+    w.org.change_directly(
+        &w.founder,
+        &Change::AddMember(max.clone(), symbol_short!("member")),
+    );
+    // Not a member yet, bad amounts, bad periods.
+    assert_eq!(
+        w.org.try_change_directly(
+            &w.founder,
+            &Change::SetSpendingLimit(Address::generate(&w.e), euros(100), 86_400)
+        ),
+        Err(Ok(Error::NotMember))
+    );
+    assert_eq!(
+        w.org.try_change_directly(
+            &w.founder,
+            &Change::SetSpendingLimit(max.clone(), -1, 86_400)
+        ),
+        Err(Ok(Error::InvalidLimit))
+    );
+    assert_eq!(
+        w.org.try_change_directly(
+            &w.founder,
+            &Change::SetSpendingLimit(max.clone(), euros(500), 0)
+        ),
+        Err(Ok(Error::InvalidLimit))
+    );
+    w.e.ledger().set_timestamp(10_000);
+    w.org.change_directly(
+        &w.founder,
+        &Change::SetSpendingLimit(max.clone(), euros(500), 30 * 86_400),
+    );
+    let shop = Address::generate(&w.e);
+    let memo = String::from_str(&w.e, "crew");
+    // €400 would normally need a board member; inside the allowance it goes out at once.
+    let id = w
+        .org
+        .propose_payment(&max, &w.token, &shop, &euros(400), &memo);
+    let request = w.org.request(&id);
+    assert_eq!(request.status, Status::Executed);
+    assert!(request.evaluation.within_limit);
+    assert_eq!(w.token_client.balance(&shop), euros(400));
+    let limits = w.org.spending_limits();
+    assert_eq!(limits.len(), 1);
+    assert_eq!(limits.get_unchecked(0).limit.spent, euros(400));
+    // The next €400 doesn't fit: normal rules, so it waits for a board member.
+    let second = w
+        .org
+        .propose_payment(&max, &w.token, &shop, &euros(400), &memo);
+    assert_eq!(w.org.request(&second).status, Status::Pending);
+    assert!(!w.org.request(&second).evaluation.within_limit);
+    w.org.approve(&bo, &second);
+    assert_eq!(w.org.request(&second).status, Status::Executed);
+    // A new period resets the allowance.
+    w.e.ledger().set_timestamp(10_000 + 30 * 86_400);
+    assert_eq!(w.org.spending_limits().get_unchecked(0).limit.spent, 0);
+    let third = w
+        .org
+        .propose_payment(&max, &w.token, &shop, &euros(500), &memo);
+    assert_eq!(w.org.request(&third).status, Status::Executed);
+    // Removing the limit (amount 0) and removing the member both clear it.
+    w.org
+        .change_directly(&w.founder, &Change::SetSpendingLimit(max.clone(), 0, 0));
+    assert_eq!(w.org.spending_limits().len(), 0);
+}
+
+#[test]
+fn spending_limits_apply_only_to_the_rules_currency() {
+    let w = club(1_000);
+    let usdc = add_asset(&w, "USD", 1_000);
+    let max = Address::generate(&w.e);
+    w.org.change_directly(
+        &w.founder,
+        &Change::AddMember(max.clone(), symbol_short!("member")),
+    );
+    w.org.change_directly(
+        &w.founder,
+        &Change::SetSpendingLimit(max.clone(), euros(500), 86_400),
+    );
+    let shop = Address::generate(&w.e);
+    let id = w
+        .org
+        .propose_payment(&max, &usdc, &shop, &euros(10), &String::from_str(&w.e, ""));
+    // Dollars in a euro organization: strictest tier and seal, the allowance doesn't apply.
+    assert_eq!(w.org.request(&id).status, Status::Pending);
+    assert!(w.org.request(&id).evaluation.seal_required);
+}

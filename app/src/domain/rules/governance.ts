@@ -1,4 +1,4 @@
-import type { Currency } from "../money.ts";
+import type { Cents, Currency } from "../money.ts";
 import { err, ok, type Result } from "../result.ts";
 import { canBeSatisfied, rankOf } from "./approvals.ts";
 import {
@@ -22,7 +22,9 @@ export type GovernanceChange =
 	| { type: "updatePolicy"; policy: Policy }
 	| { type: "switchTemplate"; templateId: TemplateId }
 	| { type: "addAsset"; asset: Asset }
-	| { type: "removeAsset"; token: string };
+	| { type: "removeAsset"; token: string }
+	/** Amount 0 removes the limit. */
+	| { type: "setSpendingLimit"; personId: PersonId; amount: Cents; periodSeconds: number };
 
 export type NewOrgInput = {
 	id: string;
@@ -151,6 +153,31 @@ function nextOrg(org: Org, change: GovernanceChange): Result<Org, RuleError> {
 				return err(ruleError("last-asset", "An organization has to accept at least one asset."));
 			}
 			return ok({ ...org, assets: org.assets.filter((a) => a.token !== change.token) });
+		case "setSpendingLimit":
+			if (!isMember(change.personId)) return notMember;
+			if (change.amount < 0 || (change.amount > 0 && change.periodSeconds <= 0)) {
+				return err(
+					ruleError("invalid-limit", "A spending limit needs an amount above zero and a period."),
+				);
+			}
+			return ok(
+				withMembers(
+					org,
+					org.members.map((m) => {
+						if (m.personId !== change.personId) return m;
+						if (change.amount === 0) return { personId: m.personId, roleId: m.roleId };
+						return {
+							...m,
+							limit: {
+								amount: change.amount,
+								periodSeconds: change.periodSeconds,
+								spent: 0,
+								windowStart: 0,
+							},
+						};
+					}),
+				),
+			);
 	}
 }
 

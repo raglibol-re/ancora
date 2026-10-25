@@ -38,6 +38,8 @@ pub enum Error {
     NotTreasurer = 27,
     /// Only the top role changes the organization's profile (logo).
     NotTopRole = 28,
+    /// A spending limit needs a non-negative amount and, when set, a period above zero.
+    InvalidLimit = 29,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -77,6 +79,8 @@ pub struct Evaluation {
     pub approvals: Vec<Requirement>,
     pub objection_window_hours: u32,
     pub seal_required: bool,
+    /// The payment fits the requester's spending limit, so no approval is needed.
+    pub within_limit: bool,
 }
 
 #[contracttype]
@@ -84,6 +88,25 @@ pub struct Evaluation {
 pub struct Member {
     pub address: Address,
     pub role: Symbol,
+}
+
+/// A crew or agent allowance: up to `amount` (rules' currency) per rolling `period_seconds`
+/// goes out without approvals; anything beyond follows the normal rules.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct SpendingLimit {
+    pub amount: i128,
+    pub period_seconds: u64,
+    /// Spent in the current window, which started at `window_start`.
+    pub spent: i128,
+    pub window_start: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct MemberLimit {
+    pub member: Address,
+    pub limit: SpendingLimit,
 }
 
 /// A token the organization should accept, the fiat currency it stands for ("EUR", "USD") and,
@@ -130,6 +153,8 @@ pub enum Change {
     AddAsset(AssetSpec),
     /// Stop accepting a token; only when its balance is zero and no open request uses it.
     RemoveAsset(Address),
+    /// Give a member a spending limit (amount per period, rules' currency); amount 0 removes it.
+    SetSpendingLimit(Address, i128, u64),
 }
 
 #[contracttype]

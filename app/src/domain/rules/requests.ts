@@ -7,8 +7,9 @@ import {
 	memberRank,
 } from "./approvals.ts";
 import { applyChange, type GovernanceChange } from "./governance.ts";
+import { fitsLimit } from "./limits.ts";
 import { type Evaluation, type Org, type PersonId, type RuleError, ruleError } from "./model.ts";
-import { evaluateGovernance, evaluatePayment } from "./policy.ts";
+import { evaluateGovernance, evaluatePayment, limitEvaluation } from "./policy.ts";
 
 /**
  * pending   → waiting for approvals (and the seal, if required)
@@ -99,10 +100,12 @@ export function createPaymentRequest(
 	if (!asset) {
 		return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
 	}
-	const evaluation = evaluatePayment(org.policy, {
-		...input,
-		foreignCurrency: asset.currency !== org.baseCurrency,
-	});
+	const foreignCurrency = asset.currency !== org.baseCurrency;
+	const requester = org.members.find((m) => m.personId === input.requesterId);
+	const evaluation =
+		!foreignCurrency && fitsLimit(requester, input.amount, now)
+			? limitEvaluation()
+			: evaluatePayment(org.policy, { ...input, foreignCurrency });
 	return ok(
 		settle(
 			org,

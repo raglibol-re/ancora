@@ -1,6 +1,6 @@
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
-import type { OnchainSnapshot } from "./mapOrganization.ts";
-import { type Network, readContract } from "./readContract.ts";
+import { mapLimit, type OnchainSnapshot } from "./mapOrganization.ts";
+import { ContractReadError, type Network, readContract } from "./readContract.ts";
 import { address, u32 } from "./scv.ts";
 
 type Native = Record<string, unknown>;
@@ -10,20 +10,41 @@ const REQUEST_PAGE = 50;
 const hex = (bytes: Uint8Array): string =>
 	Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 
+/**
+ * Organizations deployed before the spending-limit upgrade (26 Oct 2026) have no `spending_limits`
+ * view; they simply have no limits. Only a failed simulation is treated that way, network errors
+ * still surface.
+ */
+async function readSpendingLimits(network: Network, contractId: string): Promise<Native[]> {
+	try {
+		return (await readContract(network, contractId, "spending_limits")) as Native[];
+	} catch (error) {
+		if (error instanceof ContractReadError) return [];
+		throw error;
+	}
+}
+
 /** Everything the app shows about one organization, read from its contract in two rounds. */
 export async function readOrganization(
 	network: Network,
 	contractId: string,
 ): Promise<OnchainSnapshot> {
-	const [info, policy, assets, members, requests, setupPhase, policyHash] = await Promise.all([
-		readContract(network, contractId, "info") as Promise<Native>,
-		readContract(network, contractId, "policy") as Promise<Native>,
-		readContract(network, contractId, "assets") as Promise<Native[]>,
-		readContract(network, contractId, "members") as Promise<Native[]>,
-		readContract(network, contractId, "requests", [u32(0), u32(REQUEST_PAGE)]) as Promise<Native[]>,
-		readContract(network, contractId, "is_setup_phase") as Promise<boolean>,
-		readContract(network, contractId, "policy_hash") as Promise<Uint8Array>,
-	]);
+	const [info, policy, assets, members, requests, setupPhase, policyHash, limitRows] =
+		await Promise.all([
+			readContract(network, contractId, "info") as Promise<Native>,
+			readContract(network, contractId, "policy") as Promise<Native>,
+			readContract(network, contractId, "assets") as Promise<Native[]>,
+			readContract(network, contractId, "members") as Promise<Native[]>,
+			readContract(network, contractId, "requests", [u32(0), u32(REQUEST_PAGE)]) as Promise<
+				Native[]
+			>,
+			readContract(network, contractId, "is_setup_phase") as Promise<boolean>,
+			readContract(network, contractId, "policy_hash") as Promise<Uint8Array>,
+			readSpendingLimits(network, contractId),
+		]);
+	const limits = new Map(
+		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
+	);
 	// One balance per accepted token, from the token contracts themselves.
 	const balances = new Map(
 		await Promise.all(
@@ -60,6 +81,7 @@ export async function readOrganization(
 		requests,
 		balances,
 		reserves,
+		limits,
 		setupPhase,
 		policyHash: hex(policyHash),
 	};

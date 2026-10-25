@@ -123,7 +123,19 @@ pub fn evaluate_payment(
         approvals,
         objection_window_hours: tier.objection_window_hours,
         seal_required: amount_in_base.is_none_or(|amount| amount >= policy.seal_threshold),
+        within_limit: false,
     })
+}
+
+/// A payment inside the requester's spending limit: nothing to approve, out it goes.
+pub fn limit_evaluation(e: &Env) -> Evaluation {
+    Evaluation {
+        tier: None,
+        approvals: Vec::new(e),
+        objection_window_hours: 0,
+        seal_required: false,
+        within_limit: true,
+    }
 }
 
 /// Membership and rule changes always use the strictest (last) tier, without the seal.
@@ -134,6 +146,7 @@ pub fn evaluate_governance(policy: &Policy) -> Result<Evaluation, Error> {
         approvals: tier.approvals.clone(),
         objection_window_hours: tier.objection_window_hours,
         seal_required: false,
+        within_limit: false,
     })
 }
 

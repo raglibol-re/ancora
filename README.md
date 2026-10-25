@@ -29,7 +29,7 @@ One passkey per person, one contract per organization:
 - **Several stablecoins per organization**: an organization accepts any set of Stellar stablecoins (BlendUSDC, Circle's USDC and Circle's EURC on testnet; others by configuration), each with its own balance and payments; adding or dropping one is a governance change. The rules are written in one home currency; a payment in another currency takes the strictest tier until a live rate is connected.
 - **Reserve**: idle money earns variable earnings in a DeFindex vault (Blend lending on testnet); moving it in or out needs no approval because it never leaves the organization.
 - **Security seal**: large payments need a quantum-safe signature; ancora's own ML-DSA-44 (FIPS 204) verifier runs on Stellar, ready for the day today's signatures can be forged.
-- **Crew and agent keys** with hard spending limits.
+- **Crew and agent keys** with hard spending limits: routine buys go out alone, anything bigger follows the rules.
 - **Euro and dollar in and out** through a licensed ramp partner.
 
 ## Features
@@ -45,7 +45,7 @@ One passkey per person, one contract per organization:
 | Multi-asset treasury | Balances per accepted stablecoin, payments in each, test money per asset, accept/drop assets through governance, home currency (EUR or USD) for the rules with the strictest tier for other currencies | **Real on testnet** (BlendUSDC, Circle USDC, Circle EURC; sample data shows EURC + USDC) |
 | Reserve on DeFindex | Per-asset Reserve in a DeFindex vault: one-tap moves by the top role or any strictest-tier approver, value and earnings read from the vault | **Real on testnet** for BlendUSDC (the DeFindex testnet vault); **Simulated** in sample data; other assets get a Reserve once a vault exists |
 | Security seal (ML-DSA) | Payments above the seal threshold need an extra seal; ancora's `ancora_seal_verifier` contract checks ML-DSA-44 (FIPS 204) signatures on Stellar, interoperable with `@noble/post-quantum` | **Verifier real on testnet** (tested on-chain with a shared vector); the seal step in the app is signed by an approver's passkey until the ML-DSA key lives on the approving device (roadmap) |
-| Crew / agent keys | Per-key spending limits | Roadmap (task 9) |
+| Crew / agent keys | A spending limit per member (amount per day, week or 30 days in the rules' currency): payments inside it go out without approvals, beyond it the normal rules apply; an agent is simply a member whose key has a limit | **Real on testnet** (organization contract) |
 | Euro in/out | Account number card (IBAN); SEP-24 test anchor; Bridge | **Simulated** IBAN card; real ramps: task 10 |
 | Confidential payments | Hidden amounts with auditor view | Roadmap (task 14) |
 | Discussions on requests | Pro and contra reasons, questions (the requester marks them answered) and comments with thumbs up/down, one reaction per person, never on your own entry; summary on every request card | **Real** (off-chain in Vercel Blob, membership checked against the contract; entries aren't passkey-signed yet) |
@@ -88,7 +88,7 @@ Verified and written to `app/.env.testnet` by `scripts/setup-testnet.sh`, which 
 |------|----------|--------|
 | ancora registry (profiles, organizations per person) | [`CDPQV7…4QCM`](https://stellar.expert/explorer/testnet/contract/CDPQV7C2XRWVDGWBIEHNE6IOMC56KSAITMESJBI7BULJSIGSVAQD4QCM) | `contracts/registry` |
 | ancora seal verifier (ML-DSA-44, OZ external-verifier interface) | [`CDUFVN…V4NS`](https://stellar.expert/explorer/testnet/contract/CDUFVNCHZE64O37RQZQQ6ZKYDLS3RZ6YKYJDD66XNEPYHVWW6OO6V4NS) | `contracts/seal_verifier` |
-| ancora organization (one instance per organization) | WASM `a4f6cb25…3042`, deployed by the operator on "Create organization" | `contracts/organization` |
+| ancora organization (one instance per organization) | WASM `b72d19f4…c50b`, deployed by the operator on "Create organization" | `contracts/organization` |
 | USDC (BlendUSDC, SAC of `USDC:GATALT…`) | [`CAQCFV…RCJU`](https://stellar.expert/explorer/testnet/contract/CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU) | Blend testnet |
 | EURC (Circle testnet, SAC of `EURC:GB3Q6Q…`) | [`CCUUDM…MCGZ`](https://stellar.expert/explorer/testnet/contract/CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ) | Circle (faucet.circle.com) |
 | USDC (Circle testnet, SAC of `USDC:GBBD47…`) | [`CBIELT…DAMA`](https://stellar.expert/explorer/testnet/contract/CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA) | Circle (faucet.circle.com) |
