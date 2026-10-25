@@ -22,6 +22,18 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 13 | Demo admin: reset, top-up, retry stuck requests | Planned |
 | 14 | Confidential pot + auditor view stub | Planned |
 | 15 | Integrate the Claude Design package | Waiting for /design |
+| 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Planned |
+
+### Task 16: discussions on approval requests
+
+Approvers decide better when the reasons are visible next to the request.
+
+- **Thread per request** (payments and membership/rule changes). Entry types: *pro reason*, *contra reason*, *question*, *comment*. Questions can be marked answered by the requester.
+- **Reactions:** thumbs up / thumbs down on reasons; one reaction per person per entry, changeable; never on your own entry. Shows which arguments the group actually backs.
+- **Who:** members of the organization only. Posting doesn't count as approving, so four-eyes and the approval rules stay untouched.
+- **UI:** discussion section on the request page; summary on request cards and in the inbox ("2 pro · 1 contra · 1 open question"); notice when someone replies to your request.
+- **Storage:** the text is off-chain (not money, should stay private to the org). It goes behind the `DataSource` interface: sample adapter first, then a minimal Vercel-integrated store justified in DECISIONS.md. Optionally each approval records the hash of the discussion it was given on, so later readers can prove what an approver saw.
+- **Later:** attachments (receipts, quotes) via Vercel Blob, @mentions, a requester-written decision summary.
 
 ## Next: SCF #46 milestones
 

@@ -22,3 +22,4 @@
 | 2026-10-25 | Moving money between the main account and the Reserve needs no approval; allowed for the top role and anyone who can approve the strictest tier | Money never leaves the organization; one-tap UX | Treat as a payment with approvals |
 | 2026-10-25 | Requests get a `failed` status with a reason | Execution can fail (network, change no longer applies); demo admin retries it (task 13) | Reuse `declined` |
 | 2026-10-25 | Logos resized in the browser to 256×256 WebP and kept in the sample state until Vercel Blob + org registry (task 11) | Same validation and UX now; storage swaps later | Wait for Blob before building the UI |
+| 2026-10-25 | Request discussions (task 16) stay off-chain, with an optional on-chain hash per approval | Content isn't money and should stay private to the org; on-chain storage would be public and costly. The hash keeps "what did the approver see" verifiable | Fully on-chain comments; browser-only |
