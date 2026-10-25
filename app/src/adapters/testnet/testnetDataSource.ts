@@ -37,6 +37,8 @@ const EMPTY: Workspace = { people: [], accounts: [] };
 const LOGOS_KEY = "ancora.testnet.logos.v1";
 const MAX_NAME_BYTES = 64;
 const MAX_AVATAR_BYTES = 256;
+/** A session restore that takes longer than this shows the sign-in page instead of blocking it. */
+const RESTORE_TIMEOUT_MS = 8_000;
 
 const failed = (message: string) => err(ruleError("not-allowed", message));
 const byteLength = (value: string) => new TextEncoder().encode(value).length;
@@ -91,7 +93,10 @@ export class TestnetDataSource implements DataSource {
 
 	private async restore() {
 		try {
-			const session = await this.kit.connectWallet();
+			const session = await Promise.race([
+				this.kit.connectWallet(),
+				new Promise<null>((resolve) => setTimeout(() => resolve(null), RESTORE_TIMEOUT_MS)),
+			]);
 			if (session) await this.becomeIdentity(session.contractId);
 		} catch {
 			// No usable session on this device: the sign-in page takes over.
