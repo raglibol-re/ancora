@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { assetOf, isNewRecipient, type OrgAccount, primaryToken } from "../../domain/account.ts";
 import { parseAmountInput } from "../../domain/money.ts";
@@ -36,8 +36,41 @@ function PayForm({ account }: { account: OrgAccount }) {
 	const [amountInput, setAmountInput] = useState("");
 	const [note, setNote] = useState("");
 	const [errors, setErrors] = useState<Record<string, string>>({});
+	/** Per accepted token: null = can receive, a message = why not; absent = not checked yet. */
+	const [reachable, setReachable] = useState<Record<string, string | null>>({});
+
+	// A typed address is checked against every accepted asset; "Pay with" moves to one that works.
+	useEffect(() => {
+		const typed = newAccount.trim();
+		if (payeeId !== NEW_RECIPIENT || !account.onchain || typed.length < 56) {
+			setReachable({});
+			return;
+		}
+		let cancelled = false;
+		const timer = setTimeout(async () => {
+			const results = await Promise.all(
+				account.org.assets.map(async (a) => {
+					const result = await dataSource.canReceive(a.token, typed);
+					return [a.token, result.ok ? null : result.error.message] as const;
+				}),
+			);
+			if (cancelled) return;
+			const next = Object.fromEntries(results);
+			setReachable(next);
+			setToken((current) =>
+				next[current] === null
+					? current
+					: (results.find(([, why]) => why === null)?.[0] ?? current),
+			);
+		}, 600);
+		return () => {
+			cancelled = true;
+			clearTimeout(timer);
+		};
+	}, [newAccount, payeeId, account.onchain, account.org.assets, dataSource]);
 
 	const asset = assetOf(account.org, token) ?? account.org.assets[0];
+	const unreachable = reachable[token];
 	const currency = asset?.currency ?? account.org.baseCurrency;
 	const isNew = payeeId === NEW_RECIPIENT;
 	const amount = parseAmountInput(amountInput);
@@ -113,6 +146,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 								{account.org.assets.map((a) => (
 									<option key={a.token} value={a.token}>
 										{a.symbol} ({a.currency})
+										{reachable[a.token] === null
+											? " · recipient can receive it"
+											: reachable[a.token]
+												? " · recipient can't receive it"
+												: ""}
 									</option>
 								))}
 							</select>
@@ -180,6 +218,16 @@ function PayForm({ account }: { account: OrgAccount }) {
 							onChange={(e) => setAmountInput(e.target.value)}
 						/>
 					</Field>
+					{unreachable && (
+						<p className={styles.recipientWarning} role="status">
+							{unreachable}
+						</p>
+					)}
+					{unreachable === null && isNew && (
+						<p className={styles.recipientOk} role="status">
+							This address can receive {asset?.symbol ?? "the chosen asset"}.
+						</p>
+					)}
 					<RulePreview
 						account={account}
 						token={token}

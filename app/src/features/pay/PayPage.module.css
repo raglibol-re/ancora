@@ -15,3 +15,13 @@
 	font-family: var(--font-display);
 	font-size: var(--text-xl);
 }
+
+.recipientWarning {
+	font-size: var(--text-sm);
+	color: var(--color-negative);
+}
+
+.recipientOk {
+	font-size: var(--text-sm);
+	color: var(--color-positive);
+}

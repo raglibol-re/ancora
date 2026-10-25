@@ -165,4 +165,9 @@ export interface DataSource {
 	): Promise<Result<void, RuleError>>;
 	/** Testnet money in one asset for demos: sent by the demo operator, or simulated for sample data. */
 	addTestMoney(orgId: string, actorId: PersonId, token: string): Promise<Result<void, RuleError>>;
+	/**
+	 * Whether `recipient` can receive `token` right now (on Stellar: the address exists and holds
+	 * a trustline for exactly that asset). Sample data accepts everything.
+	 */
+	canReceive(token: string, recipient: string): Promise<Result<void, RuleError>>;
 }

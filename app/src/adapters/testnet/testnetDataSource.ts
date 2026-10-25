@@ -417,6 +417,10 @@ export class TestnetDataSource implements DataSource {
 		return ok(undefined);
 	}
 
+	canReceive(token: string, recipient: string) {
+		return checkRecipient(this.config, token, recipient.trim());
+	}
+
 	async addTestMoney(orgId: string, _actorId: PersonId, token: string) {
 		const response = await this.post("/api/test-money", { contractId: orgId, token });
 		if (!response.ok) return response;

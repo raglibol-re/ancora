@@ -322,6 +322,10 @@ export class LocalDataSource implements DataSource {
 		return notAllowed("Payments here go out automatically once they are fully approved.");
 	}
 
+	async canReceive(): Promise<Result<void, RuleError>> {
+		return ok(undefined);
+	}
+
 	/** Sample data: a simulated incoming transfer of 500 in the chosen asset. */
 	async addTestMoney(
 		orgId: string,
