@@ -36,10 +36,10 @@ One OpenZeppelin smart account per organization, with everything else as a modul
 | Module | What it does | Status |
 |--------|--------------|--------|
 | App shell | Installable PWA, desktop sidebar + mobile tabs, light/dark, org switcher, cross-org inbox | Real |
-| App screens | Overview, Inbox, Approvals, Send money with live rule preview, Rules, Settings, New organization | Real UI on **Simulated** sample data (testnet adapter: task 4) |
-| Passkey prompts | Confirm every action with Face ID / fingerprint | **Simulated** (real WebAuthn: task 4) |
+| App screens | Overview, Inbox, Approvals, Send money with live rule preview, Rules, Settings, New organization | Real; runs on sample data or the Stellar testnet (switch in Settings) |
+| Passkey prompts | Face ID / fingerprint / device PIN | **Real on testnet** (simulated in sample mode) |
 | Approval rules | Tiered approvals, four-eyes, objection window, seal threshold, membership requests | Engine done (TypeScript, tested against shared vectors); on-chain: task 6 |
-| Passkey smart accounts | WebAuthn signers, sponsored fees | Roadmap (task 4) |
+| Passkey smart accounts | Each organization is an OpenZeppelin smart account with a passkey signer; fees sponsored by ancora's relayer; USDC payments signed with the passkey | **Real on testnet** |
 | Reserve on DeFindex | Variable earnings on idle funds, one-tap moves | **Simulated** in the UI; DeFindex vault: task 7 |
 | Security seal (ML-DSA) | Quantum-safe approval above a threshold | Roadmap (task 8) |
 | Crew / agent keys | Per-key spending limits | Roadmap (task 9) |
@@ -101,15 +101,19 @@ The script is idempotent: the testnet is reset now and then, so it re-funds the 
 
 ## Deploy
 
-A single Vercel project, Root Directory `app`, deploys production from `main` through the Git integration. `app/vercel.json` rewrites every non-API path to the SPA so that deep links work. Environment variables are documented in `app/.env.example`.
+A single Vercel project, Root Directory `app`, deploys production from `main` through the Git integration. `app/vercel.json` rewrites every non-API path to the SPA so that deep links work. Environment variables are documented in `app/.env.example`; `scripts/setup-testnet.sh --sync-vercel` pushes the server-side ones (network, allowed origins, the operator key as a Sensitive variable).
+
+Vercel Functions in `app/api/`: `/api/relay` sponsors fees for smart-account-kit submissions after fail-closed validation (allowlisted deployments, transfers and account calls, exact authorization matching, fee cap); `/api/test-money` sends 100 test USDC from the operator to an ancora smart account. The operator key is never a signer on any organization account.
 
 Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it: the WebAuthn RP ID is `ancora-gray.vercel.app`, so passkeys created on preview URLs or localhost will not work in production.
 
 ## Limitations
 
 - Testnet only, so nothing here holds real money.
-- Anything labeled **Simulated** in the app uses sample data and is labeled the same way here. Right now the whole app runs on sample data (a purple banner says so); sample state is stored in your browser.
-- In sample mode, "Viewing as" (Settings) switches between sample people so you can approve requests from each side. On testnet this is replaced by passkey sign-in.
+- Anything labeled **Simulated** in the app uses sample data and is labeled the same way here. The app starts on sample data (a purple banner says so); Settings → Data source switches to the Stellar testnet (dark blue banner). Both keep state in your browser.
+- On testnet, the **approval rules still run in the app** and approvals are recorded there; the smart account enforces its passkey signers on-chain, and a signer signs each outgoing payment. Moving the rules on-chain is task 6.
+- **Testnet fees are unusually high right now.** Measured on 25 Oct 2026: deploying an account 22 XLM, first deposit into it 22 XLM, a passkey-signed payment 46 XLM. Testnet's Soroban state is above its rent target, which puts rent at 2,271,304 stroops/KB versus 1,000 on mainnet, and the OpenZeppelin smart account extends its storage TTL to 30 days on every use. The relayer sponsors these fees from a Friendbot-funded operator key; the same operations cost well under 1 XLM at today's mainnet rent. Details in [docs/DECISIONS.md](docs/DECISIONS.md).
+- "Viewing as" (Settings) switches the person the app acts as, so one device can show both sides of a four-eyes approval. Signing always uses the passkeys on that device.
 
 ## License
 

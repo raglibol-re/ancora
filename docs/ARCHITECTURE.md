@@ -48,7 +48,7 @@ Features never talk to the outside world directly. They use one `DataSource` int
 | Implementation | Where | Status |
 |----------------|-------|--------|
 | `SampleDataSource` | `app/src/adapters/sample/` | Labeled sample data; every command runs through the domain engine; persisted in browser storage. Stays as the demo fallback. |
-| Testnet adapter | `app/src/adapters/testnet/` | `testnetConfig.ts` reads the public IDs from `app/.env.testnet` (Vite `--mode testnet`). The adapter itself lands in task 4: smart accounts, contracts and the relayer on Stellar testnet. |
+| `TestnetDataSource` | `app/src/adapters/testnet/` (lazy-loaded chunk) | Real on Stellar testnet: creating an organization deploys an OpenZeppelin smart account through smart-account-kit 0.8.0 with a passkey signer; balances are on-chain USDC; a fully approved payment is signed by a signer's passkey and sent. Public IDs come from `app/.env.testnet` (Vite `--mode testnet`). Shares `LocalDataSource`/`WorkspaceStore` with the sample adapter for rules, requests and history. |
 
 UI state lives in `features/workspace` (snapshot via `useSyncExternalStore`, preferences, active org). `useCommand` gives every action the same UX: signature prompt → command → plain-language success or error.
 
@@ -56,9 +56,16 @@ UI state lives in `features/workspace` (snapshot via `useSyncExternalStore`, pre
 
 One OpenZeppelin smart account per organization; everything else is a module on it: signers (passkeys, ML-DSA via external verifier), policies (approval rules, spending limits), connected contracts (DeFindex vault, confidential token). Shared stateless verifiers; multi-tenant policies keyed by smart account + context rule.
 
-## Auth flows *(planned)*
+## Auth flows
 
-Passkey (WebAuthn) signatures verified by the smart account; fees sponsored by a relayer so users never hold XLM.
+- **Account creation:** smart-account-kit creates a passkey (RP ID = the production hostname) and deploys the OZ smart account with that passkey as its `External` WebAuthn signer. The deployment is salted from the credential id, so the address is reproducible.
+- **Payments:** the kit builds the USDC `transfer` as a direct token call authorized by the smart account; the passkey signs the auth digest; the smart account's `__check_auth` verifies it on-chain. Nobody ever holds XLM.
+- **Fee sponsoring:** the kit POSTs `{ func, auth }` to `/api/relay`. The Function re-validates (allowlisted WASM/functions, authorizations only from the smart account or the kit's deployer, exact match between `func` and the authorized call, simulated fee ≤ cap) and only then submits with the operator key as the fee-paying source. The operator signs the envelope, never an authorization.
+- **Approvals (until task 6):** approving, declining and proposing changes ask for a passkey to confirm presence; the rules engine records the outcome in the app. On-chain enforcement through an OZ policy is the next step.
+
+### Testnet rent (why fees are high right now)
+
+Measured 25 Oct 2026: testnet's live Soroban state is above its 4 GB rent target (4.10 GB and rising), so rent is 2,271,304 stroops/KB (mainnet: 1,000). The OZ smart account extends every persistent entry to a 30-day TTL on each read (`SMART_ACCOUNT_EXTEND_AMOUNT`). Together: deploy 22 XLM, first deposit 22 XLM, first passkey payment 46 XLM on testnet; the same on mainnet is well under 1 XLM. The relayer therefore sponsors from a Friendbot-refilled operator key instead of OpenZeppelin Relayer Channels (100 XLM/day cap).
 
 ## Multi-tenancy *(planned)*
 
