@@ -14,7 +14,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 5 | Demo admin: data-source fallback switch + health panel | Done |
 | 6 | Approval rules on-chain: organization contract + registry, policy document hash, identities | Done (see below) |
 | 7 | Reserve on DeFindex testnet vault | Done for BlendUSDC (see below); confidential split moved to task 14 |
-| 8 | Security seal: ML-DSA verifier as OZ external signer (timebox 2h) | Planned |
+| 8 | Security seal: ML-DSA verifier as OZ external signer (timebox 2h) | Verifier done and on testnet; device key + account wiring: next |
 | 9 | Crew / agent keys with OZ spending-limit policy | Planned |
 | 10 | Euro in/out: SEP-24 test anchor (real), Bridge (simulated) | Planned |
 | 11 | Organization logo in Vercel Blob with the URL on the organization contract | Planned (profile pictures already work this way) |
@@ -42,6 +42,11 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 - The organization contract deposits into and withdraws from the asset's DeFindex vault itself (`move_to_reserve`, `withdraw_from_reserve`); the top role or any strictest-tier approver may do it, no request needed. The vault's token pull is authorized as a sub-invocation.
 - `reserve(token)` reports shares, value and principal; the app shows the value and "earned so far" per asset. Assets without a vault (Circle USDC today) show "No Reserve yet".
 - Follow-ups: auto-sweep rules (keep X on the account, rest in the Reserve), more vaults as DeFindex adds them on testnet, the confidential split (task 14).
+
+### Task 8 as built: the quantum-safe seal verifier
+
+- `contracts/seal_verifier`: ML-DSA-44 (FIPS 204) verification in a 15 KB Soroban contract with OpenZeppelin's external-verifier interface; shared vector from `@noble/post-quantum`; deployed once by the setup script and checked on-chain (valid → true, tampered → false).
+- Still to do (SCF milestone): generate the ML-DSA key on the approving device, store it in the browser's IndexedDB (non-extractable where the platform allows), add it to the person's smart account as an external signer on a context rule that only covers `seal`, and sign the seal with it; swap the verifier body for the native host function after Protocol 30.
 
 ### Task 16: discussions on approval requests
 

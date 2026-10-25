@@ -22,6 +22,8 @@ export type TestnetConfig = {
 	relayerUrl: string;
 	registryContract: string;
 	orgWasmHash: string;
+	/** ancora's ML-DSA-44 verifier (OpenZeppelin external-verifier interface) for the security seal. */
+	sealVerifier: string;
 	/** "Symbol:C…:USD,…": the stablecoins an organization may accept (see parseAssetOptions). */
 	orgAssets: string;
 };
@@ -44,6 +46,7 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	relayerUrl: "VITE_RELAYER_URL",
 	registryContract: "VITE_REGISTRY_CONTRACT",
 	orgWasmHash: "VITE_ORG_WASM_HASH",
+	sealVerifier: "VITE_SEAL_VERIFIER",
 	orgAssets: "VITE_ORG_ASSETS",
 };
 
@@ -79,6 +82,7 @@ export const testnetConfig = readTestnetConfig(import.meta.env);
 export function listDeployments(config: TestnetConfig): { label: string; id: string }[] {
 	return [
 		{ label: "ancora registry (profiles, memberships)", id: config.registryContract },
+		{ label: "ancora seal verifier (ML-DSA-44, quantum-safe)", id: config.sealVerifier },
 		...parseAssetOptions(config.orgAssets).map((asset) => ({
 			label: `${asset.symbol} token (${asset.currency})`,
 			id: asset.token,

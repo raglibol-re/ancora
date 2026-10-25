@@ -28,7 +28,7 @@ One passkey per person, one contract per organization:
 - **Each organization is its own contract** that holds the money and **enforces the approval rules itself**: tiers per amount, four-eyes, objection windows, extra approval for new recipients. The rules are one readable document whose fingerprint the contract stores, so anyone can verify them.
 - **Several stablecoins per organization**: an organization accepts any set of Stellar stablecoins (BlendUSDC and Circle's USDC on testnet; EURC and others by configuration), each with its own balance and payments; adding or dropping one is a governance change. The rules are written in one home currency; a payment in another currency takes the strictest tier until a live rate is connected.
 - **Reserve**: idle money earns variable earnings in a DeFindex vault (Blend lending on testnet); moving it in or out needs no approval because it never leaves the organization.
-- **Security seal**: large payments need a quantum-safe ML-DSA signature.
+- **Security seal**: large payments need a quantum-safe signature; ancora's own ML-DSA-44 (FIPS 204) verifier runs on Stellar, ready for the day today's signatures can be forged.
 - **Crew and agent keys** with hard spending limits.
 - **Euro and dollar in and out** through a licensed ramp partner.
 
@@ -43,7 +43,7 @@ One passkey per person, one contract per organization:
 | Organizations on Stellar | Each organization is an `ancora_organization` contract with OZ AccessControl roles; people are invited by ancora ID; payments leave the contract once its rules are satisfied; fees sponsored by ancora's relayer | **Real on testnet** |
 | Multi-asset treasury | Balances per accepted stablecoin, payments in each, test money per asset, accept/drop assets through governance, home currency for the rules with the strictest tier for other currencies | **Real on testnet** (BlendUSDC + Circle USDC; sample data shows EURC + USDC) |
 | Reserve on DeFindex | Per-asset Reserve in a DeFindex vault: one-tap moves by the top role or any strictest-tier approver, value and earnings read from the vault | **Real on testnet** for BlendUSDC (the DeFindex testnet vault); **Simulated** in sample data; other assets get a Reserve once a vault exists |
-| Security seal (ML-DSA) | Quantum-safe approval above a threshold | Roadmap (task 8) |
+| Security seal (ML-DSA) | Payments above the seal threshold need an extra seal; ancora's `ancora_seal_verifier` contract checks ML-DSA-44 (FIPS 204) signatures on Stellar, interoperable with `@noble/post-quantum` | **Verifier real on testnet** (tested on-chain with a shared vector); the seal step in the app is signed by an approver's passkey until the ML-DSA key lives on the approving device (roadmap) |
 | Crew / agent keys | Per-key spending limits | Roadmap (task 9) |
 | Euro in/out | Account number card (IBAN); SEP-24 test anchor; Bridge | **Simulated** IBAN card; real ramps: task 10 |
 | Confidential payments | Hidden amounts with auditor view | Roadmap (task 14) |
@@ -85,6 +85,7 @@ Verified and written to `app/.env.testnet` by `scripts/setup-testnet.sh`, which 
 | What | Contract | Source |
 |------|----------|--------|
 | ancora registry (profiles, organizations per person) | [`CDPQV7…4QCM`](https://stellar.expert/explorer/testnet/contract/CDPQV7C2XRWVDGWBIEHNE6IOMC56KSAITMESJBI7BULJSIGSVAQD4QCM) | `contracts/registry` |
+| ancora seal verifier (ML-DSA-44, OZ external-verifier interface) | [`CDUFVN…V4NS`](https://stellar.expert/explorer/testnet/contract/CDUFVNCHZE64O37RQZQQ6ZKYDLS3RZ6YKYJDD66XNEPYHVWW6OO6V4NS) | `contracts/seal_verifier` |
 | ancora organization (one instance per organization) | WASM `1ec9ed16…61dd`, deployed by the operator on "Create organization" | `contracts/organization` |
 | USDC (BlendUSDC, SAC of `USDC:GATALT…`) | [`CAQCFV…RCJU`](https://stellar.expert/explorer/testnet/contract/CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU) | Blend testnet |
 | USDC (Circle testnet, SAC of `USDC:GBBD47…`) | [`CBIELT…DAMA`](https://stellar.expert/explorer/testnet/contract/CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA) | Circle (faucet.circle.com) |
@@ -147,6 +148,7 @@ It uses the demo operator key, which is **not a signer on any organization accou
 - Paying a classic Stellar address (G…) works only if that account holds a trustline for the exact asset being sent (testnet has several assets called USDC: Blend's and Circle's are different issuers and don't mix). The app checks this before it requests the payment and names the asset to add. Organization addresses (C…) never need one.
 - Test money in Circle's USDC comes from a float the operator fills by hand at faucet.circle.com (captcha-gated), so grants shrink when it runs low; BlendUSDC is refilled automatically by the setup script.
 - Payments in an asset whose currency differs from the organization's rules (e.g. EURC in a USD organization) take the strictest tier and the seal; a live FX rate (Reflector oracle) is on the roadmap.
+- The security seal is enforced by the organization contract, but today an eligible approver adds it with their passkey; the quantum-safe ML-DSA-44 verifier is deployed and tested on testnet, the device key and the account wiring come next (see ROADMAP).
 - The Reserve exists for BlendUSDC only (the one DeFindex vault on testnet). Its "earned so far" figure is the vault value above what was moved in; the vault's own fees and Blend's variable rate decide it, and a Reserve move on testnet costs the operator a sponsored fee of tens of XLM (testnet rent, see above).
 - **Testnet fees are unusually high right now.** Measured on 25 Oct 2026: deploying an account 22 XLM, first deposit into it 22 XLM, a passkey-signed payment 46 XLM. Testnet's Soroban state is above its rent target, which puts rent at 2,271,304 stroops/KB versus 1,000 on mainnet, and the OpenZeppelin smart account extends its storage TTL to 30 days on every use. The relayer sponsors these fees from a Friendbot-funded operator key; the same operations cost well under 1 XLM at today's mainnet rent. Details in [docs/DECISIONS.md](docs/DECISIONS.md).
 - In sample mode, "Viewing as" (on your pass) switches the person the app acts as, so one device can show both sides of a four-eyes approval. On testnet, sign out and sign in with another passkey, or use a second device.

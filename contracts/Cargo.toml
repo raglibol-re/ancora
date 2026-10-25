@@ -1,7 +1,7 @@
 # One crate per contract under contracts/<name>; shared test vectors live in contracts/test-vectors.
 [workspace]
 resolver = "2"
-members = ["registry", "organization"]
+members = ["registry", "organization", "seal_verifier"]
 
 [workspace.package]
 version = "0.1.0"

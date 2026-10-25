@@ -1,0 +1,17 @@
+[package]
+name = "ancora-seal-verifier"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["lib", "cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+fips204 = { version = "=0.5.0", default-features = false, features = ["ml-dsa-44"] }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+serde_json = { workspace = true }

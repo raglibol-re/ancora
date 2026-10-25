@@ -205,6 +205,7 @@ ensure_ancora_contracts() {
 	say "ancora contracts"
 	local wasm_dir="$ROOT/contracts/target/wasm32v1-none/release"
 	REGISTRY_CONTRACT="$(sed -n 's/^VITE_REGISTRY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	SEAL_VERIFIER="$(sed -n 's/^VITE_SEAL_VERIFIER=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	ORG_WASM_HASH="$(sed -n 's/^VITE_ORG_WASM_HASH=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	if $CHECK_ONLY; then
 		[[ -n "$ORG_WASM_HASH" ]] && ok "organization WASM $ORG_WASM_HASH" || problem "organization WASM hash missing"
@@ -212,6 +213,11 @@ ensure_ancora_contracts() {
 			ok "registry $REGISTRY_CONTRACT"
 		else
 			problem "registry contract missing (testnet reset?)"
+		fi
+		if [[ -n "$SEAL_VERIFIER" ]] && contract_exists "$SEAL_VERIFIER"; then
+			ok "seal verifier $SEAL_VERIFIER"
+		else
+			problem "seal verifier missing (testnet reset?)"
 		fi
 		return
 	fi
@@ -226,6 +232,12 @@ ensure_ancora_contracts() {
 			die "Could not deploy the registry."
 	fi
 	ok "registry $REGISTRY_CONTRACT"
+	# The ML-DSA-44 seal verifier is stateless; one instance serves every account.
+	if [[ -z "$SEAL_VERIFIER" ]] || ! contract_exists "$SEAL_VERIFIER"; then
+		SEAL_VERIFIER="$(stellar contract deploy --wasm "$wasm_dir/ancora_seal_verifier.wasm" \
+			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the seal verifier."
+	fi
+	ok "seal verifier $SEAL_VERIFIER"
 }
 
 write_env_file() {
@@ -259,6 +271,7 @@ VITE_RELAYER_URL=$RELAYER_URL
 # ancora contracts (built from contracts/)
 VITE_REGISTRY_CONTRACT=$REGISTRY_CONTRACT
 VITE_ORG_WASM_HASH=$ORG_WASM_HASH
+VITE_SEAL_VERIFIER=$SEAL_VERIFIER
 EOF
 	ok "wrote ${ENV_FILE#"$ROOT/"}"
 }
@@ -313,6 +326,7 @@ sync_vercel() {
 		vercel_env ALLOWED_ORIGINS "$PRODUCTION_ORIGIN,http://localhost:5173,http://localhost:4173"
 		vercel_env ORG_WASM_HASH "$ORG_WASM_HASH"
 		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"
+		vercel_env SEAL_VERIFIER "$SEAL_VERIFIER"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
 		vercel_env ADMIN_PASSPHRASE "$(admin_passphrase)" secret
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
