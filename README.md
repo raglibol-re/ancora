@@ -65,7 +65,18 @@ flowchart LR
 
 A person signs with their passkey through their own account; the organization contract checks its own rules and moves the money. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Decisions: [docs/DECISIONS.md](docs/DECISIONS.md)
 
-<!-- TODO before submission: a short GIF of sign-in → create organization → invite → approve → payment, and screenshots of the pass and the Rules page. -->
+## A quick tour
+
+<p align="center">
+  <img src="docs/media/tour.gif" width="900" alt="ancora tour: passkey sign-in, an organization holding EURC and USDC, sending money with the live rule preview, the rules with their on-chain document hash, and a person's pass" />
+</p>
+
+<p align="center">
+  <img src="docs/media/overview.png" width="440" alt="Overview: one balance card per accepted stablecoin, the Reserve per asset, and a request waiting for approval" />
+  <img src="docs/media/pass.png" width="440" alt="Your pass: picture, name, ancora ID with QR code, positions across organizations" />
+</p>
+
+Sample-data screens, labeled as such in the app; on the Stellar testnet the same screens read from the organization's contract.
 
 ## Testnet contracts
 
