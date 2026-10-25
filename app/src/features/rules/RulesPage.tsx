@@ -41,9 +41,13 @@ function Rules({ account }: { account: OrgAccount }) {
 				key={`${account.org.id}-${JSON.stringify(account.org.policy)}`}
 				account={account}
 			/>
-			<BudgetsRulesCard key={`budgets-${account.org.id}`} account={account} />
+			<div id="budgets">
+				<BudgetsRulesCard key={`budgets-${account.org.id}`} account={account} />
+			</div>
 			<RulesHashCard account={account} />
-			<PeopleCard key={`people-${account.org.id}`} account={account} />
+			<div id="people">
+				<PeopleCard key={`people-${account.org.id}`} account={account} />
+			</div>
 			<AssetsCard key={`assets-${account.org.id}`} account={account} />
 			<TemplateCard key={`template-${account.org.id}`} account={account} />
 		</Page>

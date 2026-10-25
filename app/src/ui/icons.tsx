@@ -100,3 +100,36 @@ export const ChevronDownIcon = () => (
 		<path d="M6 9l6 6 6-6" />
 	</Icon>
 );
+
+export const MenuIcon = () => (
+	<Icon>
+		<path d="M4 7h16M4 12h16M4 17h16" />
+	</Icon>
+);
+
+export const CloseIcon = () => (
+	<Icon>
+		<path d="M6 6l12 12M18 6L6 18" />
+	</Icon>
+);
+
+export const OrganizationIcon = () => (
+	<Icon>
+		<path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16" />
+		<path d="M14 9h5a1 1 0 0 1 1 1v11" />
+		<path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1M2 21h20" />
+	</Icon>
+);
+
+export const CompassIcon = () => (
+	<Icon>
+		<circle cx="12" cy="12" r="9" />
+		<path d="M15.5 8.5l-2 5-5 2 2-5z" />
+	</Icon>
+);
+
+export const SignalIcon = () => (
+	<Icon>
+		<path d="M3 12h4l2-6 4 12 2-6h6" />
+	</Icon>
+);
