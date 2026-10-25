@@ -82,6 +82,16 @@ describe("validateSubmission", () => {
 		).resolves.toBeUndefined();
 	});
 
+	it("accepts V1 address credentials, which simulation currently returns for smart accounts", async () => {
+		const call = invoke(TOKEN, "transfer", transferArgs(WALLET));
+		const v2 = walletAuth(WALLET, call);
+		const v1 = new xdr.SorobanAuthorizationEntry({
+			credentials: xdr.SorobanCredentials.sorobanCredentialsAddress(v2.credentials().addressV2()),
+			rootInvocation: v2.rootInvocation(),
+		});
+		await expect(validateSubmission(context(), submission(call, [v1]))).resolves.toBeUndefined();
+	});
+
 	it("refuses transfers from accounts that aren't ancora smart accounts", async () => {
 		const other = contract();
 		const call = invoke(TOKEN, "transfer", transferArgs(other));

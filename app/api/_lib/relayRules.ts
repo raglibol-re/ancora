@@ -180,13 +180,20 @@ async function validateWalletCall(
 	}
 }
 
-/** Address-bound V2 credentials only: the relayer's own account must never authorize anything. */
+/**
+ * Address credentials only (V1 or V2, whichever simulation produced): source-account credentials
+ * would make the relayer's own account authorize the call, so they are always refused.
+ */
 function signerOf(entry: xdr.SorobanAuthorizationEntry): string {
 	const credentials = entry.credentials();
-	if (credentials.switch().name !== "sorobanCredentialsAddressV2") {
-		throw refuse("Only account-signed authorizations are relayed.");
+	switch (credentials.switch().name) {
+		case "sorobanCredentialsAddress":
+			return Address.fromScAddress(credentials.address().address()).toString();
+		case "sorobanCredentialsAddressV2":
+			return Address.fromScAddress(credentials.addressV2().address()).toString();
+		default:
+			throw refuse("Only account-signed authorizations are relayed.");
 	}
-	return Address.fromScAddress(credentials.addressV2().address()).toString();
 }
 
 function onlyTargets(invocation: xdr.SorobanAuthorizedInvocation, contractId: string): boolean {
