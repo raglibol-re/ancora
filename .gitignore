@@ -1,7 +1,8 @@
 # Rust
 contracts/target/
 
-# Env (app/.gitignore covers the app itself)
+# Env and Vercel CLI link (app/.gitignore covers the app itself)
+.vercel
 .env
 .env.*
 !.env.example
