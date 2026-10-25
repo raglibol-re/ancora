@@ -11,6 +11,7 @@ import { useNotify } from "../notices/NoticeContext.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AddMoneySheet.module.css";
+import { BankDepositSection } from "./BankDepositSection.tsx";
 
 type AddMoneySheetProps = {
 	account: OrgAccount;
@@ -163,6 +164,19 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 						)}
 						<div ref={pickerHost} className={styles.pickerHost} />
 					</section>
+				)}
+
+				{funding && (
+					<BankDepositSection
+						asset={asset}
+						wallet={wallet}
+						busy={busy}
+						onConnect={connect}
+						onArrived={() => {
+							// The bank deposit landed in the wallet: read its balance again.
+							if (wallet) void funding.walletBalance(asset.token, wallet.address).then(setHeld);
+						}}
+					/>
 				)}
 
 				<section className={styles.section}>

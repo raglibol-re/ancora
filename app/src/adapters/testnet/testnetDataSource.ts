@@ -15,6 +15,7 @@ import type {
 	IdentitySupport,
 	PaymentInput,
 	ProfileInput,
+	RampSupport,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
 import type { Cents } from "../../domain/money.ts";
@@ -59,6 +60,7 @@ export class TestnetDataSource implements DataSource {
 	readonly identity: IdentitySupport;
 	readonly availableAssets: readonly AssetOption[];
 	readonly funding: FundingSupport;
+	readonly ramps: RampSupport;
 	readonly discussions: DiscussionSupport = {
 		post: (orgId, requestId, actorId, entry) =>
 			this.discuss({ action: "post", org: orgId, requestId, person: actorId, ...entry }),
@@ -98,6 +100,15 @@ export class TestnetDataSource implements DataSource {
 				if (result.ok) await this.refresh();
 				return result;
 			},
+		};
+		// The anchor client loads with the same laziness; it also needs the wallet kit to sign in.
+		const ramp = () => import("./anchorRamp.ts");
+		this.ramps = {
+			info: () => ramp().then((r) => r.anchorInfo(config)),
+			startDeposit: (token, wallet) => ramp().then((r) => r.startDeposit(config, token, wallet)),
+			startWithdrawal: (token, wallet) =>
+				ramp().then((r) => r.startWithdrawal(config, token, wallet)),
+			transaction: (wallet, id) => ramp().then((r) => r.anchorTransaction(config, wallet, id)),
 		};
 		this.identity = {
 			restoring: () => this.restoringSession,

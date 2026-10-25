@@ -16,6 +16,8 @@ set -euo pipefail
 NETWORK="testnet"
 RPC_URL="https://soroban-testnet.stellar.org"
 HORIZON_URL="https://horizon-testnet.stellar.org"
+# SEP-24 anchor for bank deposits and withdrawals (SDF test anchor; pays out test USDC).
+ANCHOR_HOME_DOMAIN="${ANCHOR_HOME_DOMAIN:-testanchor.stellar.org}"
 PASSPHRASE="Test SDF Network ; September 2015"
 DEPLOYER="ancora-deployer"
 
@@ -281,6 +283,9 @@ VITE_RELAYER_URL=$RELAYER_URL
 VITE_REGISTRY_CONTRACT=$REGISTRY_CONTRACT
 VITE_ORG_WASM_HASH=$ORG_WASM_HASH
 VITE_SEAL_VERIFIER=$SEAL_VERIFIER
+
+# Bank deposits and withdrawals (SEP-24): the anchor whose stellar.toml the app reads.
+VITE_ANCHOR_HOME_DOMAIN=$ANCHOR_HOME_DOMAIN
 EOF
 	ok "wrote ${ENV_FILE#"$ROOT/"}"
 }

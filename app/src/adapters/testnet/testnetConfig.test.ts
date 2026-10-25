@@ -19,6 +19,7 @@ const complete = {
 	VITE_ORG_WASM_HASH: "def",
 	VITE_SEAL_VERIFIER: "CSEAL",
 	VITE_ORG_ASSETS: "BlendUSDC:CUSDC:USD:CVAULT,USDC:CCIRCLE:USD",
+	VITE_ANCHOR_HOME_DOMAIN: "testanchor.stellar.org",
 };
 
 describe("readTestnetConfig", () => {

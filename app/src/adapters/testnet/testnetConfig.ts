@@ -26,6 +26,8 @@ export type TestnetConfig = {
 	sealVerifier: string;
 	/** "Symbol:C…:USD,…": the stablecoins an organization may accept (see parseAssetOptions). */
 	orgAssets: string;
+	/** Home domain of the SEP-24 anchor for bank deposits and withdrawals (the SDF test anchor). */
+	anchorHomeDomain: string;
 };
 
 type EnvSource = Record<string, string | boolean | undefined>;
@@ -48,6 +50,7 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	orgWasmHash: "VITE_ORG_WASM_HASH",
 	sealVerifier: "VITE_SEAL_VERIFIER",
 	orgAssets: "VITE_ORG_ASSETS",
+	anchorHomeDomain: "VITE_ANCHOR_HOME_DOMAIN",
 };
 
 export type AssetOption = Asset & { label: string };

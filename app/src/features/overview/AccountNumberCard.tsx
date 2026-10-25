@@ -6,7 +6,8 @@ import styles from "./AccountNumberCard.module.css";
 
 /**
  * How money reaches the account: the smart account address on Stellar (real on testnet), and the
- * EUR account number from the licensed ramp partner (simulated until task 10).
+ * EUR account number from the licensed ramp partner (simulated; on testnet the SEP-24 anchor
+ * flow in the asset sheet is the real route).
  */
 export function AccountNumberCard({ account }: { account: OrgAccount }) {
 	const number = account.accountNumber;
@@ -22,7 +23,8 @@ export function AccountNumberCard({ account }: { account: OrgAccount }) {
 						The organization's own contract. Any of the stablecoins it accepts (see Rules) sent to
 						this address arrives on its balances. A plain Stellar payment can't reach a contract
 						address: use "Add money" above to send from your wallet, or a wallet that can pay
-						contracts (Freighter).
+						contracts (Freighter). Bank deposits and withdrawals go through a Stellar anchor: tap an
+						account above, then "Add" or "To a bank account".
 					</p>
 					<ExplorerLink target={account.onchain.contractId} />
 				</Card>

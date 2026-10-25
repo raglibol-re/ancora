@@ -77,6 +77,17 @@ export async function assetName(network: Network, token: string): Promise<string
 	return String(await readContract(network, token, "name"));
 }
 
+/** Has the connected wallet sign a transaction for `address`; resolves to the signed XDR. */
+export async function signWithWallet(
+	xdr: string,
+	networkPassphrase: string,
+	address: string,
+): Promise<string> {
+	const wallets = await kit();
+	const signed = await wallets.signTransaction(xdr, { networkPassphrase, address });
+	return signed.signedTxXdr;
+}
+
 /** Transfers `amount` of `token` from the connected wallet to the organization; returns the hash. */
 export async function depositFromWallet(
 	network: Network,
@@ -117,12 +128,7 @@ export async function depositFromWallet(
 	}
 	let signedXdr: string;
 	try {
-		const wallets = await kit();
-		const signed = await wallets.signTransaction(prepared.toXDR(), {
-			networkPassphrase: network.networkPassphrase,
-			address: from,
-		});
-		signedXdr = signed.signedTxXdr;
+		signedXdr = await signWithWallet(prepared.toXDR(), network.networkPassphrase, from);
 	} catch (error) {
 		return failed(describe(error, "The wallet didn't sign the transfer."));
 	}

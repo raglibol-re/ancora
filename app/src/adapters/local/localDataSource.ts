@@ -74,6 +74,7 @@ export class LocalDataSource implements DataSource {
 	readonly kind: DataSourceKind;
 	readonly identity = null;
 	readonly funding = null;
+	readonly ramps = null;
 	readonly discussions: DiscussionSupport = {
 		post: (orgId, requestId, actorId, entry) =>
 			this.mutateThread(orgId, requestId, (account, thread) => {

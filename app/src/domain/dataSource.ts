@@ -48,6 +48,44 @@ export interface FundingSupport {
 	): Promise<Result<string, RuleError>>;
 }
 
+/** A bank deposit or withdrawal started with an anchor; `url` is the anchor's own form. */
+export type AnchorSession = { id: string; url: string };
+
+/** The anchor's record of one deposit or withdrawal, in fields the UI can show. */
+export type AnchorTransaction = {
+	id: string;
+	kind: "deposit" | "withdrawal";
+	/** SEP-24 status, e.g. "incomplete", "pending_user_transfer_start", "completed". */
+	status: string;
+	/** Decimal strings as the anchor reports them; null until known. */
+	amountIn: string | null;
+	amountOut: string | null;
+	message: string | null;
+	stellarTxHash: string | null;
+	/** Withdrawals: the account and memo the organization must pay the anchor with. */
+	withdrawTo: { account: string; memo: string } | null;
+};
+
+export type AnchorInfo = {
+	homeDomain: string;
+	/** Accepted tokens (contract ids) the anchor can bring in or pay out. */
+	depositable: readonly string[];
+	withdrawable: readonly string[];
+};
+
+/**
+ * Money between a bank and Stellar through an anchor (SEP-24). The anchor hosts the bank form;
+ * the person's wallet signs a challenge to prove who is asking. Deposits land in the wallet and
+ * move on to the organization with `FundingSupport`; a withdrawal ends in a payment request from
+ * the organization to the anchor, which then pays the bank account.
+ */
+export interface RampSupport {
+	info(): Promise<Result<AnchorInfo, RuleError>>;
+	startDeposit(token: string, wallet: string): Promise<Result<AnchorSession, RuleError>>;
+	startWithdrawal(token: string, wallet: string): Promise<Result<AnchorSession, RuleError>>;
+	transaction(wallet: string, id: string): Promise<Result<AnchorTransaction, RuleError>>;
+}
+
 /** Discussion on approval requests; the entries themselves arrive with the workspace snapshot. */
 export interface DiscussionSupport {
 	post(
@@ -110,6 +148,8 @@ export interface DataSource {
 	readonly availableAssets: readonly AssetOption[];
 	/** Funding from the person's own Stellar wallet; null for sample data. */
 	readonly funding: FundingSupport | null;
+	/** Bank deposits and withdrawals through a Stellar anchor; null for sample data. */
+	readonly ramps: RampSupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

@@ -16,6 +16,7 @@ import { Sheet } from "../../ui/Sheet.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AddMoneySheet } from "./AddMoneySheet.tsx";
 import styles from "./AssetSheet.module.css";
+import { BankWithdrawSheet } from "./BankWithdrawSheet.tsx";
 import { type ReserveDirection, ReserveSheet } from "./ReserveSheet.tsx";
 import { TokenBadge } from "./TokenBadge.tsx";
 
@@ -30,6 +31,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 	const { me, dataSource } = useWorkspace();
 	const [adding, setAdding] = useState(false);
 	const [reserve, setReserve] = useState<ReserveDirection | null>(null);
+	const [toBank, setToBank] = useState(false);
 	if (!asset) return null;
 	const { balance, reserve: inReserve, earnings } = balanceOf(account, asset.token);
 	const available = availableBalance(account, asset.token);
@@ -41,7 +43,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 	return (
 		<>
 			<Sheet
-				open={asset !== null && !adding && reserve === null}
+				open={asset !== null && !adding && reserve === null && !toBank}
 				title={asset.symbol}
 				onClose={onClose}
 			>
@@ -91,6 +93,15 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 								Add {asset.symbol}
 							</button>
 						)}
+						{dataSource.ramps && (
+							<button
+								type="button"
+								className={buttonClass("secondary")}
+								onClick={() => setToBank(true)}
+							>
+								To a bank account
+							</button>
+						)}
 					</div>
 
 					<section className={styles.reserve}>
@@ -137,6 +148,14 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 					asset={asset}
 					open={adding}
 					onClose={() => setAdding(false)}
+				/>
+			)}
+			{dataSource.ramps && (
+				<BankWithdrawSheet
+					account={account}
+					asset={asset}
+					open={toBank}
+					onClose={() => setToBank(false)}
 				/>
 			)}
 			<ReserveSheet
