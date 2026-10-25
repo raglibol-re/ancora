@@ -1,6 +1,7 @@
 /*
  * The single source of design tokens. Components use only these variables.
- * Placeholder palette until the Claude Design package lands in /design.
+ * Palette from the final brand handoff (design/brand/README.md); dark surfaces and the
+ * semantic greens/reds follow the Dashboard design in /design.
  *
  * Theme: follows the OS by default; [data-theme] on <html> forces one.
  * Each color is defined once with light-dark(<light>, <dark>).
@@ -10,10 +11,14 @@
 
 	/* Raw palette */
 	--palette-night: #0b1730;
+	--palette-night-surface: #0f1e3d;
 	--palette-tide: #14284f;
-	--palette-tide-soft: #1d3563;
 	--palette-brass: #c9a24a;
-	--palette-brass-deep: #8a6a24;
+	/* Brass for small marks on light grounds (4.5:1 on Cool Light). */
+	--palette-brass-deep: #a8832f;
+	/* Brass for text: brighter on night, darker on light, both ≥ 4.5:1. */
+	--palette-brass-text-dark: #d9b866;
+	--palette-brass-text-light: #7a5c1a;
 	--palette-mist: #eef2f8;
 	--palette-white: #ffffff;
 	--palette-starlight: #e8ecf5;
@@ -23,18 +28,20 @@
 
 	/* Semantic colors */
 	--color-bg: light-dark(var(--palette-mist), var(--palette-night));
-	--color-surface: light-dark(var(--palette-white), var(--palette-tide));
-	--color-surface-raised: light-dark(var(--palette-white), var(--palette-tide-soft));
-	--color-border: light-dark(#d8dfeb, #26406f);
+	--color-surface: light-dark(var(--palette-white), var(--palette-night-surface));
+	--color-surface-raised: light-dark(var(--palette-white), var(--palette-tide));
+	--color-border: light-dark(rgb(11 23 48 / 0.12), rgb(232 236 245 / 0.12));
 	--color-text: light-dark(var(--palette-ink), var(--palette-starlight));
 	--color-text-muted: light-dark(var(--palette-slate), var(--palette-slate-light));
+	/* Accent is a line and a mark, never a flood. Use --color-accent-text for brass text. */
 	--color-accent: light-dark(var(--palette-brass-deep), var(--palette-brass));
-	--color-accent-contrast: light-dark(var(--palette-white), var(--palette-night));
+	--color-accent-text: light-dark(var(--palette-brass-text-light), var(--palette-brass-text-dark));
+	--color-accent-contrast: var(--palette-night);
 	--color-primary: light-dark(var(--palette-night), var(--palette-starlight));
 	--color-primary-contrast: light-dark(var(--palette-starlight), var(--palette-night));
 	--color-focus: light-dark(#2f5fd0, #8fb0ff);
-	--color-positive: light-dark(#1f7a4d, #5fd39a);
-	--color-negative: light-dark(#b3261e, #ff8a80);
+	--color-positive: light-dark(#276b4e, #74c29c);
+	--color-negative: light-dark(#b23a30, #e58a7f);
 	--color-simulated: light-dark(#7a4fb3, #c7a6ff);
 	/* Banner background behind white text: dark enough in both themes. */
 	--color-simulated-strong: light-dark(#6b43a3, #55358a);

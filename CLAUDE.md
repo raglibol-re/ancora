@@ -19,7 +19,8 @@
   - `features/<name>/`: UI per feature with its components, hooks, styles.
   - `ui/`: shared presentational components only.
   - `styles/tokens.css`: the **only** place for colors, fonts, radii, spacing, shadows (light + dark via `light-dark()`). Components use tokens only.
-  - Brand assets only in `app/public/brand/`; regenerate PNGs with `pnpm icons` after editing `mark.svg`.
+  - Brand assets only in `app/public/brand/`: final exports from `design/brand/` (see its README). Use them as they are; below 40 px use the small cut (`favicon.svg`), never scale the master. Colour pairs only: brass shield + starlight star on dark, night shield + brass star on light.
+  - `design/` holds the Claude Design package (source of record, not shipped). Brass text uses `--color-accent-text`; `--color-accent` is for lines and marks.
 - No barrel files, no `utils` dumping ground; name modules by what they do.
 
 ## Code rules

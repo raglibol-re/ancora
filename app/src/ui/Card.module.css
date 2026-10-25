@@ -10,15 +10,16 @@
 	min-width: 0;
 }
 
-/* The hero balance card: night blue in both themes. */
+/* The hero balance card: night blue in both themes, with the brand's Tide → Night gradient. */
 .deep {
-	background: var(--palette-night);
-	border-color: var(--palette-tide-soft);
+	background: linear-gradient(180deg, var(--palette-tide), var(--palette-night));
+	border-color: rgb(232 236 245 / 0.12);
 	color: var(--palette-starlight);
 	--color-text: var(--palette-starlight);
 	--color-text-muted: var(--palette-slate-light);
-	--color-border: var(--palette-tide-soft);
+	--color-border: rgb(232 236 245 / 0.12);
 	--color-accent: var(--palette-brass);
+	--color-accent-text: var(--palette-brass-text-dark);
 	--color-primary: var(--palette-starlight);
 	--color-primary-contrast: var(--palette-night);
 }

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Inter:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="_ds/nocturne-7e04ac82-e42f-44b9-9863-a33cd98a0fcf/styles.css">
+<script src="_ds/nocturne-7e04ac82-e42f-44b9-9863-a33cd98a0fcf/_ds_bundle.js"></script>
+<style>body{margin:0;background:#060E1E;color:#E8ECF5;font-family:Inter,system-ui,sans-serif}a{color:#D9B866}a:hover{color:#E8ECF5}</style>
+</helmet>
+
+<section id="turn-1" data-screen-label="Identity round 1" style="padding:72px 72px 120px;display:flex;flex-direction:column;gap:80px;width:1520px;box-sizing:border-box;background:#060E1E;border-radius:24px">
+
+  <header style="display:flex;flex-direction:column;gap:12px;max-width:780px">
+    <div style="font:500 12px/1 Inter;letter-spacing:.18em;text-transform:uppercase;color:#D9B866">Identity · Round 1</div>
+    <h1 style="font:500 60px/1.05 'Cormorant Garamond',serif;letter-spacing:-.01em;margin:0;color:#E8ECF5">Navigate by the stars. Keep what’s yours.</h1>
+    <p style="font:400 16px/1.6 Inter;color:#A3AEC6;margin:0;text-wrap:pretty">Three directions for the mark, built from instrument geometry: rings, a pointer, one star. None depends on a letter of the name. <a href="#1a">1a</a> is refined below into the full system, with a neobank layer for the product: rounded surfaces, pill actions, a card you can hand to the crew. Open the <a href="Dashboard.dc.html">Dashboard</a>.</p>
+  </header>
+
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div style="font:500 12px/1 Inter;letter-spacing:.18em;text-transform:uppercase;color:#A3AEC6">Logo directions</div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px">
+
+      <div id="1a" style="width:448px;background:#0B1730;border:1px solid #C9A24A;border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font:500 12px/1 'IBM Plex Mono';color:#0B1730;background:#C9A24A;border-radius:4px;padding:5px 7px">1a</span>
+          <span style="font:500 24px/1 'Cormorant Garamond';color:#E8ECF5">Rete</span>
+          <span style="margin-left:auto;font:500 12px/1 Inter;color:#D9B866">Recommended</span>
+        </div>
+        <div style="height:220px;display:flex;align-items:center;justify-content:center;background:#0F1E3D;border-radius:14px">
+          <dc-import name="Mark" size="140" ring="#C9A24A" star="#E8ECF5" cut="#0F1E3D" hint-size="140px,140px"></dc-import>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <dc-import name="Mark" size="48" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="48px,48px"></dc-import>
+          <dc-import name="Mark" size="32" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="32px,32px"></dc-import>
+          <dc-import name="Mark" size="16" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="16px,16px"></dc-import>
+          <div style="display:flex;align-items:center;gap:16px;background:#F4EEE1;border-radius:8px;padding:8px 12px;margin-left:auto">
+            <dc-import name="Mark" size="32" ring="#0B1730" star="#A8832F" cut="#F4EEE1" hint-size="32px,32px"></dc-import>
+            <dc-import name="Mark" size="16" ring="#0B1730" star="#A8832F" cut="#F4EEE1" hint-size="16px,16px"></dc-import>
+          </div>
+        </div>
+        <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;text-wrap:pretty">The rete is the rotating star map of an astrolabe. Two rings, four degree ticks, a pointer that turns to one star. The pointer finding the star is the product: your position, found.</p>
+      </div>
+
+      <div id="1b" style="width:448px;background:#0B1730;border:1px solid rgba(232,236,245,.12);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font:500 12px/1 'IBM Plex Mono';color:#E8ECF5;border:1px solid rgba(232,236,245,.3);border-radius:4px;padding:4px 6px">1b</span>
+          <span style="font:500 24px/1 'Cormorant Garamond';color:#E8ECF5">Meridian</span>
+        </div>
+        <div style="height:220px;display:flex;align-items:center;justify-content:center;background:#0F1E3D;border-radius:14px">
+          <svg viewBox="0 0 64 64" width="140" height="140">
+            <circle cx="32" cy="36" r="19" fill="none" stroke="#C9A24A" stroke-width="2.5"></circle>
+            <line x1="32" y1="16" x2="32" y2="60" stroke="#C9A24A" stroke-width="2"></line>
+            <line x1="13" y1="36" x2="51" y2="36" stroke="#C9A24A" stroke-width="1.25"></line>
+            <path transform="translate(32 8)" d="M0,-7 L1.6,-1.6 L7,0 L1.6,1.6 L0,7 L-1.6,1.6 L-7,0 L-1.6,-1.6 Z" fill="#E8ECF5"></path>
+          </svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <svg viewBox="0 0 64 64" width="32" height="32"><circle cx="32" cy="36" r="19" fill="none" stroke="#C9A24A" stroke-width="3.5"></circle><line x1="32" y1="16" x2="32" y2="60" stroke="#C9A24A" stroke-width="3"></line><path transform="translate(32 8)" d="M0,-8 L2,-2 L8,0 L2,2 L0,8 L-2,2 L-8,0 L-2,-2 Z" fill="#E8ECF5"></path></svg>
+          <svg viewBox="0 0 64 64" width="16" height="16"><circle cx="32" cy="36" r="19" fill="none" stroke="#C9A24A" stroke-width="5"></circle><line x1="32" y1="16" x2="32" y2="60" stroke="#C9A24A" stroke-width="5"></line><path transform="translate(32 9)" d="M0,-9 L3,-3 L9,0 L3,3 L0,9 L-3,3 L-9,0 L-3,-3 Z" fill="#E8ECF5"></path></svg>
+        </div>
+        <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;text-wrap:pretty">The meridian line through the horizon, with the star at its top. Clear and calm, but at small sizes it drifts toward a crosshair or a map pin.</p>
+      </div>
+
+      <div id="1c" style="width:448px;background:#0B1730;border:1px solid rgba(232,236,245,.12);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font:500 12px/1 'IBM Plex Mono';color:#E8ECF5;border:1px solid rgba(232,236,245,.3);border-radius:4px;padding:4px 6px">1c</span>
+          <span style="font:500 24px/1 'Cormorant Garamond';color:#E8ECF5">Beacon</span>
+        </div>
+        <div style="height:220px;display:flex;align-items:center;justify-content:center;background:#0F1E3D;border-radius:14px">
+          <svg viewBox="0 0 64 64" width="140" height="140">
+            <path d="M21 16.95 A22 22 0 1 0 43 16.95" fill="none" stroke="#C9A24A" stroke-width="2.5" stroke-linecap="round"></path>
+            <line x1="32" y1="38" x2="26.5" y2="19" stroke="#C9A24A" stroke-width="1.5" stroke-linecap="round"></line>
+            <line x1="32" y1="38" x2="37.5" y2="19" stroke="#C9A24A" stroke-width="1.5" stroke-linecap="round"></line>
+            <circle cx="32" cy="38" r="2.6" fill="#C9A24A"></circle>
+            <path transform="translate(32 9)" d="M0,-7 L1.6,-1.6 L7,0 L1.6,1.6 L0,7 L-1.6,1.6 L-7,0 L-1.6,-1.6 Z" fill="#E8ECF5"></path>
+          </svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <svg viewBox="0 0 64 64" width="32" height="32"><path d="M21 16.95 A22 22 0 1 0 43 16.95" fill="none" stroke="#C9A24A" stroke-width="4" stroke-linecap="round"></path><circle cx="32" cy="38" r="4" fill="#C9A24A"></circle><path transform="translate(32 9)" d="M0,-8 L2,-2 L8,0 L2,2 L0,8 L-2,2 L-8,0 L-2,-2 Z" fill="#E8ECF5"></path></svg>
+          <svg viewBox="0 0 64 64" width="16" height="16"><path d="M21 16.95 A22 22 0 1 0 43 16.95" fill="none" stroke="#C9A24A" stroke-width="6" stroke-linecap="round"></path><path transform="translate(32 9)" d="M0,-9 L3,-3 L9,0 L3,3 L0,9 L-3,3 L-9,0 L-3,-3 Z" fill="#E8ECF5"></path></svg>
+        </div>
+        <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;text-wrap:pretty">An open ring like a sextant arc, its gap held by the star; two lines of light reach up from a lamp. Warmest of the three, closest to the lighthouse, but the beam lines vanish below 24 px.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font:500 12px/1 Inter;letter-spacing:.18em;text-transform:uppercase;color:#A3AEC6">Refined · 1a Rete</div>
+      <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Lockups</h2>
+      <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;max-width:640px">Wordmark set in Cormorant Garamond capitals, tracked wide like engraving on brass. The name is live text: swap it in the Tweaks panel and every lockup follows.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px">
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:56px 48px;display:flex;flex-direction:column;gap:40px">
+        <div style="display:flex;align-items:center;gap:18px">
+          <dc-import name="Mark" size="56" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="56px,56px"></dc-import>
+          <span style="font:500 34px/1 'Cormorant Garamond';letter-spacing:.2em;text-transform:uppercase;color:#E8ECF5">{{ name }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:18px">
+          <dc-import name="Mark" size="56" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="56px,56px"></dc-import>
+          <span style="font:500 34px/1 'Cormorant Garamond';letter-spacing:.2em;text-transform:uppercase;color:#E8ECF5">{{ altName }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <dc-import name="Mark" size="28" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="28px,28px"></dc-import>
+          <span style="font:600 17px/1 'Cormorant Garamond';letter-spacing:.18em;text-transform:uppercase;color:#E8ECF5">{{ name }}</span>
+        </div>
+      </div>
+      <div style="background:#F4EEE1;border-radius:20px;padding:56px 48px;display:flex;flex-direction:column;gap:40px">
+        <div style="display:flex;align-items:center;gap:18px">
+          <dc-import name="Mark" size="56" ring="#0B1730" star="#A8832F" cut="#F4EEE1" hint-size="56px,56px"></dc-import>
+          <span style="font:500 34px/1 'Cormorant Garamond';letter-spacing:.2em;text-transform:uppercase;color:#0B1730">{{ name }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:16px">
+          <dc-import name="Mark" size="72" ring="#0B1730" star="#A8832F" cut="#F4EEE1" hint-size="72px,72px"></dc-import>
+          <span style="font:500 28px/1 'Cormorant Garamond';letter-spacing:.2em;text-transform:uppercase;color:#0B1730">{{ altName }}</span>
+          <span style="font:400 14px/1.4 Inter;color:#4A5672">Navigate by the stars. Keep what’s yours.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Variants</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:stretch">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="width:200px;height:200px;background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;display:flex;align-items:center;justify-content:center"><dc-import name="Mark" size="96" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="96px,96px"></dc-import></div>
+        <span style="font:400 13px/1 Inter;color:#A3AEC6">On dark · brass, starlight star</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="width:200px;height:200px;background:#F4EEE1;border-radius:20px;display:flex;align-items:center;justify-content:center"><dc-import name="Mark" size="96" ring="#0B1730" star="#A8832F" cut="#F4EEE1" hint-size="96px,96px"></dc-import></div>
+        <span style="font:400 13px/1 Inter;color:#A3AEC6">On light · night blue, brass star</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="width:200px;height:200px;background:#14284F;border-radius:20px;display:flex;align-items:center;justify-content:center"><dc-import name="Mark" size="96" ring="#E8ECF5" star="#E8ECF5" cut="#14284F" hint-size="96px,96px"></dc-import></div>
+        <span style="font:400 13px/1 Inter;color:#A3AEC6">Mono · starlight</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="width:200px;height:200px;background:#E8ECF5;border-radius:20px;display:flex;align-items:center;justify-content:center"><dc-import name="Mark" size="96" ring="#0B1730" star="#0B1730" cut="#E8ECF5" hint-size="96px,96px"></dc-import></div>
+        <span style="font:400 13px/1 Inter;color:#A3AEC6">Mono · night</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="width:200px;height:200px;border-radius:20px;border:1px dashed rgba(232,236,245,.16);display:flex;align-items:center;justify-content:center;gap:20px">
+          <div style="width:112px;height:112px;border-radius:26px;background:#14284F;box-shadow:inset 0 0 0 1px rgba(201,162,74,.35),0 10px 24px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center"><dc-import name="Mark" size="72" ring="#C9A24A" star="#E8ECF5" cut="#14284F" hint-size="72px,72px"></dc-import></div>
+        </div>
+        <span style="font:400 13px/1 Inter;color:#A3AEC6">App icon</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="width:200px;height:200px;border-radius:20px;border:1px dashed rgba(232,236,245,.16);display:flex;flex-direction:column;justify-content:center;gap:14px;padding:0 20px">
+          <div style="display:flex;align-items:center;gap:8px;background:#1B2A48;border-radius:8px 8px 0 0;padding:8px 10px">
+            <div style="width:16px;height:16px;border-radius:3px;background:#0B1730;display:flex;align-items:center;justify-content:center"><dc-import name="Mark" size="14" ring="#C9A24A" star="#E8ECF5" cut="#0B1730" hint-size="14px,14px"></dc-import></div>
+            <span style="font:400 12px/1 Inter;color:#E8ECF5">{{ name }} · Bridge</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <dc-import name="Mark" size="32" ring="#C9A24A" star="#E8ECF5" cut="#060E1E" variant="small" hint-size="32px,32px"></dc-import>
+            <dc-import name="Mark" size="16" ring="#C9A24A" star="#E8ECF5" cut="#060E1E" hint-size="16px,16px"></dc-import>
+          </div>
+        </div>
+        <span style="font:400 13px/1 Inter;color:#A3AEC6">Favicon · simplified cut below 24 px</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Color</h2>
+      <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;max-width:640px">Night Blue is the ground; brass is a line and a mark, never a fill. Contrast is measured against the ground each color sits on.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">
+      <sc-for list="{{ swatches }}" as="s" hint-placeholder-count="9">
+        <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:96px;display:flex;align-items:flex-end;padding:12px;background:{{ s.hex }}">
+            <span style="font:500 13px/1 'IBM Plex Mono';color:{{ s.ink }}">{{ s.ratio }}</span>
+          </div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:4px">
+            <span style="font:500 15px/1.3 Inter;color:#E8ECF5">{{ s.name }}</span>
+            <span style="font:400 13px/1.3 'IBM Plex Mono';color:#A3AEC6">{{ s.hex }}</span>
+            <span style="font:400 13px/1.45 Inter;color:#A3AEC6">{{ s.role }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Type</h2>
+    <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:24px">
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:16px">
+        <span style="font:500 12px/1 Inter;letter-spacing:.14em;text-transform:uppercase;color:#D9B866">Headlines · Cormorant Garamond 500</span>
+        <span style="font:500 52px/1.05 'Cormorant Garamond';color:#E8ECF5">Good evening, Lena.</span>
+        <span style="font:500 28px/1.2 'Cormorant Garamond';color:#E8ECF5">A treasury that earns, stays private, and outlasts the storm.</span>
+        <span style="font:400 13px/1.5 Inter;color:#A3AEC6">Greetings, page titles and moments only. Never below 24 px, never bolder than 500.</span>
+      </div>
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:16px">
+        <span style="font:500 12px/1 Inter;letter-spacing:.14em;text-transform:uppercase;color:#D9B866">Interface · Inter 400 / 500</span>
+        <span style="font:500 20px/1.3 Inter;color:#E8ECF5">Captain’s Seal is on</span>
+        <span style="font:400 15px/1.55 Inter;color:#A3AEC6">Transfers over €10,000 need your seal. Each seal works once, then a fresh one takes its place.</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font:500 14px/1 Inter;color:#0B1730;background:#E8ECF5;border-radius:999px;padding:12px 18px">Send</span>
+          <span style="font:500 14px/1 Inter;color:#E8ECF5;border:1px solid rgba(232,236,245,.2);border-radius:999px;padding:11px 18px">Receive</span>
+          <span style="font:500 14px/1 Inter;color:#D9B866;border:1px solid #C9A24A;border-radius:999px;padding:11px 18px">Seal</span>
+        </div>
+      </div>
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:16px">
+        <span style="font:500 12px/1 Inter;letter-spacing:.14em;text-transform:uppercase;color:#D9B866">Figures · IBM Plex Mono</span>
+        <span style="font:400 40px/1 'IBM Plex Mono';color:#E8ECF5;font-variant-numeric:tabular-nums">€482,316.40</span>
+        <span style="font:400 16px/1.6 'IBM Plex Mono';color:#A3AEC6;font-variant-numeric:tabular-nums">+ 12.4031 EURC<br>88,240.00 USDC<br>GCQX…7MLA</span>
+        <span style="font:400 13px/1.5 Inter;color:#A3AEC6">Amounts, addresses, times. Tabular so columns align.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Instruments</h2>
+      <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;max-width:640px">One line style: 24 px grid, 1.5 px stroke, round caps. Shown at 40 and 20 px.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px">
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:20px">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#C9A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"></path><circle cx="12" cy="10" r="2.5"></circle><path d="M12 12.5V17M12 15.2h1.6"></path></svg>
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 16px/1.3 Inter;color:#E8ECF5">Boarding</span><span style="font:400 13px/1.45 Inter;color:#A3AEC6">Sign in with a passkey. No seed phrase.</span></div>
+      </div>
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:20px">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#C9A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="6.5"></circle><path d="M12 7l.7 2.3L15 10l-2.3.7L12 13l-.7-2.3L9 10l2.3-.7z"></path><path d="M9 15.8L7.5 21l2.5-1.4M15 15.8l1.5 5.2-2.5-1.4"></path></svg>
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 16px/1.3 Inter;color:#E8ECF5">Captain’s Seal</span><span style="font:400 13px/1.45 Inter;color:#A3AEC6">A quantum-safe seal for large transfers.</span></div>
+      </div>
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:20px">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#C9A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11a3 3 0 1 0-3-3"></path><path d="M3 12h15a3 3 0 1 1-3 3"></path><path d="M3 16h6"></path></svg>
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 16px/1.3 Inter;color:#E8ECF5">Trade Winds</span><span style="font:400 13px/1.45 Inter;color:#A3AEC6">Idle money earns, returns when needed.</span></div>
+      </div>
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:20px">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#C9A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18V6a2 2 0 0 1 2-2h11v13H7a2 2 0 0 0-2 2 2 2 0 0 0 2 2h11"></path><path d="M13 4v6l1.75-1.3L16.5 10V4"></path><path d="M8.5 9h2M8.5 12.5h5"></path></svg>
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 16px/1.3 Inter;color:#E8ECF5">Logbook</span><span style="font:400 13px/1.45 Inter;color:#A3AEC6">Private amounts, open to your auditor.</span></div>
+      </div>
+      <div style="background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:20px">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#C9A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7.5 7.5 4h9L15 7.5"></path><path d="M8.5 7.5h7l2.6 3.4a6 6 0 0 1 1.2 3.6v.5a5 5 0 0 1-5 5h-4.6a5 5 0 0 1-5-5v-.5a6 6 0 0 1 1.2-3.6z"></path><path d="M9 14.5h6"></path></svg>
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 16px/1.3 Inter;color:#E8ECF5">Crew Purse</span><span style="font:400 13px/1.45 Inter;color:#A3AEC6">Budgets for people and agents.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Neobank layer</h2>
+      <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;max-width:640px">The product talks like a bank account you open in a minute: account details you can copy, pill actions, and a Crew Purse card for each person or agent.</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+      <div style="width:380px;height:240px;border-radius:20px;background:#14284F;box-shadow:inset 0 0 0 1px rgba(201,162,74,.35),0 18px 40px rgba(0,0,0,.5);position:relative;overflow:hidden;padding:24px;display:flex;flex-direction:column;justify-content:space-between">
+        <svg width="100%" height="100%" style="position:absolute;inset:0;opacity:.14">
+          <defs><pattern id="tileCard" width="56" height="56" patternUnits="userSpaceOnUse"><g fill="none" stroke="#C9A24A" stroke-width="1"><circle cx="28" cy="28" r="16"></circle><circle cx="0" cy="0" r="12"></circle><circle cx="56" cy="0" r="12"></circle><circle cx="0" cy="56" r="12"></circle><circle cx="56" cy="56" r="12"></circle><path d="M28 22l1.2 4.8L34 28l-4.8 1.2L28 34l-1.2-4.8L22 28l4.8-1.2z"></path></g></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#tileCard)"></rect>
+        </svg>
+        <div style="position:relative;display:flex;align-items:center;gap:10px">
+          <dc-import name="Mark" size="28" ring="#C9A24A" star="#E8ECF5" cut="#14284F" hint-size="28px,28px"></dc-import>
+          <span style="font:600 15px/1 'Cormorant Garamond';letter-spacing:.18em;text-transform:uppercase;color:#E8ECF5">{{ name }}</span>
+          <span style="margin-left:auto;font:500 12px/1 Inter;color:#D9B866">Crew Purse</span>
+        </div>
+        <div style="position:relative;display:flex;flex-direction:column;gap:12px">
+          <span style="font:400 16px/1 'IBM Plex Mono';letter-spacing:.12em;color:#E8ECF5">•••• 4127</span>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between">
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 14px/1 Inter;color:#E8ECF5">Jonas Weber</span><span style="font:400 12px/1 Inter;color:#A3AEC6">€600 a month · €212.40 left</span></div>
+            <span style="font:400 12px/1 Inter;color:#A3AEC6">Built on Stellar</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;gap:16px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:56px;height:56px;border-radius:999px;background:#E8ECF5;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#0B1730" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg></div><span style="font:500 13px/1 Inter;color:#E8ECF5">Send</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:56px;height:56px;border-radius:999px;background:#14284F;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#E8ECF5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17M15 17H7V9"></path></svg></div><span style="font:500 13px/1 Inter;color:#E8ECF5">Receive</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:56px;height:56px;border-radius:999px;background:#14284F;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#E8ECF5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"></path></svg></div><span style="font:500 13px/1 Inter;color:#E8ECF5">Move</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:56px;height:56px;border-radius:999px;background:#14284F;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#E8ECF5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2.5"></rect><path d="M3 10h18"></path></svg></div><span style="font:500 13px/1 Inter;color:#E8ECF5">Cards</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:14px;padding:14px 16px;width:380px">
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 12px/1 Inter;color:#A3AEC6">Account address</span><span style="font:400 14px/1.2 'IBM Plex Mono';color:#E8ECF5">GCQX 4K2P … R8WD 7MLA</span></div>
+          <span style="margin-left:auto;font:500 13px/1 Inter;color:#D9B866;border:1px solid rgba(201,162,74,.5);border-radius:999px;padding:9px 14px">Copy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Pattern</h2>
+      <div style="height:280px;border-radius:20px;background:#0B1730;border:1px solid rgba(232,236,245,.10);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:32px;gap:8px">
+        <svg width="100%" height="100%" style="position:absolute;inset:0;opacity:.12">
+          <defs><pattern id="tileEmpty" width="56" height="56" patternUnits="userSpaceOnUse"><g fill="none" stroke="#C9A24A" stroke-width="1"><circle cx="28" cy="28" r="16"></circle><circle cx="0" cy="0" r="12"></circle><circle cx="56" cy="0" r="12"></circle><circle cx="0" cy="56" r="12"></circle><circle cx="56" cy="56" r="12"></circle><path d="M28 22l1.2 4.8L34 28l-4.8 1.2L28 34l-1.2-4.8L22 28l4.8-1.2z"></path></g></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#tileEmpty)"></rect>
+        </svg>
+        <span style="position:relative;font:500 26px/1.2 'Cormorant Garamond';color:#E8ECF5">No crew yet.</span>
+        <span style="position:relative;font:400 14px/1.5 Inter;color:#A3AEC6">Give a teammate or an agent their own budget. You set the limit.</span>
+      </div>
+      <span style="font:400 13px/1.5 Inter;color:#A3AEC6">Azulejo tile drawn as star-chart linework. Backgrounds and empty states only, at 10–14% opacity.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Voice</h2>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ voice }}" as="v" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:14px;padding:16px 18px">
+            <span style="font:400 14px/1.5 Inter;color:#E8ECF5">{{ v.yes }}</span>
+            <span style="font:400 14px/1.5 Inter;color:#A3AEC6;text-decoration:line-through;text-decoration-color:rgba(229,138,127,.6)">{{ v.no }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <h2 style="font:500 40px/1.1 'Cormorant Garamond';margin:0;color:#E8ECF5">Names</h2>
+      <p style="font:400 14px/1.6 Inter;color:#A3AEC6;margin:0;max-width:640px">Short, easy to say in German and English. Flags are a first read, not a trademark search.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+      <sc-for list="{{ names }}" as="n" hint-placeholder-count="10">
+        <div style="display:flex;align-items:baseline;gap:16px;background:#0B1730;border:1px solid rgba(232,236,245,.10);border-radius:14px;padding:16px 18px">
+          <span style="font:500 24px/1 'Cormorant Garamond';color:#E8ECF5;min-width:120px">{{ n.name }}</span>
+          <span style="font:400 14px/1.5 Inter;color:#A3AEC6;flex:1">{{ n.why }}</span>
+          <span style="font:500 12px/1 Inter;color:{{ n.flagColor }};white-space:nowrap">{{ n.flag }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;name&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Astrolabe&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;altName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Meridia&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const swatches = [
+      { name: 'Night Blue', hex: '#0B1730', role: 'Ground, dark mode', ratio: 'Starlight 15.0:1', ink: '#E8ECF5' },
+      { name: 'Deep Tide', hex: '#14284F', role: 'Raised surfaces, cards, app icon', ratio: 'Starlight 12.2:1', ink: '#E8ECF5' },
+      { name: 'Brass Gold', hex: '#C9A24A', role: 'Mark, lines, focus, the one accent', ratio: 'on Night 7.5:1', ink: '#0B1730' },
+      { name: 'Brass Deep', hex: '#7A5C1A', role: 'Brass for text on parchment', ratio: 'on Parchment 5.4:1', ink: '#F4EEE1' },
+      { name: 'Parchment', hex: '#F4EEE1', role: 'Ground, light mode', ratio: 'Night 15.5:1', ink: '#0B1730' },
+      { name: 'Starlight', hex: '#E8ECF5', role: 'Text on dark, the star', ratio: 'Night 15.0:1', ink: '#0B1730' },
+      { name: 'Mist', hex: '#A3AEC6', role: 'Secondary text on dark', ratio: 'on Night 8.1:1', ink: '#0B1730' },
+      { name: 'Sea Glass', hex: '#74C29C', role: 'Earned, received. Light: #276B4E', ratio: 'on Night 8.5:1', ink: '#0B1730' },
+      { name: 'Signal', hex: '#E58A7F', role: 'Blocked, alerts. Light: #B23A30', ratio: 'on Night 7.1:1', ink: '#0B1730' }
+    ];
+    const voice = [
+      { yes: 'Your treasury earned €12.40 tonight.', no: 'APY accrued on vault shares: 0.0026%.' },
+      { yes: 'This transfer needs your seal.', no: 'ML-DSA signature required for tx > threshold.' },
+      { yes: 'We stopped a transfer you didn’t sign.', no: 'CRITICAL: unauthorized key detected!!' },
+      { yes: 'Your auditor can now read the Logbook.', no: 'Viewing key shared with third-party address.' }
+    ];
+    const g = '#74C29C', r = '#E58A7F', m = '#A3AEC6';
+    const names = [
+      { name: 'Alidade', why: 'The astrolabe’s rotating sight; the pointer in the mark. Rare word, distinctive.', flag: 'Looks free', flagColor: g },
+      { name: 'Rete', why: 'The star-map plate of the astrolabe. Very short; pronunciation splits (REE-tee / REH-te).', flag: 'Check', flagColor: m },
+      { name: 'Altura', why: 'Portuguese for the star’s height sailors measured. A Lisbon nod, easy in German.', flag: 'Common word', flagColor: m },
+      { name: 'Estrela', why: 'Portuguese “star”. Warm, three clear syllables.', flag: 'Common word', flagColor: m },
+      { name: 'Vela', why: 'The sails constellation. Two syllables, says itself.', flag: 'Likely taken', flagColor: r },
+      { name: 'Meridia', why: 'From meridian, the line you steer by. Ties to HackMeridian.', flag: 'Check', flagColor: m },
+      { name: 'Nocturnal', why: 'A real instrument for telling time by the stars at night.', flag: 'Common word', flagColor: r },
+      { name: 'Lodestar', why: 'The guiding star. Clear meaning in English, harder in German.', flag: 'Likely taken', flagColor: r },
+      { name: 'Polaris', why: 'The fixed star. Instantly understood.', flag: 'Likely taken', flagColor: r },
+      { name: 'Azimuth', why: 'The bearing on the horizon. Precise, institutional.', flag: 'Likely taken', flagColor: r }
+    ];
+    return { name: this.props.name ?? 'Ancora', altName: this.props.altName ?? 'Meridia', swatches, voice, names };
+  }
+}
+</script>
+</body>
+</html>

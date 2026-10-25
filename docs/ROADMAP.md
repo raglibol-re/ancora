@@ -21,7 +21,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 12 | Budgets and bookkeeping | Planned |
 | 13 | Demo admin: reset, top-up, retry stuck requests | Planned |
 | 14 | Confidential pot + auditor view stub | Planned |
-| 15 | Integrate the Claude Design package | Waiting for /design |
+| 15 | Integrate the Claude Design package | Done (brand, icons, tokens) |
 | 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Planned |
 
 ### Task 16: discussions on approval requests

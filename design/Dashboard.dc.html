@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Inter:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="_ds/nocturne-7e04ac82-e42f-44b9-9863-a33cd98a0fcf/styles.css">
+<script src="_ds/nocturne-7e04ac82-e42f-44b9-9863-a33cd98a0fcf/_ds_bundle.js"></script>
+<style>body{margin:0;font-family:Inter,system-ui,sans-serif}a{color:#D9B866}a:hover{color:#E8ECF5}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
+</helmet>
+<div style="{{ themeVars }}">
+<div data-screen-label="Dashboard" style="min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr);background:var(--bg,#0B1730);color:var(--text,#E8ECF5);transition:background .4s,color .4s">
+
+  <aside style="border-right:1px solid var(--line,rgba(232,236,245,.10));padding:28px 20px;display:flex;flex-direction:column;gap:32px;position:sticky;top:0;height:100vh;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 8px">
+      <dc-import name="Mark" size="30" ring="{{ markRing }}" star="{{ markStar }}" cut="{{ markCut }}" hint-size="30px,30px"></dc-import>
+      <span style="font:600 17px/1 'Cormorant Garamond';letter-spacing:.18em;text-transform:uppercase;color:var(--text,#E8ECF5)">{{ name }}</span>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:4px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <a href="#" style="{{ n.style }}" style-hover="background:var(--surface2,#14284F)">
+          <span style="flex:1">{{ n.label }}</span>
+          <span style="{{ n.dot }}"></span>
+        </a>
+      </sc-for>
+    </nav>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px;background:var(--surface,#0F1E3D);border:1px solid var(--line,rgba(232,236,245,.10));border-radius:14px;padding:12px">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--surface2,#14284F);display:flex;align-items:center;justify-content:center;font:500 13px/1 Inter;color:var(--accentText,#D9B866)">NJ</div>
+        <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+          <span style="font:500 13px/1.2 Inter;color:var(--text,#E8ECF5)">Nordlicht Jugendhilfe e.V.</span>
+          <span style="font:400 12px/1.2 Inter;color:var(--muted,#A3AEC6)">Hamburg · 3 signers</span>
+        </div>
+      </div>
+      <span style="font:400 12px/1 Inter;color:var(--muted,#A3AEC6);padding:0 8px">Built on Stellar</span>
+    </div>
+  </aside>
+
+  <main style="padding:36px 48px 64px;display:flex;flex-direction:column;gap:28px;max-width:1240px;box-sizing:border-box;width:100%">
+
+    <header style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:280px">
+        <span style="font:400 13px/1 'IBM Plex Mono';color:var(--muted,#A3AEC6)">Sun 25 Oct · 19:12</span>
+        <h1 style="font:500 44px/1.05 'Cormorant Garamond',serif;margin:0;letter-spacing:-.01em;color:var(--text,#E8ECF5)">Good evening, Lena.</h1>
+        <span style="font:400 15px/1.5 Inter;color:var(--muted,#A3AEC6)">{{ headline }}</span>
+      </div>
+      <button onClick="{{ toggleTheme }}" aria-label="Switch light or dark" style="width:44px;height:44px;border-radius:999px;border:1px solid var(--line,rgba(232,236,245,.10));background:transparent;color:var(--text,#E8ECF5);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:var(--surface2,#14284F)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="{{ themeIcon }}"></path></svg>
+      </button>
+    </header>
+
+    <div style="display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px">
+
+      <section style="background:var(--surface,#0F1E3D);border:1px solid var(--line,rgba(232,236,245,.10));border-radius:24px;padding:32px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:28px">
+        <svg width="60%" height="100%" style="position:absolute;right:0;top:0;opacity:.10;-webkit-mask-image:linear-gradient(to left,#000,transparent);mask-image:linear-gradient(to left,#000,transparent)">
+          <defs><pattern id="tileHero" width="56" height="56" patternUnits="userSpaceOnUse"><g fill="none" style="stroke:var(--pattern,#C9A24A)" stroke-width="1"><circle cx="28" cy="28" r="16"></circle><circle cx="0" cy="0" r="12"></circle><circle cx="56" cy="0" r="12"></circle><circle cx="0" cy="56" r="12"></circle><circle cx="56" cy="56" r="12"></circle><path d="M28 22l1.2 4.8L34 28l-4.8 1.2L28 34l-1.2-4.8L22 28l4.8-1.2z"></path></g></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#tileHero)"></rect>
+        </svg>
+        <div style="position:relative;display:flex;flex-direction:column;gap:10px">
+          <span style="font:400 14px/1 Inter;color:var(--muted,#A3AEC6)">Total balance</span>
+          <span style="font:400 54px/1 'IBM Plex Mono';letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text,#E8ECF5)">€482,316<span style="color:var(--muted,#A3AEC6)">.40</span></span>
+          <span style="font:400 13px/1.4 'IBM Plex Mono';color:var(--muted,#A3AEC6)">401,135.60 EURC · 88,240.00 USDC</span>
+        </div>
+        <div style="position:relative;display:flex;gap:12px;flex-wrap:wrap">
+          <button style="height:48px;padding:0 22px;border-radius:999px;border:0;background:var(--text,#E8ECF5);color:var(--bg,#0B1730);font:500 15px/1 Inter;display:flex;align-items:center;gap:8px;cursor:pointer" style-hover="opacity:.88">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg>Send
+          </button>
+          <button style="height:48px;padding:0 22px;border-radius:999px;border:1px solid var(--line2,rgba(232,236,245,.2));background:transparent;color:var(--text,#E8ECF5);font:500 15px/1 Inter;display:flex;align-items:center;gap:8px;cursor:pointer" style-hover="background:var(--surface2,#14284F)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17M15 17H7V9"></path></svg>Receive
+          </button>
+          <button style="height:48px;padding:0 22px;border-radius:999px;border:1px solid var(--line2,rgba(232,236,245,.2));background:transparent;color:var(--text,#E8ECF5);font:500 15px/1 Inter;display:flex;align-items:center;gap:8px;cursor:pointer" style-hover="background:var(--surface2,#14284F)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"></path></svg>Move
+          </button>
+        </div>
+        <div style="position:relative;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;height:10px;gap:3px">
+            <div style="flex:85.4;border-radius:5px;background:var(--accent,#C9A24A)"></div>
+            <div style="flex:14.6;border-radius:5px;background:var(--seg2,#5E6F96)"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="display:flex;align-items:center;gap:8px;font:500 13px/1 Inter;color:var(--text,#E8ECF5)"><span style="width:8px;height:8px;border-radius:2px;background:var(--accent,#C9A24A)"></span>Treasury · earning</span>
+              <span style="font:400 18px/1.3 'IBM Plex Mono';font-variant-numeric:tabular-nums;color:var(--text,#E8ECF5)">€412,000.00</span>
+              <span style="font:400 13px/1.45 Inter;color:var(--muted,#A3AEC6)">Public. Trade Winds keeps it working.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="display:flex;align-items:center;gap:8px;font:500 13px/1 Inter;color:var(--text,#E8ECF5)"><span style="width:8px;height:8px;border-radius:2px;background:var(--seg2,#5E6F96)"></span>Payments · confidential</span>
+              <span style="font:400 18px/1.3 'IBM Plex Mono';font-variant-numeric:tabular-nums;color:var(--text,#E8ECF5)">€70,316.40</span>
+              <span style="font:400 13px/1.45 Inter;color:var(--muted,#A3AEC6)">Amounts hidden from public view.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <section style="background:var(--surface,#0F1E3D);border:1px solid var(--line,rgba(232,236,245,.10));border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="{{ pulseStyle }}"></span>
+            <span style="font:500 14px/1 Inter;color:var(--text,#E8ECF5)">Earned tonight</span>
+            <span style="margin-left:auto;font:400 12px/1 'IBM Plex Mono';color:var(--muted,#A3AEC6)">since 18:00</span>
+          </div>
+          <span style="font:400 40px/1 'IBM Plex Mono';font-variant-numeric:tabular-nums;color:var(--accentText,#D9B866)">{{ earnedMain }}<span style="font-size:24px;opacity:.75">{{ earnedTail }}</span></span>
+          <span style="font:400 14px/1.5 Inter;color:var(--muted,#A3AEC6)">{{ yieldNote }}</span>
+          <div style="display:flex;gap:24px;padding-top:6px">
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 12px/1 Inter;color:var(--muted,#A3AEC6)">This month</span><span style="font:400 15px/1 'IBM Plex Mono';color:var(--text,#E8ECF5)">€1,284.12</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 12px/1 Inter;color:var(--muted,#A3AEC6)">Ready for payments</span><span style="font:400 15px/1 'IBM Plex Mono';color:var(--text,#E8ECF5)">€5,000.00</span></div>
+          </div>
+        </section>
+        <section style="background:var(--surface,#0F1E3D);border:1px solid var(--line,rgba(232,236,245,.10));border-radius:24px;padding:20px 24px;display:flex;align-items:center;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+            <span style="font:400 12px/1 Inter;color:var(--muted,#A3AEC6)">Account address</span>
+            <span style="font:400 14px/1.2 'IBM Plex Mono';color:var(--text,#E8ECF5)">GCQX 4K2P … R8WD 7MLA</span>
+          </div>
+          <button onClick="{{ copy }}" style="margin-left:auto;height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--accent,#C9A24A);background:transparent;color:var(--accentText,#D9B866);font:500 14px/1 Inter;cursor:pointer" style-hover="background:var(--accentTint,rgba(201,162,74,.12))">{{ copyLabel }}</button>
+        </section>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px">
+      <section style="background:var(--surface,#0F1E3D);border:1px solid var(--line,rgba(232,236,245,.10));border-radius:24px;padding:24px 28px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;padding-bottom:8px">
+          <h2 style="font:500 26px/1 'Cormorant Garamond';margin:0;color:var(--text,#E8ECF5)">Recent activity</h2>
+          <a href="#" style="margin-left:auto;font:500 14px/1 Inter;color:var(--accentText,#D9B866);text-decoration:none">Open Logbook</a>
+        </div>
+        <sc-for list="{{ activity }}" as="a" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:14px;min-height:60px;border-top:1px solid var(--line,rgba(232,236,245,.10))">
+            <div style="width:40px;height:40px;border-radius:12px;background:var(--surface2,#14284F);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" style="stroke:var(--accent,#C9A24A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ a.icon }}"></path></svg>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1">
+              <span style="font:500 14px/1.3 Inter;color:var(--text,#E8ECF5)">{{ a.title }}</span>
+              <span style="font:400 13px/1.3 Inter;color:var(--muted,#A3AEC6)">{{ a.meta }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+              <span style="{{ a.amountStyle }}">{{ a.amount }}</span>
+              <span style="font:400 12px/1 Inter;color:var(--muted,#A3AEC6)">{{ a.note }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="background:var(--surface,#0F1E3D);border:1px solid var(--line,rgba(232,236,245,.10));border-radius:24px;padding:24px 28px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;padding-bottom:8px">
+          <h2 style="font:500 26px/1 'Cormorant Garamond';margin:0;color:var(--text,#E8ECF5)">Instruments</h2>
+          <span style="margin-left:auto;font:400 13px/1 'IBM Plex Mono';color:var(--muted,#A3AEC6)">{{ onCount }} of 5 on</span>
+        </div>
+        <sc-for list="{{ instruments }}" as="i" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:14px;min-height:64px;border-top:1px solid var(--line,rgba(232,236,245,.10))">
+            <div style="{{ i.tile }}">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ i.icon }}"></path></svg>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1">
+              <span style="font:500 14px/1.3 Inter;color:var(--text,#E8ECF5)">{{ i.name }}</span>
+              <span style="font:400 13px/1.35 Inter;color:var(--muted,#A3AEC6)">{{ i.status }}</span>
+            </div>
+            <button onClick="{{ i.toggle }}" aria-label="{{ i.aria }}" style="width:52px;height:44px;border:0;background:transparent;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center">
+              <span style="{{ i.track }}"><span style="{{ i.knob }}"></span></span>
+            </button>
+          </div>
+        </sc-for>
+      </section>
+    </div>
+  </main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;name&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Astrolabe&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { theme: this.props.theme ?? 'dark', earned: 12.4031, copied: false,
+    on: { boarding: true, seal: true, winds: true, logbook: true, crew: true } };
+  componentDidMount() {
+    this.t = setInterval(() => { if (this.state.on.winds) this.setState(s => ({ earned: s.earned + 0.00016 })); }, 250);
+  }
+  componentWillUnmount() { clearInterval(this.t); }
+  componentDidUpdate(p) { if (this.props.theme && p.theme !== this.props.theme) this.setState({ theme: this.props.theme }); }
+  renderVals() {
+    const dark = this.state.theme === 'dark';
+    const T = dark ? {
+      '--bg': '#0B1730', '--surface': '#0F1E3D', '--surface2': '#14284F', '--line': 'rgba(232,236,245,0.10)', '--line2': 'rgba(232,236,245,0.22)',
+      '--text': '#E8ECF5', '--muted': '#A3AEC6', '--accent': '#C9A24A', '--accentText': '#D9B866', '--accentTint': 'rgba(201,162,74,0.12)',
+      '--green': '#74C29C', '--red': '#E58A7F', '--seg2': '#5E6F96', '--trackOff': '#2A3B60', '--knobOff': '#A3AEC6', '--pattern': '#C9A24A'
+    } : {
+      '--bg': '#F4EEE1', '--surface': '#FBF8F1', '--surface2': '#ECE4D2', '--line': 'rgba(11,23,48,0.10)', '--line2': 'rgba(11,23,48,0.22)',
+      '--text': '#0B1730', '--muted': '#4A5672', '--accent': '#A8832F', '--accentText': '#7A5C1A', '--accentTint': 'rgba(168,131,47,0.12)',
+      '--green': '#276B4E', '--red': '#B23A30', '--seg2': '#8C97B0', '--trackOff': '#D6CDB8', '--knobOff': '#FBF8F1', '--pattern': '#14284F'
+    };
+    const I = {
+      boarding: 'M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3M14.5 10a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0M12 12.5V17M12 15.2h1.6',
+      seal: 'M18.5 10a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0M12 7l.7 2.3L15 10l-2.3.7L12 13l-.7-2.3L9 10l2.3-.7zM9 15.8L7.5 21l2.5-1.4M15 15.8l1.5 5.2-2.5-1.4',
+      winds: 'M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h6',
+      logbook: 'M5 18V6a2 2 0 0 1 2-2h11v13H7a2 2 0 0 0-2 2 2 2 0 0 0 2 2h11M13 4v6l1.75-1.3L16.5 10V4M8.5 9h2M8.5 12.5h5',
+      crew: 'M9 7.5 7.5 4h9L15 7.5M8.5 7.5h7l2.6 3.4a6 6 0 0 1 1.2 3.6v.5a5 5 0 0 1-5 5h-4.6a5 5 0 0 1-5-5v-.5a6 6 0 0 1 1.2-3.6zM9 14.5h6',
+      in: 'M17 7 7 17M15 17H7V9'
+    };
+    const on = this.state.on;
+    const toggle = k => () => this.setState(s => ({ on: { ...s.on, [k]: !s.on[k] } }));
+    const defs = [
+      ['boarding', 'Boarding', 'Passkeys on 3 devices', 'Off. Sign-in falls back to your signers.'],
+      ['seal', 'Captain’s Seal', 'Over €10,000 · 7 seals ready', 'Off. Large transfers need no seal.'],
+      ['winds', 'Trade Winds', 'Earning on €412,000', 'Off. Idle money is not earning.'],
+      ['logbook', 'Logbook', 'Confidential · 1 auditor', 'Off. Payment amounts are public.'],
+      ['crew', 'Crew Purse', '4 people, 2 agents', 'Off. All budgets are paused.']
+    ];
+    const instruments = defs.map(([k, name, s1, s0]) => {
+      const v = on[k];
+      return {
+        name, status: v ? s1 : s0, icon: I[k], toggle: toggle(k), aria: (v ? 'Turn off ' : 'Turn on ') + name,
+        tile: { width: 44, height: 44, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface2)', color: v ? 'var(--accent)' : 'var(--muted)', opacity: v ? 1 : 0.6, transition: 'all .2s' },
+        track: { position: 'relative', width: 44, height: 26, borderRadius: 13, background: v ? 'var(--accent)' : 'var(--trackOff)', transition: 'background .2s', display: 'block' },
+        knob: { position: 'absolute', top: 3, left: v ? 21 : 3, width: 20, height: 20, borderRadius: 10, background: v ? 'var(--bg)' : 'var(--knobOff)', transition: 'left .2s', display: 'block', boxShadow: '0 1px 2px rgba(0,0,0,.25)' }
+      };
+    });
+    const amt = c => ({ font: "400 14px/1 'IBM Plex Mono'", fontVariantNumeric: 'tabular-nums', color: c });
+    const activity = [
+      { icon: I.in, title: 'Freie und Hansestadt Hamburg', meta: 'Grant, 2nd instalment · 17:58', amount: '+€25,000.00', note: 'EURC', amountStyle: amt('var(--green)') },
+      { icon: I.winds, title: 'Trade Winds', meta: 'Returned to payments · 16:40', amount: '€8,000.00', note: 'Treasury → Payments', amountStyle: amt('var(--text)') },
+      { icon: I.logbook, title: 'Druckerei Möller GmbH', meta: 'Flyers, autumn campaign · 14:12', amount: '−€2,480.00', note: 'Confidential', amountStyle: amt('var(--text)') },
+      { icon: I.crew, title: 'Jonas Weber', meta: 'Train, Hamburg–Berlin · 11:05', amount: '−€139.90', note: 'Crew Purse', amountStyle: amt('var(--text)') },
+      { icon: I.crew, title: 'Agent · Ledger Clerk', meta: 'Accounting software · 09:30', amount: '−$49.00', note: 'USDC · Crew Purse', amountStyle: amt('var(--text)') },
+      { icon: I.seal, title: 'Captain’s Seal', meta: 'Seal used and replaced · Yesterday', amount: '−€18,500.00', note: 'Sealed · Stadtwerke', amountStyle: amt('var(--text)') }
+    ];
+    const navDefs = ['Bridge', 'Logbook', 'Crew Purse', 'Captain’s Seal', 'Instruments'];
+    const nav = navDefs.map((label, i) => ({
+      label,
+      style: { display: 'flex', alignItems: 'center', gap: 10, minHeight: 44, padding: '0 12px', borderRadius: 12, textDecoration: 'none', font: '500 14px/1 Inter', color: i === 0 ? 'var(--text)' : 'var(--muted)', background: i === 0 ? 'var(--surface2)' : 'transparent' },
+      dot: { width: 6, height: 6, borderRadius: 3, background: i === 0 ? 'var(--accent)' : 'transparent' }
+    }));
+    const e = this.state.earned.toFixed(4);
+    const winds = on.winds;
+    return {
+      name: this.props.name ?? 'Ancora',
+      themeVars: { ...T, display: 'contents' },
+      markRing: dark ? '#C9A24A' : '#0B1730', markStar: dark ? '#E8ECF5' : '#A8832F', markCut: dark ? '#0B1730' : '#F4EEE1',
+      themeIcon: dark ? 'M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0' : 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z',
+      toggleTheme: () => this.setState(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
+      headline: winds ? `Your treasury earned €${this.state.earned.toFixed(2)} tonight. Everything is in order.` : 'Trade Winds is off. Your treasury is resting.',
+      earnedMain: '€' + e.slice(0, -2), earnedTail: e.slice(-2),
+      yieldNote: winds ? 'About €2.25 an hour, while you rest. It returns the moment payments need it.' : 'Paused. Switch on Trade Winds to earn again.',
+      pulseStyle: { width: 8, height: 8, borderRadius: 4, background: winds ? 'var(--green)' : 'var(--muted)', animation: winds ? 'pulse 2s ease-in-out infinite' : 'none' },
+      copy: () => { this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1600); },
+      copyLabel: this.state.copied ? 'Copied' : 'Copy',
+      activity, instruments, nav, onCount: Object.values(on).filter(Boolean).length
+    };
+  }
+}
+</script>
+</body>
+</html>

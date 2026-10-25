@@ -10,7 +10,7 @@
 
 .pending,
 .ready {
-	color: var(--color-accent);
+	color: var(--color-accent-text);
 }
 
 .scheduled {

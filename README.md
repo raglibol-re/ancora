@@ -1,8 +1,9 @@
 <p align="center">
-  <img src="app/public/brand/mark.svg" width="96" height="96" alt="ancora mark: an anchor whose ring is a star" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="app/public/brand/lockup-dark.svg" />
+    <img src="app/public/brand/lockup-light.svg" width="228" height="60" alt="ancora: a brass shield with an anchor cut out of it and a star as its ring" />
+  </picture>
 </p>
-
-<h1 align="center">ancora</h1>
 
 <p align="center">
   A finance account for any organization that feels like a modern banking app and runs on Stellar in the background.<br/>

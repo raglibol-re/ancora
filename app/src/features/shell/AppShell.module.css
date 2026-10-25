@@ -98,7 +98,7 @@
 
 .tabBar .active {
 	background: none;
-	color: var(--color-accent);
+	color: var(--color-accent-text);
 }
 
 @media (min-width: 900px) {

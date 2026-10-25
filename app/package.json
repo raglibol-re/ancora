@@ -14,8 +14,7 @@
     "test": "vitest run",
     "typecheck": "tsc -b",
     "check": "biome check .",
-    "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet",
-    "icons": "pnpm dlx @vite-pwa/assets-generator@1.0.2"
+    "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "5.3.0",

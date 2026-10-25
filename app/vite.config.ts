@@ -9,7 +9,7 @@ export default defineConfig({
 		react(),
 		VitePWA({
 			registerType: "autoUpdate",
-			includeAssets: ["brand/favicon.ico", "brand/apple-touch-icon-180x180.png", "brand/mark.svg"],
+			includeAssets: ["brand/favicon.svg", "brand/mark-on-dark.svg", "brand/apple-touch-icon-180.png"],
 			manifest: {
 				name: "ancora",
 				short_name: "ancora",
@@ -19,12 +19,12 @@ export default defineConfig({
 				display: "standalone",
 				background_color: nightBlue,
 				theme_color: nightBlue,
+				// Final brand exports from /design/brand (see its README for the size cuts).
 				icons: [
-					{ src: "/brand/pwa-64x64.png", sizes: "64x64", type: "image/png" },
-					{ src: "/brand/pwa-192x192.png", sizes: "192x192", type: "image/png" },
-					{ src: "/brand/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+					{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+					{ src: "/brand/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
 					{
-						src: "/brand/maskable-icon-512x512.png",
+						src: "/brand/maskable-512.png",
 						sizes: "512x512",
 						type: "image/png",
 						purpose: "maskable",
@@ -32,7 +32,7 @@ export default defineConfig({
 				],
 			},
 			workbox: {
-				globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+				globPatterns: ["**/*.{js,css,html,woff2}"],
 				navigateFallback: "/index.html",
 				// API routes are server-side and must never be answered from the SPA shell.
 				navigateFallbackDenylist: [/^\/api\//],

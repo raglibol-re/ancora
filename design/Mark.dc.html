@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<svg viewBox="0 0 64 64" width="{{ px }}" height="{{ px }}" style="display:block;overflow:visible" role="img" aria-label="Ancora mark">
+  <g display="{{ fullDisplay }}">
+    <circle cx="32" cy="32" r="27" fill="none" stroke="{{ ringColor }}" stroke-width="2.5"></circle>
+    <circle cx="32" cy="32" r="17" fill="none" stroke="{{ ringColor }}" stroke-width="1.25"></circle>
+    <g stroke="{{ ringColor }}" stroke-width="1.25" stroke-linecap="round">
+      <line x1="32" y1="8.5" x2="32" y2="11.5"></line>
+      <line x1="32" y1="52.5" x2="32" y2="55.5"></line>
+      <line x1="8.5" y1="32" x2="11.5" y2="32"></line>
+      <line x1="52.5" y1="32" x2="55.5" y2="32"></line>
+    </g>
+    <g transform="rotate(45 32 32)"><polygon points="32,10 33.7,32 32,46 30.3,32" fill="{{ ringColor }}"></polygon></g>
+    <circle cx="32" cy="32" r="2.6" fill="{{ ringColor }}"></circle>
+    <circle cx="32" cy="32" r="0.9" fill="{{ cutColor }}"></circle>
+    <path transform="translate(51.09 12.91)" d="M0,-7.5 L1.6,-1.6 L7.5,0 L1.6,1.6 L0,7.5 L-1.6,1.6 L-7.5,0 L-1.6,-1.6 Z" fill="{{ starColor }}" stroke="{{ cutColor }}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"></path>
+  </g>
+  <g display="{{ smallDisplay }}">
+    <circle cx="32" cy="32" r="25" fill="none" stroke="{{ ringColor }}" stroke-width="5"></circle>
+    <g transform="rotate(45 32 32)"><polygon points="32,11 35.4,32 32,44 28.6,32" fill="{{ ringColor }}"></polygon></g>
+    <circle cx="32" cy="32" r="4" fill="{{ ringColor }}"></circle>
+    <path transform="translate(49.68 14.32)" d="M0,-11 L2.8,-2.8 L11,0 L2.8,2.8 L0,11 L-2.8,2.8 L-11,0 L-2.8,-2.8 Z" fill="{{ starColor }}" stroke="{{ cutColor }}" stroke-width="4" stroke-linejoin="round" paint-order="stroke"></path>
+  </g>
+</svg>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:200,&quot;height&quot;:200},&quot;size&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:64,&quot;tsType&quot;:&quot;number&quot;},&quot;ring&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#C9A24A&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;star&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#E8ECF5&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;cut&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#0B1730&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;full&quot;,&quot;small&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const small = (p.variant ?? 'auto') === 'small' || ((p.variant ?? 'auto') === 'auto' && (p.size ?? 64) < 24);
+    const ring = p.ring ?? '#C9A24A';
+    return {
+      px: p.size ?? 64,
+      ringColor: ring,
+      starColor: p.star ?? ring,
+      cutColor: p.cut ?? '#0B1730',
+      fullDisplay: small ? 'none' : 'inline',
+      smallDisplay: small ? 'inline' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

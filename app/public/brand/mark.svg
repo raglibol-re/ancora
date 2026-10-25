@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ancora">
-  <rect width="512" height="512" rx="112" fill="#0B1730"/>
-  <path d="M256 70 L272 122 L324 138 L272 154 L256 206 L240 154 L188 138 L240 122 Z" fill="#C9A24A"/>
-  <rect x="244" y="190" width="24" height="210" rx="12" fill="#E8ECF5"/>
-  <path d="M120 300 Q140 410 256 418 Q372 410 392 300" fill="none" stroke="#C9A24A" stroke-width="24" stroke-linecap="round"/>
-  <path d="M96 318 L120 276 L146 314 Z" fill="#C9A24A"/>
-  <path d="M416 318 L392 276 L366 314 Z" fill="#C9A24A"/>
-</svg>
