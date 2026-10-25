@@ -1,6 +1,5 @@
 import {
 	Account,
-	Contract,
 	type Keypair,
 	Operation,
 	rpc,
@@ -10,27 +9,6 @@ import {
 import { SIMULATION_SOURCE } from "../../shared/tokenBalance.js";
 import { RequestError } from "./http.js";
 import type { ServerConfig } from "./serverConfig.js";
-
-const toHex = (bytes: Uint8Array) =>
-	Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-
-/** True if the contract runs the smart-account WASM ancora accepts. */
-export async function isSmartAccount(config: ServerConfig, contractId: string): Promise<boolean> {
-	try {
-		const response = await new rpc.Server(config.rpcUrl).getLedgerEntries(
-			new Contract(contractId).getFootprint(),
-		);
-		const entry = response.entries[0];
-		if (!entry) return false;
-		const executable = entry.val.contractData().val().instance().executable();
-		return (
-			executable.switch().name === "contractExecutableWasm" &&
-			toHex(executable.wasmHash()) === config.accountWasmHash
-		);
-	} catch {
-		throw new RequestError("Could not check the account on the Stellar network. Try again.", 503);
-	}
-}
 
 /** Simulates a host function with its auth entries; returns the minimum resource fee. */
 export async function simulatedResourceFee(

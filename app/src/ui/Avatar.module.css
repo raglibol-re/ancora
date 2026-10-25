@@ -17,6 +17,12 @@
 	border-radius: var(--radius-pill);
 }
 
+/* People without a picture get their own hue; set by the component. */
+span.circle {
+	background: hsl(var(--avatar-hue, 220) 30% 36%);
+	color: #fff;
+}
+
 .sm {
 	width: 24px;
 	height: 24px;
@@ -34,4 +40,16 @@
 	height: 56px;
 	font-size: var(--text-md);
 	border-radius: var(--radius-md);
+}
+
+.xl {
+	width: 88px;
+	height: 88px;
+	font-size: var(--text-xl);
+	border-radius: var(--radius-lg);
+}
+
+.circle.lg,
+.circle.xl {
+	border-radius: var(--radius-pill);
 }

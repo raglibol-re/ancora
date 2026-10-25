@@ -1,198 +1,413 @@
+import type { xdr } from "@stellar/stellar-sdk";
 import { StrKey } from "@stellar/stellar-sdk";
-import { tokenBalance } from "../../../shared/tokenBalance.ts";
-import { recordExecutedPayment } from "../../domain/account.ts";
-import type { DataSource, PaymentInput } from "../../domain/dataSource.ts";
+import {
+	type OrgAccount,
+	type Person,
+	shortAddress,
+	type Workspace,
+} from "../../domain/account.ts";
+import type {
+	ChangeOutcome,
+	DataSource,
+	Identity,
+	IdentitySupport,
+	PaymentInput,
+	ProfileInput,
+} from "../../domain/dataSource.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
-import { LocalDataSource, notAllowed } from "../local/localDataSource.ts";
+import { rulesHash } from "../../domain/rules/policyDocument.ts";
+import { templates } from "../../domain/rules/templates.ts";
+import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
-import { samplePeople } from "../sample/seedWorkspace.ts";
+import { CONTRACT_ERROR_MESSAGES, mapOrganization } from "./mapOrganization.ts";
+import {
+	type Profile,
+	readOrganization,
+	readOrganizationsOf,
+	readProfiles,
+} from "./organizationContract.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
+import { address, changeToScVal, i128, text, toStroops, u64 } from "./scv.ts";
 import type { TestnetConfig } from "./testnetConfig.ts";
 
-const STROOPS_PER_CENT = 100_000n; // USDC has 7 decimals
+const EMPTY: Workspace = { people: [], accounts: [] };
+const LOGOS_KEY = "ancora.testnet.logos.v1";
+const MAX_NAME_BYTES = 64;
+const MAX_AVATAR_BYTES = 256;
 
 const failed = (message: string) => err(ruleError("not-allowed", message));
+const byteLength = (value: string) => new TextEncoder().encode(value).length;
 
 /**
- * Real on Stellar testnet: each organization is a smart account (OpenZeppelin, via
- * smart-account-kit) secured by passkeys, fees are sponsored by /api/relay, balances and
- * payments are on-chain USDC. The approval rules still run in the app engine until they move
- * on-chain (task 6); approving asks for a passkey to confirm presence.
+ * Real on Stellar testnet. A person is their passkey-secured smart account; an organization is
+ * an `ancora_organization` contract that holds the money, knows its members by address and
+ * enforces the approval rules itself. Everything shown is read from the chain; every command
+ * is a contract call signed with the person's passkey through their account, fees sponsored.
  */
-export class TestnetDataSource extends LocalDataSource {
-	override readonly supportsReserve = false;
+export class TestnetDataSource implements DataSource {
+	readonly kind = "testnet" as const;
+	readonly supportsReserve = false;
+	readonly identity: IdentitySupport;
 	private readonly config: TestnetConfig;
+	private readonly storage: KeyValueStorage | null;
+	private readonly listeners = new Set<() => void>();
+	private snapshot: Workspace = EMPTY;
+	private me: Identity | null = null;
+	private restoringSession = true;
+	private profiles = new Map<string, Profile | null>();
 
 	constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
-		super({
-			kind: "testnet",
-			storageKey: "ancora.testnet.v1",
-			storage,
-			payments: "manual",
-			seed: () => ({ people: samplePeople, accounts: [] }),
-		});
+		this.storage = storage;
 		this.config = config;
+		this.identity = {
+			restoring: () => this.restoringSession,
+			current: () => this.me,
+			createIdentity: (name) => this.createIdentity(name),
+			signIn: () => this.signIn(),
+			signOut: () => this.signOut(),
+			saveProfile: (profile) => this.saveProfile(profile),
+			uploadAvatar: (image) => this.uploadAvatar(image),
+		};
+		void this.restore();
 	}
+
+	subscribe = (listener: () => void) => {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	};
+
+	getSnapshot = () => this.snapshot;
 
 	private get kit() {
 		return passkeyKit(this.config);
 	}
 
-	override async createOrganization(input: Parameters<DataSource["createOrganization"]>[0]) {
-		let wallet: Awaited<ReturnType<typeof this.kit.createWallet>>;
+	private notify() {
+		for (const listener of this.listeners) listener();
+	}
+
+	private async restore() {
 		try {
-			// The passkey is named after the organization it secures.
-			wallet = await this.kit.createWallet("ancora", passkeyUserName(input.name), {
+			const session = await this.kit.connectWallet();
+			if (session) await this.becomeIdentity(session.contractId);
+		} catch {
+			// No usable session on this device: the sign-in page takes over.
+		} finally {
+			this.restoringSession = false;
+			this.notify();
+		}
+	}
+
+	private async becomeIdentity(id: string) {
+		this.me = { id, name: null, avatarUrl: null };
+		this.notify();
+		await this.refresh();
+		const profile = this.profiles.get(id) ?? null;
+		this.me = { id, name: profile?.name ?? null, avatarUrl: profile?.avatarUrl ?? null };
+		this.notify();
+	}
+
+	/** Re-reads my organizations from the registry and each organization from its contract. */
+	async refresh(): Promise<void> {
+		if (!this.me) {
+			this.snapshot = EMPTY;
+			this.notify();
+			return;
+		}
+		const me = this.me.id;
+		try {
+			const orgIds = await readOrganizationsOf(this.config, this.config.registryContract, me);
+			const snapshots = await Promise.all(
+				orgIds.map((id) => readOrganization(this.config, id, this.config.usdcToken)),
+			);
+			const everyone = new Set<string>([me]);
+			for (const snapshot of snapshots) {
+				for (const member of snapshot.members) everyone.add(String(member.address));
+			}
+			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
+			const orgNames = new Map(snapshots.map((s) => [s.contractId, String(s.info.name)]));
+			const logos = this.loadLogos();
+			const accounts: OrgAccount[] = snapshots.map((snapshot) => ({
+				...mapOrganization(
+					snapshot,
+					(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
+				),
+				logoUrl: logos[snapshot.contractId] ?? null,
+			}));
+			const people: Person[] = [...everyone].map((id) => ({
+				id,
+				name: this.profiles.get(id)?.name ?? shortAddress(id),
+				avatarUrl: this.profiles.get(id)?.avatarUrl ?? null,
+			}));
+			this.snapshot = { people, accounts };
+		} catch (error) {
+			// A failed poll keeps the last snapshot; the health check handles a dead RPC.
+			recordError(this.storage, {
+				at: Date.now(),
+				where: "testnet refresh",
+				message: error instanceof Error ? error.message : String(error),
+			});
+		}
+		this.notify();
+	}
+
+	private async createIdentity(name: string): Promise<Result<Identity, RuleError>> {
+		const trimmed = name.trim();
+		if (!trimmed || byteLength(trimmed) > MAX_NAME_BYTES) {
+			return failed("Enter a name of up to 64 characters.");
+		}
+		try {
+			const wallet = await this.kit.createWallet("ancora", passkeyUserName(trimmed), {
 				autoSubmit: true,
 			});
+			if (wallet.submitResult && !wallet.submitResult.success) {
+				return failed(
+					`Your account couldn't be created on Stellar: ${wallet.submitResult.error.message}`,
+				);
+			}
+			this.me = { id: wallet.contractId, name: trimmed, avatarUrl: null };
+			this.notify();
+			const named = await this.invoke(this.config.registryContract, "set_profile", [
+				address(wallet.contractId),
+				text(trimmed),
+				text(""),
+			]);
+			if (!named.ok) return named;
+			await this.becomeIdentity(wallet.contractId);
+			return ok({ id: wallet.contractId, name: trimmed, avatarUrl: null });
 		} catch (error) {
 			return failed(describeKitError(error, "created"));
 		}
-		if (wallet.submitResult && !wallet.submitResult.success) {
-			return failed(
-				`The account couldn't be created on Stellar: ${wallet.submitResult.error.message}`,
-			);
-		}
-		const created = this.addOrganization(input, "USD", {
-			contractId: wallet.contractId,
-			signers: [{ personId: input.actorId, credentialId: wallet.credentialId }],
-		});
-		await this.refresh();
-		return created;
 	}
 
-	override async requestPayment(orgId: string, actorId: PersonId, input: PaymentInput) {
-		const address = "account" in input.payee ? input.payee.account.trim() : null;
-		if (address && !StrKey.isValidEd25519PublicKey(address) && !StrKey.isValidContract(address)) {
-			return failed("On testnet, enter the recipient's Stellar address (starts with G or C).");
-		}
-		const present = await this.confirmPresence("requested");
-		return present.ok ? super.requestPayment(orgId, actorId, input) : present;
-	}
-
-	override async approve(orgId: string, requestId: string, actorId: PersonId) {
-		const present = await this.confirmPresence("approved");
-		return present.ok ? super.approve(orgId, requestId, actorId) : present;
-	}
-
-	override async decline(orgId: string, requestId: string, actorId: PersonId) {
-		const present = await this.confirmPresence("declined");
-		return present.ok ? super.decline(orgId, requestId, actorId) : present;
-	}
-
-	override async proposeChange(orgId: string, actorId: PersonId, change: GovernanceChange) {
-		const present = await this.confirmPresence("changed");
-		return present.ok ? super.proposeChange(orgId, actorId, change) : present;
-	}
-
-	override async moveToReserve(): Promise<Result<void, RuleError>> {
-		return notAllowed("The Reserve isn't connected on testnet yet. It arrives with DeFindex.");
-	}
-
-	override async withdrawFromReserve(): Promise<Result<void, RuleError>> {
-		return notAllowed("The Reserve isn't connected on testnet yet. It arrives with DeFindex.");
-	}
-
-	/** The signer's passkey signs the USDC transfer; the relayer pays the fee. */
-	override async executeRequest(orgId: string, requestId: string, actorId: PersonId) {
-		const account = this.store.account(orgId);
-		const request = account?.requests.find((r) => r.id === requestId);
-		if (!account?.onchain || !request || request.kind !== "payment" || request.status !== "ready") {
-			return failed("This payment isn't ready to be sent.");
-		}
-		const signer = account.onchain.signers.find((s) => s.personId === actorId);
-		if (!signer) return failed("Only a signer of this account can send the payment.");
-		const payee = account.payees.find((p) => p.id === request.recipientId);
-		if (!payee) return failed("The recipient of this payment is missing.");
+	private async signIn(): Promise<Result<Identity, RuleError>> {
 		try {
-			await this.kit.connectWallet({
-				contractId: account.onchain.contractId,
-				credentialId: signer.credentialId,
-			});
-			const result = await this.kit.transfer(
-				this.config.usdcToken,
-				payee.account,
-				request.amount / 100,
-			);
-			if (!result.success) return failed(`The payment failed on Stellar: ${result.error.message}`);
-			this.store.mutate(orgId, (current) =>
-				ok(recordExecutedPayment(current, requestId, result.hash, this.clock())),
-			);
+			const session = await this.kit.connectWallet({ fresh: true });
+			if (!session) return failed("No passkey was chosen.");
+			await this.becomeIdentity(session.contractId);
+			return this.me ? ok(this.me) : failed("Signing in didn't complete. Try again.");
 		} catch (error) {
-			return failed(describeKitError(error, "sent"));
+			return failed(describeKitError(error, "signed in"));
+		}
+	}
+
+	private async signOut(): Promise<void> {
+		await this.kit.disconnect();
+		this.me = null;
+		this.snapshot = EMPTY;
+		this.notify();
+	}
+
+	private async saveProfile(profile: ProfileInput): Promise<Result<void, RuleError>> {
+		const name = profile.name.trim();
+		const avatarUrl = profile.avatarUrl?.trim() || null;
+		if (!this.me) return failed("Sign in first.");
+		if (!name || byteLength(name) > MAX_NAME_BYTES) {
+			return failed("Enter a name of up to 64 characters.");
+		}
+		if (
+			avatarUrl &&
+			(!avatarUrl.startsWith("https://") || byteLength(avatarUrl) > MAX_AVATAR_BYTES)
+		) {
+			return failed("The picture link isn't valid. Upload the picture again.");
+		}
+		const me = this.me.id;
+		const result = await this.invoke(this.config.registryContract, "set_profile", [
+			address(me),
+			text(name),
+			text(avatarUrl ?? ""),
+		]);
+		if (result.ok) {
+			this.me = { id: me, name, avatarUrl };
+			this.notify();
+		}
+		return result;
+	}
+
+	private async uploadAvatar(image: Blob): Promise<Result<string, RuleError>> {
+		const response = await fetch("/api/upload-avatar", {
+			method: "POST",
+			headers: { "Content-Type": image.type },
+			body: image,
+		}).catch(() => null);
+		const payload = (await response?.json().catch(() => null)) as {
+			success?: boolean;
+			data?: { url?: string };
+			error?: string;
+		} | null;
+		if (!payload?.success || typeof payload.data?.url !== "string") {
+			return failed(
+				payload?.error ?? "The picture couldn't be stored right now. Try again shortly.",
+			);
+		}
+		return ok(payload.data.url);
+	}
+
+	async createOrganization(input: Parameters<DataSource["createOrganization"]>[0]) {
+		if (!this.me) return failed("Sign in first.");
+		const template = templates[input.templateId];
+		const policyHash = await rulesHash(template.id, template.roles, template.policy);
+		const response = await this.post<{ contractId: string }>("/api/create-organization", {
+			founder: this.me.id,
+			founderRole: input.founderRoleId,
+			template: input.templateId,
+			name: input.name.trim(),
+			policyHash,
+		});
+		if (!response.ok) return response;
+		await this.refresh();
+		return ok(response.value.contractId);
+	}
+
+	async requestPayment(orgId: string, actorId: PersonId, input: PaymentInput) {
+		const to = "id" in input.payee ? input.payee.id : input.payee.account.trim();
+		if (!StrKey.isValidEd25519PublicKey(to) && !StrKey.isValidContract(to)) {
+			return failed("Enter the recipient's Stellar address (starts with G or C).");
+		}
+		const result = await this.invoke(orgId, "propose_payment", [
+			address(actorId),
+			address(to),
+			i128(toStroops(input.amount)),
+			text(input.note.trim()),
+		]);
+		if (!result.ok) return result;
+		const latest = this.account(orgId)?.requests[0];
+		return ok(latest?.id ?? "");
+	}
+
+	approve(orgId: string, requestId: string, actorId: PersonId) {
+		return this.invoke(orgId, "approve", [address(actorId), u64(Number(requestId))]);
+	}
+
+	seal(orgId: string, requestId: string, actorId: PersonId) {
+		return this.invoke(orgId, "seal", [address(actorId), u64(Number(requestId))]);
+	}
+
+	decline(orgId: string, requestId: string, actorId: PersonId) {
+		return this.invoke(orgId, "decline", [address(actorId), u64(Number(requestId))]);
+	}
+
+	async proposeChange(
+		orgId: string,
+		actorId: PersonId,
+		change: GovernanceChange,
+	): Promise<Result<ChangeOutcome, RuleError>> {
+		const account = this.account(orgId);
+		if (!account) return failed("This organization doesn't exist anymore. Reload the page.");
+		if (change.type === "addMember" && !StrKey.isValidContract(change.personId.trim())) {
+			return failed("Enter the person's ancora ID (their account address, starts with C).");
+		}
+		const policyHash =
+			change.type === "updatePolicy"
+				? await rulesHash(account.org.templateId, account.org.roles, change.policy)
+				: undefined;
+		const encoded = changeToScVal(
+			change.type === "addMember" ? { ...change, personId: change.personId.trim() } : change,
+			policyHash,
+		);
+		if (!encoded) return failed("Switching templates isn't available on Stellar yet.");
+		const direct = account.onchain?.setupPhase && account.org.founderId === actorId;
+		const result = await this.invoke(orgId, direct ? "change_directly" : "propose_change", [
+			address(actorId),
+			encoded,
+		]);
+		return result.ok ? ok(direct ? "applied" : "requested") : result;
+	}
+
+	async moveToReserve(): Promise<Result<void, RuleError>> {
+		return failed("The Reserve isn't connected on testnet yet. It arrives with DeFindex.");
+	}
+
+	async withdrawFromReserve(): Promise<Result<void, RuleError>> {
+		return failed("The Reserve isn't connected on testnet yet. It arrives with DeFindex.");
+	}
+
+	async setLogo(orgId: string, _actorId: PersonId, logoUrl: string) {
+		const logos = this.loadLogos();
+		logos[orgId] = logoUrl;
+		try {
+			this.storage?.setItem(LOGOS_KEY, JSON.stringify(logos));
+		} catch {
+			// Blocked storage: the logo lasts for this tab only.
 		}
 		await this.refresh();
 		return ok(undefined);
 	}
 
-	/** Asks the demo operator (/api/test-money) to send test USDC to the organization's account. */
-	override async addTestMoney(orgId: string, actorId: PersonId) {
-		const account = this.store.account(orgId);
-		if (!account?.onchain) return failed("This organization has no account on Stellar yet.");
-		const response = await fetch("/api/test-money", {
+	async executeRequest(orgId: string, requestId: string) {
+		const response = await this.post("/api/execute-request", {
+			organization: orgId,
+			requestId: Number(requestId),
+		});
+		if (!response.ok) return response;
+		await this.refresh();
+		return ok(undefined);
+	}
+
+	async addTestMoney(orgId: string) {
+		const response = await this.post("/api/test-money", { contractId: orgId });
+		if (!response.ok) return response;
+		await this.refresh();
+		return ok(undefined);
+	}
+
+	private account(orgId: string): OrgAccount | undefined {
+		return this.snapshot.accounts.find((a) => a.org.id === orgId);
+	}
+
+	/** Calls a contract through the person's account (passkey-signed, fee-sponsored). */
+	private async invoke(
+		target: string,
+		fn: string,
+		args: xdr.ScVal[],
+	): Promise<Result<void, RuleError>> {
+		try {
+			const result = await this.kit.executeAndSubmit(target, fn, args);
+			if (!result.success) return failed(contractMessage(result.error.message));
+		} catch (error) {
+			return failed(describeKitError(error, "done"));
+		}
+		await this.refresh();
+		return ok(undefined);
+	}
+
+	private async post<T = unknown>(
+		path: string,
+		body: Record<string, unknown>,
+	): Promise<Result<T, RuleError>> {
+		const response = await fetch(path, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ contractId: account.onchain.contractId }),
+			body: JSON.stringify(body),
 		}).catch(() => null);
-		const body = (await response?.json().catch(() => null)) as {
+		const payload = (await response?.json().catch(() => null)) as {
 			success?: boolean;
+			data?: T;
 			error?: string;
-			data?: { hash: string; amountStroops: string };
 		} | null;
-		if (!body?.success || !body.data) {
-			return failed(body?.error ?? "The test-money service is unreachable. Try again shortly.");
-		}
-		const { hash, amountStroops } = body.data;
-		this.store.mutate(orgId, (current) =>
-			ok({
-				...current,
-				activity: [
-					this.entry(actorId, {
-						kind: "deposit",
-						amount: Number(BigInt(amountStroops) / STROOPS_PER_CENT),
-						from: "Test money from the demo operator",
-						txHash: hash,
-					}),
-					...current.activity,
-				],
-			}),
-		);
-		await this.refresh();
-		return ok(undefined);
-	}
-
-	/** Reads every on-chain account's USDC balance (stroops → cents, rounded down). */
-	override async refresh(): Promise<void> {
-		const accounts = this.getSnapshot().accounts.filter((a) => a.onchain);
-		const balances = await Promise.all(
-			accounts.map(async (a) =>
-				tokenBalance(this.config, this.config.usdcToken, a.onchain?.contractId ?? "").catch(
-					() => null,
-				),
-			),
-		);
-		accounts.forEach((account, index) => {
-			const stroops = balances[index];
-			if (stroops === null || stroops === undefined) return;
-			this.store.mutate(account.org.id, (current) =>
-				ok({ ...current, balance: Number(stroops / STROOPS_PER_CENT) }),
+		if (!payload?.success || payload.data === undefined) {
+			return failed(
+				payload?.error ?? "ancora's server is unreachable right now. Try again shortly.",
 			);
-		});
+		}
+		return ok(payload.data);
 	}
 
-	/**
-	 * Confirms someone is at the device with any of this site's passkeys before an action that is
-	 * recorded in the app. On-chain enforcement of approvals comes with task 6.
-	 */
-	private async confirmPresence(action: string): Promise<Result<void, RuleError>> {
+	private loadLogos(): Record<string, string> {
 		try {
-			await this.kit.authenticatePasskey();
-			return ok(undefined);
-		} catch (error) {
-			return failed(describeKitError(error, action));
+			const parsed: unknown = JSON.parse(this.storage?.getItem(LOGOS_KEY) ?? "{}");
+			return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {};
+		} catch {
+			return {};
 		}
 	}
+}
+
+/** Turns the kit's "Error(Contract, #6)" into the organization contract's plain-language text. */
+function contractMessage(message: string): string {
+	const code = /Error\(Contract, #(\d+)\)/.exec(message)?.[1];
+	return (code && CONTRACT_ERROR_MESSAGES[Number(code)]) || `Nothing was changed: ${message}`;
 }

@@ -9,6 +9,7 @@ import { NewOrgPage } from "./features/orgs/NewOrgPage.tsx";
 import { OverviewPage } from "./features/overview/OverviewPage.tsx";
 import { PasskeyProvider } from "./features/passkey/PasskeyProvider.tsx";
 import { PayPage } from "./features/pay/PayPage.tsx";
+import { ProfilePage } from "./features/profile/ProfilePage.tsx";
 import { RulesPage } from "./features/rules/RulesPage.tsx";
 import { SettingsPage } from "./features/settings/SettingsPage.tsx";
 import { AppShell } from "./features/shell/AppShell.tsx";
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
 			{ path: "pay", element: <PayPage /> },
 			{ path: "rules", element: <RulesPage /> },
 			{ path: "settings", element: <SettingsPage /> },
+			{ path: "me", element: <ProfilePage /> },
 			{ path: "new", element: <NewOrgPage /> },
 		],
 	},

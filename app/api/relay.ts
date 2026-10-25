@@ -1,6 +1,7 @@
 import { Keypair, Operation } from "@stellar/stellar-sdk";
+import { isOrganization, isSmartAccount } from "./_lib/contracts.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
-import { invokeAsServer, isSmartAccount, simulatedResourceFee } from "./_lib/ledger.js";
+import { invokeAsServer, simulatedResourceFee } from "./_lib/ledger.js";
 import { parseSubmission, validateSubmission } from "./_lib/relayRules.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
 
@@ -25,6 +26,9 @@ export default apiHandler("POST", async (request) => {
 		{
 			accountWasmHash: settings.accountWasmHash,
 			isSmartAccount: (contractId) => isSmartAccount(settings, contractId),
+			isTrustedTarget: async (contractId) =>
+				(settings.registryContract !== "" && contractId === settings.registryContract) ||
+				(settings.orgWasmHash !== "" && (await isOrganization(settings, contractId))),
 		},
 		submission,
 	);

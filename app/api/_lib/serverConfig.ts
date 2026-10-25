@@ -9,6 +9,9 @@ export type ServerConfig = {
 	accountWasmHash: string;
 	usdcToken: string;
 	allowedOrigins: Set<string>;
+	/** Set by scripts/setup-testnet.sh once ancora's own contracts are deployed; empty before. */
+	orgWasmHash: string;
+	registryContract: string;
 };
 
 export class ConfigError extends Error {}
@@ -25,6 +28,8 @@ export function serverConfig(): ServerConfig {
 		networkPassphrase: required("STELLAR_NETWORK_PASSPHRASE"),
 		accountWasmHash: required("ACCOUNT_WASM_HASH").toLowerCase(),
 		usdcToken: required("USDC_TOKEN"),
+		orgWasmHash: (process.env.ORG_WASM_HASH ?? "").toLowerCase(),
+		registryContract: process.env.REGISTRY_CONTRACT ?? "",
 		allowedOrigins: new Set(
 			required("ALLOWED_ORIGINS")
 				.split(",")

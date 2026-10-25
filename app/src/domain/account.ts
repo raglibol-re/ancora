@@ -14,7 +14,14 @@ import {
 export type Person = {
 	id: PersonId;
 	name: string;
+	/** Profile picture; initials otherwise. */
+	avatarUrl?: string | null;
 };
+
+/** "CDPI…HY7C": enough of an address to recognize it. */
+export function shortAddress(address: string): string {
+	return address.length > 12 ? `${address.slice(0, 4)}…${address.slice(-4)}` : address;
+}
 
 export type Payee = {
 	id: string;
@@ -40,10 +47,13 @@ export type AccountNumber = {
 
 export type Currency = "EUR" | "USD";
 
-/** The organization's smart account on Stellar and which person holds which passkey signer. */
+/** The organization's own contract on Stellar. */
 export type OnchainAccount = {
 	contractId: string;
-	signers: readonly { personId: PersonId; credentialId: string }[];
+	/** The founder can still change people and rules directly. */
+	setupPhase: boolean;
+	/** Hex SHA-256 of the policy document the active rules were compiled from. */
+	policyHash: string;
 };
 
 /** Everything one organization's account holds: rules, money, requests and history. */

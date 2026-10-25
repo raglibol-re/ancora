@@ -14,6 +14,28 @@ export type PaymentInput = {
 
 export type ChangeOutcome = "applied" | "requested";
 
+/** Who the app acts as: a person's address on Stellar (their passkey-secured account). */
+export type Identity = { id: PersonId; name: string | null; avatarUrl: string | null };
+
+export type ProfileInput = { name: string; avatarUrl: string | null };
+
+/**
+ * Sign-in for sources where the person is a real on-chain identity. The passkey is the login:
+ * creating one deploys the person's account; signing in reuses a passkey on this device.
+ */
+export interface IdentitySupport {
+	/** True while a stored session is being restored after load. */
+	restoring(): boolean;
+	current(): Identity | null;
+	createIdentity(name: string): Promise<Result<Identity, RuleError>>;
+	signIn(): Promise<Result<Identity, RuleError>>;
+	signOut(): Promise<void>;
+	/** Name and picture shown next to this person in every organization. */
+	saveProfile(profile: ProfileInput): Promise<Result<void, RuleError>>;
+	/** Stores a small picture and returns its public URL, to be saved with the profile. */
+	uploadAvatar(image: Blob): Promise<Result<string, RuleError>>;
+}
+
 /**
  * Everything the app reads and does. The sample adapter (labeled demo data) and the testnet
  * adapter implement the same contract, so features never know which one is active.
@@ -21,16 +43,13 @@ export type ChangeOutcome = "applied" | "requested";
  */
 export interface DataSource {
 	readonly kind: DataSourceKind;
-	/**
-	 * "auto": a payment goes out as soon as it is fully approved (sample data).
-	 * "manual": a signer of the on-chain account signs the transfer with their passkey (testnet).
-	 */
-	readonly payments: "auto" | "manual";
+	/** Null for sample data, where "Viewing as" picks the person instead of a passkey. */
+	readonly identity: IdentitySupport | null;
 	/** False until the Reserve runs on the DeFindex vault for this source (task 7). */
 	readonly supportsReserve: boolean;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;
-	/** Re-reads balances from the network; a no-op for sample data. */
+	/** Re-reads balances and organizations from the network; a no-op for sample data. */
 	refresh(): Promise<void>;
 
 	createOrganization(input: {
@@ -64,7 +83,7 @@ export interface DataSource {
 	): Promise<Result<void, RuleError>>;
 	setLogo(orgId: string, actorId: PersonId, logoUrl: string): Promise<Result<void, RuleError>>;
 
-	/** Signs and sends a fully approved payment ("manual" payments only). */
+	/** Sends a fully approved request whose objection window has passed. */
 	executeRequest(
 		orgId: string,
 		requestId: string,

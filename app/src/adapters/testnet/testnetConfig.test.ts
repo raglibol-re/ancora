@@ -14,6 +14,8 @@ const complete = {
 	VITE_THRESHOLD_POLICY: "CTHRESHOLD",
 	VITE_SPENDING_LIMIT_POLICY: "CLIMIT",
 	VITE_RELAYER_URL: "https://relayer.example",
+	VITE_REGISTRY_CONTRACT: "CREGISTRY",
+	VITE_ORG_WASM_HASH: "def",
 };
 
 describe("readTestnetConfig", () => {

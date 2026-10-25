@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router";
 import { inboxFor } from "../../domain/inbox.ts";
+import { Avatar } from "../../ui/Avatar.tsx";
 import { BrandMark } from "../../ui/BrandMark.tsx";
-import { SettingsIcon } from "../../ui/icons.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AppShell.module.css";
 import { DataSourceBanner } from "./DataSourceBanner.tsx";
@@ -10,6 +10,8 @@ import { OrgSwitcher } from "./OrgSwitcher.tsx";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 	isActive ? `${styles.navLink} ${styles.active}` : styles.navLink;
+const profileLinkClass = ({ isActive }: { isActive: boolean }) =>
+	isActive ? `${styles.profileLink} ${styles.active}` : styles.profileLink;
 
 export function AppShell() {
 	const { workspace, me } = useWorkspace();
@@ -42,12 +44,19 @@ export function AppShell() {
 							</NavLink>
 						))}
 					</nav>
+					<NavLink to="/app/me" className={profileLinkClass}>
+						<Avatar name={me.name} imageUrl={me.avatarUrl} size="md" shape="circle" />
+						<span className={styles.profileText}>
+							<span className={styles.profileName}>{me.name}</span>
+							<span className={styles.profileHint}>Your pass</span>
+						</span>
+					</NavLink>
 				</aside>
 
 				<header className={styles.mobileHeader}>
 					<OrgSwitcher />
-					<NavLink to="/app/settings" className={styles.iconLink} aria-label="Settings">
-						<SettingsIcon />
+					<NavLink to="/app/me" className={styles.iconLink} aria-label="Your pass">
+						<Avatar name={me.name} imageUrl={me.avatarUrl} size="md" shape="circle" />
 					</NavLink>
 				</header>
 

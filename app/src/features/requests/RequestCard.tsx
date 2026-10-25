@@ -21,10 +21,7 @@ type RequestCardProps = {
 
 export function RequestCard({ account, request, showOrg = false }: RequestCardProps) {
 	const { personName, me } = useWorkspace();
-	const { allowed, busy, approve, seal, decline, send, awaitingSignatureFrom } = useRequestActions(
-		account,
-		request,
-	);
+	const { allowed, busy, approve, seal, decline, send } = useRequestActions(account, request);
 	const title = requestTitle(account, request, personName);
 	const requester = request.requesterId === me.id ? "you" : personName(request.requesterId);
 
@@ -46,17 +43,12 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 			</header>
 			{request.kind === "payment" && request.note && <p className={styles.note}>{request.note}</p>}
 			<RequestProgress account={account} request={request} />
-			{awaitingSignatureFrom.length > 0 && !allowed.send && (
-				<p className={styles.meta}>
-					Approved. Waiting for {awaitingSignatureFrom.join(" or ")} to sign and send it.
-				</p>
-			)}
 			{request.executionRef && <ExplorerLink target={request.executionRef} />}
 			{(allowed.approve || allowed.seal || allowed.decline || allowed.send) && (
 				<div className={styles.actions}>
 					{allowed.send && (
 						<button type="button" className={buttonClass()} onClick={send} disabled={busy}>
-							Sign and send
+							{request.kind === "payment" ? "Send now" : "Apply now"}
 						</button>
 					)}
 					{allowed.approve && (

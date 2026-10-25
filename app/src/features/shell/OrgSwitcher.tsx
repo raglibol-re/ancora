@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Link } from "react-router";
 import { inboxFor } from "../../domain/inbox.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
-import { ChevronDownIcon, PlusIcon } from "../../ui/icons.tsx";
+import { ChevronDownIcon, PlusIcon, SettingsIcon } from "../../ui/icons.tsx";
 import { roleLabel } from "../requests/describe.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./OrgSwitcher.module.css";
@@ -65,6 +65,12 @@ export function OrgSwitcher() {
 					<PlusIcon />
 					New organization
 				</Link>
+				{active && (
+					<Link to="/app/settings" className={styles.option} onClick={close}>
+						<SettingsIcon />
+						Organization settings
+					</Link>
+				)}
 			</div>
 		</details>
 	);

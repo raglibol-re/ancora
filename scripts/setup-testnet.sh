@@ -168,6 +168,35 @@ verify_external_contracts() {
 	fi
 }
 
+# ancora's own contracts: the organization WASM (uploaded once per build; the operator deploys an
+# instance per organization) and the registry (deployed once, id kept in app/.env.testnet).
+ensure_ancora_contracts() {
+	say "ancora contracts"
+	local wasm_dir="$ROOT/contracts/target/wasm32v1-none/release"
+	REGISTRY_CONTRACT="$(sed -n 's/^VITE_REGISTRY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	ORG_WASM_HASH="$(sed -n 's/^VITE_ORG_WASM_HASH=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	if $CHECK_ONLY; then
+		[[ -n "$ORG_WASM_HASH" ]] && ok "organization WASM $ORG_WASM_HASH" || problem "organization WASM hash missing"
+		if [[ -n "$REGISTRY_CONTRACT" ]] && contract_exists "$REGISTRY_CONTRACT"; then
+			ok "registry $REGISTRY_CONTRACT"
+		else
+			problem "registry contract missing (testnet reset?)"
+		fi
+		return
+	fi
+	(cd "$ROOT/contracts" && stellar contract build >/dev/null 2>&1) ||
+		die "Contract build failed; run 'stellar contract build' in contracts/ to see why."
+	ORG_WASM_HASH="$(stellar contract upload --wasm "$wasm_dir/ancora_organization.wasm" \
+		--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not upload the organization WASM."
+	ok "organization WASM $ORG_WASM_HASH"
+	if [[ -z "$REGISTRY_CONTRACT" ]] || ! contract_exists "$REGISTRY_CONTRACT"; then
+		REGISTRY_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_registry.wasm" \
+			--source "$DEPLOYER" --network "$NETWORK" -- --admin "$DEPLOYER_ADDRESS" 2>/dev/null)" ||
+			die "Could not deploy the registry."
+	fi
+	ok "registry $REGISTRY_CONTRACT"
+}
+
 write_env_file() {
 	$CHECK_ONLY && return
 	cat >"$ENV_FILE" <<EOF
@@ -193,6 +222,10 @@ VITE_ED25519_VERIFIER=$KIT_ED25519_VERIFIER
 VITE_THRESHOLD_POLICY=$KIT_THRESHOLD_POLICY
 VITE_SPENDING_LIMIT_POLICY=$KIT_SPENDING_LIMIT_POLICY
 VITE_RELAYER_URL=$RELAYER_URL
+
+# ancora contracts (built from contracts/)
+VITE_REGISTRY_CONTRACT=$REGISTRY_CONTRACT
+VITE_ORG_WASM_HASH=$ORG_WASM_HASH
 EOF
 	ok "wrote ${ENV_FILE#"$ROOT/"}"
 }
@@ -244,6 +277,8 @@ sync_vercel() {
 		vercel_env ACCOUNT_WASM_HASH "$KIT_ACCOUNT_WASM_HASH"
 		vercel_env USDC_TOKEN "$BLEND_USDC"
 		vercel_env ALLOWED_ORIGINS "$PRODUCTION_ORIGIN,http://localhost:5173,http://localhost:4173"
+		vercel_env ORG_WASM_HASH "$ORG_WASM_HASH"
+		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
 		vercel_env ADMIN_PASSPHRASE "$(admin_passphrase)" secret
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
@@ -281,6 +316,7 @@ main() {
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_xlm_float
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_usdc_float
 	verify_external_contracts
+	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_ancora_contracts
 	# ancora's own contracts are deployed here as they land (approval policy and requests: task 6,
 	# Reserve split: task 7, seal verifier: task 8, org registry: task 11). See docs/ROADMAP.md.
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && write_env_file

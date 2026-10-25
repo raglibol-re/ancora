@@ -1,0 +1,20 @@
+[package]
+name = "ancora-organization"
+description = "ancora organization: an on-chain account with positions (OpenZeppelin AccessControl) and approval rules enforced by the contract"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+stellar-access = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+ancora-registry = { path = "../registry" }
+serde = { workspace = true }
+serde_json = { workspace = true }

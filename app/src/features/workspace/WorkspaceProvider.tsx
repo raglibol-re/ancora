@@ -9,8 +9,9 @@ import {
 import { SampleDataSource } from "../../adapters/sample/sampleDataSource.ts";
 import { fetchSiteHealth } from "../../adapters/site/siteHealth.ts";
 import { testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
-import { accountsOf } from "../../domain/account.ts";
+import { accountsOf, type Person, shortAddress } from "../../domain/account.ts";
 import type { DataSource } from "../../domain/dataSource.ts";
+import { SignInPage } from "../identity/SignInPage.tsx";
 import {
 	browserStorage,
 	loadPreferences,
@@ -38,7 +39,7 @@ async function loadTestnet(): Promise<DataSource | null> {
 	return testnet;
 }
 
-const BALANCE_REFRESH_MS = 30_000;
+const REFRESH_MS = 30_000;
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const [preferences, setPreferences] = useState(() => loadPreferences(storage));
@@ -108,24 +109,40 @@ function WorkspaceState({
 	children,
 }: WorkspaceStateProps) {
 	const workspace = useSyncExternalStore(dataSource.subscribe, dataSource.getSnapshot);
+	const identity = dataSource.identity;
+	const restoring = useSyncExternalStore(
+		dataSource.subscribe,
+		() => identity?.restoring() ?? false,
+	);
+	const current = useSyncExternalStore(dataSource.subscribe, () => identity?.current() ?? null);
 
-	// On-chain balances change outside the app (incoming transfers), so poll while visible.
+	// On-chain state changes outside the app (incoming transfers, other people's approvals).
 	useEffect(() => {
-		if (dataSource.kind !== "testnet") return;
-		void dataSource.refresh();
+		if (dataSource.kind !== "testnet" || !current) return;
 		const timer = setInterval(() => {
 			if (document.visibilityState === "visible") void dataSource.refresh();
-		}, BALANCE_REFRESH_MS);
+		}, REFRESH_MS);
 		return () => clearInterval(timer);
-	}, [dataSource]);
+	}, [dataSource, current]);
 
 	const value = useMemo<WorkspaceValue>(() => {
-		const me = workspace.people.find((p) => p.id === preferences.personId) ??
-			workspace.people[0] ?? { id: preferences.personId, name: "You" };
+		const people = new Map(workspace.people.map((p) => [p.id, p]));
+		const me: Person = current
+			? (people.get(current.id) ?? {
+					id: current.id,
+					name: current.name ?? shortAddress(current.id),
+					avatarUrl: current.avatarUrl,
+				})
+			: (people.get(preferences.personId) ??
+				workspace.people[0] ?? { id: preferences.personId, name: "You" });
 		const myAccounts = accountsOf(workspace, me.id);
 		const active =
 			myAccounts.find((a) => a.org.id === preferences.activeOrgId) ?? myAccounts[0] ?? null;
-		const names = new Map(workspace.people.map((p) => [p.id, p.name]));
+		const personOf = (personId: string): Person =>
+			people.get(personId) ?? {
+				id: personId,
+				name: personId.length > 20 ? shortAddress(personId) : "Unknown person",
+			};
 		return {
 			dataSource,
 			sourceStatus,
@@ -135,9 +152,21 @@ function WorkspaceState({
 			me,
 			myAccounts,
 			active,
-			personName: (personId) => names.get(personId) ?? "Unknown person",
+			personName: (personId) => personOf(personId).name,
+			personOf,
 		};
-	}, [dataSource, sourceStatus, workspace, preferences, updatePreferences]);
+	}, [dataSource, sourceStatus, workspace, preferences, updatePreferences, current]);
 
+	if (identity && restoring) {
+		return <p className={styles.connecting}>Restoring your session…</p>;
+	}
+	if (identity && !current) {
+		return (
+			<SignInPage
+				identity={identity}
+				onUseSampleData={() => updatePreferences({ dataSource: "sample", activeOrgId: null })}
+			/>
+		);
+	}
 	return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

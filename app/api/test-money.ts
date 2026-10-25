@@ -1,10 +1,11 @@
 import { Address, Contract, Keypair, nativeToScVal, StrKey } from "@stellar/stellar-sdk";
 import { tokenBalance } from "../shared/tokenBalance.js";
+import { isOrganization } from "./_lib/contracts.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
-import { invokeAsServer, isSmartAccount } from "./_lib/ledger.js";
+import { invokeAsServer } from "./_lib/ledger.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
 
-// Testnet only: the demo operator sends test USDC from its float to an ancora smart account.
+// Testnet only: the demo operator sends test USDC from its float to an ancora organization.
 // The operator is never a signer on any organization account; it can only give, not take.
 
 const STROOPS_PER_USDC = 10_000_000n;
@@ -19,8 +20,8 @@ export default apiHandler("POST", async (request) => {
 	if (typeof contractId !== "string" || !StrKey.isValidContract(contractId)) {
 		throw new RequestError("Send the organization's account address (C…).");
 	}
-	if (!(await isSmartAccount(settings, contractId))) {
-		throw new RequestError("Test money only goes to ancora accounts.", 403);
+	if (!(await isOrganization(settings, contractId))) {
+		throw new RequestError("Test money only goes to ancora organizations.", 403);
 	}
 	if ((await tokenBalance(settings, settings.usdcToken, contractId)) >= MAX_BALANCE_FOR_GRANT) {
 		throw new RequestError("This account already has plenty of test money.", 429);

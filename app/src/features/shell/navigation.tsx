@@ -22,5 +22,5 @@ export const navItems: readonly NavItem[] = [
 	{ to: "/app/pay", label: "Send", icon: <SendIcon />, inTabBar: true },
 	{ to: "/app/approvals", label: "Approvals", icon: <ApprovalsIcon />, inTabBar: true },
 	{ to: "/app/rules", label: "Rules", icon: <RulesIcon />, inTabBar: true },
-	{ to: "/app/settings", label: "Settings", icon: <SettingsIcon />, inTabBar: false },
+	{ to: "/app/settings", label: "Org settings", icon: <SettingsIcon />, inTabBar: false },
 ];

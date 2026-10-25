@@ -19,13 +19,15 @@ export type WorkspaceValue = {
 	workspace: Workspace;
 	preferences: Preferences;
 	updatePreferences: (patch: Partial<Preferences>) => void;
-	/** The person using the app. */
+	/** The person using the app: the signed-in identity on testnet, the chosen person on sample data. */
 	me: Person;
 	/** Organizations this person belongs to. */
 	myAccounts: OrgAccount[];
 	/** The organization currently shown; null if the person belongs to none. */
 	active: OrgAccount | null;
 	personName: (personId: string) => string;
+	/** Name and picture of anyone referenced by id; unknown people get a placeholder. */
+	personOf: (personId: string) => Person;
 };
 
 export const WorkspaceContext = createContext<WorkspaceValue | null>(null);

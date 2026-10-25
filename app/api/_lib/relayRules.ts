@@ -31,6 +31,8 @@ export type Submission = { func: xdr.HostFunction; auth: xdr.SorobanAuthorizatio
 export type RelayContext = {
 	accountWasmHash: string;
 	isSmartAccount: (contractId: string) => Promise<boolean>;
+	/** Contracts a smart account may call through `execute` at the sponsor's expense. */
+	isTrustedTarget: (contractId: string) => Promise<boolean>;
 };
 
 const refuse = (message: string) => new RequestError(message, 403);
@@ -167,6 +169,13 @@ async function validateWalletCall(
 		throw refuse("This account function is not relayed.");
 	}
 	if (!(await context.isSmartAccount(wallet))) throw refuse("Only ancora accounts are relayed.");
+	if (invoke.functionName().toString() === "execute") {
+		const [target] = invoke.args();
+		if (target?.switch().name !== "scvAddress") throw refuse("The call has an unexpected shape.");
+		if (!(await context.isTrustedTarget(Address.fromScAddress(target.address()).toString()))) {
+			throw refuse("Only calls to ancora organizations are sponsored.");
+		}
+	}
 	for (const entry of auth) {
 		const root = entry.rootInvocation();
 		if (

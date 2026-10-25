@@ -16,6 +16,8 @@ export type TestnetConfig = {
 	thresholdPolicy: string;
 	spendingLimitPolicy: string;
 	relayerUrl: string;
+	registryContract: string;
+	orgWasmHash: string;
 };
 
 type EnvSource = Record<string, string | boolean | undefined>;
@@ -33,6 +35,8 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	thresholdPolicy: "VITE_THRESHOLD_POLICY",
 	spendingLimitPolicy: "VITE_SPENDING_LIMIT_POLICY",
 	relayerUrl: "VITE_RELAYER_URL",
+	registryContract: "VITE_REGISTRY_CONTRACT",
+	orgWasmHash: "VITE_ORG_WASM_HASH",
 };
 
 export function readTestnetConfig(env: EnvSource): TestnetConfig | null {
@@ -46,6 +50,7 @@ export const testnetConfig = readTestnetConfig(import.meta.env);
 /** The deployments this build is wired to, labeled for people. */
 export function listDeployments(config: TestnetConfig): { label: string; id: string }[] {
 	return [
+		{ label: "ancora registry (profiles, memberships)", id: config.registryContract },
 		{ label: "USDC (BlendUSDC)", id: config.usdcToken },
 		{ label: "Reserve vault (DeFindex)", id: config.defindexVault },
 		{ label: "Passkey verifier", id: config.webauthnVerifier },

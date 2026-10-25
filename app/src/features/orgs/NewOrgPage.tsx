@@ -40,7 +40,9 @@ export function NewOrgPage() {
 				dataSource.createOrganization({ actorId: me.id, name, templateId, founderRoleId: roleId }),
 			{
 				signature: { kind: "passkey", title: `Create ${name.trim()}` },
-				success: "Organization created. Add your people next.",
+				success: onTestnet
+					? "Organization created on Stellar. Invite your people by their ancora ID next."
+					: "Organization created. Add your people next.",
 			},
 		);
 		if (result?.ok) {
@@ -54,7 +56,7 @@ export function NewOrgPage() {
 			title="New organization"
 			lead={
 				onTestnet
-					? "Creates a smart account on Stellar testnet. Your device will ask you to create a passkey for it; fees are sponsored."
+					? "Deploys the organization's own contract on Stellar testnet with you as its founder. Fees are sponsored; no signature needed for this step."
 					: "An account with your own approval rules, in a minute."
 			}
 		>

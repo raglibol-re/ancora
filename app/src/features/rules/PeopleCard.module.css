@@ -23,6 +23,14 @@
 	color: var(--color-text-muted);
 }
 
+.id {
+	display: block;
+	font-family: var(--font-mono, ui-monospace, monospace);
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+	overflow-wrap: anywhere;
+}
+
 .invite {
 	display: grid;
 	grid-template-columns: 2fr 1fr auto;

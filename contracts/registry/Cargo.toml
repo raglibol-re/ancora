@@ -1,0 +1,17 @@
+[package]
+name = "ancora-registry"
+description = "ancora registry: profiles of people (smart-account addresses) and which organizations they belong to"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lib]
+# "lib" lets the organization crate test against the real registry without a WASM import.
+crate-type = ["lib", "cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

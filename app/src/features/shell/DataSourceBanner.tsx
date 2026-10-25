@@ -21,10 +21,10 @@ export function DataSourceBanner() {
 		return (
 			<p className={`${styles.banner} ${styles.testnet}`}>
 				<span>
-					<strong>Stellar testnet:</strong> real transactions with test money. Approval rules run in
-					the app until they move on-chain. Viewing as {me.name}.
+					<strong>Stellar testnet:</strong> real transactions with test money; the rules run in your
+					organization's contract. Signed in as {me.name}.
 				</span>
-				<Link to="/app/settings#data-source">Change</Link>
+				<Link to="/app/me#data-source">Change</Link>
 			</p>
 		);
 	}
@@ -33,7 +33,7 @@ export function DataSourceBanner() {
 			<span>
 				<strong>Simulated:</strong> sample data, not on the Stellar testnet. Viewing as {me.name}.
 			</span>
-			<Link to="/app/settings#viewing-as">Switch person</Link>
+			<Link to="/app/me#viewing-as">Switch person</Link>
 		</p>
 	);
 }

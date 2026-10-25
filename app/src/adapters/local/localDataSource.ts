@@ -54,6 +54,7 @@ export type LocalDataSourceOptions = {
  */
 export class LocalDataSource implements DataSource {
 	readonly kind: DataSourceKind;
+	readonly identity = null;
 	readonly payments: "auto" | "manual";
 	readonly supportsReserve: boolean = true;
 	protected readonly store: WorkspaceStore;

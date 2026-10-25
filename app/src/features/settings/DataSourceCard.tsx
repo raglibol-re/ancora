@@ -9,7 +9,7 @@ const descriptions: Record<DataSourceKind, string> = {
 	sample:
 		"Sample data: realistic organizations that behave like the real thing, stored in this browser. Nothing is sent to the Stellar testnet.",
 	testnet:
-		"Stellar testnet: organization accounts are real smart accounts secured by passkeys on this device, fees are sponsored, balances and payments are real test USDC. Approval rules run in the app until they move on-chain.",
+		"Stellar testnet: you are a passkey-secured account on Stellar, each organization is its own contract that holds real test USDC and enforces the approval rules on-chain, and fees are sponsored.",
 };
 
 /** Follow the site default (set by the demo admin) or force sample data / the Stellar testnet. */

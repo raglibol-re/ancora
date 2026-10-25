@@ -51,7 +51,42 @@
 
 .iconLink {
 	display: inline-flex;
-	padding: var(--space-2);
+	padding: var(--space-1);
+	border-radius: var(--radius-pill);
+	color: var(--color-text-muted);
+}
+
+/* The person's own entry point, pinned to the bottom of the sidebar. */
+.profileLink {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin-top: auto;
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-md);
+	color: var(--color-text);
+	text-decoration: none;
+}
+
+.profileLink:hover {
+	background: var(--color-bg);
+}
+
+.profileText {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.profileName {
+	font-weight: var(--weight-semibold);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.profileHint {
+	font-size: var(--text-xs);
 	color: var(--color-text-muted);
 }
 

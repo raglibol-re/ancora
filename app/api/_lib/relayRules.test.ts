@@ -7,9 +7,12 @@ const WALLET = contract();
 const TOKEN = contract();
 const RECIPIENT = Keypair.random().publicKey();
 
+const ORG = contract();
+
 const context = (smartAccounts: string[] = [WALLET]): RelayContext => ({
 	accountWasmHash: "ab".repeat(32),
 	isSmartAccount: async (id) => smartAccounts.includes(id),
+	isTrustedTarget: async (id) => id === ORG,
 });
 
 function invoke(target: string, fn: string, args: xdr.ScVal[]) {
@@ -123,6 +126,25 @@ describe("validateSubmission", () => {
 		);
 	});
 
+	it("sponsors `execute` only towards ancora's contracts", async () => {
+		const toOrg = invoke(WALLET, "execute", [
+			new Address(ORG).toScVal(),
+			nativeToScVal("approve", { type: "symbol" }),
+			xdr.ScVal.scvVec([]),
+		]);
+		await expect(
+			validateSubmission(context(), submission(toOrg, [walletAuth(WALLET, toOrg)])),
+		).resolves.toBeUndefined();
+		const elsewhere = invoke(WALLET, "execute", [
+			new Address(TOKEN).toScVal(),
+			nativeToScVal("mint", { type: "symbol" }),
+			xdr.ScVal.scvVec([]),
+		]);
+		await expect(
+			validateSubmission(context(), submission(elsewhere, [walletAuth(WALLET, elsewhere)])),
+		).rejects.toThrow(/ancora organizations/);
+	});
+
 	it("refuses account functions outside the allowlist, such as upgrade", async () => {
 		const call = invoke(WALLET, "upgrade", []);
 		await expect(
@@ -131,7 +153,11 @@ describe("validateSubmission", () => {
 	});
 
 	it("refuses account calls whose authorization reaches into other contracts", async () => {
-		const call = invoke(WALLET, "execute", []);
+		const call = invoke(WALLET, "execute", [
+			new Address(ORG).toScVal(),
+			nativeToScVal("approve", { type: "symbol" }),
+			xdr.ScVal.scvVec([]),
+		]);
 		const nested = new xdr.SorobanAuthorizedInvocation({
 			function: xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
 				invoke(TOKEN, "transfer", transferArgs(WALLET)),

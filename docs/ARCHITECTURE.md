@@ -8,23 +8,25 @@
 flowchart LR
   subgraph Vercel["One Vercel project (root: app/)"]
     SPA["PWA: landing /, app /app/*, /admin"]
-    API["Vercel Functions /api/*<br/>(relay, test-money, health, admin)"]
+    API["Vercel Functions /api/*<br/>relay, create-organization, execute-request,<br/>test-money, upload-avatar, health, admin"]
   end
   Browser["Browser / installed PWA<br/>passkeys (WebAuthn)"] --> SPA
   SPA --> API
   SPA --> RPC["Stellar testnet RPC"]
   API --> RPC
-  API --> Blob["Vercel Blob (demo mode, logos)"]
-  RPC --> Contracts["Soroban contracts<br/>OZ smart account per org, policies, verifiers"]
+  API --> Blob["Vercel Blob (demo mode, profile pictures)"]
+  RPC --> Person["Person: OZ smart account<br/>(passkey signer) = ancora ID"]
+  RPC --> Org["Organization: ancora_organization<br/>USDC, roles, rules, requests"]
+  RPC --> Registry["ancora_registry<br/>profiles, organizations per person"]
 ```
 
 - **Static app**: Vite build served by Vercel; every path except `/api/*` rewrites to `index.html` so deep links survive refresh. A Workbox service worker precaches the shell for installability and offline start.
-- **Server-side** (`app/api/`): thin handlers calling adapters. Secrets live only in Vercel environment variables.
-- **Source of truth**: the Stellar testnet (accounts, rules, requests, balances). No database by default (see DECISIONS.md).
+- **Server-side** (`app/api/`): thin handlers calling adapters. Secrets live only in Vercel environment variables. The operator key sponsors fees, deploys organization contracts and executes due requests; it is never a member or signer anywhere.
+- **Source of truth**: the Stellar testnet (identities, organizations, rules, requests, balances). No database (see DECISIONS.md).
 
 ## Front-end layering
 
-`app/src/domain` (pure) ← `app/src/adapters` (outside world, behind interfaces) ← `app/src/features/*` (UI) using `app/src/ui` (presentational) and `app/src/styles/tokens.css` (design tokens).
+`app/src/domain` (pure) ← `app/src/adapters` (outside world, behind interfaces) ← `app/src/features/*` (UI) using `app/src/ui` (presentational) and `app/src/styles/tokens.css` (design tokens). `app/shared/` holds the few modules both the app and the Functions import (token balance read, policy document).
 
 ## Approval rules engine
 
@@ -38,37 +40,60 @@ Pure TypeScript in `app/src/domain/rules/`, no I/O:
 | `approvals.ts` | Slot matching: requester excluded, one slot per person, higher roles fill lower slots |
 | `requests.ts` | Request lifecycle: pending → scheduled (objection window) → ready → executed, or declined |
 | `governance.ts` | Member/rule/template changes, setup phase, template switching by rank, lock-out guard |
+| `policyDocument.ts` | The rules as one canonical document (`ancora: "policy/1"`) and its SHA-256 |
 
-The same behaviour is pinned by `contracts/test-vectors/approval-rules.json`, which the Soroban contracts will test against too (task 6).
+The same behaviour is pinned by `contracts/test-vectors/approval-rules.json`, which `contracts/organization/src/rules.rs` tests against too (`test_vectors.rs`). The TypeScript engine is what sample mode runs and what the UI uses for previews; on testnet the contract decides.
+
+## Identity model
+
+| Thing | On-chain | Created by | Signs with |
+|-------|----------|------------|------------|
+| Person ("ancora ID") | OpenZeppelin smart account, WebAuthn signer = the person's passkey public key | smart-account-kit in the browser, deterministic address from the credential id | The passkey on the device (private key never leaves the authenticator) |
+| Organization | `ancora_organization` instance: USDC balance, roles (OZ AccessControl, admin = the contract itself), policy + policy-document hash, requests | The operator (`/api/create-organization`) with the founder as its only member | Nobody: the contract acts when its own rules are satisfied |
+| Registry | one `ancora_registry`: profile per address (name, picture URL), organizations per address, set of registered organizations | The setup script once | Profile: the person; memberships: the organization contract; registration: the operator |
+
+One passkey, one person, any number of positions: the same address is a board member here and a treasurer there. Membership is a role grant on the organization contract plus an index entry in the registry, so a new device finds everything from the passkey alone (`connectWallet` → `orgs_of` → each organization's state).
+
+## Contracts
+
+`contracts/` (Rust, soroban-sdk 28, stellar-access 0.8):
+
+- **`organization`**: `__constructor(registry, token, founder, founder_role, template, name, policy_hash)`; views `info`, `policy`, `policy_hash`, `members`, `is_setup_phase`, `request_count`, `requests(offset, limit)`, `request`, `has_paid`, `available`; commands `propose_payment`, `propose_change`, `change_directly` (founder, setup phase), `approve`, `seal`, `decline`, `execute`. `rules.rs` is the pure engine (same semantics as the TypeScript one), `templates.rs` the three templates, `types.rs` the errors (1–21) and data types. Requests snapshot their evaluation; a fully approved request with an objection window becomes `Scheduled` with `execute_after`, otherwise executes at once (token transfer with contract-invoker auth, or the membership/rule change plus `registry.set_membership`). Events: `RequestEvent` per state change.
+- **`registry`**: `register_org` (operator), `set_membership` (the organization itself), `orgs_of`, `is_registered`, `set_profile(who, name, avatar)` (the person), `profile`.
+- Shared with the kit's testnet deployments: the OZ smart account WASM, WebAuthn and Ed25519 verifiers, threshold and spending-limit policies (unused by the organization contract so far).
+
+**Policy document.** The app builds `{ ancora: "policy/1", template, roles, unit: "cent", tiers, sealThreshold, newRecipientApprovals }` with sorted keys and hashes it (SHA-256). The hash goes into the constructor and into every `UpdatePolicy` change; the Rules page recomputes it from the contract's state and shows whether it matches. The design follows stellar-registry/perch (declarative policy IR lowered onto OZ accounts) without depending on it; per-call constraints can be added as an IR layer later, cumulative limits come from OZ `spending_limit` installed on the organization's context (task 9).
 
 ## Data sources
 
-Features never talk to the outside world directly. They use one `DataSource` interface (`app/src/domain/dataSource.ts`): a snapshot of the person's workspace plus commands (request payment, approve, seal, decline, propose change, move to/from Reserve, set logo, create organization).
+Features never talk to the outside world directly. They use one `DataSource` interface (`app/src/domain/dataSource.ts`): a snapshot of the person's workspace plus commands, and an optional `identity` (sign-in, sign-out, profile) for sources where the person is real.
 
 | Implementation | Where | Status |
 |----------------|-------|--------|
-| `SampleDataSource` | `app/src/adapters/sample/` | Labeled sample data; every command runs through the domain engine; persisted in browser storage. Stays as the demo fallback. |
-| `TestnetDataSource` | `app/src/adapters/testnet/` (lazy-loaded chunk) | Real on Stellar testnet: creating an organization deploys an OpenZeppelin smart account through smart-account-kit 0.8.0 with a passkey signer; balances are on-chain USDC; a fully approved payment is signed by a signer's passkey and sent. Public IDs come from `app/.env.testnet` (Vite `--mode testnet`). Shares `LocalDataSource`/`WorkspaceStore` with the sample adapter for rules, requests and history. |
+| `SampleDataSource` | `app/src/adapters/sample/` | Labeled sample data; every command runs through the domain engine; persisted in browser storage; "Viewing as" instead of sign-in. Stays as the demo fallback. |
+| `TestnetDataSource` | `app/src/adapters/testnet/` (lazy-loaded chunk) | Real on Stellar testnet. Reads: registry `orgs_of`, each organization's `info/policy/members/requests/available/is_setup_phase/policy_hash` and USDC balance, profiles; all by simulation (`readContract.ts`), mapped by `mapOrganization.ts`, refreshed every 30 s. Commands: `kit.executeAndSubmit(organization, fn, args)` through the person's account (passkey prompt, fees sponsored by `/api/relay`); organization creation, execution of due requests and picture uploads through the Functions. |
 
-**Choosing the source.** On load the app asks `/api/health` (site-wide demo mode from Vercel Blob, plus whether the Stellar RPC answers; 4 s timeout). `resolveDataSource` combines that with the person's own preference (follow the site default, sample, or testnet): sample data never waits for the network; the testnet is used only when the build has its configuration and the RPC is reachable, otherwise sample data is shown with the reason in the banner and a retry. The demo admin (`/admin`, passphrase) sets the site-wide default and sees the health checks.
+**Choosing the source.** On load the app asks `/api/health` (site-wide demo mode from Vercel Blob, plus whether the Stellar RPC answers; 4 s timeout). `resolveDataSource` combines that with the person's own preference: sample data never waits for the network; the testnet is used only when the build has its configuration and the RPC is reachable, otherwise sample data is shown with the reason in the banner and a retry. On testnet the app then restores the passkey session or shows the sign-in page (create a passkey = create your account; sign in = reuse one; or look around with sample data).
 
-UI state lives in `features/workspace` (snapshot via `useSyncExternalStore`, preferences, active org). `useCommand` gives every action the same UX: signature prompt → command → plain-language success or error.
-
-## Contracts *(planned)*
-
-One OpenZeppelin smart account per organization; everything else is a module on it: signers (passkeys, ML-DSA via external verifier), policies (approval rules, spending limits), connected contracts (DeFindex vault, confidential token). Shared stateless verifiers; multi-tenant policies keyed by smart account + context rule.
+UI state lives in `features/workspace` (snapshot and identity via `useSyncExternalStore`, preferences, active org). `useCommand` gives every action the same UX: signature prompt (simulated only in sample mode and for the seal) → command → plain-language success or error. `features/profile` is the person's page, `features/settings` the organization's.
 
 ## Auth flows
 
-- **Account creation:** smart-account-kit creates a passkey (RP ID = the production hostname) and deploys the OZ smart account with that passkey as its `External` WebAuthn signer. The deployment is salted from the credential id, so the address is reproducible.
-- **Payments:** the kit builds the USDC `transfer` as a direct token call authorized by the smart account; the passkey signs the auth digest; the smart account's `__check_auth` verifies it on-chain. Nobody ever holds XLM.
-- **Fee sponsoring:** the kit POSTs `{ func, auth }` to `/api/relay`. The Function re-validates (allowlisted WASM/functions, authorizations only from the smart account or the kit's deployer, exact match between `func` and the authorized call, simulated fee ≤ cap) and only then submits with the operator key as the fee-paying source. The operator signs the envelope, never an authorization.
-- **Approvals (until task 6):** approving, declining and proposing changes ask for a passkey to confirm presence; the rules engine records the outcome in the app. On-chain enforcement through an OZ policy is the next step.
+- **Sign-up:** smart-account-kit creates a passkey (RP ID = the production hostname) and deploys the OZ smart account with that passkey as its WebAuthn signer; the address is derived from the credential id, so one passkey always maps to one account. The person then writes their profile to the registry (`set_profile`, signed with the passkey).
+- **Sign-in:** `connectWallet` restores the stored session silently, or prompts for a passkey on this device; the app reads the person's organizations from the registry.
+- **Organization commands** (`propose_payment`, `approve`, `seal`, `decline`, `propose_change`, `change_directly`): the person's account calls the organization (`execute(target, fn, args)`); the organization calls `member.require_auth()`, which Soroban treats as authorized because the account is the direct invoker; the passkey signs the account's auth entry; `__check_auth` verifies it on-chain. The organization contract applies its rules; the app only mirrors them for previews and error text.
+- **Payments:** when a request is satisfied (and its objection window, if any, has passed), the organization transfers USDC from itself; `execute` is permissionless, so "Send now" lets the operator trigger it for due requests (`/api/execute-request`).
+- **Fee sponsoring:** the kit POSTs `{ func, auth }` to `/api/relay`. The Function re-validates (allowlisted WASM/functions, `execute` only towards ancora contracts, authorizations only from the smart account, exact match between `func` and the authorized call, simulated fee ≤ cap) and only then submits with the operator key as the fee-paying source. The operator signs the envelope, never an authorization.
+- **Operator calls** (create organization, register it, test money, execute due requests): plain invocations signed by the operator key; each checks the target is an ancora contract (WASM hash) and nothing else.
 
 ### Testnet rent (why fees are high right now)
 
 Measured 25 Oct 2026: testnet's live Soroban state is above its 4 GB rent target (4.10 GB and rising), so rent is 2,271,304 stroops/KB (mainnet: 1,000). The OZ smart account extends every persistent entry to a 30-day TTL on each read (`SMART_ACCOUNT_EXTEND_AMOUNT`). Together: deploy 22 XLM, first deposit 22 XLM, first passkey payment 46 XLM on testnet; the same on mainnet is well under 1 XLM. The relayer therefore sponsors from a Friendbot-refilled operator key instead of OpenZeppelin Relayer Channels (100 XLM/day cap).
 
-## Multi-tenancy *(planned)*
+## Recovery *(planned, task 17/18)*
 
-One person, many organizations, a role per organization; full isolation between orgs.
+A dedicated recovery contract per organization holds guardians and a threshold; guardians sign claims there, a waiting period runs, any current signer can cancel, then the claim swaps or adds a signer. Only the recovery contract is authorized on the account for that, through a `CallContract` context rule, so guardians never hold a rule on the account itself. Recovery devices (a second passkey on the person's own account) are added by the person's existing passkey after a QR pairing; see ROADMAP.md.
+
+## Multi-tenancy
+
+One person, many organizations, a role per organization; full isolation between organizations (separate contracts, separate balances); the registry is the only shared index and holds no money.
