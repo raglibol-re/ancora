@@ -48,6 +48,7 @@ import {
 	declineRequest,
 	sealRequest,
 } from "../../domain/rules/requests.ts";
+import { LocalLifeline } from "./localLifeline.ts";
 import { type KeyValueStorage, notFound, WorkspaceStore } from "./workspaceStore.ts";
 
 export const notAllowed = (message: string) => err(ruleError("not-allowed", message));
@@ -76,6 +77,7 @@ export class LocalDataSource implements DataSource {
 	readonly identity = null;
 	readonly funding = null;
 	readonly ramps = null;
+	readonly lifeline: LocalLifeline;
 	readonly discussions: DiscussionSupport = {
 		post: (orgId, requestId, actorId, entry) =>
 			this.mutateThread(orgId, requestId, (account, thread) => {
@@ -138,6 +140,37 @@ export class LocalDataSource implements DataSource {
 			clock: this.clock,
 			seed: () => options.seed(this.clock()),
 		});
+		this.lifeline = new LocalLifeline({
+			clock: this.clock,
+			handOver: (old, successor) => this.handOver(old, successor),
+		});
+	}
+
+	/** Moves every position of `old` to `successor` (Lifeline); the successor joins the people. */
+	private handOver(old: PersonId, successor: PersonId): string[] {
+		const current = this.store.getSnapshot();
+		const recovered: string[] = [];
+		const accounts = current.accounts.map((account) => {
+			if (!account.org.members.some((m) => m.personId === old)) return account;
+			recovered.push(account.org.id);
+			return {
+				...account,
+				org: {
+					...account.org,
+					founderId: account.org.founderId === old ? successor : account.org.founderId,
+					members: account.org.members.map((m) =>
+						m.personId === old ? { ...m, personId: successor } : m,
+					),
+				},
+			};
+		});
+		const known = current.people.some((p) => p.id === successor);
+		const oldName = current.people.find((p) => p.id === old)?.name ?? "Recovered";
+		const people = known
+			? current.people
+			: [...current.people, { id: successor, name: `${oldName} (new pass)` }];
+		this.store.replace({ ...current, people, accounts });
+		return recovered;
 	}
 
 	subscribe = (listener: () => void) => this.store.subscribe(listener);

@@ -13,6 +13,11 @@
 	color: var(--color-negative);
 }
 
+.protected {
+	font-weight: var(--weight-semibold);
+	color: var(--color-accent-text);
+}
+
 .form {
 	display: flex;
 	flex-direction: column;

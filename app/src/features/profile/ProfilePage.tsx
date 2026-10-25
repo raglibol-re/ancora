@@ -7,6 +7,10 @@ import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { InstallHint } from "../install/InstallHint.tsx";
+import { GuardianCard } from "../lifeline/GuardianCard.tsx";
+import { LifelineCard } from "../lifeline/LifelineCard.tsx";
+import { RecoverPassCard } from "../lifeline/RecoverPassCard.tsx";
+import { useLifeline } from "../lifeline/useLifeline.ts";
 import { roleLabel } from "../requests/describe.ts";
 import { DataSourceCard } from "../settings/DataSourceCard.tsx";
 import type { ThemePreference } from "../workspace/preferences.ts";
@@ -23,6 +27,7 @@ export function ProfilePage() {
 	const { dataSource, me, myAccounts, workspace, preferences, updatePreferences } = useWorkspace();
 	const navigate = useNavigate();
 	const identity = dataSource.identity;
+	const lifeline = useLifeline();
 
 	return (
 		<Page title="You" lead="One pass for every organization you work with.">
@@ -106,9 +111,19 @@ export function ProfilePage() {
 							<div>
 								<dt>Recovery</dt>
 								<dd>
-									<span className={styles.warn}>Not protected yet</span> — this passkey is the only
-									key to your account. A recovery device and guardians ("Lifeline") are next on the
-									roadmap; until then, keep this device safe.
+									{lifeline.overview?.plan ? (
+										<>
+											<span className={styles.protected}>Protected by Lifeline</span>:{" "}
+											{lifeline.overview.plan.threshold} of{" "}
+											{lifeline.overview.plan.guardians.length} guardians can confirm a new pass for
+											you. Details below.
+										</>
+									) : (
+										<>
+											<span className={styles.warn}>Not protected yet</span>: this passkey is the
+											only key to your positions. Name guardians in Lifeline below.
+										</>
+									)}
 								</dd>
 							</div>
 						</dl>
@@ -130,6 +145,14 @@ export function ProfilePage() {
 					</p>
 				)}
 			</Card>
+
+			<LifelineCard
+				overview={lifeline.overview}
+				error={lifeline.error}
+				onChanged={lifeline.reload}
+			/>
+			<GuardianCard overview={lifeline.overview} onChanged={lifeline.reload} />
+			<RecoverPassCard />
 
 			<Card title="Appearance">
 				<Segmented<ThemePreference>

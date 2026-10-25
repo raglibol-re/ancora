@@ -74,6 +74,10 @@ export function SignInPage({ identity, onUseSampleData }: SignInPageProps) {
 				<p className={styles.note}>
 					Stellar testnet with test money. Passkeys are tied to this website's domain.
 				</p>
+				<p className={styles.note}>
+					Lost your pass? Create a new one above, then open Your pass → "Recover an old pass": the
+					guardians you named confirm the new pass and your positions move over.
+				</p>
 			</div>
 			<button type="button" className={styles.link} onClick={onUseSampleData}>
 				Look around with sample data instead

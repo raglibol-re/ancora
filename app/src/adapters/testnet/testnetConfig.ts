@@ -24,6 +24,8 @@ export type TestnetConfig = {
 	orgWasmHash: string;
 	/** ancora's ML-DSA-44 verifier (OpenZeppelin external-verifier interface) for the security seal. */
 	sealVerifier: string;
+	/** ancora's Lifeline recovery contract (guardians, claims, handover of positions). */
+	recoveryContract: string;
 	/** "Symbol:C…:USD,…": the stablecoins an organization may accept (see parseAssetOptions). */
 	orgAssets: string;
 	/** Home domain of the SEP-24 anchor for bank deposits and withdrawals (the SDF test anchor). */
@@ -49,6 +51,7 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	registryContract: "VITE_REGISTRY_CONTRACT",
 	orgWasmHash: "VITE_ORG_WASM_HASH",
 	sealVerifier: "VITE_SEAL_VERIFIER",
+	recoveryContract: "VITE_RECOVERY_CONTRACT",
 	orgAssets: "VITE_ORG_ASSETS",
 	anchorHomeDomain: "VITE_ANCHOR_HOME_DOMAIN",
 };
@@ -86,6 +89,7 @@ export function listDeployments(config: TestnetConfig): { label: string; id: str
 	return [
 		{ label: "ancora registry (profiles, memberships)", id: config.registryContract },
 		{ label: "ancora seal verifier (ML-DSA-44, quantum-safe)", id: config.sealVerifier },
+		{ label: "ancora Lifeline recovery (guardians, claims)", id: config.recoveryContract },
 		...parseAssetOptions(config.orgAssets).map((asset) => ({
 			label: `${asset.symbol} token (${asset.currency})`,
 			id: asset.token,

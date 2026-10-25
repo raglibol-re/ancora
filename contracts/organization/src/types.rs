@@ -210,6 +210,8 @@ pub struct OrgInfo {
     /// another currency take the strictest tier (see `rules::evaluate_payment`).
     pub base_currency: Symbol,
     pub registry: Address,
+    /// ancora's Lifeline contract: the only caller of `recover_member`.
+    pub recovery: Address,
     pub founder: Address,
     /// Highest role first.
     pub roles: Vec<Symbol>,

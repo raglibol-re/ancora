@@ -88,6 +88,15 @@ pub struct RequestEvent {
     pub status: u32,
 }
 
+/// Emitted when a Lifeline recovery hands a position to a new pass.
+#[contractevent]
+#[derive(Clone, Debug, PartialEq)]
+pub struct MemberRecovered {
+    #[topic]
+    pub old: Address,
+    pub new: Address,
+}
+
 #[contract]
 pub struct Organization;
 
@@ -97,13 +106,15 @@ impl Organization {
     /// rules come from the template; `policy_hash` is the SHA-256 of its canonical policy
     /// document. The rules are written in `base_currency`; `assets` are the tokens it accepts
     /// (at least one). The contract is its own AccessControl admin, so positions change only
-    /// through its governance; the deployer (operator) holds no role.
+    /// through its governance; the deployer (operator) holds no role. `recovery` is ancora's
+    /// Lifeline contract, the only caller allowed to hand a position to a person's new pass.
     ///
     /// Auth: none (deployment).
     #[allow(clippy::too_many_arguments)]
     pub fn __constructor(
         e: &Env,
         registry: Address,
+        recovery: Address,
         base_currency: Symbol,
         assets: Vec<AssetSpec>,
         founder: Address,
@@ -139,6 +150,7 @@ impl Organization {
             template,
             base_currency,
             registry,
+            recovery,
             founder,
             roles: blueprint.roles,
             created_at: e.ledger().timestamp(),
@@ -245,6 +257,48 @@ impl Organization {
             }
         }
         result
+    }
+
+    /// Hands `old`'s position and spending limit to `new`: a Lifeline recovery, after the
+    /// person's guardians confirmed the new pass and the waiting period passed. The founder
+    /// flag moves along so a recovered founder can finish setting up. Money never moves.
+    ///
+    /// Auth: the recovery contract named at deployment.
+    pub fn recover_member(e: &Env, old: Address, new: Address) -> Result<(), Error> {
+        let mut info = load_info(e);
+        info.recovery.require_auth();
+        extend_instance(e);
+        let members = ranked(e, &info.roles);
+        let rank = rules::rank_of_member(&members, &old).ok_or(Error::NotMember)?;
+        if rules::rank_of_member(&members, &new).is_some() {
+            return Err(Error::AlreadyMember);
+        }
+        let role = info.roles.get(rank).ok_or(Error::UnknownRole)?;
+        let me = e.current_contract_address();
+        // Grant first, then revoke: the role's member list then updates an entry in place instead
+        // of deleting and re-creating the same storage key within one call.
+        access_control::grant_role_no_auth(e, &new, &role, &me);
+        revoke_current_role(e, &info, &old);
+        let old_limit = DataKey::Limit(old.clone());
+        if let Some(limit) = e
+            .storage()
+            .persistent()
+            .get::<DataKey, SpendingLimit>(&old_limit)
+        {
+            e.storage()
+                .persistent()
+                .set(&DataKey::Limit(new.clone()), &limit);
+            e.storage().persistent().remove(&old_limit);
+        }
+        if info.founder == old {
+            info.founder = new.clone();
+            e.storage().instance().set(&DataKey::Info, &info);
+        }
+        let registry = RegistryClient::new(e, &info.registry);
+        registry.set_membership(&me, &old, &false);
+        registry.set_membership(&me, &new, &true);
+        MemberRecovered { old, new }.publish(e);
+        Ok(())
     }
 
     /// Whether only the founder could act: nobody else can satisfy the strictest tier yet, so

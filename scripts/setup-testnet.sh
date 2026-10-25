@@ -217,6 +217,7 @@ ensure_ancora_contracts() {
 	local wasm_dir="$ROOT/contracts/target/wasm32v1-none/release"
 	REGISTRY_CONTRACT="$(sed -n 's/^VITE_REGISTRY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	SEAL_VERIFIER="$(sed -n 's/^VITE_SEAL_VERIFIER=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	RECOVERY_CONTRACT="$(sed -n 's/^VITE_RECOVERY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	ORG_WASM_HASH="$(sed -n 's/^VITE_ORG_WASM_HASH=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	if $CHECK_ONLY; then
 		[[ -n "$ORG_WASM_HASH" ]] && ok "organization WASM $ORG_WASM_HASH" || problem "organization WASM hash missing"
@@ -229,6 +230,11 @@ ensure_ancora_contracts() {
 			ok "seal verifier $SEAL_VERIFIER"
 		else
 			problem "seal verifier missing (testnet reset?)"
+		fi
+		if [[ -n "$RECOVERY_CONTRACT" ]] && contract_exists "$RECOVERY_CONTRACT"; then
+			ok "recovery (Lifeline) $RECOVERY_CONTRACT"
+		else
+			problem "recovery contract missing (testnet reset?)"
 		fi
 		return
 	fi
@@ -249,6 +255,13 @@ ensure_ancora_contracts() {
 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the seal verifier."
 	fi
 	ok "seal verifier $SEAL_VERIFIER"
+	# Lifeline: one recovery contract per registry; organizations name it at deployment.
+	if [[ -z "$RECOVERY_CONTRACT" ]] || ! contract_exists "$RECOVERY_CONTRACT"; then
+		RECOVERY_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_recovery.wasm" \
+			--source "$DEPLOYER" --network "$NETWORK" -- --registry "$REGISTRY_CONTRACT" 2>/dev/null)" ||
+			die "Could not deploy the recovery contract."
+	fi
+	ok "recovery (Lifeline) $RECOVERY_CONTRACT"
 }
 
 write_env_file() {
@@ -283,6 +296,7 @@ VITE_RELAYER_URL=$RELAYER_URL
 VITE_REGISTRY_CONTRACT=$REGISTRY_CONTRACT
 VITE_ORG_WASM_HASH=$ORG_WASM_HASH
 VITE_SEAL_VERIFIER=$SEAL_VERIFIER
+VITE_RECOVERY_CONTRACT=$RECOVERY_CONTRACT
 
 # Bank deposits and withdrawals (SEP-24): the anchor whose stellar.toml the app reads.
 VITE_ANCHOR_HOME_DOMAIN=$ANCHOR_HOME_DOMAIN
@@ -341,6 +355,7 @@ sync_vercel() {
 		vercel_env ORG_WASM_HASH "$ORG_WASM_HASH"
 		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"
 		vercel_env SEAL_VERIFIER "$SEAL_VERIFIER"
+		vercel_env RECOVERY_CONTRACT "$RECOVERY_CONTRACT"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
 		vercel_env ADMIN_PASSPHRASE "$(admin_passphrase)" secret
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.

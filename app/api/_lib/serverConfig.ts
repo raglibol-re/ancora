@@ -12,6 +12,8 @@ export type ServerConfig = {
 	/** Set by scripts/setup-testnet.sh once ancora's own contracts are deployed; empty before. */
 	orgWasmHash: string;
 	registryContract: string;
+	/** ancora's Lifeline recovery contract; organizations name it at deployment. */
+	recoveryContract: string;
 	/** The stablecoins an organization may accept, keyed by token address. */
 	orgAssets: ReadonlyMap<string, OrgAsset>;
 };
@@ -52,6 +54,7 @@ export function serverConfig(): ServerConfig {
 		usdcToken: required("USDC_TOKEN"),
 		orgWasmHash: (process.env.ORG_WASM_HASH ?? "").toLowerCase(),
 		registryContract: process.env.REGISTRY_CONTRACT ?? "",
+		recoveryContract: process.env.RECOVERY_CONTRACT ?? "",
 		orgAssets: parseOrgAssets(process.env.ORG_ASSETS ?? ""),
 		allowedOrigins: new Set(
 			required("ALLOWED_ORIGINS")

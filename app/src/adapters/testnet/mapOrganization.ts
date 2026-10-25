@@ -345,6 +345,7 @@ export function mapOrganization(
 			contractId: snapshot.contractId,
 			setupPhase: snapshot.setupPhase,
 			policyHash: snapshot.policyHash,
+			supportsRecovery: Boolean(snapshot.info.recovery),
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

@@ -54,6 +54,8 @@ export type OnchainAccount = {
 	setupPhase: boolean;
 	/** Hex SHA-256 of the policy document the active rules were compiled from. */
 	policyHash: string;
+	/** Built with the Lifeline recovery contract: positions can be handed to a new pass. */
+	supportsRecovery: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */

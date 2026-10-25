@@ -15,11 +15,13 @@ import type {
 	FundingSupport,
 	Identity,
 	IdentitySupport,
+	LifelineSupport,
 	PaymentInput,
 	ProfileInput,
 	RampSupport,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
+import type { RecoveryPlan } from "../../domain/lifeline.ts";
 import type { Cents } from "../../domain/money.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
@@ -28,6 +30,7 @@ import { rulesHash } from "../../domain/rules/policyDocument.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
+import { readClaimStatus, readOverview, recoveryMessage, setPlanArgs } from "./lifelineContract.ts";
 import { CONTRACT_ERROR_MESSAGES, mapOrganization } from "./mapOrganization.ts";
 import {
 	type Profile,
@@ -63,6 +66,28 @@ export class TestnetDataSource implements DataSource {
 	readonly availableAssets: readonly AssetOption[];
 	readonly funding: FundingSupport;
 	readonly ramps: RampSupport;
+	readonly lifeline: LifelineSupport = {
+		overview: (person) => this.readLifeline((c) => readOverview(c, c.recoveryContract, person)),
+		claimOf: (person) => this.readLifeline((c) => readClaimStatus(c, c.recoveryContract, person)),
+		setPlan: (person, plan: RecoveryPlan) =>
+			this.invokeRecovery("set_plan", setPlanArgs(person, plan)),
+		clearPlan: (person) => this.invokeRecovery("clear_plan", [address(person)]),
+		startClaim: (person, guardian, successor) =>
+			this.invokeRecovery("start_claim", [address(person), address(guardian), address(successor)]),
+		approveClaim: (person, guardian) =>
+			this.invokeRecovery("approve_claim", [address(person), address(guardian)]),
+		cancelClaim: (person) => this.invokeRecovery("cancel_claim", [address(person)]),
+		finishClaim: async (person) => {
+			const result = await this.post<{
+				successor: string | null;
+				recovered: string[];
+				skipped: string[];
+			}>("/api/finish-recovery", { person });
+			if (!result.ok) return result;
+			await this.refresh();
+			return ok({ ...result.value, successor: result.value.successor ?? "" });
+		},
+	};
 	readonly discussions: DiscussionSupport = {
 		post: (orgId, requestId, actorId, entry) =>
 			this.discuss({ action: "post", org: orgId, requestId, person: actorId, ...entry }),
@@ -506,15 +531,34 @@ export class TestnetDataSource implements DataSource {
 		target: string,
 		fn: string,
 		args: xdr.ScVal[],
+		describeContractError: (message: string) => string = contractMessage,
 	): Promise<Result<void, RuleError>> {
 		try {
 			const result = await this.kit.executeAndSubmit(target, fn, args);
-			if (!result.success) return failed(contractMessage(result.error.message));
+			if (!result.success) return failed(describeContractError(result.error.message));
 		} catch (error) {
 			return failed(describeKitError(error, "done"));
 		}
 		await this.refresh();
 		return ok(undefined);
+	}
+
+	private invokeRecovery(fn: string, args: xdr.ScVal[]): Promise<Result<void, RuleError>> {
+		return this.invoke(this.config.recoveryContract, fn, args, recoveryMessage);
+	}
+
+	private async readLifeline<T>(
+		reader: (config: TestnetConfig) => Promise<T>,
+	): Promise<Result<T, RuleError>> {
+		try {
+			return ok(await reader(this.config));
+		} catch (error) {
+			return failed(
+				error instanceof Error
+					? `Lifeline couldn't be read right now. ${error.message}`
+					: "Lifeline couldn't be read right now.",
+			);
+		}
 	}
 
 	private async post<T = unknown>(

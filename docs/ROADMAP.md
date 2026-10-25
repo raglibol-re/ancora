@@ -23,8 +23,8 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 14 | Confidential pot + auditor view stub | Documented only (no placeholder UI): see Later |
 | 15 | Integrate the Claude Design package | Done (brand, icons, tokens) |
 | 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Done (notifications, attachments and signed entries: later) |
-| 17 | Recovery ("Lifeline"): guardians, claims with a waiting period, cancel by any signer (see below) | Planned, design accepted 25 Oct |
-| 18 | Recovery device in onboarding: second device, hardware key, pairing by QR (see below) | Planned, design accepted 25 Oct |
+| 17 | Recovery ("Lifeline"): guardians, claims with a waiting period, cancel by the current pass (see below) | Done for the position handover (see "as built"); inactivity path and succession plans: next |
+| 18 | Recovery device in onboarding: second device, hardware key, pairing by QR (see below) | Partly: the profile shows the recovery status and Lifeline; a second passkey on the same account and QR pairing are next |
 | — | Submission polish: README with a short GIF of the flow, screenshots, demo video link | Before the deadline |
 
 ### Task 6 as built: one passkey per person, one contract per organization
@@ -71,7 +71,11 @@ Approvers decide better when the reasons are visible next to the request.
 - **Storage:** the text is off-chain (not money, should stay private to the org). It goes behind the `DataSource` interface: sample adapter first, then a minimal Vercel-integrated store justified in DECISIONS.md. Optionally each approval records the hash of the discussion it was given on, so later readers can prove what an approver saw.
 - **Later:** attachments (receipts, quotes) via Vercel Blob, @mentions, a requester-written decision summary.
 
-### Task 17: recovery ("Lifeline")
+### Task 17 as built: Lifeline hands positions to a new pass
+
+The person's smart account itself is not recovered (that needs a contract signer on the OpenZeppelin account, which the kit's accounts don't accept yet); the positions are. `contracts/recovery` keeps, per person, a plan (one to five guardians, threshold, waiting period of at least a minute, two minutes to thirty days in the app) and at most one open claim (successor, confirmations, ready time). A guardian starts the claim with the person's new ancora ID, other guardians confirm, the person's old pass can cancel at any time before the end; `finish_claim` (no signature needed, ancora's server submits it) asks every registered organization built with the recovery contract to `recover_member(old, new)`: role, spending limit and founder flag move, the registry index follows. Money never moves; approvals already given stay under the old ID as history. Organizations deployed before this exist without `recover_member` and are shown as not recoverable. In the app: the Lifeline card on the pass page (status, plan editor, open-claim warning with cancel, banner across the app), "People you protect" for guardians, "Recover an old pass" for the new pass. Sample data simulates the same lifecycle.
+
+### Task 17: recovery ("Lifeline"), the full design
 
 Continuity for organizations when keys are lost or a person dies or is incapacitated. Recovery can **restore control, never move money**, and can **always be cancelled by any current signer**.
 

@@ -28,6 +28,7 @@ export default apiHandler("POST", async (request) => {
 			isSmartAccount: (contractId) => isSmartAccount(settings, contractId),
 			isTrustedTarget: async (contractId) =>
 				(settings.registryContract !== "" && contractId === settings.registryContract) ||
+				(settings.recoveryContract !== "" && contractId === settings.recoveryContract) ||
 				(settings.orgWasmHash !== "" && (await isOrganization(settings, contractId))),
 		},
 		submission,

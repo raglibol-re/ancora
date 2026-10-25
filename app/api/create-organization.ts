@@ -75,11 +75,15 @@ export default apiHandler("POST", async (request) => {
 		throw new RequestError("Only an ancora account can found an organization.", 403);
 	}
 
+	if (!settings.recoveryContract) {
+		throw new RequestError("Server is missing the RECOVERY_CONTRACT setting.", 500);
+	}
 	const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
 	const salt = randomBytes(32);
 	const contractId = deployedContractId(settings.networkPassphrase, operator.publicKey(), salt);
 	const constructorArgs = [
 		new Address(settings.registryContract).toScVal(),
+		new Address(settings.recoveryContract).toScVal(),
 		symbol(baseCurrency),
 		xdr.ScVal.scvVec(accepted.map(assetSpec)),
 		new Address(founder).toScVal(),

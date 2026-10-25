@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet } from "react-router";
 import { inboxFor } from "../../domain/inbox.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { BrandMark } from "../../ui/BrandMark.tsx";
+import { ClaimBanner } from "../lifeline/ClaimBanner.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AppShell.module.css";
 import { DataSourceBanner } from "./DataSourceBanner.tsx";
@@ -30,6 +31,7 @@ export function AppShell() {
 	return (
 		<div className={styles.frame}>
 			<DataSourceBanner />
+			<ClaimBanner />
 			<div className={styles.shell}>
 				<aside className={styles.sidebar}>
 					<Link to="/" className={styles.brandLink}>

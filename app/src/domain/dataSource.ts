@@ -1,6 +1,7 @@
 import type { Workspace } from "./account.ts";
 import type { Budget } from "./budgets.ts";
 import type { EntryKind, Reaction } from "./discussion.ts";
+import type { ClaimStatus, LifelineOverview, RecoveryPlan } from "./lifeline.ts";
 import type { Cents, Currency } from "./money.ts";
 import type { Result } from "./result.ts";
 import type { GovernanceChange } from "./rules/governance.ts";
@@ -87,6 +88,29 @@ export interface RampSupport {
 	transaction(wallet: string, id: string): Promise<Result<AnchorTransaction, RuleError>>;
 }
 
+/**
+ * Lifeline recovery (see domain/lifeline.ts). Commands are signed by `actorId` where the contract
+ * requires it: the person for their plan and for cancelling, a guardian for starting and
+ * confirming; finishing needs no signature and is submitted by ancora's server.
+ */
+export interface LifelineSupport {
+	overview(personId: PersonId): Promise<Result<LifelineOverview, RuleError>>;
+	/** Plan and claim of any pass, for the new pass that watches its own recovery. */
+	claimOf(personId: PersonId): Promise<Result<ClaimStatus, RuleError>>;
+	setPlan(personId: PersonId, plan: RecoveryPlan): Promise<Result<void, RuleError>>;
+	clearPlan(personId: PersonId): Promise<Result<void, RuleError>>;
+	startClaim(
+		personId: PersonId,
+		guardianId: PersonId,
+		successorId: PersonId,
+	): Promise<Result<void, RuleError>>;
+	approveClaim(personId: PersonId, guardianId: PersonId): Promise<Result<void, RuleError>>;
+	cancelClaim(personId: PersonId): Promise<Result<void, RuleError>>;
+	finishClaim(
+		personId: PersonId,
+	): Promise<Result<{ successor: PersonId; recovered: string[]; skipped: string[] }, RuleError>>;
+}
+
 /** Discussion on approval requests; the entries themselves arrive with the workspace snapshot. */
 export interface DiscussionSupport {
 	post(
@@ -151,6 +175,8 @@ export interface DataSource {
 	readonly funding: FundingSupport | null;
 	/** Bank deposits and withdrawals through a Stellar anchor; null for sample data. */
 	readonly ramps: RampSupport | null;
+	/** Lifeline recovery: guardians, claims, handover of positions (simulated on sample data). */
+	readonly lifeline: LifelineSupport;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

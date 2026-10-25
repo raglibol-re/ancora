@@ -24,5 +24,11 @@ export class SampleDataSource extends LocalDataSource {
 			clock,
 			newId,
 		});
+		// Inês keeps a plan: Tomás and Marta can confirm a new pass after two minutes.
+		this.lifeline.seedPlan("ines", {
+			guardians: ["tomas", "marta"],
+			threshold: 2,
+			waitSeconds: 120,
+		});
 	}
 }

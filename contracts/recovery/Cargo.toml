@@ -1,0 +1,16 @@
+[package]
+name = "ancora-recovery"
+description = "ancora Lifeline: guardians confirm a person's new pass; after a waiting period their positions move over. Restores control, never moves money."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["lib", "cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

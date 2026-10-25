@@ -14,6 +14,7 @@ struct World {
     token_client: token::Client<'static>,
     registry: RealRegistryClient<'static>,
     founder: Address,
+    recovery: Address,
 }
 
 fn euros(whole: i128) -> i128 {
@@ -28,6 +29,7 @@ fn club(balance_euros: i128) -> World {
     let founder = Address::generate(&e);
     let registry_id = e.register(Registry, (&operator,));
     let registry = RealRegistryClient::new(&e, &registry_id);
+    let recovery = Address::generate(&e);
     let asset = e.register_stellar_asset_contract_v2(operator.clone());
     let accepted = Vec::from_array(
         &e,
@@ -41,6 +43,7 @@ fn club(balance_euros: i128) -> World {
         Organization,
         (
             &registry_id,
+            &recovery,
             symbol_short!("EUR"),
             accepted,
             &founder,
@@ -58,8 +61,81 @@ fn club(balance_euros: i128) -> World {
         token_client: token::Client::new(&e, &asset.address()),
         registry,
         founder,
+        recovery,
         e,
     }
+}
+
+#[test]
+fn a_recovery_hands_the_position_and_limit_to_the_new_pass() {
+    let w = club(5_000);
+    let bo = board_member(&w);
+    let new_pass = Address::generate(&w.e);
+    w.org.change_directly(
+        &w.founder,
+        &Change::SetSpendingLimit(bo.clone(), euros(100), 86_400),
+    );
+    assert!(w.registry.orgs_of(&bo).contains(&w.org.address));
+
+    w.org.recover_member(&bo, &new_pass);
+
+    let members = w.org.members();
+    assert!(members
+        .iter()
+        .any(|m| m.address == new_pass && m.role == Symbol::new(&w.e, "board")));
+    assert!(!members.iter().any(|m| m.address == bo));
+    let limits = w.org.spending_limits();
+    assert!(limits
+        .iter()
+        .any(|l| l.member == new_pass && l.limit.amount == euros(100)));
+    assert!(!limits.iter().any(|l| l.member == bo));
+    assert!(!w.registry.orgs_of(&bo).contains(&w.org.address));
+    assert!(w.registry.orgs_of(&new_pass).contains(&w.org.address));
+
+    // Strangers and existing members can't be the target; the founder flag moves along.
+    assert_eq!(
+        w.org.try_recover_member(&bo, &Address::generate(&w.e)),
+        Err(Ok(Error::NotMember))
+    );
+    assert_eq!(
+        w.org.try_recover_member(&new_pass, &w.founder),
+        Err(Ok(Error::AlreadyMember))
+    );
+    let founder_pass = Address::generate(&w.e);
+    w.org.recover_member(&w.founder, &founder_pass);
+    assert_eq!(w.org.info().founder, founder_pass);
+}
+
+#[test]
+fn recovering_requires_the_recovery_contracts_authorization() {
+    let w = club(5_000);
+    let bo = board_member(&w);
+    let new_pass = Address::generate(&w.e);
+    // Only the founder is authorized from here on: the recovery contract's auth is missing.
+    w.e.mock_auths(&[MockAuth {
+        address: &w.founder,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "recover_member",
+            args: (&bo, &new_pass).into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(w.org.try_recover_member(&bo, &new_pass).is_err());
+    assert!(w.org.members().iter().any(|m| m.address == bo));
+    // With the recovery contract's authorization it works; the registry trusts the organization
+    // as the direct invoker of `set_membership`, so no further auth is needed.
+    w.e.mock_auths(&[MockAuth {
+        address: &w.recovery,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "recover_member",
+            args: (&bo, &new_pass).into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    w.org.recover_member(&bo, &new_pass);
+    assert!(w.org.members().iter().any(|m| m.address == new_pass));
 }
 
 /// Accepts another token tagged with `currency` (setup phase) and funds it.
