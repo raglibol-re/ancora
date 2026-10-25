@@ -118,3 +118,18 @@
 	margin-top: 2px;
 	accent-color: var(--color-accent);
 }
+
+.inlineForm {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	margin-top: var(--space-3);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+	margin-top: var(--space-2);
+}

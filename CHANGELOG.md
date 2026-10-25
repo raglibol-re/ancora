@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-26: Second passkey (task 18): the pass page shows how many passkeys can sign for the account and adds another one (security key, this device, or another phone by QR), signed by the current passkey.
 - 2026-10-26: Lifeline recovery (task 17): new `ancora_recovery` contract (plans with guardians, threshold and waiting period; claims started and confirmed by guardians, cancellable by the old pass; handover of positions to the new pass) and `recover_member` on the organization contract (new WASM). Pass page: Lifeline card, guardian card, "Recover an old pass"; app-wide warning banner while a claim is open. `/api/finish-recovery` submits the handover. Sample data simulates it (Inês is protected by Tomás and Marta).
 - 2026-10-26: Sheets (add money, Reserve, bank) have a visible Close button and close on a tap outside; before, only Escape closed them, which phones don't have.
 - 2026-10-26: Budgets and bookkeeping (task 12): monthly budgets per category on the Overview (progress against this month's executed payments whose reference carries the #category tag; the Send page offers the tag), stored off-chain per organization; "Download statement (CSV)" on the Activity card.

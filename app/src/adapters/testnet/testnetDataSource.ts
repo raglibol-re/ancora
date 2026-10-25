@@ -145,6 +145,8 @@ export class TestnetDataSource implements DataSource {
 			signOut: () => this.signOut(),
 			saveProfile: (profile) => this.saveProfile(profile),
 			uploadAvatar: (image) => this.uploadAvatar(image),
+			passkeyCount: () => this.passkeyCount(),
+			addPasskey: (label) => this.addPasskey(label),
 		};
 		void this.restore();
 	}
@@ -524,6 +526,40 @@ export class TestnetDataSource implements DataSource {
 
 	private account(orgId: string): OrgAccount | undefined {
 		return this.snapshot.accounts.find((a) => a.org.id === orgId);
+	}
+
+	/** The kit creates one everyday rule per account; its External signers are the passkeys. */
+	private async everydayRule() {
+		const rules = await this.kit.rules.list();
+		const rule = rules[0];
+		if (!rule) throw new Error("Your account has no signing rule.");
+		return rule;
+	}
+
+	private async passkeyCount(): Promise<Result<number, RuleError>> {
+		try {
+			const rule = await this.everydayRule();
+			return ok(rule.signers.filter((signer) => signer.tag === "External").length);
+		} catch (error) {
+			return failed(describeKitError(error, "read"));
+		}
+	}
+
+	private async addPasskey(label: string): Promise<Result<void, RuleError>> {
+		try {
+			const rule = await this.everydayRule();
+			const { transaction } = await this.kit.signers.addPasskey(
+				rule.id,
+				"ancora",
+				passkeyUserName(label),
+				{ nickname: label },
+			);
+			const result = await this.kit.signAndSubmitAdmin(transaction);
+			if (!result.success) return failed(describeKitError(result.error, "added"));
+			return ok(undefined);
+		} catch (error) {
+			return failed(describeKitError(error, "added"));
+		}
 	}
 
 	/** Calls a contract through the person's account (passkey-signed, fee-sponsored). */

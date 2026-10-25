@@ -156,6 +156,13 @@ export interface IdentitySupport {
 	saveProfile(profile: ProfileInput): Promise<Result<void, RuleError>>;
 	/** Stores a small picture and returns its public URL, to be saved with the profile. */
 	uploadAvatar(image: Blob): Promise<Result<string, RuleError>>;
+	/** How many passkeys can sign for the account (the everyday signers). */
+	passkeyCount(): Promise<Result<number, RuleError>>;
+	/**
+	 * Creates another passkey (security key, this device, or another phone through the browser's
+	 * QR flow) and adds it as a signer, signed by the current passkey.
+	 */
+	addPasskey(label: string): Promise<Result<void, RuleError>>;
 }
 
 /**

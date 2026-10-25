@@ -15,6 +15,7 @@ import { roleLabel } from "../requests/describe.ts";
 import { DataSourceCard } from "../settings/DataSourceCard.tsx";
 import type { ThemePreference } from "../workspace/preferences.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { DevicesSection } from "./DevicesSection.tsx";
 import { EditProfileCard } from "./EditProfileCard.tsx";
 import { PassCard } from "./PassCard.tsx";
 import styles from "./ProfilePage.module.css";
@@ -108,6 +109,7 @@ export function ProfilePage() {
 									Stellar; the private key never leaves the device.
 								</dd>
 							</div>
+							<DevicesSection identity={identity} />
 							<div>
 								<dt>Recovery</dt>
 								<dd>
