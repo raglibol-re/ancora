@@ -26,6 +26,7 @@ export const templates: Readonly<Record<TemplateId, Template>> = {
 			],
 			sealThreshold: euros(10_000),
 			newRecipientApprovals: [],
+			budgets: [],
 		},
 	},
 	company: {
@@ -48,6 +49,7 @@ export const templates: Readonly<Record<TemplateId, Template>> = {
 			],
 			sealThreshold: euros(50_000),
 			newRecipientApprovals: [{ roleId: "director", count: 1 }],
+			budgets: [],
 		},
 	},
 	team: {
@@ -72,6 +74,7 @@ export const templates: Readonly<Record<TemplateId, Template>> = {
 			],
 			sealThreshold: euros(5_000),
 			newRecipientApprovals: [],
+			budgets: [],
 		},
 	},
 };

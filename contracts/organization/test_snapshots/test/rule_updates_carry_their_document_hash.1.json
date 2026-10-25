@@ -158,6 +158,14 @@
                       "map": [
                         {
                           "key": {
+                            "symbol": "budgets"
+                          },
+                          "val": {
+                            "vec": []
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "new_recipient_approvals"
                           },
                           "val": {
@@ -891,6 +899,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "over_budget"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "seal_required"
                           },
                           "val": {
@@ -952,6 +968,14 @@
                             },
                             {
                               "map": [
+                                {
+                                  "key": {
+                                    "symbol": "budgets"
+                                  },
+                                  "val": {
+                                    "vec": []
+                                  }
+                                },
                                 {
                                   "key": {
                                     "symbol": "new_recipient_approvals"
@@ -1518,6 +1542,14 @@
                       },
                       "val": {
                         "map": [
+                          {
+                            "key": {
+                              "symbol": "budgets"
+                            },
+                            "val": {
+                              "vec": []
+                            }
+                          },
                           {
                             "key": {
                               "symbol": "new_recipient_approvals"

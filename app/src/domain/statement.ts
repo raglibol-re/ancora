@@ -1,5 +1,4 @@
 import { type ActivityEntry, balanceEffect, currencyOf, type OrgAccount } from "./account.ts";
-import { categoryOf } from "./budgets.ts";
 import type { Cents } from "./money.ts";
 
 // The bookkeeping statement: every movement of money as a row, built from what the organization
@@ -64,7 +63,7 @@ export function statementRows(account: OrgAccount, names: Names): StatementRow[]
 					asset: symbols.get(request.token) ?? request.token,
 					counterparty: names.payee(request.recipientId),
 					reference: request.note,
-					category: categoryOf(request.note) ?? "",
+					category: request.category ?? "",
 					by: names.person(request.requesterId),
 					transaction: request.executionRef ?? "",
 				},

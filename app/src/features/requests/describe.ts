@@ -37,6 +37,9 @@ export function describeEvaluation(org: HasRoles, evaluation: Evaluation): strin
 		return "Within the requester's spending limit. No approval needed, it goes out right away.";
 	}
 	const sentences: string[] = [];
+	if (evaluation.overBudget) {
+		sentences.push("Over its budget for this period, so the strictest tier applies.");
+	}
 	if (approvals.length === 0 && objectionWindowHours === 0) {
 		sentences.push("No approval needed. It goes out right away.");
 	} else {

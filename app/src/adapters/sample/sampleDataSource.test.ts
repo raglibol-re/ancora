@@ -255,7 +255,7 @@ describe("SampleDataSource", () => {
 
 	it("falls back to the seed when stored data is corrupt", () => {
 		const storage = memoryStorage();
-		storage.setItem("ancora.sample.v6", "{not json");
+		storage.setItem("ancora.sample.v7", "{not json");
 		expect(source(storage).getSnapshot().accounts).toHaveLength(3);
 	});
 });

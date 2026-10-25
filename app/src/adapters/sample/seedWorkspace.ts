@@ -41,8 +41,8 @@ function account(
 	name: string,
 	templateId: TemplateId,
 	members: [string, RoleId][],
-	rest: Omit<OrgAccount, "org" | "onchain" | "discussions" | "budgets"> &
-		Partial<Pick<OrgAccount, "discussions" | "budgets">>,
+	rest: Omit<OrgAccount, "org" | "onchain" | "discussions" | "budgetUse"> &
+		Partial<Pick<OrgAccount, "discussions" | "budgetUse">>,
 ): OrgAccount {
 	const template = templates[templateId];
 	const memberList: Member[] = members.map(([personId, roleId]) => ({ personId, roleId }));
@@ -65,7 +65,7 @@ function account(
 		},
 		onchain: null,
 		discussions: {},
-		budgets: [],
+		budgetUse: {},
 		...rest,
 	};
 }
@@ -87,7 +87,7 @@ type SeedPayment = Pick<
 	PaymentRequest,
 	"id" | "requesterId" | "createdAt" | "amount" | "recipientId" | "recipientIsNew" | "note"
 > &
-	Partial<Pick<PaymentRequest, "approvals" | "status" | "executeAfter">>;
+	Partial<Pick<PaymentRequest, "approvals" | "status" | "executeAfter" | "category">>;
 
 function payment(templateId: TemplateId, fields: SeedPayment): PaymentRequest {
 	return {
@@ -102,11 +102,21 @@ function payment(templateId: TemplateId, fields: SeedPayment): PaymentRequest {
 		declinedBy: null,
 		failure: null,
 		executionRef: null,
+		category: null,
 		...fields,
 	};
 }
 
 const entry = (e: ActivityEntry) => e;
+
+const MONTH = 30 * 86_400;
+
+/** The club's envelopes: two soft (strictest tier beyond), travel hard (refused beyond). */
+const CLUB_BUDGETS = [
+	{ category: "equipment", amount: euros(1_500), periodSeconds: MONTH, hard: false },
+	{ category: "events", amount: euros(4_000), periodSeconds: MONTH, hard: false },
+	{ category: "travel", amount: euros(600), periodSeconds: MONTH, hard: true },
+];
 
 export function seedWorkspace(now: number): Workspace {
 	const club = account(
@@ -151,7 +161,8 @@ export function seedWorkspace(now: number): Workspace {
 					amount: euros(450),
 					recipientId: "boat-supplies",
 					recipientIsNew: false,
-					note: "Two pairs of sculling oars #equipment",
+					note: "Two pairs of sculling oars",
+					category: "equipment",
 				}),
 				payment("club", {
 					id: "req-regatta",
@@ -160,7 +171,8 @@ export function seedWorkspace(now: number): Workspace {
 					amount: euros(3_200),
 					recipientId: "regatta-assoc",
 					recipientIsNew: false,
-					note: "Spring regatta entry fees #events",
+					note: "Spring regatta entry fees",
+					category: "events",
 					approvals: [
 						{ personId: "tomas", at: now - 19 * HOUR },
 						{ personId: "marta", at: now - 18 * HOUR },
@@ -175,15 +187,11 @@ export function seedWorkspace(now: number): Workspace {
 					amount: euros(640),
 					recipientId: "boat-supplies",
 					recipientIsNew: false,
-					note: "Hull repairs after the storm #equipment",
+					note: "Hull repairs after the storm",
+					category: "equipment",
 					approvals: [{ personId: "tomas", at: now - 4 * DAY + HOUR }],
 					status: "executed",
 				}),
-			],
-			budgets: [
-				{ category: "equipment", amount: euros(1_500) },
-				{ category: "events", amount: euros(4_000) },
-				{ category: "travel", amount: euros(600) },
 			],
 			activity: [
 				entry({
@@ -407,8 +415,11 @@ export function seedWorkspace(now: number): Workspace {
 	// João runs the boathouse shop: a small allowance so routine buys don't wait for the board.
 	const clubWithCrew: OrgAccount = {
 		...club,
+		// Hull repairs already count against this period's equipment budget.
+		budgetUse: { equipment: { spent: euros(640), windowStart: now - 4 * DAY } },
 		org: {
 			...club.org,
+			policy: { ...club.org.policy, budgets: CLUB_BUDGETS },
 			members: club.org.members.map((m) =>
 				m.personId === "joao"
 					? {

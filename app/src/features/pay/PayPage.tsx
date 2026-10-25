@@ -1,7 +1,6 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { assetOf, isNewRecipient, type OrgAccount, primaryToken } from "../../domain/account.ts";
-import { withCategory } from "../../domain/budgets.ts";
 import { parseAmountInput } from "../../domain/money.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
@@ -117,7 +116,8 @@ function PayForm({ account }: { account: OrgAccount }) {
 							: { id: payeeId },
 					token,
 					amount,
-					note: withCategory(note, category || null),
+					note,
+					category: category || null,
 				}),
 			{
 				signature: {
@@ -235,12 +235,13 @@ function PayForm({ account }: { account: OrgAccount }) {
 						token={token}
 						amount={amount}
 						recipientIsNew={recipientIsNew}
+						category={category || null}
 					/>
-					{account.budgets.length > 0 && (
+					{account.org.policy.budgets.length > 0 && (
 						<Field
 							label="Budget category"
 							htmlFor="category"
-							hint="Optional. Added to the reference as a tag so the payment counts against the budget."
+							hint="Optional. The payment counts against this budget; beyond it the rules escalate or refuse."
 						>
 							<select
 								id="category"
@@ -249,7 +250,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 								onChange={(e) => setCategory(e.target.value)}
 							>
 								<option value="">None</option>
-								{account.budgets.map((budget) => (
+								{account.org.policy.budgets.map((budget) => (
 									<option key={budget.category} value={budget.category}>
 										#{budget.category}
 									</option>

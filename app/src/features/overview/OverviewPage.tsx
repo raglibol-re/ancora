@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import {
 	availableBalance,
 	balanceOf,
@@ -11,7 +10,6 @@ import {
 import { inboxFor } from "../../domain/inbox.ts";
 import type { Asset } from "../../domain/rules/model.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
-import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { ChevronDownIcon } from "../../ui/icons.tsx";
@@ -23,6 +21,7 @@ import { AccountNumberCard } from "./AccountNumberCard.tsx";
 import { ActivityList } from "./ActivityList.tsx";
 import { AssetSheet } from "./AssetSheet.tsx";
 import { BudgetsCard } from "./BudgetsCard.tsx";
+import { MoneyHeadline } from "./MoneyHeadline.tsx";
 import styles from "./OverviewPage.module.css";
 import { describeAsset, TokenBadge } from "./TokenBadge.tsx";
 
@@ -43,14 +42,6 @@ function Overview({ account }: { account: OrgAccount }) {
 	const assets = [...account.org.assets].sort((a, b) =>
 		a.token === lead ? -1 : b.token === lead ? 1 : 0,
 	);
-	const home = assets.filter((a) => !isForeign(account.org, a.token));
-	const total = home.reduce((sum, a) => sum + balanceOf(account, a.token).balance, 0);
-	const totalAvailable = home.reduce((sum, a) => sum + availableBalance(account, a.token), 0);
-	const others = assets
-		.filter((a) => isForeign(account.org, a.token))
-		.map((a) => ({ asset: a, balance: balanceOf(account, a.token).balance }))
-		.filter((h) => h.balance > 0);
-	const reserveTotal = home.reduce((sum, a) => sum + balanceOf(account, a.token).reserve, 0);
 	const leadAsset = assets.find((a) => a.token === lead) ?? assets[0] ?? null;
 
 	return (
@@ -60,32 +51,7 @@ function Overview({ account }: { account: OrgAccount }) {
 				<h1>{account.org.name}</h1>
 			</header>
 
-			<Card tone="deep">
-				<p className={styles.eyebrow}>Total balance · {base}</p>
-				<p className={styles.balance}>{formatMoney(total, base)}</p>
-				<p className={styles.sub}>
-					{totalAvailable !== total
-						? `${formatMoney(totalAvailable, base)} available · ${formatMoney(total - totalAvailable, base)} waiting in requests`
-						: "All of it available"}
-					{others.length > 0 &&
-						` · plus ${others.map((o) => `${formatMoney(o.balance, o.asset.currency)} in ${o.asset.symbol}`).join(" and ")}`}
-					{reserveTotal > 0 && ` · ${formatMoney(reserveTotal, base)} in the Reserve`}
-				</p>
-				<div className={styles.actions}>
-					<Link to="/app/pay" className={buttonClass()}>
-						Send money
-					</Link>
-					{leadAsset && (
-						<button
-							type="button"
-							className={buttonClass("secondary")}
-							onClick={() => setOpen(leadAsset)}
-						>
-							Add money
-						</button>
-					)}
-				</div>
-			</Card>
+			<MoneyHeadline account={account} onAdd={leadAsset ? () => setOpen(leadAsset) : null} />
 
 			<Card title="Accounts" action={sample ? <SimulatedTag /> : null}>
 				<ul className={styles.assetList}>

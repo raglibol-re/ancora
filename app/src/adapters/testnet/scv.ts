@@ -35,8 +35,22 @@ function struct(fields: Record<string, xdr.ScVal>): xdr.ScVal {
 const requirement = (r: Requirement): xdr.ScVal =>
 	struct({ count: u32(r.count), role: symbol(r.roleId) });
 
+/** `Option<Symbol>`: a symbol or void. */
+export const optionalSymbol = (value: string | null): xdr.ScVal =>
+	value ? symbol(value) : xdr.ScVal.scvVoid();
+
 export function policyToScVal(policy: Policy): xdr.ScVal {
 	return struct({
+		budgets: xdr.ScVal.scvVec(
+			policy.budgets.map((budget) =>
+				struct({
+					amount: i128(toStroops(budget.amount)),
+					category: symbol(budget.category),
+					hard: xdr.ScVal.scvBool(budget.hard),
+					period_seconds: u64(budget.periodSeconds),
+				}),
+			),
+		),
 		new_recipient_approvals: xdr.ScVal.scvVec(policy.newRecipientApprovals.map(requirement)),
 		seal_threshold: i128(toStroops(policy.sealThreshold)),
 		tiers: xdr.ScVal.scvVec(

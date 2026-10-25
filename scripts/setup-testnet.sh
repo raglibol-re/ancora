@@ -18,6 +18,8 @@ RPC_URL="https://soroban-testnet.stellar.org"
 HORIZON_URL="https://horizon-testnet.stellar.org"
 # SEP-24 anchor for bank deposits and withdrawals (SDF test anchor; pays out test USDC).
 ANCHOR_HOME_DOMAIN="${ANCHOR_HOME_DOMAIN:-testanchor.stellar.org}"
+# Exchange rates for the headline total (display only; ECB reference rates via Frankfurter).
+FX_RATES_URL="${FX_RATES_URL:-https://api.frankfurter.app}"
 PASSPHRASE="Test SDF Network ; September 2015"
 DEPLOYER="ancora-deployer"
 
@@ -300,6 +302,9 @@ VITE_RECOVERY_CONTRACT=$RECOVERY_CONTRACT
 
 # Bank deposits and withdrawals (SEP-24): the anchor whose stellar.toml the app reads.
 VITE_ANCHOR_HOME_DOMAIN=$ANCHOR_HOME_DOMAIN
+
+# Exchange rates for the headline total only (the rules never use them).
+VITE_FX_RATES_URL=$FX_RATES_URL
 EOF
 	ok "wrote ${ENV_FILE#"$ROOT/"}"
 }

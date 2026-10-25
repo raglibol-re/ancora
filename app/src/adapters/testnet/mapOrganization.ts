@@ -4,6 +4,7 @@ import {
 	type Payee,
 	shortAddress,
 } from "../../domain/account.ts";
+import type { BudgetUse } from "../../domain/budgets.ts";
 import type { Currency } from "../../domain/money.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import {
@@ -40,6 +41,8 @@ export type OnchainSnapshot = {
 	reserves: ReadonlyMap<string, { value: bigint; principal: bigint }>;
 	/** Spending limits by member address. */
 	limits: ReadonlyMap<string, SpendingLimit>;
+	/** Booked per budget category (empty for organizations built before budgets). */
+	budgetUse: Readonly<Record<string, BudgetUse>>;
 	setupPhase: boolean;
 	policyHash: string;
 };
@@ -84,6 +87,8 @@ const ERROR_CODES: RuleErrorCode[] = [
 	"not-allowed",
 	"not-allowed",
 	"invalid-limit",
+	"budget-exceeded",
+	"unknown-budget",
 ];
 
 export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
@@ -116,6 +121,8 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	27: "Your role can't move money between the account and the Reserve.",
 	28: "Only the organization's highest role can change the logo.",
 	29: "A spending limit needs an amount above zero and a period.",
+	30: "This goes beyond what is left of a hard budget this period, so it isn't accepted.",
+	31: "The rules have no budget with that name.",
 };
 
 const variant = (value: unknown): [string, unknown[]] => {
@@ -145,7 +152,24 @@ export function mapPolicy(native: Native): Policy {
 		})),
 		sealThreshold: toCents(big(native.seal_threshold)),
 		newRecipientApprovals: requirements(native.new_recipient_approvals),
+		// Organizations built before budgets existed report none.
+		budgets: ((native.budgets as Native[] | undefined) ?? []).map((budget) => ({
+			category: str(budget.category),
+			amount: toCents(big(budget.amount)),
+			periodSeconds: num(budget.period_seconds),
+			hard: Boolean(budget.hard),
+		})),
 	};
+}
+
+/** The `budgets` view rows → what was booked per category. */
+export function mapBudgetUse(rows: Native[]): Record<string, BudgetUse> {
+	return Object.fromEntries(
+		rows.map((row) => [
+			str((row.budget as Native).category),
+			{ spent: toCents(big(row.spent)), windowStart: seconds(row.window_start) },
+		]),
+	);
 }
 
 function mapEvaluation(native: Native): Evaluation {
@@ -155,6 +179,7 @@ function mapEvaluation(native: Native): Evaluation {
 		objectionWindowHours: num(native.objection_window_hours),
 		sealRequired: Boolean(native.seal_required),
 		withinLimit: Boolean(native.within_limit),
+		...(native.over_budget ? { overBudget: true } : {}),
 	};
 }
 
@@ -272,6 +297,8 @@ export function mapRequest(
 			recipientId: str(payment.to),
 			recipientIsNew: false,
 			note: str(payment.memo),
+			category:
+				payment.category === null || payment.category === undefined ? null : str(payment.category),
 		};
 	}
 	return { ...base, kind: "governance", change: mapChange(fields[0]) };
@@ -363,6 +390,6 @@ export function mapOrganization(
 		requests,
 		activity,
 		discussions: {},
-		budgets: [],
+		budgetUse: snapshot.budgetUse,
 	};
 }

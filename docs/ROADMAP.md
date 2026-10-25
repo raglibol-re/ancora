@@ -18,7 +18,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 9 | Crew / agent keys with spending limits | Done, natively in the organization contract (see DECISIONS: why not OZ `spending_limit`) |
 | 10 | Bank in/out: SEP-24 with the SDF test anchor (real on testnet); a licensed euro anchor or Bridge later | Done for deposits and the withdrawal request (see below) |
 | 11 | Organization logo in Vercel Blob with the URL on the organization contract | Done |
-| 12 | Budgets and bookkeeping | Done: monthly budgets per category (off-chain plans), spend from tagged references, CSV statement |
+| 12 | Budgets and bookkeeping | Done: budgets are on-chain rules (soft or hard envelopes per category and period), CSV statement |
 | 13 | Demo admin: reset, top-up, retry stuck requests | Done: sample reset, XLM top-up from Friendbot in /admin, per-asset floats in health; due requests are sent with "Send now" by any member |
 | 14 | Confidential pot + auditor view stub | Documented only (no placeholder UI): see Later |
 | 15 | Integrate the Claude Design package | Done (brand, icons, tokens) |
@@ -56,9 +56,13 @@ A member can carry a spending limit: an amount per day, week or 30 days in the r
 
 `adapters/testnet/anchorRamp.ts` speaks SEP-1, SEP-10 and SEP-24 with the anchor named by `VITE_ANCHOR_HOME_DOMAIN` (the SDF test anchor, which pays out test USDC). The person's wallet signs the anchor's challenge; the anchor's hosted form takes the bank details; ancora follows the transaction status. Deposits land in the wallet and move on to the organization through the existing wallet funding; a withdrawal turns the anchor's instructions (account and reference) into a payment request from the organization, so it follows the rules. Verified: the protocol end-to-end with a keypair; not yet: the hosted form in a browser session and the anchor's payout after the organization pays. A euro anchor or Bridge needs KYB and comes with the licensed partner.
 
-### Task 12 as built: budgets and the statement
+### Task 12 as built: budgets are rules
 
-Budgets are monthly plans per category in the home currency, kept off-chain per organization (`/api/budgets`, Vercel Blob) and edited by whoever may manage the treasury. A payment counts against a budget when its reference carries the category as a tag (`Oars #equipment`); the Send page offers the tag. Spend is read from executed on-chain requests, so the books can be rebuilt from the chain plus one small file. "Download statement (CSV)" on the Activity card exports executed payments, deposits and Reserve moves with references and categories. Not enforced: the rules do that; budget enforcement is a later rules feature.
+A budget is part of `Policy`: category, amount per rolling period in the home currency, and whether it is hard or soft. Changing budgets is a rule change (`UpdatePolicy`, document v3 hash). A payment carries an optional category; the contract books it against the budget's running window at proposal time and gives it back on decline. Inside what is left the payment follows its own tier; beyond it a soft budget forces the strictest tier and flags the request for approvers, a hard budget refuses it (`BudgetExceeded`). Payments in another currency can't be measured: soft flags them, hard refuses them. The Rules page edits budgets, the Overview shows the meters, the Send page previews the verdict. "Download statement (CSV)" exports executed payments with their categories.
+
+### Rules document v3 and perch
+
+The rules document now follows stellar-registry/perch's canonical form (CANON v1: no whitespace, sorted keys, `u32` numbers only, amounts as decimal strings, no null, no booleans) so the same bytes can later be read by that toolchain. Older organizations verified against document v2; the Rules page says which version matched. Perch itself (testnet beta, pre-audit) models per-signer rights on a smart account and can't express role tiers, asynchronous approvals or budgets, so the organization contract stays the evaluator; see DECISIONS.
 
 ### Task 16: discussions on approval requests
 
@@ -97,6 +101,9 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 - **If skipped:** persistent reminder banner and the recovery status on the profile and overview until a recovery device exists.
 
 ## Next: SCF #46 milestones
+
+- Perch adoption in three steps: publish ancora's document in perch's IR where it fits, lower per-member allowances onto perch `cap` rules once organizations can be perch accounts, and propose `i128` range predicates and asynchronous approvals upstream so the tiers can move too.
+- Custom roles (editable list and ranks through governance; templates become presets), per-member limits per category and asset, recipient allowlists, recurring payments.
 
 - Switch the security seal from the in-contract ML-DSA verifier to the native ML-DSA host function after Protocol 30 "Bell" (mainnet vote 23 Nov 2026).
 - Lifeline in full (inactivity path, succession plans, professional guardians).

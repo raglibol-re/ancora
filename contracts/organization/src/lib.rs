@@ -75,6 +75,8 @@ enum DataKey {
     ReservePrincipal(Address),
     /// A member's spending limit (crew / agent allowance).
     Limit(Address),
+    /// Spent per budget category in the running window.
+    BudgetUse(Symbol),
     Request(u64),
     Paid(Address),
 }
@@ -218,6 +220,23 @@ impl Organization {
             panic_with_error!(e, Error::NotFound);
         };
         hash
+    }
+
+    /// The rules' budgets with what was booked against each in its running window.
+    ///
+    /// Auth: none (read).
+    pub fn budgets(e: &Env) -> Vec<BudgetView> {
+        let policy = load_policy(e);
+        let mut result = Vec::new(e);
+        for budget in policy.budgets.iter() {
+            let used = current_budget_use(e, &budget);
+            result.push_back(BudgetView {
+                budget,
+                spent: used.spent,
+                window_start: used.window_start,
+            });
+        }
+        result
     }
 
     /// Spending limits currently granted, with what was spent in the running window.
@@ -454,6 +473,7 @@ impl Organization {
         to: Address,
         amount: i128,
         memo: String,
+        category: Option<Symbol>,
     ) -> Result<u64, Error> {
         by.require_auth();
         extend_instance(e);
@@ -472,11 +492,30 @@ impl Organization {
         }
         let policy = load_policy(e);
         let amount_in_base = (asset.currency == info.base_currency).then_some(amount);
-        // Inside the requester's spending limit (rules' currency only) nothing needs approval.
-        let evaluation = match amount_in_base.and_then(|a| use_limit(e, &by, a)) {
-            Some(()) => rules::limit_evaluation(e),
-            None => rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to))?,
+        // Budgets are measured in the rules' currency: a payment in another currency can't be
+        // counted, so a hard budget refuses it and a soft one treats it as over budget.
+        let budget = match &category {
+            Some(name) => Some(find_budget(&policy, name)?),
+            None => None,
         };
+        let over_budget = match (&budget, amount_in_base) {
+            (None, _) => false,
+            (Some(b), Some(a)) if a <= budget_room(e, b) => false,
+            (Some(b), _) if b.hard => return Err(Error::BudgetExceeded),
+            (Some(_), _) => true,
+        };
+        // Inside the requester's spending limit (rules' currency only) nothing needs approval,
+        // unless the payment is over its budget: then approvers must see it.
+        let within_limit =
+            !over_budget && amount_in_base.and_then(|a| use_limit(e, &by, a)).is_some();
+        let evaluation = if within_limit {
+            rules::limit_evaluation(e)
+        } else {
+            rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to), over_budget)?
+        };
+        if let (Some(b), Some(a)) = (&budget, amount_in_base) {
+            book_budget(e, b, a);
+        }
         let request = new_request(
             e,
             RequestKind::Payment(Payment {
@@ -484,6 +523,7 @@ impl Organization {
                 to,
                 amount,
                 memo,
+                category,
             }),
             by,
             evaluation,
@@ -626,6 +666,7 @@ impl Organization {
         request.decided_by = Some(by);
         if let RequestKind::Payment(payment) = &request.kind {
             add_committed(e, &payment.token, -payment.amount);
+            release_budget(e, &info, payment);
         }
         save_request(e, &request);
         Ok(())
@@ -1063,6 +1104,84 @@ fn use_limit(e: &Env, by: &Address, amount: i128) -> Option<()> {
         .persistent()
         .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
     Some(())
+}
+
+fn find_budget(policy: &Policy, category: &Symbol) -> Result<Budget, Error> {
+    policy
+        .budgets
+        .iter()
+        .find(|b| b.category == *category)
+        .ok_or(Error::UnknownBudget)
+}
+
+/// What was booked against the budget, with the window rolled forward to now.
+fn current_budget_use(e: &Env, budget: &Budget) -> BudgetUse {
+    let now = e.ledger().timestamp();
+    let used: BudgetUse = e
+        .storage()
+        .persistent()
+        .get(&DataKey::BudgetUse(budget.category.clone()))
+        .unwrap_or(BudgetUse {
+            spent: 0,
+            window_start: now,
+        });
+    if now >= used.window_start.saturating_add(budget.period_seconds) {
+        BudgetUse {
+            spent: 0,
+            window_start: now,
+        }
+    } else {
+        used
+    }
+}
+
+fn budget_room(e: &Env, budget: &Budget) -> i128 {
+    (budget.amount - current_budget_use(e, budget).spent).max(0)
+}
+
+fn save_budget_use(e: &Env, category: &Symbol, used: &BudgetUse) {
+    let key = DataKey::BudgetUse(category.clone());
+    e.storage().persistent().set(&key, used);
+    e.storage()
+        .persistent()
+        .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+}
+
+fn book_budget(e: &Env, budget: &Budget, amount: i128) {
+    let used = current_budget_use(e, budget);
+    save_budget_use(
+        e,
+        &budget.category,
+        &BudgetUse {
+            spent: used.spent + amount,
+            ..used
+        },
+    );
+}
+
+/// Gives a declined payment's amount back to its budget, when it was booked in this window.
+fn release_budget(e: &Env, info: &OrgInfo, payment: &Payment) {
+    let Some(category) = &payment.category else {
+        return;
+    };
+    let Ok(asset) = find_asset(&load_assets(e), &payment.token) else {
+        return;
+    };
+    if asset.currency != info.base_currency {
+        return;
+    }
+    let Ok(budget) = find_budget(&load_policy(e), category) else {
+        return;
+    };
+    let used = current_budget_use(e, &budget);
+    save_budget_use(
+        e,
+        category,
+        &BudgetUse {
+            spent: (used.spent - payment.amount).max(0),
+            ..used
+        },
+    );
 }
 
 fn revoke_current_role(e: &Env, info: &OrgInfo, who: &Address) {

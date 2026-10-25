@@ -170,6 +170,7 @@ fn policy(e: &Env, json: &PolicyJson) -> Policy {
         tiers,
         seal_threshold: i128::from(json.seal_threshold),
         new_recipient_approvals: requirements(e, &json.new_recipient_approvals),
+        budgets: Vec::new(e),
     }
 }
 
@@ -251,6 +252,7 @@ fn payment_vectors() {
             &org.policy,
             Some(i128::from(vector.amount)),
             vector.recipient_is_new,
+            false,
         )
         .expect("evaluation");
         let approvers = addresses(&mut people, &vector.approvals);

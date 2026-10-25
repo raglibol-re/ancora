@@ -1,5 +1,5 @@
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
-import { mapLimit, type OnchainSnapshot } from "./mapOrganization.ts";
+import { mapBudgetUse, mapLimit, type OnchainSnapshot } from "./mapOrganization.ts";
 import { ContractReadError, type Network, readContract } from "./readContract.ts";
 import { address, u32 } from "./scv.ts";
 
@@ -24,12 +24,22 @@ async function readSpendingLimits(network: Network, contractId: string): Promise
 	}
 }
 
+/** Same tolerance for `budgets`, which organizations before 26 Oct 2026 don't have. */
+async function readBudgets(network: Network, contractId: string): Promise<Native[]> {
+	try {
+		return (await readContract(network, contractId, "budgets")) as Native[];
+	} catch (error) {
+		if (error instanceof ContractReadError) return [];
+		throw error;
+	}
+}
+
 /** Everything the app shows about one organization, read from its contract in two rounds. */
 export async function readOrganization(
 	network: Network,
 	contractId: string,
 ): Promise<OnchainSnapshot> {
-	const [info, policy, assets, members, requests, setupPhase, policyHash, limitRows] =
+	const [info, policy, assets, members, requests, setupPhase, policyHash, limitRows, budgetRows] =
 		await Promise.all([
 			readContract(network, contractId, "info") as Promise<Native>,
 			readContract(network, contractId, "policy") as Promise<Native>,
@@ -41,6 +51,7 @@ export async function readOrganization(
 			readContract(network, contractId, "is_setup_phase") as Promise<boolean>,
 			readContract(network, contractId, "policy_hash") as Promise<Uint8Array>,
 			readSpendingLimits(network, contractId),
+			readBudgets(network, contractId),
 		]);
 	const limits = new Map(
 		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
@@ -82,6 +93,7 @@ export async function readOrganization(
 		balances,
 		reserves,
 		limits,
+		budgetUse: mapBudgetUse(budgetRows),
 		setupPhase,
 		policyHash: hex(policyHash),
 	};

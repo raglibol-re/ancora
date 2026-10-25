@@ -26,6 +26,8 @@ export type TestnetConfig = {
 	sealVerifier: string;
 	/** ancora's Lifeline recovery contract (guardians, claims, handover of positions). */
 	recoveryContract: string;
+	/** Base URL of the exchange-rate service used for the headline total (display only). */
+	fxRatesUrl: string;
 	/** "Symbol:C…:USD,…": the stablecoins an organization may accept (see parseAssetOptions). */
 	orgAssets: string;
 	/** Home domain of the SEP-24 anchor for bank deposits and withdrawals (the SDF test anchor). */
@@ -52,6 +54,7 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	orgWasmHash: "VITE_ORG_WASM_HASH",
 	sealVerifier: "VITE_SEAL_VERIFIER",
 	recoveryContract: "VITE_RECOVERY_CONTRACT",
+	fxRatesUrl: "VITE_FX_RATES_URL",
 	orgAssets: "VITE_ORG_ASSETS",
 	anchorHomeDomain: "VITE_ANCHOR_HOME_DOMAIN",
 };

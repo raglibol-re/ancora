@@ -32,6 +32,15 @@ export function ExpertDetails({
 							? "Strictest tier (membership or rule change)"
 							: `Tier ${request.evaluation.tierIndex + 1} of ${account.org.policy.tiers.length}`}
 				</dd>
+				{request.kind === "payment" && (
+					<>
+						<dt>Budget</dt>
+						<dd>
+							{request.category ? `#${request.category}` : "No category"}
+							{request.evaluation.overBudget ? " · over budget (strictest tier)" : ""}
+						</dd>
+					</>
+				)}
 				{account.onchain && (
 					<>
 						<dt>Smart account</dt>

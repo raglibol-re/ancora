@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { seedWorkspace } from "../adapters/sample/seedWorkspace.ts";
-import { budgetReport, categoryOf, toCategory, upsertBudget, withCategory } from "./budgets.ts";
+import {
+	bookBudget,
+	budgetLines,
+	budgetVerdict,
+	checkBudget,
+	releaseBudget,
+	toCategory,
+	upsertBudget,
+} from "./budgets.ts";
 import { euros } from "./money.ts";
 
 const now = Date.UTC(2026, 9, 25, 12);
@@ -12,52 +20,66 @@ function club() {
 }
 
 describe("budget categories", () => {
-	it("reads the first hashtag of a reference, case-insensitively", () => {
-		expect(categoryOf("Oars #Equipment and more #travel")).toBe("equipment");
-		expect(categoryOf("#events")).toBe("events");
-		expect(categoryOf("no tag here")).toBeNull();
-		expect(categoryOf("email#notatag")).toBeNull();
-	});
-
-	it("cleans typed names into categories", () => {
-		expect(toCategory(" Boat Repairs ")).toBe("boat-repairs");
+	it("cleans typed names into contract-safe categories", () => {
+		expect(toCategory(" Boat Repairs ")).toBe("boat_repairs");
 		expect(toCategory("#Travel!")).toBe("travel");
 	});
 
-	it("appends the tag once", () => {
-		expect(withCategory("Oars", "equipment")).toBe("Oars #equipment");
-		expect(withCategory("Oars #equipment", "equipment")).toBe("Oars #equipment");
-		expect(withCategory("", "events")).toBe("#events");
-		expect(withCategory("Oars ", null)).toBe("Oars");
+	it("upserts and removes budgets by category", () => {
+		const one = upsertBudget([], {
+			category: "events",
+			amount: euros(100),
+			periodSeconds: 1,
+			hard: false,
+		});
+		const two = upsertBudget(one, {
+			category: "travel",
+			amount: euros(50),
+			periodSeconds: 1,
+			hard: true,
+		});
+		expect(two.map((b) => b.category)).toEqual(["events", "travel"]);
+		expect(
+			upsertBudget(two, { category: "events", amount: 0, periodSeconds: 1, hard: false }),
+		).toEqual([{ category: "travel", amount: euros(50), periodSeconds: 1, hard: true }]);
 	});
 });
 
-describe("budget report", () => {
-	it("adds up this month's executed payments per category in the home currency", () => {
-		const report = budgetReport(club(), now);
-		const equipment = report.lines.find((l) => l.category === "equipment");
+describe("budget lines and checks", () => {
+	it("reads the seeded use and rolls the window forward", () => {
+		const account = club();
+		const equipment = budgetLines(account, now).find((l) => l.category === "equipment");
 		expect(equipment).toMatchObject({ amount: euros(1_500), spent: euros(640) });
 		expect(equipment?.remaining).toBe(euros(860));
-		expect(report.lines.find((l) => l.category === "events")?.spent).toBe(0);
-		expect(report.uncategorized).toBe(0);
-	});
-
-	it("ignores pending payments and other months", () => {
-		const account = club();
-		const executed = account.requests.filter(
-			(r) => r.kind === "payment" && r.status === "executed",
+		const later = budgetLines(account, now + 31 * 86_400_000).find(
+			(l) => l.category === "equipment",
 		);
-		expect(executed.length).toBeGreaterThan(0);
-		const nextMonth = Date.UTC(2026, 10, 15);
-		expect(budgetReport(account, nextMonth).lines.every((l) => l.spent === 0)).toBe(true);
+		expect(later?.spent).toBe(0);
 	});
 
-	it("upserts and removes budgets by category", () => {
-		const one = upsertBudget([], { category: "events", amount: euros(100) });
-		const two = upsertBudget(one, { category: "travel", amount: euros(50) });
-		expect(two.map((b) => b.category)).toEqual(["events", "travel"]);
-		expect(upsertBudget(two, { category: "events", amount: 0 })).toEqual([
-			{ category: "travel", amount: euros(50) },
-		]);
+	it("decides within, over and refused like the contract", () => {
+		const account = club();
+		expect(checkBudget(account, null, euros(10), false, now).kind).toBe("none");
+		expect(checkBudget(account, "nope", euros(10), false, now).kind).toBe("unknown");
+		expect(checkBudget(account, "equipment", euros(860), false, now).kind).toBe("within");
+		expect(checkBudget(account, "equipment", euros(861), false, now).kind).toBe("over");
+		expect(checkBudget(account, "travel", euros(601), false, now).kind).toBe("refused");
+		// Another currency can't be measured: soft flags, hard refuses.
+		expect(checkBudget(account, "equipment", euros(1), true, now).kind).toBe("over");
+		expect(checkBudget(account, "travel", euros(1), true, now).kind).toBe("refused");
+		const [firstLine] = budgetLines(account, now);
+		expect(firstLine && budgetVerdict({ kind: "over", line: firstLine })).toEqual({
+			ok: true,
+			value: true,
+		});
+		expect(budgetVerdict(checkBudget(account, "travel", euros(601), false, now)).ok).toBe(false);
+	});
+
+	it("books and releases within the running window", () => {
+		const account = club();
+		const booked = bookBudget(account, "equipment", euros(100), now);
+		expect(booked.equipment?.spent).toBe(euros(740));
+		const released = releaseBudget({ ...account, budgetUse: booked }, "equipment", euros(740), now);
+		expect(released.equipment?.spent).toBe(0);
 	});
 });

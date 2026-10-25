@@ -15,7 +15,9 @@ function orgFor(key: string): Org {
 	const fixture = vectors.orgs[key as OrgKey];
 	if (!fixture) throw new Error(`Unknown org fixture "${key}"`);
 	const policy: Policy =
-		typeof fixture.policy === "string" ? policyOf(fixture.policy) : fixture.policy;
+		typeof fixture.policy === "string"
+			? policyOf(fixture.policy)
+			: { ...fixture.policy, budgets: [] };
 	return {
 		id: key,
 		name: key,
@@ -32,7 +34,8 @@ function orgFor(key: string): Org {
 function policyOf(key: string): Policy {
 	const fixture = vectors.orgs[key as OrgKey];
 	if (!fixture || typeof fixture.policy === "string") throw new Error(`No policy for "${key}"`);
-	return fixture.policy;
+	// The shared vectors predate budgets; both engines treat a missing list as empty.
+	return { ...fixture.policy, budgets: [] };
 }
 
 const asSet = (requirements: readonly Requirement[]) =>

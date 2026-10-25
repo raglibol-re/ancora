@@ -24,6 +24,18 @@ export type Tier = {
 	objectionWindowHours: number;
 };
 
+/**
+ * A spending envelope per category and rolling period in the home currency. Beyond what is
+ * left, a soft budget escalates a payment to the strictest tier; a hard budget refuses it.
+ */
+export type Budget = {
+	/** Contract symbol: lowercase letters, digits, underscores. */
+	category: string;
+	amount: Cents;
+	periodSeconds: number;
+	hard: boolean;
+};
+
 export type Policy = {
 	/** Ascending by upTo; the last tier is unbounded. The last tier is also the strictest. */
 	tiers: readonly Tier[];
@@ -31,6 +43,8 @@ export type Policy = {
 	sealThreshold: Cents;
 	/** Extra requirements for the first payment to a recipient, merged per role (higher count wins). */
 	newRecipientApprovals: readonly Requirement[];
+	/** Part of the rules, so the document hash covers them. */
+	budgets: readonly Budget[];
 };
 
 /** A crew or agent allowance: up to `amount` per rolling period goes out without approvals. */
@@ -81,6 +95,8 @@ export type Evaluation = {
 	sealRequired: boolean;
 	/** The payment fit the requester's spending limit, so nothing needs approval. */
 	withinLimit?: boolean;
+	/** The payment goes beyond its soft budget: strictest tier, and approvers see the flag. */
+	overBudget?: boolean;
 };
 
 export type RuleErrorCode =
@@ -107,7 +123,9 @@ export type RuleErrorCode =
 	| "asset-exists"
 	| "asset-in-use"
 	| "last-asset"
-	| "invalid-limit";
+	| "invalid-limit"
+	| "budget-exceeded"
+	| "unknown-budget";
 
 export type RuleError = {
 	code: RuleErrorCode;

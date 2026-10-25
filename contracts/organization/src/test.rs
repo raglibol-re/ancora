@@ -3,7 +3,7 @@ use soroban_sdk::{symbol_short, token, Address, BytesN, Env, IntoVal, String, Sy
 
 use ancora_registry::{Registry, RegistryClient as RealRegistryClient};
 
-use crate::types::{AssetSpec, Change, Error, Status, CENT};
+use crate::types::{AssetSpec, Budget, Change, Error, Status, CENT};
 use crate::{Organization, OrganizationClient};
 use mock_vault::MockVault;
 
@@ -227,6 +227,7 @@ fn small_payments_go_out_at_once() {
         &shop,
         &euros(150),
         &String::from_str(&w.e, "Oars"),
+        &None,
     );
     let request = w.org.request(&id);
     assert_eq!(request.status, Status::Executed);
@@ -247,6 +248,7 @@ fn payments_wait_for_the_right_approvals_and_apply_four_eyes() {
         &shop,
         &euros(500),
         &String::from_str(&w.e, "Boat"),
+        &None,
     );
     assert_eq!(w.org.request(&id).status, Status::Pending);
     assert_eq!(w.org.available(&w.token), euros(4_500));
@@ -278,6 +280,7 @@ fn large_payments_run_through_the_objection_window() {
         &shop,
         &euros(3_200),
         &String::from_str(&w.e, "Regatta"),
+        &None,
     );
     w.org.approve(&bo, &id);
     w.org.approve(&bea, &id);
@@ -309,6 +312,7 @@ fn objections_and_cancellations_release_the_money() {
         &shop,
         &euros(3_000),
         &String::from_str(&w.e, ""),
+        &None,
     );
     w.org.approve(&bea, &id);
     w.org.approve(&w.founder, &id);
@@ -331,6 +335,7 @@ fn the_seal_is_required_above_the_threshold() {
         &shop,
         &euros(12_000),
         &String::from_str(&w.e, ""),
+        &None,
     );
     w.org.approve(&bo, &id);
     w.org.approve(&bea, &id);
@@ -351,12 +356,12 @@ fn refuses_overdrafts_and_bad_amounts() {
     let memo = String::from_str(&w.e, "");
     assert_eq!(
         w.org
-            .try_propose_payment(&w.founder, &w.token, &shop, &euros(101), &memo),
+            .try_propose_payment(&w.founder, &w.token, &shop, &euros(101), &memo, &None),
         Err(Ok(Error::InsufficientFunds))
     );
     assert_eq!(
         w.org
-            .try_propose_payment(&w.founder, &w.token, &shop, &0, &memo),
+            .try_propose_payment(&w.founder, &w.token, &shop, &0, &memo, &None),
         Err(Ok(Error::InvalidAmount))
     );
 }
@@ -470,6 +475,7 @@ fn requests_are_listed_newest_first() {
             &shop,
             &euros(10),
             &String::from_str(&w.e, ""),
+            &None,
         );
     }
     let page = w.org.requests(&0, &2);
@@ -492,6 +498,7 @@ fn approving_requires_the_approvers_own_authorization() {
         &shop,
         &euros(500),
         &String::from_str(&w.e, ""),
+        &None,
     );
     // From here on, only `bo` is authorized; approving as `bea` must fail at the auth check.
     w.e.mock_auths(&[MockAuth {
@@ -535,7 +542,8 @@ fn proposing_requires_the_requesters_own_authorization() {
             &w.token,
             &shop,
             &euros(10),
-            &String::from_str(&w.e, "")
+            &String::from_str(&w.e, ""),
+            &None
         )
         .is_err());
     assert_eq!(w.token_client.balance(&shop), 0);
@@ -553,7 +561,7 @@ fn accepts_several_tokens_and_pays_in_each() {
     let memo = String::from_str(&w.e, "");
     let id = w
         .org
-        .propose_payment(&w.founder, &eurc, &shop, &euros(100), &memo);
+        .propose_payment(&w.founder, &eurc, &shop, &euros(100), &memo, &None);
     assert_eq!(w.org.request(&id).status, Status::Executed);
     assert_eq!(token::Client::new(&w.e, &eurc).balance(&shop), euros(100));
     assert_eq!(w.org.available(&eurc), euros(400));
@@ -563,7 +571,7 @@ fn accepts_several_tokens_and_pays_in_each() {
             .address();
     assert_eq!(
         w.org
-            .try_propose_payment(&w.founder, &stranger, &shop, &euros(1), &memo),
+            .try_propose_payment(&w.founder, &stranger, &shop, &euros(1), &memo, &None),
         Err(Ok(Error::UnknownAsset))
     );
     assert_eq!(w.org.try_available(&stranger), Err(Ok(Error::UnknownAsset)));
@@ -593,6 +601,7 @@ fn payments_in_another_currency_take_the_strictest_rules_and_the_seal() {
         &shop,
         &euros(150),
         &String::from_str(&w.e, "Small, but in dollars"),
+        &None,
     );
     let request = w.org.request(&id);
     assert_eq!(request.status, Status::Pending);
@@ -631,6 +640,7 @@ fn tokens_in_use_or_alone_cannot_be_removed() {
         &shop,
         &euros(50),
         &String::from_str(&w.e, ""),
+        &None,
     );
     w.org
         .change_directly(&w.founder, &Change::RemoveAsset(eurc.clone()));
@@ -842,7 +852,7 @@ fn spending_limits_let_crew_pay_small_amounts_without_approvals() {
     // €400 would normally need a board member; inside the allowance it goes out at once.
     let id = w
         .org
-        .propose_payment(&max, &w.token, &shop, &euros(400), &memo);
+        .propose_payment(&max, &w.token, &shop, &euros(400), &memo, &None);
     let request = w.org.request(&id);
     assert_eq!(request.status, Status::Executed);
     assert!(request.evaluation.within_limit);
@@ -853,7 +863,7 @@ fn spending_limits_let_crew_pay_small_amounts_without_approvals() {
     // The next €400 doesn't fit: normal rules, so it waits for a board member.
     let second = w
         .org
-        .propose_payment(&max, &w.token, &shop, &euros(400), &memo);
+        .propose_payment(&max, &w.token, &shop, &euros(400), &memo, &None);
     assert_eq!(w.org.request(&second).status, Status::Pending);
     assert!(!w.org.request(&second).evaluation.within_limit);
     w.org.approve(&bo, &second);
@@ -863,7 +873,7 @@ fn spending_limits_let_crew_pay_small_amounts_without_approvals() {
     assert_eq!(w.org.spending_limits().get_unchecked(0).limit.spent, 0);
     let third = w
         .org
-        .propose_payment(&max, &w.token, &shop, &euros(500), &memo);
+        .propose_payment(&max, &w.token, &shop, &euros(500), &memo, &None);
     assert_eq!(w.org.request(&third).status, Status::Executed);
     // Removing the limit (amount 0) and removing the member both clear it.
     w.org
@@ -885,10 +895,138 @@ fn spending_limits_apply_only_to_the_rules_currency() {
         &Change::SetSpendingLimit(max.clone(), euros(500), 86_400),
     );
     let shop = Address::generate(&w.e);
-    let id = w
-        .org
-        .propose_payment(&max, &usdc, &shop, &euros(10), &String::from_str(&w.e, ""));
+    let id = w.org.propose_payment(
+        &max,
+        &usdc,
+        &shop,
+        &euros(10),
+        &String::from_str(&w.e, ""),
+        &None,
+    );
     // Dollars in a euro organization: strictest tier and seal, the allowance doesn't apply.
     assert_eq!(w.org.request(&id).status, Status::Pending);
     assert!(w.org.request(&id).evaluation.seal_required);
+}
+
+#[test]
+fn budgets_count_categorised_payments_and_escalate_or_refuse() {
+    let w = club(50_000);
+    let events = Symbol::new(&w.e, "events");
+    let gear = symbol_short!("gear");
+    let mut policy = w.org.policy();
+    policy.budgets = Vec::from_array(
+        &w.e,
+        [
+            Budget {
+                category: events.clone(),
+                amount: euros(1_000),
+                period_seconds: 30 * 86_400,
+                hard: false,
+            },
+            Budget {
+                category: gear.clone(),
+                amount: euros(500),
+                period_seconds: 30 * 86_400,
+                hard: true,
+            },
+        ],
+    );
+    w.org.change_directly(
+        &w.founder,
+        &Change::UpdatePolicy(policy, BytesN::from_array(&w.e, &[3u8; 32])),
+    );
+    let bo = board_member(&w);
+    let shop = Address::generate(&w.e);
+    let memo = String::from_str(&w.e, "");
+
+    assert_eq!(
+        w.org.try_propose_payment(
+            &bo,
+            &w.token,
+            &shop,
+            &euros(10),
+            &memo,
+            &Some(symbol_short!("other"))
+        ),
+        Err(Ok(Error::UnknownBudget))
+    );
+    // Within the events budget: the amount's own tier.
+    let first = w.org.propose_payment(
+        &bo,
+        &w.token,
+        &shop,
+        &euros(600),
+        &memo,
+        &Some(events.clone()),
+    );
+    let request = w.org.request(&first);
+    assert_eq!(request.evaluation.tier, Some(1));
+    assert!(!request.evaluation.over_budget);
+    assert_eq!(w.org.budgets().get(0).unwrap().spent, euros(600));
+    // Beyond it (soft): strictest tier, flagged, still booked.
+    let second = w.org.propose_payment(
+        &bo,
+        &w.token,
+        &shop,
+        &euros(600),
+        &memo,
+        &Some(events.clone()),
+    );
+    let request = w.org.request(&second);
+    assert_eq!(request.evaluation.tier, Some(2));
+    assert!(request.evaluation.over_budget);
+    assert_eq!(w.org.budgets().get(0).unwrap().spent, euros(1_200));
+    // Declining gives the amount back.
+    w.org.decline(&bo, &second);
+    assert_eq!(w.org.budgets().get(0).unwrap().spent, euros(600));
+    // A hard budget refuses what doesn't fit.
+    w.org.propose_payment(
+        &bo,
+        &w.token,
+        &shop,
+        &euros(300),
+        &memo,
+        &Some(gear.clone()),
+    );
+    assert_eq!(
+        w.org.try_propose_payment(
+            &bo,
+            &w.token,
+            &shop,
+            &euros(300),
+            &memo,
+            &Some(gear.clone())
+        ),
+        Err(Ok(Error::BudgetExceeded))
+    );
+    // A new period starts empty.
+    w.e.ledger()
+        .set_timestamp(w.e.ledger().timestamp() + 30 * 86_400);
+    assert!(w
+        .org
+        .try_propose_payment(&bo, &w.token, &shop, &euros(300), &memo, &Some(gear))
+        .is_ok());
+    // Payments without a category are untouched.
+    let plain = w
+        .org
+        .propose_payment(&bo, &w.token, &shop, &euros(50), &memo, &None);
+    assert!(!w.org.request(&plain).evaluation.over_budget);
+    // Rules with a bad budget are refused.
+    let mut broken = w.org.policy();
+    broken.budgets = Vec::from_array(
+        &w.e,
+        [Budget {
+            category: symbol_short!("zero"),
+            amount: 0,
+            period_seconds: 86_400,
+            hard: false,
+        }],
+    );
+    assert_eq!(
+        w.org.try_propose_change(
+            &bo,
+            &Change::UpdatePolicy(broken, BytesN::from_array(&w.e, &[4u8; 32]))
+        ),
+        Err(Ok(Error::InvalidPolicy))
+    );
 }

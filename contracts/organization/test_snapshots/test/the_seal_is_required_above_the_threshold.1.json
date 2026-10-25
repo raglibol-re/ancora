@@ -158,7 +158,8 @@
                 },
                 {
                   "string": ""
-                }
+                },
+                "void"
               ]
             }
           },
@@ -759,6 +760,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "over_budget"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "seal_required"
                           },
                           "val": {
@@ -824,6 +833,12 @@
                               "val": {
                                 "i128": "120000000000"
                               }
+                            },
+                            {
+                              "key": {
+                                "symbol": "category"
+                              },
+                              "val": "void"
                             },
                             {
                               "key": {
@@ -1278,6 +1293,14 @@
                       },
                       "val": {
                         "map": [
+                          {
+                            "key": {
+                              "symbol": "budgets"
+                            },
+                            "val": {
+                              "vec": []
+                            }
+                          },
                           {
                             "key": {
                               "symbol": "new_recipient_approvals"

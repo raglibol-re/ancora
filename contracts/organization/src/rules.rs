@@ -8,6 +8,8 @@ use crate::types::{Error, Evaluation, Policy, Requirement, Tier};
 /// A member with the rank of their role: 0 is the highest role.
 pub type Ranked = (Address, u32);
 
+const MAX_BUDGETS: u32 = 20;
+
 /// Rank of a role in the organization's role list; `None` for unknown roles.
 pub fn rank_of(roles: &Vec<Symbol>, role: &Symbol) -> Option<u32> {
     roles.iter().position(|r| r == *role).map(|i| i as u32)
@@ -48,6 +50,19 @@ pub fn validate_policy(policy: &Policy, roles: &Vec<Symbol>) -> Result<(), Error
     }
     if policy.seal_threshold <= 0 {
         return Err(Error::InvalidPolicy);
+    }
+    if policy.budgets.len() > MAX_BUDGETS {
+        return Err(Error::InvalidPolicy);
+    }
+    for (index, budget) in policy.budgets.iter().enumerate() {
+        if budget.amount <= 0 || budget.period_seconds == 0 {
+            return Err(Error::InvalidPolicy);
+        }
+        for later in policy.budgets.iter().skip(index + 1) {
+            if later.category == budget.category {
+                return Err(Error::InvalidPolicy);
+            }
+        }
     }
     validate_requirements(&policy.new_recipient_approvals, roles)
 }
@@ -96,14 +111,15 @@ pub fn evaluate_payment(
     policy: &Policy,
     amount_in_base: Option<i128>,
     recipient_is_new: bool,
+    over_budget: bool,
 ) -> Result<Evaluation, Error> {
     let index = match amount_in_base {
-        Some(amount) => policy
+        Some(amount) if !over_budget => policy
             .tiers
             .iter()
             .position(|tier| tier.up_to.is_none_or(|limit| amount <= limit))
             .ok_or(Error::InvalidPolicy)?,
-        None => {
+        _ => {
             let last = policy
                 .tiers
                 .len()
@@ -124,6 +140,7 @@ pub fn evaluate_payment(
         objection_window_hours: tier.objection_window_hours,
         seal_required: amount_in_base.is_none_or(|amount| amount >= policy.seal_threshold),
         within_limit: false,
+        over_budget,
     })
 }
 
@@ -135,6 +152,7 @@ pub fn limit_evaluation(e: &Env) -> Evaluation {
         objection_window_hours: 0,
         seal_required: false,
         within_limit: true,
+        over_budget: false,
     }
 }
 
@@ -147,6 +165,7 @@ pub fn evaluate_governance(policy: &Policy) -> Result<Evaluation, Error> {
         objection_window_hours: tier.objection_window_hours,
         seal_required: false,
         within_limit: false,
+        over_budget: false,
     })
 }
 

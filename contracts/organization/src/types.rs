@@ -40,6 +40,10 @@ pub enum Error {
     NotTopRole = 28,
     /// A spending limit needs a non-negative amount and, when set, a period above zero.
     InvalidLimit = 29,
+    /// The payment goes beyond what is left of a hard budget in this period.
+    BudgetExceeded = 30,
+    /// The rules have no budget for this category.
+    UnknownBudget = 31,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -59,6 +63,34 @@ pub struct Tier {
     pub objection_window_hours: u32,
 }
 
+/// A spending envelope for one category per rolling period, in the rules' currency. Payments
+/// tagged with the category count against it. Beyond the remaining amount a soft budget
+/// escalates the payment to the strictest tier and flags it; a hard budget refuses it.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Budget {
+    pub category: Symbol,
+    pub amount: i128,
+    pub period_seconds: u64,
+    pub hard: bool,
+}
+
+/// What was booked against a budget in its running window.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BudgetUse {
+    pub spent: i128,
+    pub window_start: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BudgetView {
+    pub budget: Budget,
+    pub spent: i128,
+    pub window_start: u64,
+}
+
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Policy {
@@ -68,6 +100,8 @@ pub struct Policy {
     pub seal_threshold: i128,
     /// Extra requirements for a first payment to a recipient, merged per role (higher count wins).
     pub new_recipient_approvals: Vec<Requirement>,
+    /// Spending envelopes per category; part of the rules, so the document hash covers them.
+    pub budgets: Vec<Budget>,
 }
 
 /// What a request needs before it can execute; fixed when the request is created.
@@ -81,6 +115,8 @@ pub struct Evaluation {
     pub seal_required: bool,
     /// The payment fits the requester's spending limit, so no approval is needed.
     pub within_limit: bool,
+    /// The payment goes beyond its (soft) budget: strictest tier, and approvers see the flag.
+    pub over_budget: bool,
 }
 
 #[contracttype]
@@ -164,6 +200,8 @@ pub struct Payment {
     pub to: Address,
     pub amount: i128,
     pub memo: String,
+    /// The budget category this payment counts against, if any.
+    pub category: Option<Symbol>,
 }
 
 #[contracttype]

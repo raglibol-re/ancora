@@ -7,6 +7,7 @@ import { describeEvaluation } from "../requests/describe.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AssetsCard } from "./AssetsCard.tsx";
+import { BudgetsRulesCard } from "./BudgetsRulesCard.tsx";
 import { PeopleCard } from "./PeopleCard.tsx";
 import { RulesHashCard } from "./RulesHashCard.tsx";
 import { TemplateCard } from "./TemplateCard.tsx";
@@ -40,6 +41,7 @@ function Rules({ account }: { account: OrgAccount }) {
 				key={`${account.org.id}-${JSON.stringify(account.org.policy)}`}
 				account={account}
 			/>
+			<BudgetsRulesCard key={`budgets-${account.org.id}`} account={account} />
 			<RulesHashCard account={account} />
 			<PeopleCard key={`people-${account.org.id}`} account={account} />
 			<AssetsCard key={`assets-${account.org.id}`} account={account} />

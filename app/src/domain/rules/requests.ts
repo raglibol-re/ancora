@@ -49,6 +49,8 @@ export type PaymentRequest = RequestBase & {
 	recipientIsNew: boolean;
 	/** Reference shown to approvers and on the statement. */
 	note: string;
+	/** The budget category it counts against, if any. */
+	category: string | null;
 };
 
 export type GovernanceRequest = RequestBase & {
@@ -79,6 +81,9 @@ const notMember = () =>
 
 export type NewPayment = {
 	id: string;
+	category?: string | null;
+	/** The data source checked the budget: beyond a soft one, the strictest tier applies. */
+	overBudget?: boolean;
 	requesterId: PersonId;
 	token: string;
 	amount: Cents;
@@ -102,17 +107,24 @@ export function createPaymentRequest(
 	}
 	const foreignCurrency = asset.currency !== org.baseCurrency;
 	const requester = org.members.find((m) => m.personId === input.requesterId);
+	const { overBudget = false, ...fields } = input;
 	const evaluation =
-		!foreignCurrency && fitsLimit(requester, input.amount, now)
+		!foreignCurrency && !overBudget && fitsLimit(requester, input.amount, now)
 			? limitEvaluation()
-			: evaluatePayment(org.policy, { ...input, foreignCurrency });
+			: evaluatePayment(org.policy, {
+					amount: input.amount,
+					recipientIsNew: input.recipientIsNew,
+					foreignCurrency,
+					overBudget,
+				});
 	return ok(
 		settle(
 			org,
 			{
 				...blank(input.id, input.requesterId, now, evaluation),
 				kind: "payment",
-				...input,
+				...fields,
+				category: fields.category ?? null,
 				currency: asset.currency,
 			},
 			now,

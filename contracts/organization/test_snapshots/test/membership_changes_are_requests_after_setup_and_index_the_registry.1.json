@@ -805,6 +805,14 @@
                         },
                         {
                           "key": {
+                            "symbol": "over_budget"
+                          },
+                          "val": {
+                            "bool": false
+                          }
+                        },
+                        {
+                          "key": {
                             "symbol": "seal_required"
                           },
                           "val": {
@@ -1353,6 +1361,14 @@
                       },
                       "val": {
                         "map": [
+                          {
+                            "key": {
+                              "symbol": "budgets"
+                            },
+                            "val": {
+                              "vec": []
+                            }
+                          },
                           {
                             "key": {
                               "symbol": "new_recipient_approvals"

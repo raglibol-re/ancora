@@ -3,7 +3,7 @@
 
 use soroban_sdk::{symbol_short, Env, Symbol, Vec};
 
-use crate::types::{Policy, Requirement, Tier, CENT};
+use crate::types::{Budget, Policy, Requirement, Tier, CENT};
 
 pub struct Template {
     pub roles: Vec<Symbol>,
@@ -53,6 +53,7 @@ pub fn template_in_cents(e: &Env, id: &Symbol) -> Option<Template> {
                 ),
                 seal_threshold: euros(10_000),
                 new_recipient_approvals: Vec::new(e),
+                budgets: Vec::new(e),
             },
         });
     }
@@ -78,6 +79,7 @@ pub fn template_in_cents(e: &Env, id: &Symbol) -> Option<Template> {
                 ),
                 seal_threshold: euros(50_000),
                 new_recipient_approvals: Vec::from_array(e, [req(director, 1)]),
+                budgets: Vec::new(e),
             },
         });
     }
@@ -97,6 +99,7 @@ pub fn template_in_cents(e: &Env, id: &Symbol) -> Option<Template> {
                 ),
                 seal_threshold: euros(5_000),
                 new_recipient_approvals: Vec::new(e),
+                budgets: Vec::new(e),
             },
         });
     }
@@ -121,9 +124,17 @@ pub fn scale_policy(e: &Env, policy: &Policy, factor: i128) -> Policy {
             objection_window_hours: t.objection_window_hours,
         });
     }
+    let mut budgets = Vec::new(e);
+    for b in policy.budgets.iter() {
+        budgets.push_back(Budget {
+            amount: b.amount * factor,
+            ..b
+        });
+    }
     Policy {
         tiers,
         seal_threshold: policy.seal_threshold * factor,
         new_recipient_approvals: policy.new_recipient_approvals.clone(),
+        budgets,
     }
 }

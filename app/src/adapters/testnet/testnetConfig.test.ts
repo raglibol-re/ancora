@@ -21,6 +21,7 @@ const complete = {
 	VITE_ORG_ASSETS: "BlendUSDC:CUSDC:USD:CVAULT,USDC:CCIRCLE:USD",
 	VITE_ANCHOR_HOME_DOMAIN: "testanchor.stellar.org",
 	VITE_RECOVERY_CONTRACT: "CRECOVERY",
+	VITE_FX_RATES_URL: "https://rates.example",
 };
 
 describe("readTestnetConfig", () => {

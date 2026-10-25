@@ -13,7 +13,7 @@ import {
 	type Workspace,
 	withdrawFromReserve,
 } from "../../domain/account.ts";
-import type { Budget } from "../../domain/budgets.ts";
+import { bookBudget, budgetVerdict, checkBudget, releaseBudget } from "../../domain/budgets.ts";
 import type {
 	AssetOption,
 	ChangeOutcome,
@@ -220,23 +220,9 @@ export class LocalDataSource implements DataSource {
 			requests: [],
 			activity: [],
 			discussions: {},
-			budgets: [],
+			budgetUse: {},
 		});
 		return ok(id);
-	}
-
-	async saveBudgets(orgId: string, actorId: PersonId, budgets: readonly Budget[]) {
-		return this.store.mutate(orgId, (account) => {
-			if (!canManageTreasury(account.org, actorId)) {
-				return err(
-					ruleError(
-						"not-allowed",
-						"Only the top role or a strictest-tier approver sets the budgets.",
-					),
-				);
-			}
-			return ok({ ...account, budgets: [...budgets] });
-		});
 	}
 
 	private async mutateThread(
@@ -274,6 +260,13 @@ export class LocalDataSource implements DataSource {
 							account: target.account.trim(),
 						});
 			if (!payee) return notFound();
+			const now = this.clock();
+			const asset = account.org.assets.find((a) => a.token === input.token);
+			const foreign = asset !== undefined && asset.currency !== account.org.baseCurrency;
+			const category = input.category ?? null;
+			// Like the contract: a hard budget refuses, a soft one escalates and flags.
+			const verdict = budgetVerdict(checkBudget(account, category, input.amount, foreign, now));
+			if (!verdict.ok) return verdict;
 			const created = createPaymentRequest(
 				account.org,
 				{
@@ -284,8 +277,10 @@ export class LocalDataSource implements DataSource {
 					recipientId: payee.id,
 					recipientIsNew: isNewRecipient(account, payee.id),
 					note: input.note.trim(),
+					category,
+					overBudget: verdict.value,
 				},
-				this.clock(),
+				now,
 			);
 			if (!created.ok) return created;
 			const payees = account.payees.some((p) => p.id === payee.id)
@@ -293,9 +288,17 @@ export class LocalDataSource implements DataSource {
 				: [...account.payees, payee];
 			// A payment inside the requester's allowance is booked against it (the contract does the same).
 			const org = created.value.evaluation.withinLimit
-				? bookLimit(account.org, actorId, input.amount, this.clock())
+				? bookLimit(account.org, actorId, input.amount, now)
 				: account.org;
-			return ok({ ...account, org, payees, requests: [created.value, ...account.requests] });
+			const budgetUse =
+				category && !foreign ? bookBudget(account, category, input.amount, now) : account.budgetUse;
+			return ok({
+				...account,
+				org,
+				payees,
+				budgetUse,
+				requests: [created.value, ...account.requests],
+			});
 		});
 		return result.ok ? ok(requestId) : result;
 	}
@@ -313,9 +316,25 @@ export class LocalDataSource implements DataSource {
 	}
 
 	async decline(orgId: string, requestId: string, actorId: PersonId) {
-		return this.mutateRequest(orgId, requestId, (account, request) =>
+		const declined = this.mutateRequest(orgId, requestId, (account, request) =>
 			declineRequest(account.org, request, actorId),
 		);
+		if (!declined.ok) return declined;
+		// A declined payment gives its amount back to its budget (the contract does the same).
+		return this.store.mutate(orgId, (account) => {
+			const request = account.requests.find((r) => r.id === requestId);
+			if (
+				request?.kind !== "payment" ||
+				!request.category ||
+				request.currency !== account.org.baseCurrency
+			) {
+				return ok(account);
+			}
+			return ok({
+				...account,
+				budgetUse: releaseBudget(account, request.category, request.amount, this.clock()),
+			});
+		});
 	}
 
 	async proposeChange(orgId: string, actorId: PersonId, change: GovernanceChange) {

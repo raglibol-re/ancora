@@ -1,5 +1,4 @@
 import type { Workspace } from "./account.ts";
-import type { Budget } from "./budgets.ts";
 import type { EntryKind, Reaction } from "./discussion.ts";
 import type { ClaimStatus, LifelineOverview, RecoveryPlan } from "./lifeline.ts";
 import type { Cents, Currency } from "./money.ts";
@@ -15,6 +14,8 @@ export type PaymentInput = {
 	token: string;
 	amount: Cents;
 	note: string;
+	/** Budget category the payment counts against (one of the rules' budgets). */
+	category?: string | null;
 };
 
 export type ChangeOutcome = "applied" | "requested";
@@ -216,13 +217,6 @@ export interface DataSource {
 		actorId: PersonId,
 		change: GovernanceChange,
 	): Promise<Result<ChangeOutcome, RuleError>>;
-
-	/** Replaces the organization's budgets; only people who may manage the treasury. */
-	saveBudgets(
-		orgId: string,
-		actorId: PersonId,
-		budgets: readonly Budget[],
-	): Promise<Result<void, RuleError>>;
 
 	moveToReserve(
 		orgId: string,

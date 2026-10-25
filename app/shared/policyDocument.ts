@@ -1,15 +1,19 @@
-// The readable form of an organization's rules. Canonical JSON (sorted keys, no whitespace,
-// integers only) hashed with SHA-256; the organization contract stores the hash, so anyone can
-// recompute it from the document and verify the active rules. Used by the app and the Functions.
+// The readable form of an organization's rules. Canonical JSON hashed with SHA-256; the
+// organization contract stores the hash, so anyone can recompute it from the document and
+// verify the active rules. Used by the app and the Functions.
+//
+// Version 3 follows the canonical-form rules of stellar-registry/perch (CANON v1) so the
+// document can later be read by that toolchain: no whitespace, object keys sorted, arrays in
+// order, numbers only where they fit in u32, big amounts as decimal strings, no null (absent
+// optional fields are left out), no booleans. Version 2 is kept to verify organizations created
+// before 26 Oct 2026.
 
 export type PolicyDocumentRequirement = { role: string; count: number };
 
-export type PolicyDocument = {
+export type PolicyDocumentV2 = {
 	ancora: "policy/2";
 	template: string;
-	/** Highest role first; rank decides who may fill whose approval slot. */
 	roles: string[];
-	/** Amounts are integer cents of `currency`; other currencies take the strictest tier. */
 	unit: "cent";
 	currency: string;
 	tiers: {
@@ -20,6 +24,33 @@ export type PolicyDocument = {
 	sealThreshold: number;
 	newRecipientApprovals: PolicyDocumentRequirement[];
 };
+
+export type PolicyDocumentV3 = {
+	ancora: "policy/3";
+	template: string;
+	/** Highest role first; rank decides who may fill whose approval slot. */
+	roles: string[];
+	/** Amounts are decimal strings of integer cents of `currency`. */
+	unit: "cent";
+	currency: string;
+	tiers: {
+		/** Absent on the last, unbounded tier. */
+		upTo?: string;
+		approvals: PolicyDocumentRequirement[];
+		objectionWindowHours: number;
+	}[];
+	sealThreshold: string;
+	newRecipientApprovals: PolicyDocumentRequirement[];
+	budgets: {
+		category: string;
+		amount: string;
+		periodSeconds: number;
+		/** "hard" refuses beyond the budget, "soft" escalates to the strictest tier. */
+		mode: "hard" | "soft";
+	}[];
+};
+
+export type PolicyDocument = PolicyDocumentV2 | PolicyDocumentV3;
 
 /** Deterministic JSON: object keys sorted, arrays in order, no insignificant whitespace. */
 export function canonicalJson(value: unknown): string {

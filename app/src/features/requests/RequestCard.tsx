@@ -43,7 +43,13 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 				</div>
 				<StatusPill status={request.status} />
 			</header>
-			{request.kind === "payment" && request.note && <p className={styles.note}>{request.note}</p>}
+			{request.kind === "payment" && (request.note || request.category) && (
+				<p className={styles.note}>
+					{request.note}
+					{request.category && `${request.note ? " · " : ""}#${request.category}`}
+					{request.evaluation.overBudget && " · over budget"}
+				</p>
+			)}
 			{discussion && (
 				<Link to={`/app/approvals/${request.id}`} className={styles.meta}>
 					Discussion: {discussion}

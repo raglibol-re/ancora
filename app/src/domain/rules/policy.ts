@@ -35,6 +35,19 @@ export function validatePolicy(policy: Policy, roles: readonly Role[]): Result<P
 	if (!isValidAmount(policy.sealThreshold)) {
 		return invalid("The security seal threshold must be an amount above zero.");
 	}
+	if (policy.budgets.length > 20) return invalid("Up to 20 budgets.");
+	const categories = new Set<string>();
+	for (const budget of policy.budgets) {
+		if (!/^[a-z0-9][a-z0-9_]{0,31}$/.test(budget.category)) {
+			return invalid(`Budget "${budget.category}" needs a name of letters, digits or underscores.`);
+		}
+		if (!isValidAmount(budget.amount) || budget.periodSeconds <= 0) {
+			return invalid(`Budget ${budget.category} needs an amount above zero and a period.`);
+		}
+		if (categories.has(budget.category))
+			return invalid(`Budget ${budget.category} is listed twice.`);
+		categories.add(budget.category);
+	}
 	const allRequirements = [
 		...tiers.flatMap((tier) => tier.approvals),
 		...policy.newRecipientApprovals,
@@ -70,10 +83,13 @@ export type PaymentFacts = {
 	 * it takes the strictest tier and the seal, so it is never under-approved.
 	 */
 	foreignCurrency?: boolean;
+	/** Beyond its soft budget: the strictest tier applies and approvers see the flag. */
+	overBudget?: boolean;
 };
 
 export function evaluatePayment(policy: Policy, payment: PaymentFacts): Evaluation {
-	const tierIndex = payment.foreignCurrency
+	const strictest = payment.foreignCurrency === true || payment.overBudget === true;
+	const tierIndex = strictest
 		? policy.tiers.length - 1
 		: policy.tiers.findIndex((tier) => tier.upTo === null || payment.amount <= tier.upTo);
 	const tier = tierAt(policy, tierIndex);
@@ -84,6 +100,7 @@ export function evaluatePayment(policy: Policy, payment: PaymentFacts): Evaluati
 			: [...tier.approvals],
 		objectionWindowHours: tier.objectionWindowHours,
 		sealRequired: payment.foreignCurrency === true || payment.amount >= policy.sealThreshold,
+		...(payment.overBudget ? { overBudget: true } : {}),
 	};
 }
 
