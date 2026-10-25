@@ -23,7 +23,7 @@ DEPLOYER="ancora-deployer"
 BLEND_USDC="CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU"
 BLEND_FAUCET="https://ewqw4hx7oa.execute-api.us-east-1.amazonaws.com/getAssets"
 # Keep at least this much BlendUSDC (in stroops, 7 decimals) on the deployer for demo top-ups.
-MIN_USDC_FLOAT=2000000000 # 200 USDC
+MIN_USDC_FLOAT=3000000000 # 300 USDC (three test-money grants)
 
 # DeFindex testnet deployments, from paltalabs/defindex public/testnet.contracts.json.
 DEFINDEX_USDC_VAULT="CBMVK2JK6NTOT2O4HNQAIQFJY232BHKGLIMXDVQVHIIZKDACXDFZDWHN"
@@ -117,16 +117,29 @@ ensure_usdc_float() {
 			problem "deployer holds ${balance:-no} BlendUSDC stroops (want ≥ $MIN_USDC_FLOAT)"
 			return
 		}
-		# The faucet returns a transaction pre-signed by the issuer that adds the trustline and pays
-		# 1,000 USDC; the receiving account co-signs and submits it.
-		local envelope signed
-		envelope="$(curl -fsS "$BLEND_FAUCET?userId=$DEPLOYER_ADDRESS" | tr -d '"')" ||
-			die "Blend faucet unreachable. Try again later or claim manually at https://testnet.blend.capital"
-		signed="$(stellar tx sign "$envelope" --sign-with-key "$DEPLOYER" --network "$NETWORK" 2>/dev/null)"
-		stellar tx send "$signed" --network "$NETWORK" >/dev/null
+		refill_usdc_float
 		balance="$(read_contract "$BLEND_USDC" balance --id "$DEPLOYER_ADDRESS" | tr -d '"')"
 	fi
 	ok "deployer holds $((balance / 10000000)) BlendUSDC"
+}
+
+# Blend's faucet pays each account once: it returns an issuer-signed transaction that adds the
+# trustline and pays 1,000 USDC, which the receiver co-signs. To refill repeatedly, a throwaway
+# Friendbot-funded key claims it and forwards everything to the deployer, then is deleted.
+refill_usdc_float() {
+	local helper helper_address envelope signed amount
+	helper="ancora-float-$(date +%s)"
+	stellar keys generate "$helper" --network "$NETWORK" --fund >/dev/null 2>&1 ||
+		die "Friendbot could not fund a helper key. Try again later."
+	helper_address="$(stellar keys address "$helper")"
+	envelope="$(curl -fsS "$BLEND_FAUCET?userId=$helper_address" | tr -d '"')" ||
+		die "Blend faucet unreachable. Try again later or claim manually at https://testnet.blend.capital"
+	signed="$(stellar tx sign "$envelope" --sign-with-key "$helper" --network "$NETWORK" 2>/dev/null)"
+	stellar tx send "$signed" --network "$NETWORK" >/dev/null 2>&1 || die "Blend faucet claim failed."
+	amount="$(stellar contract invoke --id "$BLEND_USDC" --network "$NETWORK" --source "$helper" --send no 		-- balance --id "$helper_address" 2>/dev/null | tr -d '"')"
+	stellar contract invoke --id "$BLEND_USDC" --network "$NETWORK" --source "$helper" 		-- transfer --from "$helper_address" --to "$DEPLOYER_ADDRESS" --amount "$amount" >/dev/null 2>&1 ||
+		die "Could not forward the faucet USDC to the deployer."
+	stellar keys rm "$helper" >/dev/null 2>&1 || true
 }
 
 verify_external_contracts() {

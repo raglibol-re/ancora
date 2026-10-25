@@ -8,7 +8,7 @@ import { required, serverConfig } from "./_lib/serverConfig.js";
 // The operator is never a signer on any organization account; it can only give, not take.
 
 const STROOPS_PER_USDC = 10_000_000n;
-const GRANT = 500n * STROOPS_PER_USDC;
+const GRANT = 100n * STROOPS_PER_USDC;
 const MAX_BALANCE_FOR_GRANT = 5_000n * STROOPS_PER_USDC;
 
 export const config = { maxDuration: 60 };
