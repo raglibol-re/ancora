@@ -20,8 +20,35 @@
 	background: rgb(11 23 48 / 0.55);
 }
 
+.header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+
 .title {
 	font-size: var(--text-xl);
+}
+
+.close {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
+	padding: 0;
+	border: none;
+	border-radius: var(--radius-pill);
+	background: transparent;
+	color: var(--color-text-muted);
+	cursor: pointer;
+}
+
+.close:hover {
+	background: var(--color-border);
+	color: var(--color-text);
 }
 
 @media (min-width: 600px) {
