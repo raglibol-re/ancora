@@ -48,6 +48,9 @@ export function apiHandler(method: "GET" | "POST", handle: (request: Request) =>
 				return json({ success: true, data: await handle(request) }, 200, origin);
 			} catch (error) {
 				if (error instanceof RequestError) {
+					// Refusals are the operator's main debugging signal (Vercel logs); no secrets in them.
+					// biome-ignore lint/suspicious/noConsole: server-side log line for the operator
+					console.warn(`[api] ${new URL(request.url).pathname} ${error.status}: ${error.message}`);
 					return json({ success: false, error: error.message }, error.status, origin);
 				}
 				const message =
