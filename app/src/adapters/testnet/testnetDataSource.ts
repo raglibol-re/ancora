@@ -9,12 +9,14 @@ import {
 import type {
 	ChangeOutcome,
 	DataSource,
+	DiscussionSupport,
 	FundingSupport,
 	Identity,
 	IdentitySupport,
 	PaymentInput,
 	ProfileInput,
 } from "../../domain/dataSource.ts";
+import type { DiscussionEntry } from "../../domain/discussion.ts";
 import type { Cents } from "../../domain/money.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
@@ -57,6 +59,14 @@ export class TestnetDataSource implements DataSource {
 	readonly identity: IdentitySupport;
 	readonly availableAssets: readonly AssetOption[];
 	readonly funding: FundingSupport;
+	readonly discussions: DiscussionSupport = {
+		post: (orgId, requestId, actorId, entry) =>
+			this.discuss({ action: "post", org: orgId, requestId, person: actorId, ...entry }),
+		react: (orgId, requestId, entryId, actorId, reaction) =>
+			this.discuss({ action: "react", org: orgId, requestId, entryId, person: actorId, reaction }),
+		markAnswered: (orgId, requestId, entryId, actorId) =>
+			this.discuss({ action: "answer", org: orgId, requestId, entryId, person: actorId }),
+	};
 	private readonly config: TestnetConfig;
 	private readonly storage: KeyValueStorage | null;
 	private readonly listeners = new Set<() => void>();
@@ -150,7 +160,10 @@ export class TestnetDataSource implements DataSource {
 		const me = this.me.id;
 		try {
 			const orgIds = await readOrganizationsOf(this.config, this.config.registryContract, me);
-			const snapshots = await Promise.all(orgIds.map((id) => readOrganization(this.config, id)));
+			const [snapshots, threads] = await Promise.all([
+				Promise.all(orgIds.map((id) => readOrganization(this.config, id))),
+				Promise.all(orgIds.map((id) => this.loadDiscussions(id))),
+			]);
 			const everyone = new Set<string>([me]);
 			for (const snapshot of snapshots) {
 				for (const member of snapshot.members) everyone.add(String(member.address));
@@ -158,14 +171,15 @@ export class TestnetDataSource implements DataSource {
 			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
 			const orgNames = new Map(snapshots.map((s) => [s.contractId, String(s.info.name)]));
 			const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
-			const accounts: OrgAccount[] = snapshots.map((snapshot) =>
-				mapOrganization(
+			const accounts: OrgAccount[] = snapshots.map((snapshot, index) => ({
+				...mapOrganization(
 					snapshot,
 					(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
 					Date.now(),
 					(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
 				),
-			);
+				discussions: threads[index] ?? {},
+			}));
 			const people: Person[] = [...everyone].map((id) => ({
 				id,
 				name: this.profiles.get(id)?.name ?? shortAddress(id),
@@ -405,6 +419,31 @@ export class TestnetDataSource implements DataSource {
 
 	async addTestMoney(orgId: string, _actorId: PersonId, token: string) {
 		const response = await this.post("/api/test-money", { contractId: orgId, token });
+		if (!response.ok) return response;
+		await this.refresh();
+		return ok(undefined);
+	}
+
+	/** The organization's discussion threads from ancora's server, grouped by request. */
+	private async loadDiscussions(orgId: string): Promise<Record<string, DiscussionEntry[]>> {
+		const response = await fetch(`/api/discussions?org=${encodeURIComponent(orgId)}`).catch(
+			() => null,
+		);
+		const payload = (await response?.json().catch(() => null)) as {
+			success?: boolean;
+			data?: { entries?: DiscussionEntry[] };
+		} | null;
+		const threads: Record<string, DiscussionEntry[]> = {};
+		for (const entry of payload?.data?.entries ?? []) {
+			const thread = threads[entry.requestId] ?? [];
+			thread.push(entry);
+			threads[entry.requestId] = thread;
+		}
+		return threads;
+	}
+
+	private async discuss(body: Record<string, unknown>): Promise<Result<void, RuleError>> {
+		const response = await this.post("/api/discussions", body);
 		if (!response.ok) return response;
 		await this.refresh();
 		return ok(undefined);

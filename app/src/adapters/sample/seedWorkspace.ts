@@ -1,5 +1,6 @@
 import type { ActivityEntry, OrgAccount, Person, Workspace } from "../../domain/account.ts";
 import type { AssetOption } from "../../domain/dataSource.ts";
+import type { DiscussionEntry } from "../../domain/discussion.ts";
 import { dollars, euros } from "../../domain/money.ts";
 import type { Member, RoleId, TemplateId } from "../../domain/rules/model.ts";
 import { evaluatePayment } from "../../domain/rules/policy.ts";
@@ -40,7 +41,8 @@ function account(
 	name: string,
 	templateId: TemplateId,
 	members: [string, RoleId][],
-	rest: Omit<OrgAccount, "org" | "onchain">,
+	rest: Omit<OrgAccount, "org" | "onchain" | "discussions"> &
+		Partial<Pick<OrgAccount, "discussions">>,
 ): OrgAccount {
 	const template = templates[templateId];
 	const memberList: Member[] = members.map(([personId, roleId]) => ({ personId, roleId }));
@@ -62,8 +64,22 @@ function account(
 			})),
 		},
 		onchain: null,
+		discussions: {},
 		...rest,
 	};
+}
+
+function said(
+	id: string,
+	requestId: string,
+	authorId: string,
+	at: number,
+	kind: DiscussionEntry["kind"],
+	text: string,
+	reactions: DiscussionEntry["reactions"] = {},
+	answered = false,
+): DiscussionEntry {
+	return { id, requestId, authorId, at, kind, text, answered, reactions };
 }
 
 type SeedPayment = Pick<
@@ -190,6 +206,27 @@ export function seedWorkspace(now: number): Workspace {
 					amount: 224,
 				}),
 			],
+			discussions: {
+				"req-regatta": [
+					said(
+						"d1",
+						"req-regatta",
+						"tomas",
+						now - 19 * HOUR,
+						"pro",
+						"Entry fees are due Friday and the regatta is our main event of the season.",
+						{ marta: "up", joao: "up" },
+					),
+					said(
+						"d2",
+						"req-regatta",
+						"marta",
+						now - 18 * HOUR,
+						"question",
+						"Is the early-bird discount already included in the €3,200?",
+					),
+				],
+			},
 		},
 	);
 
@@ -270,6 +307,27 @@ export function seedWorkspace(now: number): Workspace {
 					amount: 1_685,
 				}),
 			],
+			discussions: {
+				"req-design": [
+					said(
+						"d3",
+						"req-design",
+						"sofia",
+						now - 4 * HOUR,
+						"contra",
+						"Phase 2 before phase 1 has shipped feels early. Can we split it into two payments?",
+						{ rui: "down" },
+					),
+					said(
+						"d4",
+						"req-design",
+						"rui",
+						now - 3 * HOUR,
+						"comment",
+						"The quote matches the proposal we approved in May; the split is possible.",
+					),
+				],
+			},
 		},
 	);
 

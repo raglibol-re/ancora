@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router";
 import { Card } from "../../ui/Card.tsx";
 import { formatDateTime } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
+import { DiscussionCard } from "../discussion/DiscussionCard.tsx";
 import { describeEvaluation } from "../requests/describe.ts";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -44,6 +45,7 @@ export function RequestDetailPage() {
 					</ul>
 				</Card>
 			)}
+			<DiscussionCard account={account} request={request} />
 			{preferences.expertMode && <ExpertDetails account={account} request={request} />}
 		</Page>
 	);

@@ -1,3 +1,4 @@
+import type { DiscussionEntry } from "./discussion.ts";
 import type { Cents, Currency } from "./money.ts";
 import { err, ok, type Result } from "./result.ts";
 import { isEligibleApprover, memberRank } from "./rules/approvals.ts";
@@ -82,7 +83,14 @@ export type OrgAccount = {
 	payees: readonly Payee[];
 	requests: readonly ApprovalRequest[];
 	activity: readonly ActivityEntry[];
+	/** Discussion entries per request id (off-chain; see docs/DECISIONS.md). */
+	discussions: Readonly<Record<string, readonly DiscussionEntry[]>>;
 };
+
+/** The discussion on one request; tolerant of accounts stored before discussions existed. */
+export function discussionOf(account: OrgAccount, requestId: string): readonly DiscussionEntry[] {
+	return account.discussions?.[requestId] ?? [];
+}
 
 export type Workspace = {
 	people: readonly Person[];

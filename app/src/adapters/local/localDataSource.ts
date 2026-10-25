@@ -18,8 +18,17 @@ import type {
 	ChangeOutcome,
 	DataSource,
 	DataSourceKind,
+	DiscussionSupport,
 	PaymentInput,
 } from "../../domain/dataSource.ts";
+import {
+	canMarkAnswered,
+	canPost,
+	canReact,
+	type DiscussionEntry,
+	validateEntryText,
+	withReaction,
+} from "../../domain/discussion.ts";
 import type { Cents } from "../../domain/money.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import {
@@ -64,6 +73,46 @@ export class LocalDataSource implements DataSource {
 	readonly kind: DataSourceKind;
 	readonly identity = null;
 	readonly funding = null;
+	readonly discussions: DiscussionSupport = {
+		post: (orgId, requestId, actorId, entry) =>
+			this.mutateThread(orgId, requestId, (account, thread) => {
+				if (!canPost(account.org, actorId)) {
+					return notAllowed("Only members of the organization can take part.");
+				}
+				const text = validateEntryText(entry.text);
+				if (!text.ok) return text;
+				const posted: DiscussionEntry = {
+					id: this.newId(),
+					requestId,
+					authorId: actorId,
+					at: this.clock(),
+					kind: entry.kind,
+					text: text.value,
+					answered: false,
+					reactions: {},
+				};
+				return ok([...thread, posted]);
+			}),
+		react: (orgId, requestId, entryId, actorId, reaction) =>
+			this.mutateThread(orgId, requestId, (account, thread) => {
+				const entry = thread.find((e) => e.id === entryId);
+				if (!entry) return notFound();
+				if (!canPost(account.org, actorId) || !canReact(entry, actorId)) {
+					return notAllowed("You can't react to this entry.");
+				}
+				return ok(thread.map((e) => (e.id === entryId ? withReaction(e, actorId, reaction) : e)));
+			}),
+		markAnswered: (orgId, requestId, entryId, actorId) =>
+			this.mutateThread(orgId, requestId, (account, thread) => {
+				const entry = thread.find((e) => e.id === entryId);
+				const request = account.requests.find((r) => r.id === requestId);
+				if (!entry || !request) return notFound();
+				if (!canMarkAnswered(request, entry, actorId)) {
+					return notAllowed("Only the requester marks questions on their request as answered.");
+				}
+				return ok(thread.map((e) => (e.id === entryId ? { ...e, answered: true } : e)));
+			}),
+	};
 	readonly payments: "auto" | "manual";
 	readonly supportsReserve: boolean = true;
 	readonly availableAssets: readonly AssetOption[];
@@ -134,8 +183,28 @@ export class LocalDataSource implements DataSource {
 			payees: [],
 			requests: [],
 			activity: [],
+			discussions: {},
 		});
 		return ok(id);
+	}
+
+	private async mutateThread(
+		orgId: string,
+		requestId: string,
+		update: (
+			account: OrgAccount,
+			thread: readonly DiscussionEntry[],
+		) => Result<readonly DiscussionEntry[], RuleError>,
+	): Promise<Result<void, RuleError>> {
+		return this.store.mutate(orgId, (account) => {
+			if (!account.requests.some((r) => r.id === requestId)) return notFound();
+			const updated = update(account, account.discussions?.[requestId] ?? []);
+			if (!updated.ok) return updated;
+			return ok({
+				...account,
+				discussions: { ...account.discussions, [requestId]: updated.value },
+			});
+		});
 	}
 
 	async requestPayment(orgId: string, actorId: PersonId, input: PaymentInput) {

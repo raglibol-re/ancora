@@ -336,5 +336,6 @@ export function mapOrganization(
 		payees: [...payees.values()],
 		requests,
 		activity,
+		discussions: {},
 	};
 }

@@ -1,4 +1,5 @@
 import type { Workspace } from "./account.ts";
+import type { EntryKind, Reaction } from "./discussion.ts";
 import type { Cents, Currency } from "./money.ts";
 import type { Result } from "./result.ts";
 import type { GovernanceChange } from "./rules/governance.ts";
@@ -47,6 +48,31 @@ export interface FundingSupport {
 	): Promise<Result<string, RuleError>>;
 }
 
+/** Discussion on approval requests; the entries themselves arrive with the workspace snapshot. */
+export interface DiscussionSupport {
+	post(
+		orgId: string,
+		requestId: string,
+		actorId: PersonId,
+		entry: { kind: EntryKind; text: string },
+	): Promise<Result<void, RuleError>>;
+	/** Sets, changes or (null) clears the person's reaction on an entry. */
+	react(
+		orgId: string,
+		requestId: string,
+		entryId: string,
+		actorId: PersonId,
+		reaction: Reaction | null,
+	): Promise<Result<void, RuleError>>;
+	/** The requester closes a question on their request. */
+	markAnswered(
+		orgId: string,
+		requestId: string,
+		entryId: string,
+		actorId: PersonId,
+	): Promise<Result<void, RuleError>>;
+}
+
 /** Who the app acts as: a person's address on Stellar (their passkey-secured account). */
 export type Identity = { id: PersonId; name: string | null; avatarUrl: string | null };
 
@@ -84,6 +110,7 @@ export interface DataSource {
 	readonly availableAssets: readonly AssetOption[];
 	/** Funding from the person's own Stellar wallet; null for sample data. */
 	readonly funding: FundingSupport | null;
+	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;
 	/** Re-reads balances and organizations from the network; a no-op for sample data. */

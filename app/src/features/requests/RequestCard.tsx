@@ -1,5 +1,6 @@
 import { Link } from "react-router";
-import type { OrgAccount } from "../../domain/account.ts";
+import { discussionOf, type OrgAccount } from "../../domain/account.ts";
+import { describeSummary, summarize } from "../../domain/discussion.ts";
 import type { ApprovalRequest } from "../../domain/rules/requests.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
@@ -24,6 +25,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 	const { allowed, busy, approve, seal, decline, send } = useRequestActions(account, request);
 	const title = requestTitle(account, request, personName);
 	const requester = request.requesterId === me.id ? "you" : personName(request.requesterId);
+	const discussion = describeSummary(summarize(discussionOf(account, request.id)));
 
 	return (
 		<article className={styles.card}>
@@ -42,6 +44,11 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 				<StatusPill status={request.status} />
 			</header>
 			{request.kind === "payment" && request.note && <p className={styles.note}>{request.note}</p>}
+			{discussion && (
+				<Link to={`/app/approvals/${request.id}`} className={styles.meta}>
+					Discussion: {discussion}
+				</Link>
+			)}
 			<RequestProgress account={account} request={request} />
 			{request.executionRef && <ExplorerLink target={request.executionRef} />}
 			{(allowed.approve || allowed.seal || allowed.decline || allowed.send) && (

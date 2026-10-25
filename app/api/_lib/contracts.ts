@@ -1,6 +1,38 @@
-import { Address, Contract, hash, rpc, StrKey, xdr } from "@stellar/stellar-sdk";
+import {
+	Account,
+	Address,
+	Contract,
+	hash,
+	rpc,
+	StrKey,
+	scValToNative,
+	TransactionBuilder,
+	xdr,
+} from "@stellar/stellar-sdk";
+import { SIMULATION_SOURCE } from "../../shared/tokenBalance.js";
 import { RequestError } from "./http.js";
 import type { ServerConfig } from "./serverConfig.js";
+
+/** Calls a read-only contract function through simulation and decodes the result. */
+export async function readView(
+	config: ServerConfig,
+	contractId: string,
+	fn: string,
+	args: xdr.ScVal[] = [],
+): Promise<unknown> {
+	const tx = new TransactionBuilder(new Account(SIMULATION_SOURCE, "0"), {
+		fee: "100",
+		networkPassphrase: config.networkPassphrase,
+	})
+		.addOperation(new Contract(contractId).call(fn, ...args))
+		.setTimeout(30)
+		.build();
+	const simulation = await new rpc.Server(config.rpcUrl).simulateTransaction(tx);
+	if (!rpc.Api.isSimulationSuccess(simulation) || !simulation.result) {
+		throw new RequestError("The organization couldn't be read right now. Try again shortly.", 502);
+	}
+	return scValToNative(simulation.result.retval);
+}
 
 /** The WASM hash a deployed contract runs, lowercase hex; null when it doesn't exist. */
 export async function contractWasmHash(

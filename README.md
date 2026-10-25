@@ -48,6 +48,7 @@ One passkey per person, one contract per organization:
 | Crew / agent keys | Per-key spending limits | Roadmap (task 9) |
 | Euro in/out | Account number card (IBAN); SEP-24 test anchor; Bridge | **Simulated** IBAN card; real ramps: task 10 |
 | Confidential payments | Hidden amounts with auditor view | Roadmap (task 14) |
+| Discussions on requests | Pro and contra reasons, questions (the requester marks them answered) and comments with thumbs up/down, one reaction per person, never on your own entry; summary on every request card | **Real** (off-chain in Vercel Blob, membership checked against the contract; entries aren't passkey-signed yet) |
 | Demo admin | `/admin` (passphrase): site-wide demo mode with automatic fallback, health panel (RPC, testnet rent, contracts, operator floats), recent errors, sample reset | Real (operator tool, testnet only) |
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -150,6 +151,7 @@ It uses the demo operator key, which is **not a signer on any organization accou
 - Paying a classic Stellar address (G…) works only if that account holds a trustline for the exact asset being sent (testnet has several assets called USDC: Blend's and Circle's are different issuers and don't mix). The app checks this before it requests the payment and names the asset to add. Organization addresses (C…) never need one.
 - Test money in Circle's USDC comes from a float the operator fills by hand at faucet.circle.com (captcha-gated), so grants shrink when it runs low; BlendUSDC is refilled automatically by the setup script.
 - Payments in an asset whose currency differs from the organization's rules (e.g. EURC in a USD organization) take the strictest tier and the seal; a live FX rate (Reflector oracle) is on the roadmap.
+- Discussion entries are stored off-chain (Vercel Blob) and checked against the organization's member list, but not yet signed with the author's passkey; signing them (SEP-53 style) is a roadmap item.
 - The security seal is enforced by the organization contract, but today an eligible approver adds it with their passkey; the quantum-safe ML-DSA-44 verifier is deployed and tested on testnet, the device key and the account wiring come next (see ROADMAP).
 - The Reserve exists for BlendUSDC only (the one DeFindex vault on testnet). Its "earned so far" figure is the vault value above what was moved in; the vault's own fees and Blend's variable rate decide it, and a Reserve move on testnet costs the operator a sponsored fee of tens of XLM (testnet rent, see above).
 - **Testnet fees are unusually high right now.** Measured on 25 Oct 2026: deploying an account 22 XLM, first deposit into it 22 XLM, a passkey-signed payment 46 XLM. Testnet's Soroban state is above its rent target, which puts rent at 2,271,304 stroops/KB versus 1,000 on mainnet, and the OpenZeppelin smart account extends its storage TTL to 30 days on every use. The relayer sponsors these fees from a Friendbot-funded operator key; the same operations cost well under 1 XLM at today's mainnet rent. Details in [docs/DECISIONS.md](docs/DECISIONS.md).

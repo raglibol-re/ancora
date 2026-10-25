@@ -8,7 +8,7 @@
 flowchart LR
   subgraph Vercel["One Vercel project (root: app/)"]
     SPA["PWA: landing /, app /app/*, /admin"]
-    API["Vercel Functions /api/*<br/>relay, create-organization, execute-request,<br/>test-money, upload-avatar, health, admin"]
+    API["Vercel Functions /api/*<br/>relay, create-organization, execute-request,<br/>test-money, upload-image, health, admin"]
   end
   Browser["Browser / installed PWA<br/>passkeys (WebAuthn)"] --> SPA
   SPA --> API
@@ -71,7 +71,7 @@ One passkey, one person, any number of positions: the same address is a board me
 
 ## Data sources
 
-Features never talk to the outside world directly. They use one `DataSource` interface (`app/src/domain/dataSource.ts`): a snapshot of the person's workspace plus commands, an optional `identity` (sign-in, sign-out, profile) for sources where the person is real, and an optional `funding` capability (connect a Stellar wallet, deposit into an organization) that the testnet adapter backs with Stellar Wallets Kit, loaded on demand (`walletFunding.ts`).
+Features never talk to the outside world directly. They use one `DataSource` interface (`app/src/domain/dataSource.ts`): a snapshot of the person's workspace plus commands, an optional `identity` (sign-in, sign-out, profile) for sources where the person is real, an optional `funding` capability (connect a Stellar wallet, deposit into an organization) that the testnet adapter backs with Stellar Wallets Kit, loaded on demand (`walletFunding.ts`), and `discussions` (post, react, mark answered), whose entries travel with the snapshot (`OrgAccount.discussions`): sample data keeps them in the browser store, the testnet adapter reads and writes them through `/api/discussions` (Vercel Blob, membership checked on-chain).
 
 | Implementation | Where | Status |
 |----------------|-------|--------|

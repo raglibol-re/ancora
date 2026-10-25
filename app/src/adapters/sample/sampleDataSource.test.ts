@@ -184,6 +184,40 @@ describe("SampleDataSource", () => {
 		expect(balanceOf(accountOf(ds, "tejo-rowing"), "eurc").reserve).toBe(euros(21_000));
 	});
 
+	it("keeps a discussion per request: members post, others react, the requester answers", async () => {
+		const ds = source();
+		expect(
+			await ds.discussions.post("tejo-rowing", "req-oars", "noah", { kind: "pro", text: "x" }),
+		).toMatchObject({ error: { code: "not-allowed" } });
+		expect(
+			(
+				await ds.discussions.post("tejo-rowing", "req-oars", "marta", {
+					kind: "question",
+					text: "Do we need two pairs?",
+				})
+			).ok,
+		).toBe(true);
+		const posted = accountOf(ds, "tejo-rowing").discussions["req-oars"]?.[0];
+		if (!posted) throw new Error("no entry");
+		expect(posted).toMatchObject({ kind: "question", authorId: "marta", answered: false });
+		expect(
+			await ds.discussions.react("tejo-rowing", "req-oars", posted.id, "marta", "up"),
+		).toMatchObject({ error: { code: "not-allowed" } });
+		expect(
+			(await ds.discussions.react("tejo-rowing", "req-oars", posted.id, "tomas", "up")).ok,
+		).toBe(true);
+		expect(
+			await ds.discussions.markAnswered("tejo-rowing", "req-oars", posted.id, "tomas"),
+		).toMatchObject({ error: { code: "not-allowed" } });
+		expect(
+			(await ds.discussions.markAnswered("tejo-rowing", "req-oars", posted.id, "joao")).ok,
+		).toBe(true);
+		expect(accountOf(ds, "tejo-rowing").discussions["req-oars"]?.[0]).toMatchObject({
+			answered: true,
+			reactions: { tomas: "up" },
+		});
+	});
+
 	it("persists to storage and survives a reload", async () => {
 		const storage = memoryStorage();
 		const first = source(storage);
@@ -196,7 +230,7 @@ describe("SampleDataSource", () => {
 
 	it("falls back to the seed when stored data is corrupt", () => {
 		const storage = memoryStorage();
-		storage.setItem("ancora.sample.v3", "{not json");
+		storage.setItem("ancora.sample.v4", "{not json");
 		expect(source(storage).getSnapshot().accounts).toHaveLength(3);
 	});
 });

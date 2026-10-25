@@ -22,7 +22,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 13 | Demo admin: reset, top-up, retry stuck requests | Planned |
 | 14 | Confidential pot + auditor view stub | Planned |
 | 15 | Integrate the Claude Design package | Done (brand, icons, tokens) |
-| 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Planned |
+| 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Done (notifications, attachments and signed entries: later) |
 | 17 | Recovery ("Lifeline"): guardians, claims with a waiting period, cancel by any signer (see below) | Planned, design accepted 25 Oct |
 | 18 | Recovery device in onboarding: second device, hardware key, pairing by QR (see below) | Planned, design accepted 25 Oct |
 | — | Submission polish: README with a short GIF of the flow, screenshots, demo video link | Before the deadline |
