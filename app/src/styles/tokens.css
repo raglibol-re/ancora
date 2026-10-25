@@ -1,0 +1,87 @@
+/*
+ * The single source of design tokens. Components use only these variables.
+ * Placeholder palette until the Claude Design package lands in /design.
+ *
+ * Theme: follows the OS by default; [data-theme] on <html> forces one.
+ * Each color is defined once with light-dark(<light>, <dark>).
+ */
+:root {
+	color-scheme: light dark;
+
+	/* Raw palette */
+	--palette-night: #0b1730;
+	--palette-tide: #14284f;
+	--palette-tide-soft: #1d3563;
+	--palette-brass: #c9a24a;
+	--palette-brass-deep: #8a6a24;
+	--palette-mist: #eef2f8;
+	--palette-white: #ffffff;
+	--palette-starlight: #e8ecf5;
+	--palette-ink: #0e1a33;
+	--palette-slate: #52607a;
+	--palette-slate-light: #a3afc6;
+
+	/* Semantic colors */
+	--color-bg: light-dark(var(--palette-mist), var(--palette-night));
+	--color-surface: light-dark(var(--palette-white), var(--palette-tide));
+	--color-surface-raised: light-dark(var(--palette-white), var(--palette-tide-soft));
+	--color-border: light-dark(#d8dfeb, #26406f);
+	--color-text: light-dark(var(--palette-ink), var(--palette-starlight));
+	--color-text-muted: light-dark(var(--palette-slate), var(--palette-slate-light));
+	--color-accent: light-dark(var(--palette-brass-deep), var(--palette-brass));
+	--color-accent-contrast: light-dark(var(--palette-white), var(--palette-night));
+	--color-primary: light-dark(var(--palette-night), var(--palette-starlight));
+	--color-primary-contrast: light-dark(var(--palette-starlight), var(--palette-night));
+	--color-focus: light-dark(#2f5fd0, #8fb0ff);
+	--color-positive: light-dark(#1f7a4d, #5fd39a);
+	--color-negative: light-dark(#b3261e, #ff8a80);
+	--color-simulated: light-dark(#7a4fb3, #c7a6ff);
+
+	/* Typography */
+	--font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+	--font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+	--text-xs: 0.75rem;
+	--text-sm: 0.875rem;
+	--text-md: 1rem;
+	--text-lg: 1.25rem;
+	--text-xl: 1.75rem;
+	--text-2xl: 2.5rem;
+	--text-3xl: clamp(2.5rem, 6vw, 4rem);
+	--weight-regular: 400;
+	--weight-medium: 500;
+	--weight-semibold: 600;
+	--leading-tight: 1.15;
+	--leading-normal: 1.5;
+
+	/* Spacing (4px grid) */
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+	--space-7: 3rem;
+	--space-8: 4rem;
+
+	/* Shape and depth */
+	--radius-sm: 6px;
+	--radius-md: 12px;
+	--radius-lg: 20px;
+	--radius-pill: 999px;
+	--shadow-sm: 0 1px 2px light-dark(rgb(14 26 51 / 0.06), rgb(0 0 0 / 0.3));
+	--shadow-md: 0 8px 24px light-dark(rgb(14 26 51 / 0.08), rgb(0 0 0 / 0.35));
+
+	/* Layout */
+	--sidebar-width: 248px;
+	--tabbar-height: 64px;
+	--content-max: 1080px;
+	--duration-fast: 120ms;
+}
+
+:root[data-theme="light"] {
+	color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+	color-scheme: dark;
+}

@@ -1,0 +1,116 @@
+.shell {
+	min-height: 100dvh;
+}
+
+.brandLink {
+	text-decoration: none;
+	color: var(--color-text);
+}
+
+.navLink {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-md);
+	color: var(--color-text-muted);
+	text-decoration: none;
+	font-weight: var(--weight-medium);
+}
+
+.navLink:hover {
+	color: var(--color-text);
+}
+
+.active {
+	color: var(--color-text);
+	background: var(--color-bg);
+}
+
+.iconLink {
+	display: inline-flex;
+	padding: var(--space-2);
+	color: var(--color-text-muted);
+}
+
+.content {
+	max-width: var(--content-max);
+	margin: 0 auto;
+	padding: var(--space-5) var(--space-4)
+		calc(var(--tabbar-height) + var(--space-5) + env(safe-area-inset-bottom));
+}
+
+/* Mobile first: header on top, tab bar at the bottom, no sidebar. */
+.sidebar {
+	display: none;
+}
+
+.mobileHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: calc(var(--space-3) + env(safe-area-inset-top)) var(--space-4) var(--space-3);
+	background: var(--color-surface);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.tabBar {
+	position: fixed;
+	inset: auto 0 0 0;
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+	padding-bottom: env(safe-area-inset-bottom);
+	background: var(--color-surface);
+	border-top: 1px solid var(--color-border);
+}
+
+.tabBar .navLink {
+	flex-direction: column;
+	justify-content: center;
+	gap: var(--space-1);
+	padding: var(--space-1);
+	border-radius: 0;
+	font-size: var(--text-xs);
+}
+
+.tabBar .active {
+	background: none;
+	color: var(--color-accent);
+}
+
+@media (min-width: 900px) {
+	.shell {
+		display: grid;
+		grid-template-columns: var(--sidebar-width) 1fr;
+	}
+
+	.sidebar {
+		position: sticky;
+		top: 0;
+		height: 100dvh;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5);
+		padding: var(--space-5) var(--space-4);
+		background: var(--color-surface);
+		border-right: 1px solid var(--color-border);
+	}
+
+	.sidebar nav {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		flex: 1;
+	}
+
+	.mobileHeader,
+	.tabBar {
+		display: none;
+	}
+
+	.content {
+		width: 100%;
+		padding: var(--space-6);
+	}
+}

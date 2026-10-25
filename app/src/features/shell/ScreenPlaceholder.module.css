@@ -1,0 +1,13 @@
+.screen {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.screen h1 {
+	font-size: var(--text-2xl);
+}
+
+.note {
+	color: var(--color-text-muted);
+}

@@ -1,0 +1,11 @@
+/* biome-ignore-all lint/complexity/noImportantStyles: the user's reduced-motion preference must override every component's own transitions and animations. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

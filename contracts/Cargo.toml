@@ -1,0 +1,14 @@
+# One crate per contract under contracts/<name>; shared test vectors live in contracts/test-vectors.
+[workspace]
+resolver = "2"
+members = []
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true

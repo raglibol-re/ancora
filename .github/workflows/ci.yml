@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Format and lint
+        run: pnpm biome ci .
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test
+      - name: Build
+        run: pnpm exec vite build
+
+  contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v5
+      # hashFiles() is not available in a job-level `if`, so the gate is a step output.
+      - id: crates
+        name: Detect contract crates
+        run: echo "present=${{ hashFiles('contracts/*/Cargo.toml') != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.crates.outputs.present == 'true'
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rust-src-dir: contracts
+          cache-workspaces: contracts
+      - if: steps.crates.outputs.present == 'true'
+        run: cargo fmt --all --check
+      - if: steps.crates.outputs.present == 'true'
+        run: cargo clippy --all-targets -- -D warnings
+      - if: steps.crates.outputs.present == 'true'
+        run: cargo test
