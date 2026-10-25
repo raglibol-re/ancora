@@ -127,10 +127,15 @@ export class LocalDataSource implements DataSource {
 			const funds = checkFunds(account, input.amount);
 			if (!funds.ok) return funds;
 			const target = input.payee;
+			// A recipient entered again with the same account number stays one payee.
 			const payee =
 				"id" in target
 					? account.payees.find((p) => p.id === target.id)
-					: { id: this.newId(), name: target.name.trim(), account: target.account.trim() };
+					: (account.payees.find((p) => p.account === target.account.trim()) ?? {
+							id: this.newId(),
+							name: target.name.trim(),
+							account: target.account.trim(),
+						});
 			if (!payee) return notFound();
 			const created = createPaymentRequest(
 				account.org,

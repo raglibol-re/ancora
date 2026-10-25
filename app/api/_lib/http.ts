@@ -1,3 +1,4 @@
+import { originAllowed } from "./origin.js";
 import { ConfigError, serverConfig } from "./serverConfig.js";
 
 /** A refusal with an HTTP status; the message is safe to show to the user. */
@@ -32,7 +33,8 @@ export function apiHandler(method: "GET" | "POST", handle: (request: Request) =>
 		async fetch(request: Request): Promise<Response> {
 			const origin = request.headers.get("Origin");
 			try {
-				if (origin && !serverConfig().allowedOrigins.has(origin)) {
+				const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+				if (!originAllowed(origin, host, serverConfig().allowedOrigins)) {
 					throw new RequestError("This origin is not allowed.", 403);
 				}
 				if (request.method === "OPTIONS") {

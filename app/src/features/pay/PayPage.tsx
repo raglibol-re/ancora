@@ -14,13 +14,15 @@ import styles from "./PayPage.module.css";
 import { RulePreview } from "./RulePreview.tsx";
 
 const NEW_RECIPIENT = "new";
+/** Other organizations on Stellar in this browser, payable without typing their address. */
+const ORG_PREFIX = "org:";
 
 export function PayPage() {
 	return <OrgRequired>{(account) => <PayForm account={account} />}</OrgRequired>;
 }
 
 function PayForm({ account }: { account: OrgAccount }) {
-	const { dataSource, me } = useWorkspace();
+	const { dataSource, me, workspace } = useWorkspace();
 	const { run, busy } = useCommand();
 	const navigate = useNavigate();
 	const [payeeId, setPayeeId] = useState(account.payees[0]?.id ?? NEW_RECIPIENT);
@@ -32,8 +34,20 @@ function PayForm({ account }: { account: OrgAccount }) {
 
 	const isNew = payeeId === NEW_RECIPIENT;
 	const amount = parseAmountInput(amountInput);
-	const recipientIsNew = isNew || isNewRecipient(account, payeeId);
-	const recipientName = isNew ? newName.trim() : account.payees.find((p) => p.id === payeeId)?.name;
+	const otherOrgs = account.onchain
+		? workspace.accounts.filter((a) => a.onchain && a.org.id !== account.org.id)
+		: [];
+	const orgPayee = otherOrgs.find((a) => `${ORG_PREFIX}${a.org.id}` === payeeId);
+	const orgAddress = orgPayee?.onchain?.contractId;
+	const knownOrgPayee = account.payees.find((p) => p.account === orgAddress);
+	const recipientIsNew = isNew
+		? true
+		: orgPayee
+			? !knownOrgPayee || isNewRecipient(account, knownOrgPayee.id)
+			: isNewRecipient(account, payeeId);
+	const recipientName = isNew
+		? newName.trim()
+		: (orgPayee?.org.name ?? account.payees.find((p) => p.id === payeeId)?.name);
 
 	const submit = async (event: FormEvent) => {
 		event.preventDefault();
@@ -51,7 +65,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 		const result = await run(
 			() =>
 				dataSource.requestPayment(account.org.id, me.id, {
-					payee: isNew ? { name: newName, account: newAccount } : { id: payeeId },
+					payee: isNew
+						? { name: newName, account: newAccount }
+						: orgPayee && orgAddress
+							? { name: orgPayee.org.name, account: orgAddress }
+							: { id: payeeId },
 					amount,
 					note,
 				}),
@@ -79,6 +97,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 							{account.payees.map((payee) => (
 								<option key={payee.id} value={payee.id}>
 									{payee.name}
+								</option>
+							))}
+							{otherOrgs.map((other) => (
+								<option key={other.org.id} value={`${ORG_PREFIX}${other.org.id}`}>
+									{other.org.name} (organization on ancora)
 								</option>
 							))}
 							<option value={NEW_RECIPIENT}>New recipient…</option>
@@ -111,7 +134,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 							</Field>
 						</div>
 					)}
-					<Field label="Amount (EUR)" htmlFor="amount" error={errors.amount}>
+					<Field label={`Amount (${account.currency})`} htmlFor="amount" error={errors.amount}>
 						<input
 							id="amount"
 							className={`${controlClass} ${styles.amount}`}

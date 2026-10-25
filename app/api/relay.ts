@@ -12,8 +12,9 @@ import { required, serverConfig } from "./_lib/serverConfig.js";
 
 // Testnet cap. Deploying a smart account currently costs ~20–40 XLM in resource fees, almost all
 // of it rent for the account's long-lived storage (measured: ~1 KB written, ~2.7M instructions),
-// far above the reference proxy's 0.1 XLM. 100 XLM still bounds what one request can spend.
-const MAX_RESOURCE_FEE_STROOPS = 1_000_000_000n;
+// far above the reference proxy's 0.1 XLM, and rising with testnet's state size. 300 XLM still
+// bounds what one request can spend; the operator float is refilled by scripts/setup-testnet.sh.
+const MAX_RESOURCE_FEE_STROOPS = 3_000_000_000n;
 
 export const config = { maxDuration: 60 };
 

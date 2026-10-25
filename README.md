@@ -121,7 +121,8 @@ It uses the demo operator key, which is **not a signer on any organization accou
 ## Limitations
 
 - Testnet only, so nothing here holds real money.
-- Anything labeled **Simulated** in the app uses sample data and is labeled the same way here. The app starts on sample data (a purple banner says so); Settings → Data source switches to the Stellar testnet (dark blue banner). Both keep state in your browser.
+- The app runs on the **Stellar testnet by default** (dark blue banner). Sample data (purple banner, everything labeled **Simulated**) is the automatic backup when the testnet or ancora's server doesn't answer, and can be chosen in Settings → Data source. Both keep their state in your browser.
+- Use **https://ancora-gray.vercel.app**. Passkeys are bound to that hostname; the project's other Vercel URLs redirect there.
 - On testnet, the **approval rules still run in the app** and approvals are recorded there; the smart account enforces its passkey signers on-chain, and a signer signs each outgoing payment. Moving the rules on-chain is task 6.
 - **Testnet fees are unusually high right now.** Measured on 25 Oct 2026: deploying an account 22 XLM, first deposit into it 22 XLM, a passkey-signed payment 46 XLM. Testnet's Soroban state is above its rent target, which puts rent at 2,271,304 stroops/KB versus 1,000 on mainnet, and the OpenZeppelin smart account extends its storage TTL to 30 days on every use. The relayer sponsors these fees from a Friendbot-funded operator key; the same operations cost well under 1 XLM at today's mainnet rent. Details in [docs/DECISIONS.md](docs/DECISIONS.md).
 - "Viewing as" (Settings) switches the person the app acts as, so one device can show both sides of a four-eyes approval. Signing always uses the passkeys on that device.
