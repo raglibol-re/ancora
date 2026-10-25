@@ -17,7 +17,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 8 | Security seal: ML-DSA verifier as OZ external signer (timebox 2h) | Verifier done and on testnet; device key + account wiring: next |
 | 9 | Crew / agent keys with OZ spending-limit policy | Planned |
 | 10 | Euro in/out: SEP-24 test anchor (real), Bridge (simulated) | Planned |
-| 11 | Organization logo in Vercel Blob with the URL on the organization contract | Planned (profile pictures already work this way) |
+| 11 | Organization logo in Vercel Blob with the URL on the organization contract | Done |
 | 12 | Budgets and bookkeeping | Planned |
 | 13 | Demo admin: reset, top-up, retry stuck requests | Planned |
 | 14 | Confidential pot + auditor view stub | Planned |

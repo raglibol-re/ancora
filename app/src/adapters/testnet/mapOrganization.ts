@@ -79,6 +79,7 @@ const ERROR_CODES: RuleErrorCode[] = [
 	"last-asset",
 	"not-allowed",
 	"not-allowed",
+	"not-allowed",
 ];
 
 export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
@@ -109,6 +110,7 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	25: "An organization has to accept at least one asset.",
 	26: "This asset has no Reserve yet.",
 	27: "Your role can't move money between the account and the Reserve.",
+	28: "Only the organization's highest role can change the logo.",
 };
 
 const variant = (value: unknown): [string, unknown[]] => {
@@ -330,7 +332,7 @@ export function mapOrganization(
 		}),
 		reserveRateBps: 410,
 		accountNumber: null,
-		logoUrl: null,
+		logoUrl: info.logo ? str(info.logo) : null,
 		payees: [...payees.values()],
 		requests,
 		activity,

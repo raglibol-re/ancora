@@ -28,6 +28,7 @@ const REQUEST_EXTEND: u32 = 60 * DAY_IN_LEDGERS;
 const REQUEST_THRESHOLD: u32 = 14 * DAY_IN_LEDGERS;
 const MAX_MEMO_LEN: u32 = 140;
 const MAX_NAME_LEN: u32 = 64;
+const MAX_LOGO_LEN: u32 = 256;
 const MAX_PAGE: u32 = 50;
 const SECONDS_PER_HOUR: u64 = 3_600;
 
@@ -139,6 +140,7 @@ impl Organization {
             founder,
             roles: blueprint.roles,
             created_at: e.ledger().timestamp(),
+            logo: String::from_str(e, ""),
         };
         e.storage().instance().set(&DataKey::Info, &info);
         e.storage()
@@ -151,11 +153,32 @@ impl Organization {
         extend_instance(e);
     }
 
-    /// Name, template, base currency, registry, founder and ranked roles.
+    /// Name, template, base currency, registry, founder, ranked roles and logo.
     ///
     /// Auth: none (read).
     pub fn info(e: &Env) -> OrgInfo {
         load_info(e)
+    }
+
+    /// Sets the logo URL (empty clears it). Cosmetic, so no request: the top role decides.
+    ///
+    /// Auth: `by`, a member holding the highest role.
+    pub fn set_logo(e: &Env, by: Address, logo: String) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let mut info = load_info(e);
+        let members = ranked(e, &info.roles);
+        match rules::rank_of_member(&members, &by) {
+            None => return Err(Error::NotMember),
+            Some(0) => {}
+            Some(_) => return Err(Error::NotTopRole),
+        }
+        if logo.len() > MAX_LOGO_LEN {
+            return Err(Error::TextTooLong);
+        }
+        info.logo = logo;
+        e.storage().instance().set(&DataKey::Info, &info);
+        Ok(())
     }
 
     /// The approval rules, amounts in minor units of the base currency.

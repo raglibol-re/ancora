@@ -31,12 +31,18 @@ export function LogoCard({ account }: { account: OrgAccount }) {
 				const saved = await dataSource.setLogo(account.org.id, me.id, dataUrl);
 				return saved.ok ? ok(undefined) : saved;
 			},
-			{ success: "Logo updated." },
+			{
+				signature: { kind: "passkey", title: `Change the logo of ${account.org.name}` },
+				success: "Logo updated.",
+			},
 		);
 	};
 
 	return (
-		<Card title="Organization logo" action={<SimulatedTag label="Stored in this browser" />}>
+		<Card
+			title="Organization logo"
+			action={dataSource.kind === "sample" ? <SimulatedTag label="Stored in this browser" /> : null}
+		>
 			<div className={styles.row}>
 				<Avatar name={account.org.name} imageUrl={account.logoUrl} size="lg" />
 				{allowed ? (
@@ -47,7 +53,10 @@ export function LogoCard({ account }: { account: OrgAccount }) {
 							onChange={upload}
 							disabled={busy}
 						/>
-						<span>PNG, JPG or WebP, up to 5 MB. Resized to 256×256 in your browser.</span>
+						<span>
+							PNG, JPG or WebP, up to 5 MB. Resized to 256×256 in your browser
+							{dataSource.kind === "testnet" && ", stored with the organization on Stellar"}.
+						</span>
 					</label>
 				) : (
 					<p className={styles.hint}>Only the organization's highest role can change the logo.</p>

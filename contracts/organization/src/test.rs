@@ -101,6 +101,26 @@ fn founder_starts_alone_in_the_setup_phase() {
 }
 
 #[test]
+fn only_the_top_role_sets_the_logo() {
+    let w = club(10);
+    let bo = board_member(&w);
+    let logo = String::from_str(&w.e, "https://example.test/logo.webp");
+    assert_eq!(w.org.info().logo, String::from_str(&w.e, ""));
+    assert_eq!(w.org.try_set_logo(&bo, &logo), Err(Ok(Error::NotTopRole)));
+    assert_eq!(
+        w.org.try_set_logo(&Address::generate(&w.e), &logo),
+        Err(Ok(Error::NotMember))
+    );
+    w.org.set_logo(&w.founder, &logo);
+    assert_eq!(w.org.info().logo, logo);
+    let long = String::from_str(&w.e, &"u".repeat(257));
+    assert_eq!(
+        w.org.try_set_logo(&w.founder, &long),
+        Err(Ok(Error::TextTooLong))
+    );
+}
+
+#[test]
 fn setup_phase_ends_once_others_can_satisfy_the_strictest_tier() {
     let w = club(1_000);
     let bo = board_member(&w);

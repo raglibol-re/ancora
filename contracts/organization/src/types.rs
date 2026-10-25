@@ -36,6 +36,8 @@ pub enum Error {
     NoReserve = 26,
     /// Only the top role or someone who could approve the strictest tier moves money to the Reserve.
     NotTreasurer = 27,
+    /// Only the top role changes the organization's profile (logo).
+    NotTopRole = 28,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -187,4 +189,6 @@ pub struct OrgInfo {
     /// Highest role first.
     pub roles: Vec<Symbol>,
     pub created_at: u64,
+    /// https URL of the logo (an image in ancora's store); empty for none.
+    pub logo: String,
 }

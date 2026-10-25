@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 import { put } from "@vercel/blob";
 import { apiHandler, RequestError } from "./_lib/http.js";
 
-// Profile pictures live in Vercel Blob, addressed by their content hash; the person then stores
-// the URL in their on-chain profile with their passkey. Only the owner of an address can change
-// what it shows, so the upload itself needs no login: it is a small, public, immutable image.
+// Profile pictures and organization logos live in Vercel Blob, addressed by their content hash;
+// the URL is then written on-chain (registry profile, organization info) with the owner's
+// passkey. Only the owner can change what an address shows, so the upload itself needs no
+// login: it is a small, public, immutable image.
 
 const MAX_BYTES = 300 * 1024;
 const EXTENSIONS: Record<string, string> = {
@@ -40,7 +41,7 @@ export default apiHandler("POST", async (request) => {
 	}
 	if (!looksLikeImage(bytes, type)) throw new RequestError("That file isn't a valid image.");
 	const hash = createHash("sha256").update(bytes).digest("hex");
-	const blob = await put(`avatars/${hash}.${extension}`, bytes, {
+	const blob = await put(`images/${hash}.${extension}`, bytes, {
 		access: "public",
 		contentType: type,
 		addRandomSuffix: false,

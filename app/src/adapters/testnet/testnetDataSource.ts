@@ -37,7 +37,6 @@ import { address, changeToScVal, i128, text, toStroops, u64 } from "./scv.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
 
 const EMPTY: Workspace = { people: [], accounts: [] };
-const LOGOS_KEY = "ancora.testnet.logos.v1";
 const MAX_NAME_BYTES = 64;
 const MAX_AVATAR_BYTES = 256;
 /** A session restore that takes longer than this shows the sign-in page instead of blocking it. */
@@ -159,16 +158,14 @@ export class TestnetDataSource implements DataSource {
 			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
 			const orgNames = new Map(snapshots.map((s) => [s.contractId, String(s.info.name)]));
 			const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
-			const logos = this.loadLogos();
-			const accounts: OrgAccount[] = snapshots.map((snapshot) => ({
-				...mapOrganization(
+			const accounts: OrgAccount[] = snapshots.map((snapshot) =>
+				mapOrganization(
 					snapshot,
 					(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
 					Date.now(),
 					(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
 				),
-				logoUrl: logos[snapshot.contractId] ?? null,
-			}));
+			);
 			const people: Person[] = [...everyone].map((id) => ({
 				id,
 				name: this.profiles.get(id)?.name ?? shortAddress(id),
@@ -260,7 +257,7 @@ export class TestnetDataSource implements DataSource {
 	}
 
 	private async uploadAvatar(image: Blob): Promise<Result<string, RuleError>> {
-		const response = await fetch("/api/upload-avatar", {
+		const response = await fetch("/api/upload-image", {
 			method: "POST",
 			headers: { "Content-Type": image.type },
 			body: image,
@@ -388,16 +385,12 @@ export class TestnetDataSource implements DataSource {
 		]);
 	}
 
-	async setLogo(orgId: string, _actorId: PersonId, logoUrl: string) {
-		const logos = this.loadLogos();
-		logos[orgId] = logoUrl;
-		try {
-			this.storage?.setItem(LOGOS_KEY, JSON.stringify(logos));
-		} catch {
-			// Blocked storage: the logo lasts for this tab only.
-		}
-		await this.refresh();
-		return ok(undefined);
+	/** Stores the image in ancora's image store, then writes its URL on the organization. */
+	async setLogo(orgId: string, actorId: PersonId, logoDataUrl: string) {
+		const image = await fetch(logoDataUrl).then((r) => r.blob());
+		const uploaded = await this.uploadAvatar(image);
+		if (!uploaded.ok) return uploaded;
+		return this.invoke(orgId, "set_logo", [address(actorId), text(uploaded.value)]);
 	}
 
 	async executeRequest(orgId: string, requestId: string) {
@@ -457,15 +450,6 @@ export class TestnetDataSource implements DataSource {
 			);
 		}
 		return ok(payload.data);
-	}
-
-	private loadLogos(): Record<string, string> {
-		try {
-			const parsed: unknown = JSON.parse(this.storage?.getItem(LOGOS_KEY) ?? "{}");
-			return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {};
-		} catch {
-			return {};
-		}
 	}
 }
 

@@ -87,7 +87,7 @@ Verified and written to `app/.env.testnet` by `scripts/setup-testnet.sh`, which 
 |------|----------|--------|
 | ancora registry (profiles, organizations per person) | [`CDPQV7…4QCM`](https://stellar.expert/explorer/testnet/contract/CDPQV7C2XRWVDGWBIEHNE6IOMC56KSAITMESJBI7BULJSIGSVAQD4QCM) | `contracts/registry` |
 | ancora seal verifier (ML-DSA-44, OZ external-verifier interface) | [`CDUFVN…V4NS`](https://stellar.expert/explorer/testnet/contract/CDUFVNCHZE64O37RQZQQ6ZKYDLS3RZ6YKYJDD66XNEPYHVWW6OO6V4NS) | `contracts/seal_verifier` |
-| ancora organization (one instance per organization) | WASM `1ec9ed16…61dd`, deployed by the operator on "Create organization" | `contracts/organization` |
+| ancora organization (one instance per organization) | WASM `a4f6cb25…3042`, deployed by the operator on "Create organization" | `contracts/organization` |
 | USDC (BlendUSDC, SAC of `USDC:GATALT…`) | [`CAQCFV…RCJU`](https://stellar.expert/explorer/testnet/contract/CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU) | Blend testnet |
 | USDC (Circle testnet, SAC of `USDC:GBBD47…`) | [`CBIELT…DAMA`](https://stellar.expert/explorer/testnet/contract/CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA) | Circle (faucet.circle.com) |
 | Reserve: DeFindex USDC vault | [`CBMVK2…DWHN`](https://stellar.expert/explorer/testnet/contract/CBMVK2JK6NTOT2O4HNQAIQFJY232BHKGLIMXDVQVHIIZKDACXDFZDWHN) | paltalabs/defindex `testnet.contracts.json` |
@@ -124,7 +124,7 @@ The script is idempotent: the testnet is reset now and then, so it re-funds the 
 
 A single Vercel project, Root Directory `app`, deploys production from `main` through the Git integration. `app/vercel.json` rewrites every non-API path to the SPA so that deep links work. Environment variables are documented in `app/.env.example`; `scripts/setup-testnet.sh --sync-vercel` pushes the server-side ones (network, allowed origins, the operator key as a Sensitive variable).
 
-Vercel Functions in `app/api/`: `/api/relay` sponsors fees for smart-account-kit submissions after fail-closed validation (allowlisted deployments and functions, `execute` only towards ancora contracts, exact authorization matching, fee cap); `/api/create-organization` deploys an organization contract for a founder and registers it; `/api/execute-request` triggers a due request; `/api/test-money` sends 100 test USDC from the operator to an organization; `/api/upload-avatar` stores a profile picture in Vercel Blob. The operator key holds no role in any organization and is never a signer on any account.
+Vercel Functions in `app/api/`: `/api/relay` sponsors fees for smart-account-kit submissions after fail-closed validation (allowlisted deployments and functions, `execute` only towards ancora contracts, exact authorization matching, fee cap); `/api/create-organization` deploys an organization contract for a founder and registers it; `/api/execute-request` triggers a due request; `/api/test-money` sends 100 test USDC from the operator to an organization; `/api/upload-image` stores profile pictures and logos in Vercel Blob. The operator key holds no role in any organization and is never a signer on any account.
 
 Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it: the WebAuthn RP ID is `ancora-gray.vercel.app`, so passkeys created on preview URLs or localhost will not work in production.
 
@@ -143,9 +143,9 @@ It uses the demo operator key, which is **not a signer on any organization accou
 - Testnet only, so nothing here holds real money.
 - The app runs on the **Stellar testnet by default** (dark blue banner). Sample data (purple banner, everything labeled **Simulated**) is the automatic backup when the testnet or ancora's server doesn't answer, and can be chosen on your pass → Data source. Sample state and device preferences stay in your browser; everything on testnet is on-chain.
 - Use **https://ancora-gray.vercel.app**. Passkeys are bound to that hostname; the project's other Vercel URLs redirect there.
-- On testnet, each organization's rules are enforced by its own contract. Template switching and the organization logo are not on-chain yet (logo: this browser only); the Reserve is simulated until task 7.
+- On testnet, each organization's rules are enforced by its own contract. Template switching is not on-chain yet.
 - Your passkey is the only key to your account for now: there is no recovery device or guardian yet (Lifeline, tasks 17–18 in the roadmap). The profile page says so.
-- Profile pictures are public files in Vercel Blob (content-addressed, max 300 KB); the URL is on-chain in your profile.
+- Profile pictures and organization logos are public files in Vercel Blob (content-addressed, max 300 KB); the URL is on-chain (your profile in the registry, the logo on the organization contract).
 - A plain Stellar payment from a wallet can't reach an organization, because organizations are contract addresses (C…). Use "Add money → From your wallet" in the app (Freighter, Hana, xBull, Albedo), or a wallet that can pay contract addresses directly (Freighter).
 - Paying a classic Stellar address (G…) works only if that account holds a trustline for the exact asset being sent (testnet has several assets called USDC: Blend's and Circle's are different issuers and don't mix). The app checks this before it requests the payment and names the asset to add. Organization addresses (C…) never need one.
 - Test money in Circle's USDC comes from a float the operator fills by hand at faucet.circle.com (captcha-gated), so grants shrink when it runs low; BlendUSDC is refilled automatically by the setup script.

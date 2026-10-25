@@ -1396,6 +1396,14 @@
                           },
                           {
                             "key": {
+                              "symbol": "logo"
+                            },
+                            "val": {
+                              "string": ""
+                            }
+                          },
+                          {
+                            "key": {
                               "symbol": "name"
                             },
                             "val": {
