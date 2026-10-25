@@ -5,6 +5,8 @@
 #
 #   scripts/setup-testnet.sh            set up / repair, then write app/.env.testnet
 #   scripts/setup-testnet.sh --check    only verify, change nothing (exit 1 if something is off)
+#   scripts/setup-testnet.sh --sync-vercel  also push the server settings and secrets the
+#                                       Vercel Functions need (relayer, test money) to the project
 #
 # Requires: stellar CLI (28.x), curl. Secret keys stay in the stellar CLI keystore
 # (~/.config/stellar); app/.env.testnet only ever contains public addresses and IDs.
@@ -33,13 +35,18 @@ KIT_WEBAUTHN_VERIFIER="CC7EKIHQP3TN4CARQDND6CEOY2UXLWWC2X5GHTD5NLAT7BG5GPZIOM3F"
 KIT_ED25519_VERIFIER="CAAVTMCBXEIBPR64EAASKFXERVPYFZA2JYP5A3BG6PESWEFUJX5IHKN4"
 KIT_THRESHOLD_POLICY="CB3FATQKCIRIQOCYRUPCQ2KREQ7T4RPKS7EAEOZWPEPUKWEDRVROBCEG"
 KIT_SPENDING_LIMIT_POLICY="CABXBYJNZ7IUW4G3D6BND5YCAQF3ASSDMDAOKQQ63UYFSO7WUU2TIP5G"
-KIT_RELAYER_URL="https://smart-account-relayer-proxy.sdf-ecosystem.workers.dev"
+# Fee sponsoring goes through ancora's own Vercel Function (OZ Relayer Channels behind it).
+RELAYER_URL="/api/relay"
+CHANNELS_GEN_URL="https://channels.openzeppelin.com/testnet/gen"
+PRODUCTION_ORIGIN="https://ancora-gray.vercel.app"
 NATIVE_XLM_SAC="CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/app/.env.testnet"
 CHECK_ONLY=false
+SYNC_VERCEL=false
 [[ "${1:-}" == "--check" ]] && CHECK_ONLY=true
+[[ "${1:-}" == "--sync-vercel" ]] && SYNC_VERCEL=true
 PROBLEMS=0
 
 say() { printf '%s\n' "$*"; }
@@ -170,9 +177,49 @@ VITE_WEBAUTHN_VERIFIER=$KIT_WEBAUTHN_VERIFIER
 VITE_ED25519_VERIFIER=$KIT_ED25519_VERIFIER
 VITE_THRESHOLD_POLICY=$KIT_THRESHOLD_POLICY
 VITE_SPENDING_LIMIT_POLICY=$KIT_SPENDING_LIMIT_POLICY
-VITE_RELAYER_URL=$KIT_RELAYER_URL
+VITE_RELAYER_URL=$RELAYER_URL
 EOF
 	ok "wrote ${ENV_FILE#"$ROOT/"}"
+}
+
+# Replaces one Vercel environment variable in all environments; values go through stdin so
+# secrets never appear in the process list or the terminal.
+# Public settings go to every environment as Config; secrets (third argument "secret") only to
+# production and preview as Sensitive, which Vercel never shows again and keeps out of development.
+vercel_env() {
+	local name="$1" value="$2" kind="${3:-config}" target targets=(production preview development)
+	local flag="--no-sensitive"
+	if [[ "$kind" == "secret" ]]; then
+		flag="--sensitive"
+		targets=(production preview)
+	fi
+	for target in production preview development; do
+		vercel env rm "$name" "$target" --yes >/dev/null 2>&1 || true
+	done
+	for target in "${targets[@]}"; do
+		printf '%s' "$value" | vercel env add "$name" "$target" "$flag" >/dev/null 2>&1 ||
+			die "Could not set $name on Vercel ($target)."
+	done
+	ok "Vercel env $name ($kind)"
+}
+
+sync_vercel() {
+	$SYNC_VERCEL || return 0
+	say "Vercel server settings"
+	command -v vercel >/dev/null || die "vercel CLI is required for --sync-vercel."
+	local api_key
+	api_key="$(curl -fsS "$CHANNELS_GEN_URL" | sed -n 's/.*"apiKey" *: *"\([^"]*\)".*/\1/p')"
+	[[ -n "$api_key" ]] || die "Could not mint an OpenZeppelin Channels API key."
+	(
+		cd "$ROOT"
+		vercel_env STELLAR_RPC_URL "$RPC_URL"
+		vercel_env STELLAR_NETWORK_PASSPHRASE "$PASSPHRASE"
+		vercel_env ACCOUNT_WASM_HASH "$KIT_ACCOUNT_WASM_HASH"
+		vercel_env USDC_TOKEN "$BLEND_USDC"
+		vercel_env ALLOWED_ORIGINS "$PRODUCTION_ORIGIN,http://localhost:5173,http://localhost:4173"
+		vercel_env RELAYER_API_KEY "$api_key" secret
+		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
+	)
 }
 
 main() {
@@ -184,6 +231,7 @@ main() {
 	# ancora's own contracts are deployed here as they land (approval policy and requests: task 6,
 	# Reserve split: task 7, seal verifier: task 8, org registry: task 11). See docs/ROADMAP.md.
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && write_env_file
+	sync_vercel
 	if ((PROBLEMS > 0)); then
 		die "$PROBLEMS problem(s) found."
 	fi

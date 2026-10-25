@@ -43,6 +43,16 @@
 	},
 	"overrides": [
 		{
+			"includes": ["api/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noConsole": { "level": "error", "options": { "allow": ["error"] } }
+					}
+				}
+			}
+		},
+		{
 			"includes": ["package.json"],
 			"formatter": { "indentStyle": "space", "indentWidth": 2 }
 		}
