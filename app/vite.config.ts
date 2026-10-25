@@ -9,7 +9,11 @@ export default defineConfig({
 		react(),
 		VitePWA({
 			registerType: "autoUpdate",
-			includeAssets: ["brand/favicon.svg", "brand/mark-on-dark.svg", "brand/apple-touch-icon-180.png"],
+			includeAssets: [
+				"brand/favicon.svg",
+				"brand/mark-on-dark.svg",
+				"brand/apple-touch-icon-180.png",
+			],
 			manifest: {
 				name: "ancora",
 				short_name: "ancora",
