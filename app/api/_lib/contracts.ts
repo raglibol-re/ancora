@@ -64,8 +64,16 @@ export async function isSmartAccount(config: ServerConfig, contractId: string): 
 }
 
 /** True if the contract is an ancora organization. */
+/**
+ * An ancora organization is one the operator registered after deploying it. The registry, not
+ * the WASM hash, decides: organizations created before the latest contract build stay ours.
+ */
 export async function isOrganization(config: ServerConfig, contractId: string): Promise<boolean> {
-	return (await contractWasmHash(config, contractId)) === config.orgWasmHash;
+	if (!config.registryContract) return false;
+	const registered = await readView(config, config.registryContract, "is_registered", [
+		new Address(contractId).toScVal(),
+	]).catch(() => false);
+	return registered === true;
 }
 
 /**
