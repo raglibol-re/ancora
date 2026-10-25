@@ -1,6 +1,6 @@
 use soroban_sdk::{contracterror, contracttype, Address, BytesN, String, Symbol, Vec};
 
-/// Amounts are token minor units (USDC: 7 decimals). Policies are entered in cents and scaled.
+/// Amounts are token minor units (7 decimals on Stellar). Policies are entered in cents and scaled.
 pub const CENT: i128 = 100_000;
 
 #[contracterror]
@@ -28,6 +28,10 @@ pub enum Error {
     NotFounder = 19,
     UnknownTemplate = 20,
     TextTooLong = 21,
+    UnknownAsset = 22,
+    AssetExists = 23,
+    AssetInUse = 24,
+    LastAsset = 25,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -76,6 +80,24 @@ pub struct Member {
     pub role: Symbol,
 }
 
+/// A token the organization should accept and the fiat currency it stands for ("EUR", "USD").
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct AssetSpec {
+    pub token: Address,
+    pub currency: Symbol,
+}
+
+/// An accepted token, with what the token contract says about itself.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Asset {
+    pub token: Address,
+    pub currency: Symbol,
+    pub symbol: String,
+    pub decimals: u32,
+}
+
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Change {
@@ -84,11 +106,16 @@ pub enum Change {
     ChangeRole(Address, Symbol),
     /// New rules plus the SHA-256 of their canonical policy document (see docs/ARCHITECTURE.md).
     UpdatePolicy(Policy, BytesN<32>),
+    /// Accept another token.
+    AddAsset(AssetSpec),
+    /// Stop accepting a token; only when its balance is zero and no open request uses it.
+    RemoveAsset(Address),
 }
 
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Payment {
+    pub token: Address,
     pub to: Address,
     pub amount: i128,
     pub memo: String,
@@ -134,7 +161,9 @@ pub struct Request {
 pub struct OrgInfo {
     pub name: String,
     pub template: Symbol,
-    pub token: Address,
+    /// Currency the rules are written in ("EUR", "USD"). Payments in an accepted token of
+    /// another currency take the strictest tier (see `rules::evaluate_payment`).
+    pub base_currency: Symbol,
     pub registry: Address,
     pub founder: Address,
     /// Highest role first.

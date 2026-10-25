@@ -6,6 +6,7 @@ import { Page } from "../../ui/Page.tsx";
 import { describeEvaluation } from "../requests/describe.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { AssetsCard } from "./AssetsCard.tsx";
 import { PeopleCard } from "./PeopleCard.tsx";
 import { RulesHashCard } from "./RulesHashCard.tsx";
 import { TemplateCard } from "./TemplateCard.tsx";
@@ -21,7 +22,10 @@ function Rules({ account }: { account: OrgAccount }) {
 	const founder = account.org.founderId === me.id;
 
 	return (
-		<Page title="Rules" lead="Who approves what. The account itself enforces these rules.">
+		<Page
+			title="Rules"
+			lead={`Who approves what, in ${account.org.baseCurrency}. The organization's contract enforces these rules; payments in another currency take the strictest tier.`}
+		>
 			<Card title={setup ? "Setup phase" : "Changing the rules"}>
 				<p>
 					{setup && founder
@@ -38,6 +42,7 @@ function Rules({ account }: { account: OrgAccount }) {
 			/>
 			<RulesHashCard account={account} />
 			<PeopleCard key={`people-${account.org.id}`} account={account} />
+			<AssetsCard key={`assets-${account.org.id}`} account={account} />
 			<TemplateCard key={`template-${account.org.id}`} account={account} />
 		</Page>
 	);

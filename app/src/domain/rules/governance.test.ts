@@ -8,7 +8,7 @@ import {
 	switchTemplate,
 } from "./governance.ts";
 import type { Org } from "./model.ts";
-import { club, company, orgWith, team } from "./testOrgs.ts";
+import { club, company, EURC, orgWith, team } from "./testOrgs.ts";
 
 function newClub(): Org {
 	const result = createOrg({
@@ -17,6 +17,8 @@ function newClub(): Org {
 		templateId: "club",
 		founderId: "tess",
 		founderRoleId: "treasurer",
+		baseCurrency: "EUR",
+		assets: [EURC],
 	});
 	if (!result.ok) throw new Error(result.error.message);
 	return result.value;
@@ -36,6 +38,8 @@ describe("createOrg", () => {
 			templateId: "team",
 			founderId: "a",
 			founderRoleId: "treasurer",
+			baseCurrency: "EUR",
+			assets: [EURC],
 		});
 		expect(result).toMatchObject({ error: { code: "unknown-role" } });
 	});

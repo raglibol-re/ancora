@@ -5,6 +5,7 @@ import { isSetupPhase } from "./governance.ts";
 import type { Org, Policy, Requirement, TemplateId } from "./model.ts";
 import { evaluateGovernance, evaluatePayment } from "./policy.ts";
 import { templates } from "./templates.ts";
+import { EURC } from "./testOrgs.ts";
 
 // The same file drives the Soroban contract tests, so both engines provably agree.
 
@@ -23,6 +24,8 @@ function orgFor(key: string): Org {
 		members: fixture.members,
 		policy,
 		founderId: fixture.members[0]?.personId ?? "",
+		baseCurrency: "EUR",
+		assets: [EURC],
 	};
 }
 

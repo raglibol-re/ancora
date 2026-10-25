@@ -1,6 +1,7 @@
 import {
 	type ActivityEntry,
-	type Currency,
+	assetInUse,
+	assetOf,
 	canEditProfile,
 	canManageTreasury,
 	checkFunds,
@@ -8,16 +9,18 @@ import {
 	moveToReserve,
 	type OnchainAccount,
 	type OrgAccount,
+	syncBalances,
 	type Workspace,
 	withdrawFromReserve,
 } from "../../domain/account.ts";
 import type {
+	AssetOption,
 	ChangeOutcome,
 	DataSource,
 	DataSourceKind,
 	PaymentInput,
 } from "../../domain/dataSource.ts";
-import { type Cents, euros } from "../../domain/money.ts";
+import type { Cents } from "../../domain/money.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import {
 	applyChangeDirectly,
@@ -44,19 +47,25 @@ export type LocalDataSourceOptions = {
 	storage: KeyValueStorage | null;
 	payments: "auto" | "manual";
 	seed: (now: number) => Workspace;
+	/** The stablecoins a new organization may accept. */
+	assets: readonly AssetOption[];
 	clock?: () => number;
 	newId?: () => string;
 };
 
+/** Simulated test money per click, in cents of the asset's currency. */
+const TEST_MONEY = 500 * 100;
+
 /**
  * Organizations, rules and requests held in a local workspace store; every command runs through
- * the domain engine. The sample adapter uses it as is; the testnet adapter adds the chain.
+ * the domain engine. The sample adapter uses it as is.
  */
 export class LocalDataSource implements DataSource {
 	readonly kind: DataSourceKind;
 	readonly identity = null;
 	readonly payments: "auto" | "manual";
 	readonly supportsReserve: boolean = true;
+	readonly availableAssets: readonly AssetOption[];
 	protected readonly store: WorkspaceStore;
 	protected readonly clock: () => number;
 	protected readonly newId: () => string;
@@ -65,6 +74,7 @@ export class LocalDataSource implements DataSource {
 	constructor(options: LocalDataSourceOptions) {
 		this.kind = options.kind;
 		this.payments = options.payments;
+		this.availableAssets = options.assets;
 		this.clock = options.clock ?? Date.now;
 		this.newId = options.newId ?? (() => crypto.randomUUID());
 		this.seed = options.seed;
@@ -89,29 +99,29 @@ export class LocalDataSource implements DataSource {
 	}
 
 	async createOrganization(input: Parameters<DataSource["createOrganization"]>[0]) {
-		return this.addOrganization(input, "EUR", null);
+		return this.addOrganization(input, null);
 	}
 
 	protected addOrganization(
 		input: Parameters<DataSource["createOrganization"]>[0],
-		currency: Currency,
 		onchain: OnchainAccount | null,
 	): Result<string, RuleError> {
 		const id = this.newId();
+		const assets = this.availableAssets.filter((a) => input.assets.includes(a.token));
 		const created = createOrg({
 			id,
 			name: input.name.trim(),
 			templateId: input.templateId,
 			founderId: input.actorId,
 			founderRoleId: input.founderRoleId,
+			baseCurrency: input.baseCurrency,
+			assets: assets.map(({ token, symbol, currency }) => ({ token, symbol, currency })),
 		});
 		if (!created.ok) return created;
 		this.store.addAccount({
 			org: created.value,
-			currency,
 			onchain,
-			balance: 0,
-			reserve: 0,
+			balances: assets.map((a) => ({ token: a.token, balance: 0, reserve: 0 })),
 			reserveRateBps: 410,
 			accountNumber: null,
 			logoUrl: null,
@@ -125,7 +135,7 @@ export class LocalDataSource implements DataSource {
 	async requestPayment(orgId: string, actorId: PersonId, input: PaymentInput) {
 		const requestId = this.newId();
 		const result = this.store.mutate(orgId, (account) => {
-			const funds = checkFunds(account, input.amount);
+			const funds = checkFunds(account, input.token, input.amount);
 			if (!funds.ok) return funds;
 			const target = input.payee;
 			// A recipient entered again with the same account number stays one payee.
@@ -143,6 +153,7 @@ export class LocalDataSource implements DataSource {
 				{
 					id: requestId,
 					requesterId: actorId,
+					token: input.token,
 					amount: input.amount,
 					recipientId: payee.id,
 					recipientIsNew: isNewRecipient(account, payee.id),
@@ -180,12 +191,23 @@ export class LocalDataSource implements DataSource {
 	async proposeChange(orgId: string, actorId: PersonId, change: GovernanceChange) {
 		let outcome: ChangeOutcome = "requested";
 		const result = this.store.mutate(orgId, (account) => {
+			// Like the contract: an asset with money or open requests on it can't be dropped.
+			if (change.type === "removeAsset" && assetInUse(account, change.token)) {
+				return err(
+					ruleError(
+						"asset-in-use",
+						"This asset still holds money or has open requests, so it can't be removed.",
+					),
+				);
+			}
 			if (actorId === account.org.founderId && isSetupPhase(account.org)) {
 				const applied = applyChangeDirectly(account.org, actorId, change);
 				if (!applied.ok) return applied;
 				outcome = "applied";
 				const entry = this.entry(actorId, { kind: "governance", change, viaRequest: false });
-				return ok({ ...account, org: applied.value, activity: [entry, ...account.activity] });
+				return ok(
+					syncBalances({ ...account, org: applied.value, activity: [entry, ...account.activity] }),
+				);
 			}
 			const created = createGovernanceRequest(
 				account.org,
@@ -199,12 +221,12 @@ export class LocalDataSource implements DataSource {
 		return result.ok ? ok(outcome) : result;
 	}
 
-	async moveToReserve(orgId: string, actorId: PersonId, amount: Cents) {
-		return this.mutateTreasury(orgId, actorId, amount, "reserve-in", moveToReserve);
+	async moveToReserve(orgId: string, actorId: PersonId, token: string, amount: Cents) {
+		return this.mutateTreasury(orgId, actorId, token, amount, "reserve-in", moveToReserve);
 	}
 
-	async withdrawFromReserve(orgId: string, actorId: PersonId, amount: Cents) {
-		return this.mutateTreasury(orgId, actorId, amount, "reserve-out", withdrawFromReserve);
+	async withdrawFromReserve(orgId: string, actorId: PersonId, token: string, amount: Cents) {
+		return this.mutateTreasury(orgId, actorId, token, amount, "reserve-out", withdrawFromReserve);
 	}
 
 	async setLogo(orgId: string, actorId: PersonId, logoUrl: string) {
@@ -225,21 +247,28 @@ export class LocalDataSource implements DataSource {
 		return notAllowed("Payments here go out automatically once they are fully approved.");
 	}
 
-	/** Sample data: a simulated incoming transfer of €500. */
-	async addTestMoney(orgId: string, actorId: PersonId): Promise<Result<void, RuleError>> {
-		const amount = euros(500);
+	/** Sample data: a simulated incoming transfer of 500 in the chosen asset. */
+	async addTestMoney(
+		orgId: string,
+		actorId: PersonId,
+		token: string,
+	): Promise<Result<void, RuleError>> {
 		return this.store.mutate(orgId, (account) => {
+			const asset = assetOf(account.org, token);
+			if (!asset) {
+				return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
+			}
 			const entry = this.entry(actorId, {
 				kind: "deposit",
-				amount,
-				from: "Test money (simulated)",
+				token,
+				amount: TEST_MONEY,
+				from: `Test money (simulated ${asset.symbol})`,
 				txHash: null,
 			});
-			return ok({
-				...account,
-				balance: account.balance + amount,
-				activity: [entry, ...account.activity],
-			});
+			const balances = account.balances.map((b) =>
+				b.token === token ? { ...b, balance: b.balance + TEST_MONEY } : b,
+			);
+			return ok({ ...account, balances, activity: [entry, ...account.activity] });
 		});
 	}
 
@@ -270,17 +299,18 @@ export class LocalDataSource implements DataSource {
 	private mutateTreasury(
 		orgId: string,
 		actorId: PersonId,
+		token: string,
 		amount: Cents,
 		kind: "reserve-in" | "reserve-out",
-		move: (account: OrgAccount, amount: Cents) => Result<OrgAccount, RuleError>,
+		move: (account: OrgAccount, token: string, amount: Cents) => Result<OrgAccount, RuleError>,
 	) {
 		return this.store.mutate(orgId, (account) => {
 			if (!canManageTreasury(account.org, actorId)) {
 				return notAllowed("Your role can't move money between the account and the Reserve.");
 			}
-			const moved = move(account, amount);
+			const moved = move(account, token, amount);
 			if (!moved.ok) return moved;
-			const entry = this.entry(actorId, { kind, amount });
+			const entry = this.entry(actorId, { kind, token, amount });
 			return ok({ ...moved.value, activity: [entry, ...moved.value.activity] });
 		});
 	}

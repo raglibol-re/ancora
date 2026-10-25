@@ -5,12 +5,13 @@
 export type PolicyDocumentRequirement = { role: string; count: number };
 
 export type PolicyDocument = {
-	ancora: "policy/1";
+	ancora: "policy/2";
 	template: string;
 	/** Highest role first; rank decides who may fill whose approval slot. */
 	roles: string[];
-	/** Amounts are integer cents of the account currency. */
+	/** Amounts are integer cents of `currency`; other currencies take the strictest tier. */
 	unit: "cent";
+	currency: string;
 	tiers: {
 		upTo: number | null;
 		approvals: PolicyDocumentRequirement[];

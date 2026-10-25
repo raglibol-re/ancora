@@ -1,6 +1,8 @@
+import type { Currency } from "../money.ts";
 import { err, ok, type Result } from "../result.ts";
 import { canBeSatisfied, rankOf } from "./approvals.ts";
 import {
+	type Asset,
 	type Member,
 	type Org,
 	type PersonId,
@@ -18,7 +20,9 @@ export type GovernanceChange =
 	| { type: "removeMember"; personId: PersonId }
 	| { type: "changeRole"; personId: PersonId; roleId: RoleId }
 	| { type: "updatePolicy"; policy: Policy }
-	| { type: "switchTemplate"; templateId: TemplateId };
+	| { type: "switchTemplate"; templateId: TemplateId }
+	| { type: "addAsset"; asset: Asset }
+	| { type: "removeAsset"; token: string };
 
 export type NewOrgInput = {
 	id: string;
@@ -26,12 +30,17 @@ export type NewOrgInput = {
 	templateId: TemplateId;
 	founderId: PersonId;
 	founderRoleId: RoleId;
+	baseCurrency: Currency;
+	assets: readonly Asset[];
 };
 
 export function createOrg(input: NewOrgInput): Result<Org, RuleError> {
 	const template = templates[input.templateId];
 	if (!template.roles.some((role) => role.id === input.founderRoleId)) {
 		return err(ruleError("unknown-role", "Pick one of this template's roles for yourself."));
+	}
+	if (input.assets.length === 0) {
+		return err(ruleError("unknown-asset", "Pick at least one asset the organization accepts."));
 	}
 	return ok({
 		id: input.id,
@@ -41,6 +50,8 @@ export function createOrg(input: NewOrgInput): Result<Org, RuleError> {
 		members: [{ personId: input.founderId, roleId: input.founderRoleId }],
 		policy: template.policy,
 		founderId: input.founderId,
+		baseCurrency: input.baseCurrency,
+		assets: input.assets,
 	});
 }
 
@@ -127,6 +138,19 @@ function nextOrg(org: Org, change: GovernanceChange): Result<Org, RuleError> {
 		}
 		case "switchTemplate":
 			return ok(switchTemplate(org, change.templateId));
+		case "addAsset":
+			if (org.assets.some((a) => a.token === change.asset.token)) {
+				return err(ruleError("asset-exists", "The organization already accepts this asset."));
+			}
+			return ok({ ...org, assets: [...org.assets, change.asset] });
+		case "removeAsset":
+			if (!org.assets.some((a) => a.token === change.token)) {
+				return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
+			}
+			if (org.assets.length === 1) {
+				return err(ruleError("last-asset", "An organization has to accept at least one asset."));
+			}
+			return ok({ ...org, assets: org.assets.filter((a) => a.token !== change.token) });
 	}
 }
 

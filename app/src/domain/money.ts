@@ -4,8 +4,14 @@
  */
 export type Cents = number;
 
+/** The fiat currencies the stablecoins ancora holds stand for. */
+export type Currency = "EUR" | "USD";
+
+export const CURRENCIES: readonly Currency[] = ["EUR", "USD"];
+
 /** Whole currency units to cents, for constants such as template limits. */
 export const euros = (whole: number): Cents => whole * 100;
+export const dollars = (whole: number): Cents => whole * 100;
 
 export function isValidAmount(amount: Cents): boolean {
 	return Number.isSafeInteger(amount) && amount > 0;

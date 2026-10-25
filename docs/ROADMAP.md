@@ -32,9 +32,10 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 - **Person = OpenZeppelin smart account** created by smart-account-kit with the passkey as its WebAuthn signer; its address is the person's *ancora ID*. The same ID holds different positions in different organizations.
 - **Organization = `ancora_organization` contract** (`contracts/organization`): holds the USDC, roles with OZ AccessControl, the approval engine (ported from `app/src/domain/rules`, tested against the same `contracts/test-vectors`), requests, objection windows, the setup phase and the lock-out guard. The operator deploys it with the founder as its only member and holds no role.
 - **`ancora_registry`** (`contracts/registry`): profiles (name, picture URL) and the organizations per person, so any device finds everything with one read. Organizations update the membership index themselves (direct-invoker auth).
-- **Policy document**: each organization's rules are one canonical JSON document (`app/shared/policyDocument.ts`); the contract stores its SHA-256 at creation and with every rule change, the Rules page verifies it.
+- **Policy document**: each organization's rules are one canonical JSON document (`app/shared/policyDocument.ts`, with the rules' home currency); the contract stores its SHA-256 at creation and with every rule change, the Rules page verifies it.
+- **Several stablecoins**: an organization accepts a list of tokens (BlendUSDC and Circle USDC on testnet, from the `ORG_ASSETS` allowlist), each with its own balance, payments and test money; accepting or dropping one is a governance change. Payments in an asset of another currency than the rules take the strictest tier and the seal.
 - **App**: passkey sign-in/sign-out, profile page ("your pass"), invites by ancora ID, commands signed through the person's account (`execute`), "Send now" for due requests via the operator, reads by simulation, 30 s refresh.
-- **Follow-ups**: template switching on-chain; cumulative crew limits through OZ `spending_limit` installed on the organization's context (task 9); Perch-style IR for function-level constraints once needed.
+- **Follow-ups**: live FX rate from the Reflector oracle (SEP-40) so payments in another currency hit the right tier; EURC on testnet (Circle issuer, one `ORG_ASSETS` line plus an operator float); template switching on-chain; cumulative crew limits through OZ `spending_limit` installed on the organization's context (task 9); Perch-style IR for function-level constraints once needed.
 
 ### Task 16: discussions on approval requests
 
@@ -74,6 +75,12 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 - Lifeline in full (inactivity path, succession plans, professional guardians).
 - Licensed ramp partner integration (EUR IBAN/SEPA, USD/ACH) in production mode.
 - Security review of the organization, registry and recovery contracts; mainnet readiness.
+
+## Outlook
+
+- **Non-fungible holdings:** membership cards, certificates and tickets as OpenZeppelin NonFungible tokens held by the organization next to its stablecoins (the asset list already pairs a token address with what it stands for; NFTs need no amounts, so they bypass the tiers and use governance for transfers).
+- **Live FX for the rules:** Reflector oracle rates so a EURC payment in a USD organization is evaluated at today's rate instead of the strictest tier.
+- **Per-asset Reserve:** a DeFindex vault per stablecoin once they exist on testnet; today only BlendUSDC has one.
 
 ## Later
 

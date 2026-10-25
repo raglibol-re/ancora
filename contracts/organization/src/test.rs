@@ -1,14 +1,15 @@
 use soroban_sdk::testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke};
-use soroban_sdk::{symbol_short, token, Address, BytesN, Env, IntoVal, String, Symbol};
+use soroban_sdk::{symbol_short, token, Address, BytesN, Env, IntoVal, String, Symbol, Vec};
 
 use ancora_registry::{Registry, RegistryClient as RealRegistryClient};
 
-use crate::types::{Change, Error, Status, CENT};
+use crate::types::{AssetSpec, Change, Error, Status, CENT};
 use crate::{Organization, OrganizationClient};
 
 struct World {
     e: Env,
     org: OrganizationClient<'static>,
+    token: Address,
     token_client: token::Client<'static>,
     registry: RealRegistryClient<'static>,
     founder: Address,
@@ -27,11 +28,19 @@ fn club(balance_euros: i128) -> World {
     let registry_id = e.register(Registry, (&operator,));
     let registry = RealRegistryClient::new(&e, &registry_id);
     let asset = e.register_stellar_asset_contract_v2(operator.clone());
+    let accepted = Vec::from_array(
+        &e,
+        [AssetSpec {
+            token: asset.address(),
+            currency: symbol_short!("EUR"),
+        }],
+    );
     let org_id = e.register(
         Organization,
         (
             &registry_id,
-            &asset.address(),
+            symbol_short!("EUR"),
+            accepted,
             &founder,
             Symbol::new(&e, "treasurer"),
             symbol_short!("club"),
@@ -43,11 +52,27 @@ fn club(balance_euros: i128) -> World {
     token::StellarAssetClient::new(&e, &asset.address()).mint(&org_id, &euros(balance_euros));
     World {
         org: OrganizationClient::new(&e, &org_id),
+        token: asset.address(),
         token_client: token::Client::new(&e, &asset.address()),
         registry,
         founder,
         e,
     }
+}
+
+/// Accepts another token tagged with `currency` (setup phase) and funds it.
+fn add_asset(w: &World, currency: &str, whole: i128) -> Address {
+    let asset =
+        w.e.register_stellar_asset_contract_v2(Address::generate(&w.e));
+    w.org.change_directly(
+        &w.founder,
+        &Change::AddAsset(AssetSpec {
+            token: asset.address(),
+            currency: Symbol::new(&w.e, currency),
+        }),
+    );
+    token::StellarAssetClient::new(&w.e, &asset.address()).mint(&w.org.address, &euros(whole));
+    asset.address()
 }
 
 fn board_member(w: &World) -> Address {
@@ -99,6 +124,7 @@ fn small_payments_go_out_at_once() {
     let shop = Address::generate(&w.e);
     let id = w.org.propose_payment(
         &w.founder,
+        &w.token,
         &shop,
         &euros(150),
         &String::from_str(&w.e, "Oars"),
@@ -106,7 +132,7 @@ fn small_payments_go_out_at_once() {
     let request = w.org.request(&id);
     assert_eq!(request.status, Status::Executed);
     assert_eq!(w.token_client.balance(&shop), euros(150));
-    assert_eq!(w.org.available(), euros(850));
+    assert_eq!(w.org.available(&w.token), euros(850));
     assert!(w.org.has_paid(&shop));
 }
 
@@ -116,11 +142,15 @@ fn payments_wait_for_the_right_approvals_and_apply_four_eyes() {
     let bo = board_member(&w);
     let bea = board_member(&w);
     let shop = Address::generate(&w.e);
-    let id = w
-        .org
-        .propose_payment(&bo, &shop, &euros(500), &String::from_str(&w.e, "Boat"));
+    let id = w.org.propose_payment(
+        &bo,
+        &w.token,
+        &shop,
+        &euros(500),
+        &String::from_str(&w.e, "Boat"),
+    );
     assert_eq!(w.org.request(&id).status, Status::Pending);
-    assert_eq!(w.org.available(), euros(4_500));
+    assert_eq!(w.org.available(&w.token), euros(4_500));
     assert_eq!(
         w.org.try_approve(&bo, &id),
         Err(Ok(Error::RequesterCannotApprove))
@@ -145,6 +175,7 @@ fn large_payments_run_through_the_objection_window() {
     w.e.ledger().set_timestamp(1_000);
     let id = w.org.propose_payment(
         &w.founder,
+        &w.token,
         &shop,
         &euros(3_200),
         &String::from_str(&w.e, "Regatta"),
@@ -173,16 +204,20 @@ fn objections_and_cancellations_release_the_money() {
     );
     let bea = board_member(&w);
     let shop = Address::generate(&w.e);
-    let id = w
-        .org
-        .propose_payment(&bo, &shop, &euros(3_000), &String::from_str(&w.e, ""));
+    let id = w.org.propose_payment(
+        &bo,
+        &w.token,
+        &shop,
+        &euros(3_000),
+        &String::from_str(&w.e, ""),
+    );
     w.org.approve(&bea, &id);
     w.org.approve(&w.founder, &id);
     assert_eq!(w.org.request(&id).status, Status::Scheduled);
     assert_eq!(w.org.try_decline(&max, &id), Err(Ok(Error::CannotDecline)));
     w.org.decline(&bea, &id);
     assert_eq!(w.org.request(&id).status, Status::Declined);
-    assert_eq!(w.org.available(), euros(10_000));
+    assert_eq!(w.org.available(&w.token), euros(10_000));
 }
 
 #[test]
@@ -193,6 +228,7 @@ fn the_seal_is_required_above_the_threshold() {
     let shop = Address::generate(&w.e);
     let id = w.org.propose_payment(
         &w.founder,
+        &w.token,
         &shop,
         &euros(12_000),
         &String::from_str(&w.e, ""),
@@ -216,11 +252,12 @@ fn refuses_overdrafts_and_bad_amounts() {
     let memo = String::from_str(&w.e, "");
     assert_eq!(
         w.org
-            .try_propose_payment(&w.founder, &shop, &euros(101), &memo),
+            .try_propose_payment(&w.founder, &w.token, &shop, &euros(101), &memo),
         Err(Ok(Error::InsufficientFunds))
     );
     assert_eq!(
-        w.org.try_propose_payment(&w.founder, &shop, &0, &memo),
+        w.org
+            .try_propose_payment(&w.founder, &w.token, &shop, &0, &memo),
         Err(Ok(Error::InvalidAmount))
     );
 }
@@ -328,8 +365,13 @@ fn requests_are_listed_newest_first() {
     let w = club(1_000);
     let shop = Address::generate(&w.e);
     for _ in 0..3 {
-        w.org
-            .propose_payment(&w.founder, &shop, &euros(10), &String::from_str(&w.e, ""));
+        w.org.propose_payment(
+            &w.founder,
+            &w.token,
+            &shop,
+            &euros(10),
+            &String::from_str(&w.e, ""),
+        );
     }
     let page = w.org.requests(&0, &2);
     assert_eq!(page.len(), 2);
@@ -345,9 +387,13 @@ fn approving_requires_the_approvers_own_authorization() {
     let bo = board_member(&w);
     let bea = board_member(&w);
     let shop = Address::generate(&w.e);
-    let id = w
-        .org
-        .propose_payment(&bo, &shop, &euros(500), &String::from_str(&w.e, ""));
+    let id = w.org.propose_payment(
+        &bo,
+        &w.token,
+        &shop,
+        &euros(500),
+        &String::from_str(&w.e, ""),
+    );
     // From here on, only `bo` is authorized; approving as `bea` must fail at the auth check.
     w.e.mock_auths(&[MockAuth {
         address: &bo,
@@ -372,13 +418,122 @@ fn proposing_requires_the_requesters_own_authorization() {
         invoke: &MockAuthInvoke {
             contract: &w.org.address,
             fn_name: "propose_payment",
-            args: (&w.founder, &shop, euros(10), String::from_str(&w.e, "")).into_val(&w.e),
+            args: (
+                &w.founder,
+                &w.token,
+                &shop,
+                euros(10),
+                String::from_str(&w.e, ""),
+            )
+                .into_val(&w.e),
             sub_invokes: &[],
         },
     }]);
     assert!(w
         .org
-        .try_propose_payment(&w.founder, &shop, &euros(10), &String::from_str(&w.e, ""))
+        .try_propose_payment(
+            &w.founder,
+            &w.token,
+            &shop,
+            &euros(10),
+            &String::from_str(&w.e, "")
+        )
         .is_err());
     assert_eq!(w.token_client.balance(&shop), 0);
+}
+
+#[test]
+fn accepts_several_tokens_and_pays_in_each() {
+    let w = club(1_000);
+    let eurc = add_asset(&w, "EUR", 500);
+    let assets = w.org.assets();
+    assert_eq!(assets.len(), 2);
+    assert_eq!(assets.get_unchecked(1).token, eurc);
+    assert_eq!(assets.get_unchecked(1).decimals, 7);
+    let shop = Address::generate(&w.e);
+    let memo = String::from_str(&w.e, "");
+    let id = w
+        .org
+        .propose_payment(&w.founder, &eurc, &shop, &euros(100), &memo);
+    assert_eq!(w.org.request(&id).status, Status::Executed);
+    assert_eq!(token::Client::new(&w.e, &eurc).balance(&shop), euros(100));
+    assert_eq!(w.org.available(&eurc), euros(400));
+    assert_eq!(w.org.available(&w.token), euros(1_000));
+    let stranger =
+        w.e.register_stellar_asset_contract_v2(Address::generate(&w.e))
+            .address();
+    assert_eq!(
+        w.org
+            .try_propose_payment(&w.founder, &stranger, &shop, &euros(1), &memo),
+        Err(Ok(Error::UnknownAsset))
+    );
+    assert_eq!(w.org.try_available(&stranger), Err(Ok(Error::UnknownAsset)));
+    assert_eq!(
+        w.org.try_change_directly(
+            &w.founder,
+            &Change::AddAsset(AssetSpec {
+                token: eurc,
+                currency: symbol_short!("EUR"),
+            })
+        ),
+        Err(Ok(Error::AssetExists))
+    );
+}
+
+#[test]
+fn payments_in_another_currency_take_the_strictest_rules_and_the_seal() {
+    let w = club(1_000);
+    let usdc = add_asset(&w, "USD", 1_000);
+    let bo = board_member(&w);
+    let bea = board_member(&w);
+    let shop = Address::generate(&w.e);
+    let id = w.org.propose_payment(
+        &w.founder,
+        &usdc,
+        &shop,
+        &euros(150),
+        &String::from_str(&w.e, "Small, but in dollars"),
+    );
+    let request = w.org.request(&id);
+    assert_eq!(request.status, Status::Pending);
+    assert_eq!(request.evaluation.tier, Some(2));
+    assert!(request.evaluation.seal_required);
+    assert_eq!(request.evaluation.objection_window_hours, 48);
+    w.org.approve(&bo, &id);
+    w.org.approve(&bea, &id);
+    w.org.seal(&bo, &id);
+    assert_eq!(w.org.request(&id).status, Status::Scheduled);
+}
+
+#[test]
+fn tokens_in_use_or_alone_cannot_be_removed() {
+    let w = club(10);
+    assert_eq!(
+        w.org
+            .try_change_directly(&w.founder, &Change::RemoveAsset(w.token.clone())),
+        Err(Ok(Error::LastAsset))
+    );
+    let eurc = add_asset(&w, "EUR", 50);
+    assert_eq!(
+        w.org
+            .try_change_directly(&w.founder, &Change::RemoveAsset(eurc.clone())),
+        Err(Ok(Error::AssetInUse))
+    );
+    assert_eq!(
+        w.org
+            .try_change_directly(&w.founder, &Change::RemoveAsset(Address::generate(&w.e))),
+        Err(Ok(Error::UnknownAsset))
+    );
+    let shop = Address::generate(&w.e);
+    w.org.propose_payment(
+        &w.founder,
+        &eurc,
+        &shop,
+        &euros(50),
+        &String::from_str(&w.e, ""),
+    );
+    w.org
+        .change_directly(&w.founder, &Change::RemoveAsset(eurc.clone()));
+    assert_eq!(w.org.assets().len(), 1);
+    assert_eq!(w.org.try_available(&eurc), Err(Ok(Error::UnknownAsset)));
 }

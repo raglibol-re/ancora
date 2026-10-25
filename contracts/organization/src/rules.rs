@@ -89,16 +89,29 @@ fn strictest_tier(policy: &Policy) -> Option<Tier> {
     policy.tiers.last()
 }
 
+/// `amount_in_base` is the amount in the currency the rules are written in. `None` means the
+/// payment is in another currency and no rate is available: it then takes the strictest tier
+/// and the seal, so a payment is never under-approved.
 pub fn evaluate_payment(
     policy: &Policy,
-    amount: i128,
+    amount_in_base: Option<i128>,
     recipient_is_new: bool,
 ) -> Result<Evaluation, Error> {
-    let index = policy
-        .tiers
-        .iter()
-        .position(|tier| tier.up_to.is_none_or(|limit| amount <= limit))
-        .ok_or(Error::InvalidPolicy)?;
+    let index = match amount_in_base {
+        Some(amount) => policy
+            .tiers
+            .iter()
+            .position(|tier| tier.up_to.is_none_or(|limit| amount <= limit))
+            .ok_or(Error::InvalidPolicy)?,
+        None => {
+            let last = policy
+                .tiers
+                .len()
+                .checked_sub(1)
+                .ok_or(Error::InvalidPolicy)?;
+            last as usize
+        }
+    };
     let tier = policy.tiers.get_unchecked(index as u32);
     let approvals = if recipient_is_new {
         merge_requirements(&tier.approvals, &policy.new_recipient_approvals)
@@ -109,7 +122,7 @@ pub fn evaluate_payment(
         tier: Some(index as u32),
         approvals,
         objection_window_hours: tier.objection_window_hours,
-        seal_required: amount >= policy.seal_threshold,
+        seal_required: amount_in_base.is_none_or(|amount| amount >= policy.seal_threshold),
     })
 }
 

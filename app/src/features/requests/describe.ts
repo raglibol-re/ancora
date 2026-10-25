@@ -1,6 +1,6 @@
 import type { OrgAccount } from "../../domain/account.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
-import type { Evaluation, Requirement, Role, RoleId } from "../../domain/rules/model.ts";
+import type { Asset, Evaluation, Requirement, Role, RoleId } from "../../domain/rules/model.ts";
 import type { ApprovalRequest, RequestStatus } from "../../domain/rules/requests.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { formatMoney } from "../../ui/format.ts";
@@ -9,8 +9,8 @@ import { formatMoney } from "../../ui/format.ts";
 
 type NameOf = (personId: string) => string;
 
-/** An org or a template: anything that defines roles. */
-type HasRoles = { roles: readonly Role[] };
+/** An org or a template: anything that defines roles (and, for an org, assets). */
+type HasRoles = { roles: readonly Role[]; assets?: readonly Asset[] };
 
 export function roleLabel(org: HasRoles, roleId: RoleId, count = 1): string {
 	const role = org.roles.find((r) => r.id === roleId);
@@ -61,6 +61,10 @@ export function describeChange(org: HasRoles, change: GovernanceChange, nameOf: 
 			return "Update the approval rules";
 		case "switchTemplate":
 			return `Switch to the ${templates[change.templateId].label.toLowerCase()} template`;
+		case "addAsset":
+			return `Accept ${change.asset.symbol}`;
+		case "removeAsset":
+			return `Stop accepting ${org.assets?.find((a) => a.token === change.token)?.symbol ?? "an asset"}`;
 	}
 }
 
@@ -71,7 +75,7 @@ export function requestTitle(
 ): string {
 	if (request.kind === "governance") return describeChange(account.org, request.change, nameOf);
 	const payee = account.payees.find((p) => p.id === request.recipientId);
-	return `${formatMoney(request.amount, account.currency)} to ${payee?.name ?? "a recipient"}`;
+	return `${formatMoney(request.amount, request.currency)} to ${payee?.name ?? "a recipient"}`;
 }
 
 export const statusLabels: Readonly<Record<RequestStatus, string>> = {

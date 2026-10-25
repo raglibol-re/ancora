@@ -26,6 +26,7 @@ One passkey per person, one contract per organization:
 
 - **You are your passkey**: it creates your own account on Stellar (an OpenZeppelin smart account); its address is your *ancora ID*, which holds any number of positions in any number of organizations. Face ID or a fingerprint signs; fees are sponsored, nobody touches XLM.
 - **Each organization is its own contract** that holds the money and **enforces the approval rules itself**: tiers per amount, four-eyes, objection windows, extra approval for new recipients. The rules are one readable document whose fingerprint the contract stores, so anyone can verify them.
+- **Several stablecoins per organization**: an organization accepts any set of Stellar stablecoins (BlendUSDC and Circle's USDC on testnet; EURC and others by configuration), each with its own balance and payments; adding or dropping one is a governance change. The rules are written in one home currency; a payment in another currency takes the strictest tier until a live rate is connected.
 - **Reserve**: idle money earns variable earnings in a DeFindex vault, with auto-sweep.
 - **Security seal**: large payments need a quantum-safe ML-DSA signature.
 - **Crew and agent keys** with hard spending limits.
@@ -39,7 +40,8 @@ One passkey per person, one contract per organization:
 | App screens | Overview, Inbox, Approvals, Send money with live rule preview, Rules, Organization settings, New organization | Real; runs on sample data or the Stellar testnet (switch on your pass) |
 | Identity ("your pass") | Passkey sign-in/sign-out, on-chain profile (name, picture), ancora ID with QR code, your positions, recovery status, device preferences | **Real on testnet** (sample mode uses "Viewing as") |
 | Approval rules | Tiered approvals, four-eyes, objection window, seal threshold, membership and rule requests, setup phase, lock-out guard | **Real on testnet**: enforced by the organization contract (Rust, tested against the same vectors as the TypeScript engine); policy-document hash verified on the Rules page |
-| Organizations on Stellar | Each organization is an `ancora_organization` contract with OZ AccessControl roles; people are invited by ancora ID; USDC payments leave the contract once its rules are satisfied; fees sponsored by ancora's relayer | **Real on testnet** |
+| Organizations on Stellar | Each organization is an `ancora_organization` contract with OZ AccessControl roles; people are invited by ancora ID; payments leave the contract once its rules are satisfied; fees sponsored by ancora's relayer | **Real on testnet** |
+| Multi-asset treasury | Balances per accepted stablecoin, payments in each, test money per asset, accept/drop assets through governance, home currency for the rules with the strictest tier for other currencies | **Real on testnet** (BlendUSDC + Circle USDC; sample data shows EURC + USDC) |
 | Reserve on DeFindex | Variable earnings on idle funds, one-tap moves | **Simulated** in the UI; DeFindex vault: task 7 |
 | Security seal (ML-DSA) | Quantum-safe approval above a threshold | Roadmap (task 8) |
 | Crew / agent keys | Per-key spending limits | Roadmap (task 9) |
@@ -71,9 +73,10 @@ Verified and written to `app/.env.testnet` by `scripts/setup-testnet.sh`, which 
 
 | What | Contract | Source |
 |------|----------|--------|
-| ancora registry (profiles, organizations per person) | [`CDPIEZ…HY7C`](https://stellar.expert/explorer/testnet/contract/CDPIEZPVDBIAPBOPFXWQSJO2FB7UNX6H7WBXKRF4X2EM43L46G76HY7C) | `contracts/registry` |
-| ancora organization (one instance per organization) | WASM `7462909c…c6dd`, deployed by the operator on "Create organization" | `contracts/organization` |
+| ancora registry (profiles, organizations per person) | [`CDPQV7…4QCM`](https://stellar.expert/explorer/testnet/contract/CDPQV7C2XRWVDGWBIEHNE6IOMC56KSAITMESJBI7BULJSIGSVAQD4QCM) | `contracts/registry` |
+| ancora organization (one instance per organization) | WASM `30e92427…5db0`, deployed by the operator on "Create organization" | `contracts/organization` |
 | USDC (BlendUSDC, SAC of `USDC:GATALT…`) | [`CAQCFV…RCJU`](https://stellar.expert/explorer/testnet/contract/CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU) | Blend testnet |
+| USDC (Circle testnet, SAC of `USDC:GBBD47…`) | [`CBIELT…DAMA`](https://stellar.expert/explorer/testnet/contract/CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA) | Circle (faucet.circle.com) |
 | Reserve: DeFindex USDC vault | [`CBMVK2…DWHN`](https://stellar.expert/explorer/testnet/contract/CBMVK2JK6NTOT2O4HNQAIQFJY232BHKGLIMXDVQVHIIZKDACXDFZDWHN) | paltalabs/defindex `testnet.contracts.json` |
 | DeFindex USDC Blend strategy | [`CALLOM…FSUY`](https://stellar.expert/explorer/testnet/contract/CALLOM5I7XLQPPOPQMYAHUWW4N7O3JKT42KQ4ASEEVBXDJQNJOALFSUY) | paltalabs/defindex |
 | Passkey (WebAuthn) verifier | [`CC7EKI…OM3F`](https://stellar.expert/explorer/testnet/contract/CC7EKIHQP3TN4CARQDND6CEOY2UXLWWC2X5GHTD5NLAT7BG5GPZIOM3F) | stellar/smart-account-kit v0.8.0 |
@@ -130,7 +133,9 @@ It uses the demo operator key, which is **not a signer on any organization accou
 - On testnet, each organization's rules are enforced by its own contract. Template switching and the organization logo are not on-chain yet (logo: this browser only); the Reserve is simulated until task 7.
 - Your passkey is the only key to your account for now: there is no recovery device or guardian yet (Lifeline, tasks 17–18 in the roadmap). The profile page says so.
 - Profile pictures are public files in Vercel Blob (content-addressed, max 300 KB); the URL is on-chain in your profile.
-- Paying a classic Stellar address (G…) works only if that account already holds a trustline for **BlendUSDC** (`USDC` issued by `GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56`); testnet has several assets called USDC (Circle's is a different issuer) and they don't mix. The app checks this before it requests the payment and names the asset to add. Organization addresses (C…) never need one.
+- Paying a classic Stellar address (G…) works only if that account holds a trustline for the exact asset being sent (testnet has several assets called USDC: Blend's and Circle's are different issuers and don't mix). The app checks this before it requests the payment and names the asset to add. Organization addresses (C…) never need one.
+- Test money in Circle's USDC comes from a float the operator fills by hand at faucet.circle.com (captcha-gated), so grants shrink when it runs low; BlendUSDC is refilled automatically by the setup script.
+- Payments in an asset whose currency differs from the organization's rules (e.g. EURC in a USD organization) take the strictest tier and the seal; a live FX rate (Reflector oracle) is on the roadmap.
 - **Testnet fees are unusually high right now.** Measured on 25 Oct 2026: deploying an account 22 XLM, first deposit into it 22 XLM, a passkey-signed payment 46 XLM. Testnet's Soroban state is above its rent target, which puts rent at 2,271,304 stroops/KB versus 1,000 on mainnet, and the OpenZeppelin smart account extends its storage TTL to 30 days on every use. The relayer sponsors these fees from a Friendbot-funded operator key; the same operations cost well under 1 XLM at today's mainnet rent. Details in [docs/DECISIONS.md](docs/DECISIONS.md).
 - In sample mode, "Viewing as" (on your pass) switches the person the app acts as, so one device can show both sides of a four-eyes approval. On testnet, sign out and sign in with another passkey, or use a second device.
 

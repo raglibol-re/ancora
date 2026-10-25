@@ -1,8 +1,8 @@
 import { LocalDataSource } from "../local/localDataSource.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
-import { seedWorkspace } from "./seedWorkspace.ts";
+import { SAMPLE_ASSETS, seedWorkspace } from "./seedWorkspace.ts";
 
-export const SAMPLE_STORAGE_KEY = "ancora.sample.v2";
+export const SAMPLE_STORAGE_KEY = "ancora.sample.v3";
 
 /**
  * Labeled demo data that behaves like the real thing: every command goes through the domain
@@ -20,6 +20,7 @@ export class SampleDataSource extends LocalDataSource {
 			storage,
 			payments: "auto",
 			seed: seedWorkspace,
+			assets: SAMPLE_ASSETS,
 			clock,
 			newId,
 		});

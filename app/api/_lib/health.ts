@@ -96,7 +96,12 @@ export async function contractsHealth(
 	);
 }
 
-export type OperatorHealth = { address: string; xlmStroops: string; usdcStroops: string };
+export type OperatorHealth = {
+	address: string;
+	xlmStroops: string;
+	/** Test-money float per accepted stablecoin. */
+	floats: { symbol: string; token: string; stroops: string }[];
+};
 
 /** The demo operator's floats. It pays sponsored fees and sends test money; it signs for no org. */
 export async function operatorHealth(
@@ -104,9 +109,18 @@ export async function operatorHealth(
 	nativeToken: string,
 ): Promise<OperatorHealth> {
 	const address = Keypair.fromSecret(required("DEPLOYER_SECRET")).publicKey();
-	const [xlm, usdc] = await Promise.all([
+	const assets = [...config.orgAssets.values()];
+	const [xlm, ...floats] = await Promise.all([
 		tokenBalance(config, nativeToken, address).catch(() => 0n),
-		tokenBalance(config, config.usdcToken, address).catch(() => 0n),
+		...assets.map((asset) => tokenBalance(config, asset.token, address).catch(() => 0n)),
 	]);
-	return { address, xlmStroops: xlm.toString(), usdcStroops: usdc.toString() };
+	return {
+		address,
+		xlmStroops: xlm.toString(),
+		floats: assets.map((asset, index) => ({
+			symbol: asset.symbol,
+			token: asset.token,
+			stroops: (floats[index] ?? 0n).toString(),
+		})),
+	};
 }

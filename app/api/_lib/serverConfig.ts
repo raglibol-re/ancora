@@ -12,7 +12,23 @@ export type ServerConfig = {
 	/** Set by scripts/setup-testnet.sh once ancora's own contracts are deployed; empty before. */
 	orgWasmHash: string;
 	registryContract: string;
+	/** The stablecoins an organization may accept, keyed by token address. */
+	orgAssets: ReadonlyMap<string, OrgAsset>;
 };
+
+export type OrgAsset = { token: string; symbol: string; currency: "EUR" | "USD" };
+
+/** "BlendUSDC:CAQCF…:USD,USDC:CBIEL…:USD" → assets by token address. */
+export function parseOrgAssets(spec: string): Map<string, OrgAsset> {
+	const assets = new Map<string, OrgAsset>();
+	for (const entry of spec.split(",")) {
+		const [symbol, token, currency] = entry.trim().split(":");
+		if (symbol && token && (currency === "EUR" || currency === "USD")) {
+			assets.set(token, { token, symbol, currency });
+		}
+	}
+	return assets;
+}
 
 export class ConfigError extends Error {}
 
@@ -30,6 +46,7 @@ export function serverConfig(): ServerConfig {
 		usdcToken: required("USDC_TOKEN"),
 		orgWasmHash: (process.env.ORG_WASM_HASH ?? "").toLowerCase(),
 		registryContract: process.env.REGISTRY_CONTRACT ?? "",
+		orgAssets: parseOrgAssets(process.env.ORG_ASSETS ?? ""),
 		allowedOrigins: new Set(
 			required("ALLOWED_ORIGINS")
 				.split(",")

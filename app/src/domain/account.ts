@@ -1,8 +1,8 @@
-import type { Cents } from "./money.ts";
+import type { Cents, Currency } from "./money.ts";
 import { err, ok, type Result } from "./result.ts";
 import { isEligibleApprover, memberRank } from "./rules/approvals.ts";
 import { applyChange, type GovernanceChange } from "./rules/governance.ts";
-import { type Org, type PersonId, type RuleError, ruleError } from "./rules/model.ts";
+import { type Asset, type Org, type PersonId, type RuleError, ruleError } from "./rules/model.ts";
 import { strictestTier } from "./rules/policy.ts";
 import {
 	type ApprovalRequest,
@@ -30,11 +30,11 @@ export type Payee = {
 	account: string;
 };
 
-/** Structured history; the UI turns entries into words. */
+/** Structured history; the UI turns entries into words. Money entries name their asset. */
 export type ActivityEntry = { id: string; at: number; actorId: PersonId | null } & (
-	| { kind: "payment-out"; amount: Cents; payeeId: string; txHash: string | null }
-	| { kind: "deposit"; amount: Cents; from: string; txHash: string | null }
-	| { kind: "reserve-in" | "reserve-out" | "earnings"; amount: Cents }
+	| { kind: "payment-out"; token: string; amount: Cents; payeeId: string; txHash: string | null }
+	| { kind: "deposit"; token: string; amount: Cents; from: string; txHash: string | null }
+	| { kind: "reserve-in" | "reserve-out" | "earnings"; token: string; amount: Cents }
 	| { kind: "governance"; change: GovernanceChange; viaRequest: boolean }
 	| { kind: "logo" }
 );
@@ -45,8 +45,6 @@ export type AccountNumber = {
 	holder: string;
 };
 
-export type Currency = "EUR" | "USD";
-
 /** The organization's own contract on Stellar. */
 export type OnchainAccount = {
 	contractId: string;
@@ -56,15 +54,20 @@ export type OnchainAccount = {
 	policyHash: string;
 };
 
+/** What the organization holds of one accepted asset: on the main account and in the Reserve. */
+export type Balance = {
+	token: string;
+	balance: Cents;
+	reserve: Cents;
+};
+
 /** Everything one organization's account holds: rules, money, requests and history. */
 export type OrgAccount = {
 	org: Org;
-	/** EURC accounts show euros; on testnet the account holds USDC, so it shows dollars. */
-	currency: Currency;
 	/** Null for sample data. */
 	onchain: OnchainAccount | null;
-	balance: Cents;
-	reserve: Cents;
+	/** One entry per accepted asset (see `org.assets`). */
+	balances: readonly Balance[];
 	/** Current variable annual rate of the Reserve vault, in basis points. */
 	reserveRateBps: number;
 	accountNumber: AccountNumber | null;
@@ -83,7 +86,31 @@ export function accountsOf(workspace: Workspace, personId: PersonId): OrgAccount
 	return workspace.accounts.filter((a) => a.org.members.some((m) => m.personId === personId));
 }
 
-/** Signed effect of an entry on the main balance. */
+export function assetOf(org: Org, token: string): Asset | undefined {
+	return org.assets.find((a) => a.token === token);
+}
+
+/** The currency an amount in `token` is shown in; the rules' currency for unknown tokens. */
+export function currencyOf(account: OrgAccount, token: string): Currency {
+	return assetOf(account.org, token)?.currency ?? account.org.baseCurrency;
+}
+
+/** Whether payments in `token` take the strictest tier (another currency than the rules). */
+export function isForeign(org: Org, token: string): boolean {
+	return (assetOf(org, token)?.currency ?? org.baseCurrency) !== org.baseCurrency;
+}
+
+export function balanceOf(account: OrgAccount, token: string): Balance {
+	return account.balances.find((b) => b.token === token) ?? { token, balance: 0, reserve: 0 };
+}
+
+/** The asset the Send page and the overview lead with: the first one in the rules' currency. */
+export function primaryToken(account: OrgAccount): string {
+	const home = account.org.assets.find((a) => a.currency === account.org.baseCurrency);
+	return home?.token ?? account.org.assets[0]?.token ?? "";
+}
+
+/** Signed effect of an entry on its asset's main balance. */
 export function balanceEffect(entry: ActivityEntry): Cents {
 	switch (entry.kind) {
 		case "deposit":
@@ -117,17 +144,39 @@ export function canEditProfile(org: Org, personId: PersonId): boolean {
 
 const OPEN_STATUSES: readonly ApprovalRequest["status"][] = ["pending", "scheduled", "ready"];
 
-/** Main-balance money not yet promised to open payment requests. */
-export function availableBalance(account: OrgAccount): Cents {
+/** Main-balance money in `token` not yet promised to open payment requests. */
+export function availableBalance(account: OrgAccount, token: string): Cents {
 	const committed = account.requests.reduce(
-		(sum, r) => (r.kind === "payment" && OPEN_STATUSES.includes(r.status) ? sum + r.amount : sum),
+		(sum, r) =>
+			r.kind === "payment" && r.token === token && OPEN_STATUSES.includes(r.status)
+				? sum + r.amount
+				: sum,
 		0,
 	);
-	return account.balance - committed;
+	return balanceOf(account, token).balance - committed;
 }
 
-export function checkFunds(account: OrgAccount, amount: Cents): Result<Cents, RuleError> {
-	if (amount <= availableBalance(account)) return ok(amount);
+/** Whether an asset can be dropped: nothing left on it and no open request pays from it. */
+export function assetInUse(account: OrgAccount, token: string): boolean {
+	const { balance, reserve } = balanceOf(account, token);
+	return (
+		balance !== 0 ||
+		reserve !== 0 ||
+		account.requests.some(
+			(r) => r.kind === "payment" && r.token === token && OPEN_STATUSES.includes(r.status),
+		)
+	);
+}
+
+export function checkFunds(
+	account: OrgAccount,
+	token: string,
+	amount: Cents,
+): Result<Cents, RuleError> {
+	if (!assetOf(account.org, token)) {
+		return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
+	}
+	if (amount <= availableBalance(account, token)) return ok(amount);
 	return err(
 		ruleError(
 			"insufficient-funds",
@@ -136,17 +185,31 @@ export function checkFunds(account: OrgAccount, amount: Cents): Result<Cents, Ru
 	);
 }
 
-export function moveToReserve(account: OrgAccount, amount: Cents): Result<OrgAccount, RuleError> {
-	const funds = checkFunds(account, amount);
+function withBalance(account: OrgAccount, token: string, change: Partial<Balance>): OrgAccount {
+	const current = balanceOf(account, token);
+	const next = { ...current, ...change };
+	const others = account.balances.filter((b) => b.token !== token);
+	return { ...account, balances: [...others, next] };
+}
+
+export function moveToReserve(
+	account: OrgAccount,
+	token: string,
+	amount: Cents,
+): Result<OrgAccount, RuleError> {
+	const funds = checkFunds(account, token, amount);
 	if (!funds.ok) return funds;
-	return ok({ ...account, balance: account.balance - amount, reserve: account.reserve + amount });
+	const { balance, reserve } = balanceOf(account, token);
+	return ok(withBalance(account, token, { balance: balance - amount, reserve: reserve + amount }));
 }
 
 export function withdrawFromReserve(
 	account: OrgAccount,
+	token: string,
 	amount: Cents,
 ): Result<OrgAccount, RuleError> {
-	if (amount > account.reserve) {
+	const { balance, reserve } = balanceOf(account, token);
+	if (amount > reserve) {
 		return err(
 			ruleError(
 				"insufficient-funds",
@@ -154,7 +217,7 @@ export function withdrawFromReserve(
 			),
 		);
 	}
-	return ok({ ...account, balance: account.balance + amount, reserve: account.reserve - amount });
+	return ok(withBalance(account, token, { balance: balance + amount, reserve: reserve - amount }));
 }
 
 /**
@@ -207,14 +270,15 @@ function execute(
 		const entry: ActivityEntry = {
 			...base,
 			kind: "payment-out",
+			token: request.token,
 			amount: request.amount,
 			payeeId: request.recipientId,
 			txHash,
 		};
+		const { balance } = balanceOf(account, request.token);
 		return {
-			...account,
+			...withBalance(account, request.token, { balance: balance - request.amount }),
 			requests,
-			balance: account.balance - request.amount,
 			activity: [entry, ...account.activity],
 		};
 	}
@@ -234,10 +298,22 @@ function execute(
 		change: request.change,
 		viaRequest: true,
 	};
-	return { ...account, org: applied.value, requests, activity: [entry, ...account.activity] };
+	return {
+		...syncBalances({ ...account, org: applied.value }),
+		requests,
+		activity: [entry, ...account.activity],
+	};
+}
+
+/** Keeps one balance entry per accepted asset after assets were added or removed. */
+export function syncBalances(account: OrgAccount): OrgAccount {
+	return {
+		...account,
+		balances: account.org.assets.map((asset) => balanceOf(account, asset.token)),
+	};
 }
 
 /** Rough daily earnings at the current variable rate; real figures come from the vault (task 7). */
-export function estimatedDailyEarnings(account: OrgAccount): Cents {
-	return Math.round((account.reserve * account.reserveRateBps) / 10_000 / 365);
+export function estimatedDailyEarnings(account: OrgAccount, token: string): Cents {
+	return Math.round((balanceOf(account, token).reserve * account.reserveRateBps) / 10_000 / 365);
 }

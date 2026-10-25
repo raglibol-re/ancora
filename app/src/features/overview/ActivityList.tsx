@@ -1,4 +1,4 @@
-import { balanceEffect, type OrgAccount } from "../../domain/account.ts";
+import { balanceEffect, currencyOf, type OrgAccount } from "../../domain/account.ts";
 import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatDateTime, formatMoney, formatSignedMoney } from "../../ui/format.ts";
@@ -21,6 +21,8 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 					{entries.map((entry) => {
 						const effect = balanceEffect(entry);
 						const amount = "amount" in entry ? entry.amount : 0;
+						const currency =
+							"token" in entry ? currencyOf(account, entry.token) : account.org.baseCurrency;
 						return (
 							<li key={entry.id} className={styles.row}>
 								<span className={styles.text}>
@@ -36,8 +38,8 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 								{amount !== 0 && (
 									<span className={effect > 0 ? styles.positive : styles.amount}>
 										{effect === 0
-											? formatMoney(amount, account.currency)
-											: formatSignedMoney(effect, account.currency)}
+											? formatMoney(amount, currency)
+											: formatSignedMoney(effect, currency)}
 									</span>
 								)}
 							</li>

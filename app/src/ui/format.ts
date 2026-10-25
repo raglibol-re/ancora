@@ -1,5 +1,4 @@
-import type { Currency } from "../domain/account.ts";
-import type { Cents } from "../domain/money.ts";
+import type { Cents, Currency } from "../domain/money.ts";
 
 // Formatting lives at the UI edge only; the domain works in integer cents and epoch milliseconds.
 
@@ -25,6 +24,11 @@ export function formatStroops(stroops: string, symbol: string): string {
 	const whole = Number(BigInt(stroops) / 10_000_000n);
 	const fraction = Number((BigInt(stroops) % 10_000_000n) / 100_000n);
 	return `${whole.toLocaleString(LOCALE)}.${String(fraction).padStart(2, "0")} ${symbol}`;
+}
+
+/** "€" / "$" for input labels. */
+export function currencySymbol(currency: Currency): string {
+	return currency === "EUR" ? "€" : "$";
 }
 
 export function formatRate(basisPoints: number): string {

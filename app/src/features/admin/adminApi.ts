@@ -6,7 +6,11 @@ export type AdminHealth = {
 	rpc: { ok: boolean; ledger: number | null; protocol: string | null; latencyMs: number };
 	rent: { stateBytes: number; targetBytes: number; ratePerKb: number; escalated: boolean } | null;
 	contracts: { label: string; id: string; ok: boolean }[];
-	operator: { address: string; xlmStroops: string; usdcStroops: string } | null;
+	operator: {
+		address: string;
+		xlmStroops: string;
+		floats: { symbol: string; token: string; stroops: string }[];
+	} | null;
 	relayer: { allowedOrigins: string[]; rpcUrl: string };
 };
 

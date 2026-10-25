@@ -1,5 +1,6 @@
 import type { ActivityEntry, OrgAccount, Person, Workspace } from "../../domain/account.ts";
-import { euros } from "../../domain/money.ts";
+import type { AssetOption } from "../../domain/dataSource.ts";
+import { dollars, euros } from "../../domain/money.ts";
 import type { Member, RoleId, TemplateId } from "../../domain/rules/model.ts";
 import { evaluatePayment } from "../../domain/rules/policy.ts";
 import type { PaymentRequest } from "../../domain/rules/requests.ts";
@@ -12,6 +13,14 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
 export const SAMPLE_DEFAULT_PERSON = "ines";
+
+/** The stablecoins sample organizations can accept; labels only, nothing is on Stellar. */
+export const SAMPLE_ASSETS: readonly AssetOption[] = [
+	{ token: "eurc", symbol: "EURC", currency: "EUR", label: "EURC (EUR)" },
+	{ token: "usdc", symbol: "USDC", currency: "USD", label: "USDC (USD)" },
+];
+const EURC = "eurc";
+const USDC = "usdc";
 
 /** Fictional people, shared with the testnet adapter as its directory of invitable people. */
 export const samplePeople: readonly Person[] = [
@@ -31,7 +40,7 @@ function account(
 	name: string,
 	templateId: TemplateId,
 	members: [string, RoleId][],
-	rest: Omit<OrgAccount, "org" | "currency" | "onchain">,
+	rest: Omit<OrgAccount, "org" | "onchain">,
 ): OrgAccount {
 	const template = templates[templateId];
 	const memberList: Member[] = members.map(([personId, roleId]) => ({ personId, roleId }));
@@ -44,8 +53,9 @@ function account(
 			members: memberList,
 			policy: template.policy,
 			founderId: members[0]?.[0] ?? "",
+			baseCurrency: "EUR",
+			assets: SAMPLE_ASSETS.map(({ token, symbol, currency }) => ({ token, symbol, currency })),
 		},
-		currency: "EUR",
 		onchain: null,
 		...rest,
 	};
@@ -60,6 +70,8 @@ type SeedPayment = Pick<
 function payment(templateId: TemplateId, fields: SeedPayment): PaymentRequest {
 	return {
 		kind: "payment",
+		token: EURC,
+		currency: "EUR",
 		evaluation: evaluatePayment(templates[templateId].policy, fields),
 		approvals: [],
 		status: "pending",
@@ -86,8 +98,10 @@ export function seedWorkspace(now: number): Workspace {
 			["joao", "member"],
 		],
 		{
-			balance: euros(12_480),
-			reserve: euros(20_000),
+			balances: [
+				{ token: EURC, balance: euros(12_480), reserve: euros(20_000) },
+				{ token: USDC, balance: dollars(1_250), reserve: 0 },
+			],
 			reserveRateBps: 410,
 			accountNumber: {
 				iban: "PT50 0000 0000 0000 0000 1234 5",
@@ -139,6 +153,7 @@ export function seedWorkspace(now: number): Workspace {
 					at: now - 2 * DAY,
 					actorId: null,
 					kind: "deposit",
+					token: EURC,
 					amount: euros(2_400),
 					from: "Membership fees (SEPA)",
 					txHash: null,
@@ -148,6 +163,7 @@ export function seedWorkspace(now: number): Workspace {
 					at: now - 4 * DAY,
 					actorId: "ines",
 					kind: "payment-out",
+					token: EURC,
 					amount: euros(180),
 					payeeId: "boat-supplies",
 					txHash: null,
@@ -157,9 +173,17 @@ export function seedWorkspace(now: number): Workspace {
 					at: now - 6 * DAY,
 					actorId: "ines",
 					kind: "reserve-in",
+					token: EURC,
 					amount: euros(5_000),
 				}),
-				entry({ id: "a4", at: now - 1 * DAY, actorId: null, kind: "earnings", amount: 224 }),
+				entry({
+					id: "a4",
+					at: now - 1 * DAY,
+					actorId: null,
+					kind: "earnings",
+					token: EURC,
+					amount: 224,
+				}),
 			],
 		},
 	);
@@ -175,8 +199,10 @@ export function seedWorkspace(now: number): Workspace {
 			["ana", "employee"],
 		],
 		{
-			balance: euros(84_200),
-			reserve: euros(150_000),
+			balances: [
+				{ token: EURC, balance: euros(84_200), reserve: euros(150_000) },
+				{ token: USDC, balance: dollars(18_300), reserve: 0 },
+			],
 			reserveRateBps: 410,
 			accountNumber: {
 				iban: "PT50 0000 0000 0000 0000 5566 2",
@@ -215,6 +241,7 @@ export function seedWorkspace(now: number): Workspace {
 					at: now - 1 * DAY,
 					actorId: null,
 					kind: "deposit",
+					token: EURC,
 					amount: euros(42_000),
 					from: "Client invoice 2026-031 (SEPA)",
 					txHash: null,
@@ -224,11 +251,19 @@ export function seedWorkspace(now: number): Workspace {
 					at: now - 3 * DAY,
 					actorId: "rui",
 					kind: "payment-out",
+					token: EURC,
 					amount: euros(8_400),
 					payeeId: "studio-luz",
 					txHash: null,
 				}),
-				entry({ id: "b3", at: now - 1 * DAY, actorId: null, kind: "earnings", amount: 1_685 }),
+				entry({
+					id: "b3",
+					at: now - 1 * DAY,
+					actorId: null,
+					kind: "earnings",
+					token: EURC,
+					amount: 1_685,
+				}),
 			],
 		},
 	);
@@ -243,8 +278,10 @@ export function seedWorkspace(now: number): Workspace {
 			["noah", "member"],
 		],
 		{
-			balance: euros(1_850),
-			reserve: 0,
+			balances: [
+				{ token: EURC, balance: euros(1_850), reserve: 0 },
+				{ token: USDC, balance: 0, reserve: 0 },
+			],
 			reserveRateBps: 410,
 			accountNumber: null,
 			logoUrl: null,
@@ -268,6 +305,7 @@ export function seedWorkspace(now: number): Workspace {
 					at: now - 3 * DAY,
 					actorId: null,
 					kind: "deposit",
+					token: EURC,
 					amount: euros(2_000),
 					from: "Sponsor grant",
 					txHash: null,
@@ -277,6 +315,7 @@ export function seedWorkspace(now: number): Workspace {
 					at: now - 2 * DAY,
 					actorId: "noah",
 					kind: "payment-out",
+					token: EURC,
 					amount: euros(150),
 					payeeId: "hw-shop",
 					txHash: null,

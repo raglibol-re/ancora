@@ -19,8 +19,8 @@ export function AccountNumberCard({ account }: { account: OrgAccount }) {
 						<dd className={styles.iban}>{account.onchain.contractId}</dd>
 					</dl>
 					<p className={styles.note}>
-						A smart account secured by passkeys. USDC sent to this address arrives on your main
-						account.
+						The organization's own contract. Any of the stablecoins it accepts (see Rules) sent to
+						this address arrives on its balances.
 					</p>
 					<ExplorerLink target={account.onchain.contractId} />
 				</Card>

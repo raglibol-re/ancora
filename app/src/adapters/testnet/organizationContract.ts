@@ -10,33 +10,37 @@ const REQUEST_PAGE = 50;
 const hex = (bytes: Uint8Array): string =>
 	Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 
-/** Everything the app shows about one organization, read from its contract in one round. */
+/** Everything the app shows about one organization, read from its contract in two rounds. */
 export async function readOrganization(
 	network: Network,
 	contractId: string,
-	token: string,
 ): Promise<OnchainSnapshot> {
-	const [info, policy, members, requests, available, setupPhase, policyHash, balanceStroops] =
-		await Promise.all([
-			readContract(network, contractId, "info") as Promise<Native>,
-			readContract(network, contractId, "policy") as Promise<Native>,
-			readContract(network, contractId, "members") as Promise<Native[]>,
-			readContract(network, contractId, "requests", [u32(0), u32(REQUEST_PAGE)]) as Promise<
-				Native[]
-			>,
-			readContract(network, contractId, "available") as Promise<bigint>,
-			readContract(network, contractId, "is_setup_phase") as Promise<boolean>,
-			readContract(network, contractId, "policy_hash") as Promise<Uint8Array>,
-			tokenBalance(network, token, contractId),
-		]);
+	const [info, policy, assets, members, requests, setupPhase, policyHash] = await Promise.all([
+		readContract(network, contractId, "info") as Promise<Native>,
+		readContract(network, contractId, "policy") as Promise<Native>,
+		readContract(network, contractId, "assets") as Promise<Native[]>,
+		readContract(network, contractId, "members") as Promise<Native[]>,
+		readContract(network, contractId, "requests", [u32(0), u32(REQUEST_PAGE)]) as Promise<Native[]>,
+		readContract(network, contractId, "is_setup_phase") as Promise<boolean>,
+		readContract(network, contractId, "policy_hash") as Promise<Uint8Array>,
+	]);
+	// One balance per accepted token, from the token contracts themselves.
+	const balances = new Map(
+		await Promise.all(
+			assets.map(async (asset) => {
+				const token = String(asset.token);
+				return [token, await tokenBalance(network, token, contractId)] as const;
+			}),
+		),
+	);
 	return {
 		contractId,
 		info,
 		policy,
+		assets,
 		members,
 		requests,
-		availableStroops: BigInt(available),
-		balanceStroops,
+		balances,
 		setupPhase,
 		policyHash: hex(policyHash),
 	};

@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router";
-import { isNewRecipient, type OrgAccount } from "../../domain/account.ts";
+import { useNavigate, useSearchParams } from "react-router";
+import { assetOf, isNewRecipient, type OrgAccount, primaryToken } from "../../domain/account.ts";
 import { parseAmountInput } from "../../domain/money.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
@@ -25,6 +25,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 	const { dataSource, me, workspace } = useWorkspace();
 	const { run, busy } = useCommand();
 	const navigate = useNavigate();
+	const [params] = useSearchParams();
+	const requested = params.get("token");
+	const [token, setToken] = useState(
+		requested && assetOf(account.org, requested) ? requested : primaryToken(account),
+	);
 	const [payeeId, setPayeeId] = useState(account.payees[0]?.id ?? NEW_RECIPIENT);
 	const [newName, setNewName] = useState("");
 	const [newAccount, setNewAccount] = useState("");
@@ -32,10 +37,15 @@ function PayForm({ account }: { account: OrgAccount }) {
 	const [note, setNote] = useState("");
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
+	const asset = assetOf(account.org, token) ?? account.org.assets[0];
+	const currency = asset?.currency ?? account.org.baseCurrency;
 	const isNew = payeeId === NEW_RECIPIENT;
 	const amount = parseAmountInput(amountInput);
+	// Other organizations that accept the same token can be paid by name.
 	const otherOrgs = account.onchain
-		? workspace.accounts.filter((a) => a.onchain && a.org.id !== account.org.id)
+		? workspace.accounts.filter(
+				(a) => a.onchain && a.org.id !== account.org.id && assetOf(a.org, token),
+			)
 		: [];
 	const orgPayee = otherOrgs.find((a) => `${ORG_PREFIX}${a.org.id}` === payeeId);
 	const orgAddress = orgPayee?.onchain?.contractId;
@@ -70,13 +80,14 @@ function PayForm({ account }: { account: OrgAccount }) {
 						: orgPayee && orgAddress
 							? { name: orgPayee.org.name, account: orgAddress }
 							: { id: payeeId },
+					token,
 					amount,
 					note,
 				}),
 			{
 				signature: {
 					kind: "passkey",
-					title: `Send ${formatMoney(amount, account.currency)} to ${recipientName}`,
+					title: `Send ${formatMoney(amount, currency)} to ${recipientName}`,
 				},
 			},
 		);
@@ -84,9 +95,29 @@ function PayForm({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Page title="Send money" lead={`From the main account of ${account.org.name}.`}>
+		<Page title="Send money" lead={`From the account of ${account.org.name}.`}>
 			<Card>
 				<form className={styles.form} onSubmit={submit} noValidate>
+					{account.org.assets.length > 1 && (
+						<Field
+							label="Pay with"
+							htmlFor="asset"
+							hint={`The rules are written in ${account.org.baseCurrency}; a payment in another currency takes the strictest tier.`}
+						>
+							<select
+								id="asset"
+								className={controlClass}
+								value={token}
+								onChange={(e) => setToken(e.target.value)}
+							>
+								{account.org.assets.map((a) => (
+									<option key={a.token} value={a.token}>
+										{a.symbol} ({a.currency})
+									</option>
+								))}
+							</select>
+						</Field>
+					)}
 					<Field label="Recipient" htmlFor="payee">
 						<select
 							id="payee"
@@ -124,7 +155,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 								error={errors.account}
 								hint={
 									account.onchain
-										? "Starts with G or C. Payments go out as BlendUSDC (USDC issued by GATALT…5V56); a G address must hold a trustline for exactly that asset. Testnet has several assets called USDC."
+										? `Starts with G or C. The payment goes out as ${asset?.symbol ?? "the chosen asset"}; a G address must already hold a trustline for exactly that asset (testnet has several assets called USDC).`
 										: undefined
 								}
 							>
@@ -138,7 +169,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 							</Field>
 						</div>
 					)}
-					<Field label={`Amount (${account.currency})`} htmlFor="amount" error={errors.amount}>
+					<Field label={`Amount (${currency})`} htmlFor="amount" error={errors.amount}>
 						<input
 							id="amount"
 							className={`${controlClass} ${styles.amount}`}
@@ -149,7 +180,12 @@ function PayForm({ account }: { account: OrgAccount }) {
 							onChange={(e) => setAmountInput(e.target.value)}
 						/>
 					</Field>
-					<RulePreview account={account} amount={amount} recipientIsNew={recipientIsNew} />
+					<RulePreview
+						account={account}
+						token={token}
+						amount={amount}
+						recipientIsNew={recipientIsNew}
+					/>
 					<Field label="Reference" htmlFor="note" hint="Shown to approvers and on the statement.">
 						<input
 							id="note"

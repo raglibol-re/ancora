@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { availableBalance, type OrgAccount } from "../../domain/account.ts";
+import { availableBalance, balanceOf, type OrgAccount } from "../../domain/account.ts";
 import { inboxFor } from "../../domain/inbox.ts";
 import { euros } from "../../domain/money.ts";
 import { SampleDataSource } from "./sampleDataSource.ts";
@@ -41,10 +41,10 @@ describe("SampleDataSource", () => {
 
 	it("executes a payment once approved and updates balance and history", async () => {
 		const ds = source();
-		const before = accountOf(ds, "tejo-rowing").balance;
+		const before = balanceOf(accountOf(ds, "tejo-rowing"), "eurc").balance;
 		expect((await ds.approve("tejo-rowing", "req-oars", "ines")).ok).toBe(true);
 		const after = accountOf(ds, "tejo-rowing");
-		expect(after.balance).toBe(before - euros(450));
+		expect(balanceOf(after, "eurc").balance).toBe(before - euros(450));
 		expect(after.requests.find((r) => r.id === "req-oars")?.status).toBe("executed");
 		expect(after.activity[0]).toMatchObject({ kind: "payment-out", payeeId: "boat-supplies" });
 	});
@@ -65,6 +65,7 @@ describe("SampleDataSource", () => {
 		const ds = source();
 		const created = await ds.requestPayment("mare-labs", "rui", {
 			payee: { name: "New Vendor", account: "PT50 1" },
+			token: "eurc",
 			amount: euros(500),
 			note: "Test",
 		});
@@ -74,15 +75,75 @@ describe("SampleDataSource", () => {
 
 		const tooMuch = await ds.requestPayment("meridian-team", "noah", {
 			payee: { id: "hw-shop" },
+			token: "eurc",
 			amount: euros(5_000),
 			note: "",
 		});
 		expect(tooMuch).toMatchObject({ ok: false, error: { code: "insufficient-funds" } });
 	});
 
+	it("pays in a second asset, applying the strictest tier for another currency", async () => {
+		const ds = source();
+		const created = await ds.requestPayment("tejo-rowing", "ines", {
+			payee: { id: "boat-supplies" },
+			token: "usdc",
+			amount: euros(50),
+			note: "Dollar invoice",
+		});
+		expect(created.ok).toBe(true);
+		const request = accountOf(ds, "tejo-rowing").requests[0];
+		expect(request).toMatchObject({
+			kind: "payment",
+			currency: "USD",
+			status: "pending",
+			evaluation: { tierIndex: 2, sealRequired: true },
+		});
+		expect(availableBalance(accountOf(ds, "tejo-rowing"), "usdc")).toBe(euros(1_250) - euros(50));
+	});
+
+	it("adds and drops accepted assets through governance, never one in use", async () => {
+		const ds = source();
+		const created = await ds.createOrganization({
+			actorId: "ines",
+			name: "Chess Club",
+			templateId: "club",
+			founderRoleId: "treasurer",
+			baseCurrency: "EUR",
+			assets: ["eurc"],
+		});
+		if (!created.ok) throw new Error(created.error.message);
+		const orgId = created.value;
+		expect(accountOf(ds, orgId).org.assets.map((a) => a.token)).toEqual(["eurc"]);
+		expect(
+			await ds.proposeChange(orgId, "ines", { type: "removeAsset", token: "eurc" }),
+		).toMatchObject({ error: { code: "last-asset" } });
+		expect(
+			await ds.proposeChange(orgId, "ines", {
+				type: "addAsset",
+				asset: { token: "usdc", symbol: "USDC", currency: "USD" },
+			}),
+		).toEqual({ ok: true, value: "applied" });
+		expect(
+			accountOf(ds, orgId)
+				.balances.map((b) => b.token)
+				.sort(),
+		).toEqual(["eurc", "usdc"]);
+		expect((await ds.addTestMoney(orgId, "ines", "usdc")).ok).toBe(true);
+		expect(
+			await ds.proposeChange(orgId, "ines", { type: "removeAsset", token: "usdc" }),
+		).toMatchObject({ error: { code: "asset-in-use" } });
+		expect(await ds.proposeChange(orgId, "ines", { type: "removeAsset", token: "eurc" })).toEqual({
+			ok: true,
+			value: "applied",
+		});
+		expect(accountOf(ds, orgId).balances.map((b) => b.token)).toEqual(["usdc"]);
+	});
+
 	it("counts open requests against the available balance", () => {
 		const club = accountOf(source(), "tejo-rowing");
-		expect(availableBalance(club)).toBe(club.balance - euros(450) - euros(3_200));
+		expect(availableBalance(club, "eurc")).toBe(
+			balanceOf(club, "eurc").balance - euros(450) - euros(3_200),
+		);
 	});
 
 	it("lets a founder set up a new organization directly, then requires requests", async () => {
@@ -92,6 +153,8 @@ describe("SampleDataSource", () => {
 			name: "Book Club",
 			templateId: "club",
 			founderRoleId: "treasurer",
+			baseCurrency: "EUR",
+			assets: ["eurc", "usdc"],
 		});
 		if (!created.ok) throw new Error(created.error.message);
 		const orgId = created.value;
@@ -114,11 +177,11 @@ describe("SampleDataSource", () => {
 
 	it("only lets approvers move money to the Reserve", async () => {
 		const ds = source();
-		expect(await ds.moveToReserve("tejo-rowing", "joao", euros(10))).toMatchObject({
+		expect(await ds.moveToReserve("tejo-rowing", "joao", "eurc", euros(10))).toMatchObject({
 			error: { code: "not-allowed" },
 		});
-		expect((await ds.moveToReserve("tejo-rowing", "ines", euros(1_000))).ok).toBe(true);
-		expect(accountOf(ds, "tejo-rowing").reserve).toBe(euros(21_000));
+		expect((await ds.moveToReserve("tejo-rowing", "ines", "eurc", euros(1_000))).ok).toBe(true);
+		expect(balanceOf(accountOf(ds, "tejo-rowing"), "eurc").reserve).toBe(euros(21_000));
 	});
 
 	it("persists to storage and survives a reload", async () => {
@@ -133,7 +196,7 @@ describe("SampleDataSource", () => {
 
 	it("falls back to the seed when stored data is corrupt", () => {
 		const storage = memoryStorage();
-		storage.setItem("ancora.sample.v2", "{not json");
+		storage.setItem("ancora.sample.v3", "{not json");
 		expect(source(storage).getSnapshot().accounts).toHaveLength(3);
 	});
 });

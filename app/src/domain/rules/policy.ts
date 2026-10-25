@@ -65,12 +65,17 @@ export function mergeRequirements(
 export type PaymentFacts = {
 	amount: Cents;
 	recipientIsNew: boolean;
+	/**
+	 * The payment is in an asset of another currency than the rules, and no rate is available:
+	 * it takes the strictest tier and the seal, so it is never under-approved.
+	 */
+	foreignCurrency?: boolean;
 };
 
 export function evaluatePayment(policy: Policy, payment: PaymentFacts): Evaluation {
-	const tierIndex = policy.tiers.findIndex(
-		(tier) => tier.upTo === null || payment.amount <= tier.upTo,
-	);
+	const tierIndex = payment.foreignCurrency
+		? policy.tiers.length - 1
+		: policy.tiers.findIndex((tier) => tier.upTo === null || payment.amount <= tier.upTo);
 	const tier = tierAt(policy, tierIndex);
 	return {
 		tierIndex,
@@ -78,7 +83,7 @@ export function evaluatePayment(policy: Policy, payment: PaymentFacts): Evaluati
 			? mergeRequirements(tier.approvals, policy.newRecipientApprovals)
 			: [...tier.approvals],
 		objectionWindowHours: tier.objectionWindowHours,
-		sealRequired: payment.amount >= policy.sealThreshold,
+		sealRequired: payment.foreignCurrency === true || payment.amount >= policy.sealThreshold,
 	};
 }
 

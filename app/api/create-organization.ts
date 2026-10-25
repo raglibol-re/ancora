@@ -11,20 +11,33 @@ import {
 import { deployedContractId, isSmartAccount } from "./_lib/contracts.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer } from "./_lib/ledger.js";
-import { required, serverConfig } from "./_lib/serverConfig.js";
+import { type OrgAsset, required, serverConfig } from "./_lib/serverConfig.js";
 
 // The operator deploys the organization contract and registers it. The founder (a person's
 // smart account) is the organization's first and only member; the operator holds no role. The
-// contract stores the SHA-256 of the template's policy document so anyone can verify the rules.
+// contract stores the SHA-256 of the template's policy document so anyone can verify the rules,
+// and starts with the stablecoins the founder picked from the allowlist.
 
 const TEMPLATES = new Set(["club", "company", "team"]);
+const CURRENCIES = new Set(["EUR", "USD"]);
 const MAX_NAME_BYTES = 64;
 
 export const config = { maxDuration: 60 };
 
+const symbol = (value: string) => nativeToScVal(value, { type: "symbol" });
+
+/** The contract's `AssetSpec` struct: map keys in sorted order, as Soroban encodes structs. */
+function assetSpec(asset: OrgAsset): xdr.ScVal {
+	return xdr.ScVal.scvMap([
+		new xdr.ScMapEntry({ key: symbol("currency"), val: symbol(asset.currency) }),
+		new xdr.ScMapEntry({ key: symbol("token"), val: new Address(asset.token).toScVal() }),
+	]);
+}
+
 export default apiHandler("POST", async (request) => {
 	const settings = serverConfig();
-	const { founder, founderRole, template, name, policyHash } = await readJsonObject(request);
+	const { founder, founderRole, template, name, policyHash, baseCurrency, assets } =
+		await readJsonObject(request);
 	if (typeof founder !== "string" || !StrKey.isValidContract(founder)) {
 		throw new RequestError("The founder must be an ancora account address (C…).");
 	}
@@ -40,6 +53,20 @@ export default apiHandler("POST", async (request) => {
 	if (typeof policyHash !== "string" || !/^[0-9a-f]{64}$/.test(policyHash)) {
 		throw new RequestError("The rules document hash must be 64 hex characters.");
 	}
+	if (typeof baseCurrency !== "string" || !CURRENCIES.has(baseCurrency)) {
+		throw new RequestError("Pick EUR or USD as the currency of the rules.");
+	}
+	if (!Array.isArray(assets) || assets.length === 0 || assets.length > settings.orgAssets.size) {
+		throw new RequestError("Pick at least one asset the organization accepts.");
+	}
+	const accepted = assets.map((token) => {
+		const asset = typeof token === "string" ? settings.orgAssets.get(token) : undefined;
+		if (!asset) throw new RequestError("One of the assets isn't available on ancora.");
+		return asset;
+	});
+	if (new Set(accepted.map((a) => a.token)).size !== accepted.length) {
+		throw new RequestError("Each asset can be picked once.");
+	}
 	if (!(await isSmartAccount(settings, founder))) {
 		throw new RequestError("Only an ancora account can found an organization.", 403);
 	}
@@ -49,10 +76,11 @@ export default apiHandler("POST", async (request) => {
 	const contractId = deployedContractId(settings.networkPassphrase, operator.publicKey(), salt);
 	const constructorArgs = [
 		new Address(settings.registryContract).toScVal(),
-		new Address(settings.usdcToken).toScVal(),
+		symbol(baseCurrency),
+		xdr.ScVal.scvVec(accepted.map(assetSpec)),
 		new Address(founder).toScVal(),
-		nativeToScVal(founderRole, { type: "symbol" }),
-		nativeToScVal(template, { type: "symbol" }),
+		symbol(founderRole),
+		symbol(template),
 		nativeToScVal(name.trim(), { type: "string" }),
 		xdr.ScVal.scvBytes(Buffer.from(policyHash, "hex")),
 	];

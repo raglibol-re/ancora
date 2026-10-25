@@ -1,3 +1,5 @@
+import type { Asset } from "../../domain/rules/model.ts";
+
 /**
  * Public testnet deployment IDs, written to app/.env.testnet by scripts/setup-testnet.sh and
  * bundled at build time (`vite --mode testnet`). Null when the file is missing or incomplete,
@@ -20,6 +22,8 @@ export type TestnetConfig = {
 	relayerUrl: string;
 	registryContract: string;
 	orgWasmHash: string;
+	/** "Symbol:C…:USD,…": the stablecoins an organization may accept (see parseAssetOptions). */
+	orgAssets: string;
 };
 
 type EnvSource = Record<string, string | boolean | undefined>;
@@ -40,12 +44,30 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	relayerUrl: "VITE_RELAYER_URL",
 	registryContract: "VITE_REGISTRY_CONTRACT",
 	orgWasmHash: "VITE_ORG_WASM_HASH",
+	orgAssets: "VITE_ORG_ASSETS",
 };
 
+export type AssetOption = Asset & { label: string };
+
+/** Parses "BlendUSDC:CAQCF…:USD,USDC:CBIEL…:USD" into the assets an organization may accept. */
+export function parseAssetOptions(spec: string): AssetOption[] {
+	return spec
+		.split(",")
+		.map((entry) => entry.trim())
+		.filter(Boolean)
+		.flatMap((entry) => {
+			const [symbol, token, currency] = entry.split(":");
+			if (!symbol || !token || (currency !== "EUR" && currency !== "USD")) return [];
+			return [{ symbol, token, currency, label: `${symbol} (${currency})` }];
+		});
+}
+
 export function readTestnetConfig(env: EnvSource): TestnetConfig | null {
+	// Every key must be present; the asset list must parse to at least one asset.
 	const entries = Object.entries(KEYS).map(([field, key]) => [field, env[key]] as const);
 	if (entries.some(([, value]) => typeof value !== "string" || value === "")) return null;
-	return Object.fromEntries(entries) as TestnetConfig;
+	const config = Object.fromEntries(entries) as TestnetConfig;
+	return parseAssetOptions(config.orgAssets).length > 0 ? config : null;
 }
 
 export const testnetConfig = readTestnetConfig(import.meta.env);
@@ -54,7 +76,10 @@ export const testnetConfig = readTestnetConfig(import.meta.env);
 export function listDeployments(config: TestnetConfig): { label: string; id: string }[] {
 	return [
 		{ label: "ancora registry (profiles, memberships)", id: config.registryContract },
-		{ label: "USDC (BlendUSDC)", id: config.usdcToken },
+		...parseAssetOptions(config.orgAssets).map((asset) => ({
+			label: `${asset.symbol} token (${asset.currency})`,
+			id: asset.token,
+		})),
 		{ label: "Reserve vault (DeFindex)", id: config.defindexVault },
 		{ label: "Passkey verifier", id: config.webauthnVerifier },
 		{ label: "Ed25519 verifier", id: config.ed25519Verifier },

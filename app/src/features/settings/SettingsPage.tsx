@@ -66,6 +66,17 @@ function OnStellarCard({ account }: { account: OrgAccount }) {
 					</dd>
 				</div>
 				<div>
+					<dt>Accepted assets</dt>
+					<dd>
+						{account.org.assets.map((asset) => (
+							<span key={asset.token}>
+								{asset.symbol} ({asset.currency}) ·{" "}
+								<code className={styles.code}>{asset.token}</code>
+							</span>
+						))}
+					</dd>
+				</div>
+				<div>
 					<dt>Rules document</dt>
 					<dd>
 						<code className={styles.code}>{account.onchain.policyHash}</code>

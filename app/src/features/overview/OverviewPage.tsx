@@ -2,11 +2,15 @@ import { useState } from "react";
 import { Link } from "react-router";
 import {
 	availableBalance,
+	balanceOf,
 	canManageTreasury,
 	estimatedDailyEarnings,
+	isForeign,
 	type OrgAccount,
+	primaryToken,
 } from "../../domain/account.ts";
 import { inboxFor } from "../../domain/inbox.ts";
+import type { Asset } from "../../domain/rules/model.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
@@ -27,15 +31,19 @@ export function OverviewPage() {
 
 function Overview({ account }: { account: OrgAccount }) {
 	const { workspace, me, dataSource } = useWorkspace();
-	const { run, busy } = useCommand();
-	const onTestnet = dataSource.kind === "testnet";
-	const [reserveSheet, setReserveSheet] = useState<ReserveDirection | null>(null);
+	const [reserveSheet, setReserveSheet] = useState<{
+		token: string;
+		direction: ReserveDirection;
+	} | null>(null);
 	const waiting = inboxFor(workspace, me.id).filter(
 		(item) => item.account.org.id === account.org.id,
 	);
-	const available = availableBalance(account);
-	const committed = account.balance - available;
 	const mayMove = canManageTreasury(account.org, me.id);
+	const lead = primaryToken(account);
+	// The rules' currency first, then the rest in the order the organization accepted them.
+	const assets = [...account.org.assets].sort((a, b) =>
+		a.token === lead ? -1 : b.token === lead ? 1 : 0,
+	);
 
 	return (
 		<div className={styles.page}>
@@ -45,70 +53,59 @@ function Overview({ account }: { account: OrgAccount }) {
 			</header>
 
 			<div className={styles.grid}>
-				<Card title="Main account" tone="deep">
-					<p className={styles.balance}>{formatMoney(account.balance, account.currency)}</p>
-					<p className={styles.sub}>
-						{committed > 0
-							? `${formatMoney(available, account.currency)} available · ${formatMoney(committed, account.currency)} waiting in requests`
-							: "All of it available"}
-					</p>
-					<div className={styles.actions}>
-						<Link to="/app/pay" className={buttonClass()}>
-							Send money
-						</Link>
-						{onTestnet ? (
-							<button
-								type="button"
-								className={buttonClass("secondary")}
-								disabled={busy}
-								onClick={() =>
-									run(() => dataSource.addTestMoney(account.org.id, me.id), {
-										success: "Test money arrived on your account.",
-									})
-								}
-							>
-								Add test money
-							</button>
-						) : (
-							<a href="#account-number" className={buttonClass("secondary")}>
-								Add money
-							</a>
-						)}
-					</div>
-				</Card>
-
-				<Card title="Reserve" action={dataSource.supportsReserve ? <SimulatedTag /> : null}>
-					<p className={styles.amount}>{formatMoney(account.reserve, account.currency)}</p>
-					<p className={styles.sub}>
-						Earnings, variable: {formatRate(account.reserveRateBps)} a year right now, about{" "}
-						{formatMoney(estimatedDailyEarnings(account), account.currency)} a day.
-					</p>
-					{!dataSource.supportsReserve && (
-						<p className={styles.sub}>
-							Not connected on testnet yet. Idle money will earn in a DeFindex vault.
-						</p>
-					)}
-					{mayMove && dataSource.supportsReserve && (
-						<div className={styles.actions}>
-							<button
-								type="button"
-								className={buttonClass("secondary")}
-								onClick={() => setReserveSheet("in")}
-							>
-								Move to Reserve
-							</button>
-							<button
-								type="button"
-								className={buttonClass("secondary")}
-								onClick={() => setReserveSheet("out")}
-								disabled={account.reserve === 0}
-							>
-								Move to account
-							</button>
-						</div>
-					)}
-				</Card>
+				{assets.map((asset) => (
+					<BalanceCard
+						key={asset.token}
+						account={account}
+						asset={asset}
+						lead={asset.token === lead}
+					/>
+				))}
 			</div>
+
+			<Card title="Reserve" action={dataSource.supportsReserve ? <SimulatedTag /> : null}>
+				<ul className={styles.reserveList}>
+					{assets.map((asset) => {
+						const { reserve } = balanceOf(account, asset.token);
+						return (
+							<li key={asset.token} className={styles.reserveRow}>
+								<span className={styles.reserveAsset}>{asset.symbol}</span>
+								<span className={styles.amount}>{formatMoney(reserve, asset.currency)}</span>
+								{mayMove && dataSource.supportsReserve && (
+									<span className={styles.actions}>
+										<button
+											type="button"
+											className={buttonClass("secondary")}
+											onClick={() => setReserveSheet({ token: asset.token, direction: "in" })}
+										>
+											Move to Reserve
+										</button>
+										<button
+											type="button"
+											className={buttonClass("secondary")}
+											onClick={() => setReserveSheet({ token: asset.token, direction: "out" })}
+											disabled={reserve === 0}
+										>
+											Move to account
+										</button>
+									</span>
+								)}
+							</li>
+						);
+					})}
+				</ul>
+				<p className={styles.sub}>
+					Earnings, variable: {formatRate(account.reserveRateBps)} a year right now
+					{assets[0] &&
+						`, about ${formatMoney(estimatedDailyEarnings(account, lead), assets[0].currency)} a day on the ${assets[0].symbol} Reserve`}
+					.
+				</p>
+				{!dataSource.supportsReserve && (
+					<p className={styles.sub}>
+						Not connected on testnet yet. Idle money will earn in a DeFindex vault, asset by asset.
+					</p>
+				)}
+			</Card>
 
 			{waiting.length > 0 && (
 				<section className={styles.section}>
@@ -126,9 +123,67 @@ function Overview({ account }: { account: OrgAccount }) {
 
 			<ReserveSheet
 				account={account}
-				direction={reserveSheet}
+				token={reserveSheet?.token ?? lead}
+				direction={reserveSheet?.direction ?? null}
 				onClose={() => setReserveSheet(null)}
 			/>
 		</div>
+	);
+}
+
+/** One accepted asset: its balance, what's free, and how to add or send money in it. */
+function BalanceCard({
+	account,
+	asset,
+	lead,
+}: {
+	account: OrgAccount;
+	asset: Asset;
+	lead: boolean;
+}) {
+	const { me, dataSource } = useWorkspace();
+	const { run, busy } = useCommand();
+	const onTestnet = dataSource.kind === "testnet";
+	const { balance } = balanceOf(account, asset.token);
+	const available = availableBalance(account, asset.token);
+	const committed = balance - available;
+	const foreign = isForeign(account.org, asset.token);
+
+	return (
+		<Card title={`${asset.symbol} account`} tone={lead ? "deep" : "default"}>
+			<p className={lead ? styles.balance : styles.amount}>
+				{formatMoney(balance, asset.currency)}
+			</p>
+			<p className={styles.sub}>
+				{committed > 0
+					? `${formatMoney(available, asset.currency)} available · ${formatMoney(committed, asset.currency)} waiting in requests`
+					: "All of it available"}
+				{foreign &&
+					` · rules are in ${account.org.baseCurrency}, so payments in ${asset.symbol} take the strictest tier`}
+			</p>
+			<div className={styles.actions}>
+				<Link to={`/app/pay?token=${encodeURIComponent(asset.token)}`} className={buttonClass()}>
+					Send {asset.symbol}
+				</Link>
+				{onTestnet ? (
+					<button
+						type="button"
+						className={buttonClass("secondary")}
+						disabled={busy}
+						onClick={() =>
+							run(() => dataSource.addTestMoney(account.org.id, me.id, asset.token), {
+								success: `Test ${asset.symbol} arrived on the account.`,
+							})
+						}
+					>
+						Add test {asset.symbol}
+					</button>
+				) : (
+					<a href="#account-number" className={buttonClass("secondary")}>
+						Add money
+					</a>
+				)}
+			</div>
+		</Card>
 	);
 }

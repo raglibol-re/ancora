@@ -32,7 +32,7 @@ import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
 import { checkRecipient } from "./recipientCheck.ts";
 import { address, changeToScVal, i128, text, toStroops, u64 } from "./scv.ts";
-import type { TestnetConfig } from "./testnetConfig.ts";
+import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
 
 const EMPTY: Workspace = { people: [], accounts: [] };
 const LOGOS_KEY = "ancora.testnet.logos.v1";
@@ -54,6 +54,7 @@ export class TestnetDataSource implements DataSource {
 	readonly kind = "testnet" as const;
 	readonly supportsReserve = false;
 	readonly identity: IdentitySupport;
+	readonly availableAssets: readonly AssetOption[];
 	private readonly config: TestnetConfig;
 	private readonly storage: KeyValueStorage | null;
 	private readonly listeners = new Set<() => void>();
@@ -65,6 +66,7 @@ export class TestnetDataSource implements DataSource {
 	constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
 		this.storage = storage;
 		this.config = config;
+		this.availableAssets = parseAssetOptions(config.orgAssets);
 		this.identity = {
 			restoring: () => this.restoringSession,
 			current: () => this.me,
@@ -126,9 +128,7 @@ export class TestnetDataSource implements DataSource {
 		const me = this.me.id;
 		try {
 			const orgIds = await readOrganizationsOf(this.config, this.config.registryContract, me);
-			const snapshots = await Promise.all(
-				orgIds.map((id) => readOrganization(this.config, id, this.config.usdcToken)),
-			);
+			const snapshots = await Promise.all(orgIds.map((id) => readOrganization(this.config, id)));
 			const everyone = new Set<string>([me]);
 			for (const snapshot of snapshots) {
 				for (const member of snapshot.members) everyone.add(String(member.address));
@@ -255,13 +255,20 @@ export class TestnetDataSource implements DataSource {
 	async createOrganization(input: Parameters<DataSource["createOrganization"]>[0]) {
 		if (!this.me) return failed("Sign in first.");
 		const template = templates[input.templateId];
-		const policyHash = await rulesHash(template.id, template.roles, template.policy);
+		const policyHash = await rulesHash(
+			template.id,
+			template.roles,
+			template.policy,
+			input.baseCurrency,
+		);
 		const response = await this.post<{ contractId: string }>("/api/create-organization", {
 			founder: this.me.id,
 			founderRole: input.founderRoleId,
 			template: input.templateId,
 			name: input.name.trim(),
 			policyHash,
+			baseCurrency: input.baseCurrency,
+			assets: input.assets,
 		});
 		if (!response.ok) return response;
 		await this.refresh();
@@ -273,20 +280,19 @@ export class TestnetDataSource implements DataSource {
 		if (!StrKey.isValidEd25519PublicKey(to) && !StrKey.isValidContract(to)) {
 			return failed("Enter the recipient's Stellar address (starts with G or C).");
 		}
-		const recipient = await checkRecipient(this.config, this.config.usdcToken, to).catch(
-			(error: unknown) => {
-				// The check is a courtesy; if the RPC hiccups the contract still decides.
-				recordError(this.storage, {
-					at: Date.now(),
-					where: "recipient check",
-					message: error instanceof Error ? error.message : String(error),
-				});
-				return null;
-			},
-		);
+		const recipient = await checkRecipient(this.config, input.token, to).catch((error: unknown) => {
+			// The check is a courtesy; if the RPC hiccups the contract still decides.
+			recordError(this.storage, {
+				at: Date.now(),
+				where: "recipient check",
+				message: error instanceof Error ? error.message : String(error),
+			});
+			return null;
+		});
 		if (recipient && !recipient.ok) return recipient;
 		const result = await this.invoke(orgId, "propose_payment", [
 			address(actorId),
+			address(input.token),
 			address(to),
 			i128(toStroops(input.amount)),
 			text(input.note.trim()),
@@ -320,7 +326,12 @@ export class TestnetDataSource implements DataSource {
 		}
 		const policyHash =
 			change.type === "updatePolicy"
-				? await rulesHash(account.org.templateId, account.org.roles, change.policy)
+				? await rulesHash(
+						account.org.templateId,
+						account.org.roles,
+						change.policy,
+						account.org.baseCurrency,
+					)
 				: undefined;
 		const encoded = changeToScVal(
 			change.type === "addMember" ? { ...change, personId: change.personId.trim() } : change,
@@ -365,8 +376,8 @@ export class TestnetDataSource implements DataSource {
 		return ok(undefined);
 	}
 
-	async addTestMoney(orgId: string) {
-		const response = await this.post("/api/test-money", { contractId: orgId });
+	async addTestMoney(orgId: string, _actorId: PersonId, token: string) {
+		const response = await this.post("/api/test-money", { contractId: orgId, token });
 		if (!response.ok) return response;
 		await this.refresh();
 		return ok(undefined);

@@ -15,18 +15,22 @@ describe("canonicalJson", () => {
 describe("policy document", () => {
 	it("hashes deterministically and changes with any rule", async () => {
 		const { id, roles, policy } = templates.club;
-		const first = await rulesHash(id, roles, policy);
+		const first = await rulesHash(id, roles, policy, "EUR");
 		expect(first).toMatch(/^[0-9a-f]{64}$/);
-		expect(await rulesHash(id, roles, policy)).toBe(first);
+		expect(await rulesHash(id, roles, policy, "EUR")).toBe(first);
 		expect(
-			await rulesHash(id, roles, { ...policy, sealThreshold: policy.sealThreshold + 1 }),
+			await rulesHash(id, roles, { ...policy, sealThreshold: policy.sealThreshold + 1 }, "EUR"),
 		).not.toBe(first);
+		expect(await rulesHash(id, roles, policy, "USD")).not.toBe(first);
 	});
 
 	it("matches the SHA-256 of the canonical text", async () => {
 		const { id, roles, policy } = templates.team;
-		const document = buildPolicyDocument(id, roles, policy);
-		expect(await rulesHash(id, roles, policy)).toBe(await sha256Hex(canonicalJson(document)));
+		const document = buildPolicyDocument(id, roles, policy, "USD");
+		expect(await rulesHash(id, roles, policy, "USD")).toBe(
+			await sha256Hex(canonicalJson(document)),
+		);
+		expect(document.currency).toBe("USD");
 		expect(document.roles).toEqual(["lead", "member"]);
 		expect(document.tiers[2]?.approvals).toEqual([
 			{ role: "member", count: 2 },

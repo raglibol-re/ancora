@@ -1,18 +1,23 @@
 import type { Workspace } from "./account.ts";
-import type { Cents } from "./money.ts";
+import type { Cents, Currency } from "./money.ts";
 import type { Result } from "./result.ts";
 import type { GovernanceChange } from "./rules/governance.ts";
-import type { PersonId, RoleId, RuleError, TemplateId } from "./rules/model.ts";
+import type { Asset, PersonId, RoleId, RuleError, TemplateId } from "./rules/model.ts";
 
 export type DataSourceKind = "sample" | "testnet";
 
 export type PaymentInput = {
 	payee: { id: string } | { name: string; account: string };
+	/** The accepted asset the payment goes out in. */
+	token: string;
 	amount: Cents;
 	note: string;
 };
 
 export type ChangeOutcome = "applied" | "requested";
+
+/** An asset a new organization may accept, with a label for pickers. */
+export type AssetOption = Asset & { label: string };
 
 /** Who the app acts as: a person's address on Stellar (their passkey-secured account). */
 export type Identity = { id: PersonId; name: string | null; avatarUrl: string | null };
@@ -47,6 +52,8 @@ export interface DataSource {
 	readonly identity: IdentitySupport | null;
 	/** False until the Reserve runs on the DeFindex vault for this source (task 7). */
 	readonly supportsReserve: boolean;
+	/** The stablecoins an organization may accept on this source. */
+	readonly availableAssets: readonly AssetOption[];
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;
 	/** Re-reads balances and organizations from the network; a no-op for sample data. */
@@ -57,6 +64,10 @@ export interface DataSource {
 		name: string;
 		templateId: TemplateId;
 		founderRoleId: RoleId;
+		/** The currency the rules are written in. */
+		baseCurrency: Currency;
+		/** Tokens from `availableAssets` the organization accepts from the start. */
+		assets: readonly string[];
 	}): Promise<Result<string, RuleError>>;
 
 	requestPayment(
@@ -75,10 +86,16 @@ export interface DataSource {
 		change: GovernanceChange,
 	): Promise<Result<ChangeOutcome, RuleError>>;
 
-	moveToReserve(orgId: string, actorId: PersonId, amount: Cents): Promise<Result<void, RuleError>>;
+	moveToReserve(
+		orgId: string,
+		actorId: PersonId,
+		token: string,
+		amount: Cents,
+	): Promise<Result<void, RuleError>>;
 	withdrawFromReserve(
 		orgId: string,
 		actorId: PersonId,
+		token: string,
 		amount: Cents,
 	): Promise<Result<void, RuleError>>;
 	setLogo(orgId: string, actorId: PersonId, logoUrl: string): Promise<Result<void, RuleError>>;
@@ -89,6 +106,6 @@ export interface DataSource {
 		requestId: string,
 		actorId: PersonId,
 	): Promise<Result<void, RuleError>>;
-	/** Testnet money for demos: sent by the demo operator, or simulated for sample data. */
-	addTestMoney(orgId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
+	/** Testnet money in one asset for demos: sent by the demo operator, or simulated for sample data. */
+	addTestMoney(orgId: string, actorId: PersonId, token: string): Promise<Result<void, RuleError>>;
 }

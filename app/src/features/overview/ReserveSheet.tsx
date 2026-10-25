@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { availableBalance, type OrgAccount } from "../../domain/account.ts";
+import { availableBalance, balanceOf, currencyOf, type OrgAccount } from "../../domain/account.ts";
 import { parseAmountInput } from "../../domain/money.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { controlClass, Field } from "../../ui/Field.tsx";
@@ -13,18 +13,20 @@ export type ReserveDirection = "in" | "out";
 
 type ReserveSheetProps = {
 	account: OrgAccount;
+	token: string;
 	direction: ReserveDirection | null;
 	onClose: () => void;
 };
 
 /** One-tap move between the main account and the Reserve. */
-export function ReserveSheet({ account, direction, onClose }: ReserveSheetProps) {
+export function ReserveSheet({ account, token, direction, onClose }: ReserveSheetProps) {
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [input, setInput] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const toReserve = direction === "in";
-	const max = toReserve ? availableBalance(account) : account.reserve;
+	const currency = currencyOf(account, token);
+	const max = toReserve ? availableBalance(account, token) : balanceOf(account, token).reserve;
 
 	const submit = async (event: FormEvent) => {
 		event.preventDefault();
@@ -37,12 +39,12 @@ export function ReserveSheet({ account, direction, onClose }: ReserveSheetProps)
 		const result = await run(
 			() =>
 				toReserve
-					? dataSource.moveToReserve(orgId, me.id, amount)
-					: dataSource.withdrawFromReserve(orgId, me.id, amount),
+					? dataSource.moveToReserve(orgId, me.id, token, amount)
+					: dataSource.withdrawFromReserve(orgId, me.id, token, amount),
 			{
 				signature: {
 					kind: "passkey",
-					title: `Move ${formatMoney(amount, account.currency)} ${toReserve ? "to the Reserve" : "to the main account"}`,
+					title: `Move ${formatMoney(amount, currency)} ${toReserve ? "to the Reserve" : "to the main account"}`,
 				},
 				success: "Done. The balances are updated.",
 			},
@@ -64,7 +66,7 @@ export function ReserveSheet({ account, direction, onClose }: ReserveSheetProps)
 				<Field
 					label="Amount"
 					htmlFor="reserve-amount"
-					hint={`Up to ${formatMoney(max, account.currency)}`}
+					hint={`Up to ${formatMoney(max, currency)}`}
 					error={error}
 				>
 					<input

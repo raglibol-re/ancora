@@ -1,4 +1,4 @@
-import { type Cents, isValidAmount } from "../money.ts";
+import { type Cents, type Currency, isValidAmount } from "../money.ts";
 import { err, ok, type Result } from "../result.ts";
 import {
 	approvalProgress,
@@ -40,6 +40,9 @@ type RequestBase = {
 
 export type PaymentRequest = RequestBase & {
 	kind: "payment";
+	/** The asset the payment goes out in, and its currency (fixed when requested). */
+	token: string;
+	currency: Currency;
 	amount: Cents;
 	recipientId: string;
 	recipientIsNew: boolean;
@@ -76,6 +79,7 @@ const notMember = () =>
 export type NewPayment = {
 	id: string;
 	requesterId: PersonId;
+	token: string;
 	amount: Cents;
 	recipientId: string;
 	recipientIsNew: boolean;
@@ -91,11 +95,23 @@ export function createPaymentRequest(
 	if (!isValidAmount(input.amount)) {
 		return err(ruleError("invalid-amount", "Enter an amount above zero."));
 	}
-	const evaluation = evaluatePayment(org.policy, input);
+	const asset = org.assets.find((a) => a.token === input.token);
+	if (!asset) {
+		return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
+	}
+	const evaluation = evaluatePayment(org.policy, {
+		...input,
+		foreignCurrency: asset.currency !== org.baseCurrency,
+	});
 	return ok(
 		settle(
 			org,
-			{ ...blank(input.id, input.requesterId, now, evaluation), kind: "payment", ...input },
+			{
+				...blank(input.id, input.requesterId, now, evaluation),
+				kind: "payment",
+				...input,
+				currency: asset.currency,
+			},
 			now,
 		),
 	);

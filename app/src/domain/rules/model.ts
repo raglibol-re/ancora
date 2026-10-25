@@ -1,4 +1,4 @@
-import type { Cents } from "../money.ts";
+import type { Cents, Currency } from "../money.ts";
 
 export type RoleId = string;
 export type PersonId = string;
@@ -38,6 +38,14 @@ export type Member = {
 	roleId: RoleId;
 };
 
+/** A stablecoin the organization accepts and the fiat currency it stands for. */
+export type Asset = {
+	/** Token contract address on Stellar; a label in sample data. */
+	token: string;
+	symbol: string;
+	currency: Currency;
+};
+
 export type Org = {
 	id: string;
 	name: string;
@@ -47,6 +55,9 @@ export type Org = {
 	members: readonly Member[];
 	policy: Policy;
 	founderId: PersonId;
+	/** The currency the rules are written in; payments in other currencies take the strictest tier. */
+	baseCurrency: Currency;
+	assets: readonly Asset[];
 };
 
 /** What a specific request needs before it can execute. */
@@ -77,7 +88,11 @@ export type RuleErrorCode =
 	| "would-lock-account"
 	| "insufficient-funds"
 	| "not-allowed"
-	| "not-found";
+	| "not-found"
+	| "unknown-asset"
+	| "asset-exists"
+	| "asset-in-use"
+	| "last-asset";
 
 export type RuleError = {
 	code: RuleErrorCode;

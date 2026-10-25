@@ -21,9 +21,10 @@ function unwrap<T>(result: Result<T, RuleError>): T {
 	return result.value;
 }
 
-const payment = (requesterId: string, amount: number, recipientIsNew = false) => ({
+const payment = (requesterId: string, amount: number, recipientIsNew = false, token = "eurc") => ({
 	id: "req-1",
 	requesterId,
+	token,
 	amount,
 	recipientId: "acme",
 	recipientIsNew,
@@ -31,6 +32,18 @@ const payment = (requesterId: string, amount: number, recipientIsNew = false) =>
 });
 
 describe("payment requests", () => {
+	it("take the strictest tier and the seal in another currency, and refuse unknown assets", () => {
+		const request = unwrap(
+			createPaymentRequest(club(), payment("max", euros(50), false, "usdc"), T0),
+		);
+		expect(request.currency).toBe("USD");
+		expect(request.evaluation).toMatchObject({ tierIndex: 2, sealRequired: true });
+		expect(request.status).toBe("pending");
+		expect(
+			createPaymentRequest(club(), payment("max", euros(50), false, "nope"), T0),
+		).toMatchObject({ error: { code: "unknown-asset" } });
+	});
+
 	it("are ready immediately when the tier needs no approval", () => {
 		const request = unwrap(createPaymentRequest(club(), payment("max", euros(50)), T0));
 		expect(request.status).toBe("ready");

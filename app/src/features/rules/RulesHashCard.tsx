@@ -13,18 +13,18 @@ import styles from "./RulesHashCard.module.css";
 export function RulesHashCard({ account }: { account: OrgAccount }) {
 	const { preferences } = useWorkspace();
 	const [local, setLocal] = useState<string | null>(null);
-	const { templateId, roles, policy } = account.org;
+	const { templateId, roles, policy, baseCurrency } = account.org;
 	const onchainHash = account.onchain?.policyHash ?? null;
 
 	useEffect(() => {
 		let cancelled = false;
-		void rulesHash(templateId, roles, policy).then((hash) => {
+		void rulesHash(templateId, roles, policy, baseCurrency).then((hash) => {
 			if (!cancelled) setLocal(hash);
 		});
 		return () => {
 			cancelled = true;
 		};
-	}, [templateId, roles, policy]);
+	}, [templateId, roles, policy, baseCurrency]);
 
 	const verified = onchainHash !== null && local !== null ? onchainHash === local : null;
 	return (
@@ -46,7 +46,7 @@ export function RulesHashCard({ account }: { account: OrgAccount }) {
 			<code className={styles.hash}>{local ?? "computing…"}</code>
 			{preferences.expertMode && (
 				<pre className={styles.document}>
-					{canonicalJson(buildPolicyDocument(templateId, roles, policy))}
+					{canonicalJson(buildPolicyDocument(templateId, roles, policy, baseCurrency))}
 				</pre>
 			)}
 		</Card>

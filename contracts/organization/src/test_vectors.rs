@@ -249,7 +249,7 @@ fn payment_vectors() {
         let org = org(&vectors, &mut people, &vector.org);
         let evaluation = rules::evaluate_payment(
             &org.policy,
-            i128::from(vector.amount),
+            Some(i128::from(vector.amount)),
             vector.recipient_is_new,
         )
         .expect("evaluation");

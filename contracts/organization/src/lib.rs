@@ -1,8 +1,9 @@
 //! ancora organization.
 //!
 //! One contract per organization. It is the organization's account on Stellar: it holds the
-//! organization's token balance, knows its members by address (their passkey-secured smart
-//! accounts) through OpenZeppelin AccessControl, and enforces the approval rules itself.
+//! organization's balances in the stablecoins it accepts, knows its members by address (their
+//! passkey-secured smart accounts) through OpenZeppelin AccessControl, and enforces the
+//! approval rules itself.
 //! A payment or a membership/rule change is a request; members approve with their own
 //! `require_auth`; once the rules are satisfied the contract executes it.
 #![no_std]
@@ -40,8 +41,10 @@ enum DataKey {
     Info,
     Policy,
     PolicyHash,
+    Assets,
     RequestCount,
-    Committed,
+    /// Amount promised to open payment requests, per token.
+    Committed(Address),
     Request(u64),
     Paid(Address),
 }
@@ -61,15 +64,18 @@ pub struct Organization;
 #[contractimpl]
 impl Organization {
     /// Creates the organization from a template: the founder gets `founder_role`, roles and
-    /// rules come from the template; `policy_hash` is the SHA-256 of its canonical policy document. The contract is its own AccessControl admin, so positions
-    /// change only through its governance; the deployer (operator) holds no role.
+    /// rules come from the template; `policy_hash` is the SHA-256 of its canonical policy
+    /// document. The rules are written in `base_currency`; `assets` are the tokens it accepts
+    /// (at least one). The contract is its own AccessControl admin, so positions change only
+    /// through its governance; the deployer (operator) holds no role.
     ///
     /// Auth: none (deployment).
     #[allow(clippy::too_many_arguments)]
     pub fn __constructor(
         e: &Env,
         registry: Address,
-        token: Address,
+        base_currency: Symbol,
+        assets: Vec<AssetSpec>,
         founder: Address,
         founder_role: Symbol,
         template: Symbol,
@@ -79,6 +85,17 @@ impl Organization {
         if name.len() > MAX_NAME_LEN {
             panic_with_error!(e, Error::TextTooLong);
         }
+        if assets.is_empty() {
+            panic_with_error!(e, Error::UnknownAsset);
+        }
+        let mut accepted: Vec<Asset> = Vec::new(e);
+        for spec in assets.iter() {
+            match register_asset(e, &accepted, &spec) {
+                Ok(asset) => accepted.push_back(asset),
+                Err(error) => panic_with_error!(e, error),
+            }
+        }
+        e.storage().instance().set(&DataKey::Assets, &accepted);
         let Some(blueprint) = templates::template(e, &template) else {
             panic_with_error!(e, Error::UnknownTemplate);
         };
@@ -90,7 +107,7 @@ impl Organization {
         let info = OrgInfo {
             name,
             template,
-            token,
+            base_currency,
             registry,
             founder,
             roles: blueprint.roles,
@@ -104,22 +121,28 @@ impl Organization {
             .instance()
             .set(&DataKey::PolicyHash, &policy_hash);
         e.storage().instance().set(&DataKey::RequestCount, &0u64);
-        e.storage().instance().set(&DataKey::Committed, &0i128);
         extend_instance(e);
     }
 
-    /// Name, template, token, registry, founder and ranked roles.
+    /// Name, template, base currency, registry, founder and ranked roles.
     ///
     /// Auth: none (read).
     pub fn info(e: &Env) -> OrgInfo {
         load_info(e)
     }
 
-    /// The approval rules in token minor units.
+    /// The approval rules, amounts in minor units of the base currency.
     ///
     /// Auth: none (read).
     pub fn policy(e: &Env) -> Policy {
         load_policy(e)
+    }
+
+    /// The tokens the organization accepts, each with the currency it stands for.
+    ///
+    /// Auth: none (read).
+    pub fn assets(e: &Env) -> Vec<Asset> {
+        load_assets(e)
     }
 
     /// SHA-256 of the canonical policy document the active rules were compiled from, so anyone
@@ -198,20 +221,23 @@ impl Organization {
         has_paid(e, &to)
     }
 
-    /// Token balance minus what open payment requests have promised.
+    /// Balance of `token` minus what open payment requests in it have promised.
     ///
     /// Auth: none (read).
-    pub fn available(e: &Env) -> i128 {
-        available(e, &load_info(e))
+    pub fn available(e: &Env, token: Address) -> Result<i128, Error> {
+        find_asset(&load_assets(e), &token)?;
+        Ok(available(e, &token))
     }
 
-    /// Proposes a payment from the organization's balance. Executes at once if the rules need
+    /// Proposes a payment in one of the accepted tokens. Executes at once if the rules need
     /// no approval; otherwise waits for approvals (and the seal) and the objection window.
+    /// A token of another currency than the rules' takes the strictest tier and the seal.
     ///
     /// Auth: `by`, a member.
     pub fn propose_payment(
         e: &Env,
         by: Address,
+        token: Address,
         to: Address,
         amount: i128,
         memo: String,
@@ -221,24 +247,31 @@ impl Organization {
         let info = load_info(e);
         let members = ranked(e, &info.roles);
         rules::rank_of_member(&members, &by).ok_or(Error::NotMember)?;
+        let asset = find_asset(&load_assets(e), &token)?;
         if amount <= 0 {
             return Err(Error::InvalidAmount);
         }
         if memo.len() > MAX_MEMO_LEN {
             return Err(Error::TextTooLong);
         }
-        if amount > available(e, &info) {
+        if amount > available(e, &token) {
             return Err(Error::InsufficientFunds);
         }
         let policy = load_policy(e);
-        let evaluation = rules::evaluate_payment(&policy, amount, !has_paid(e, &to))?;
+        let amount_in_base = (asset.currency == info.base_currency).then_some(amount);
+        let evaluation = rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to))?;
         let request = new_request(
             e,
-            RequestKind::Payment(Payment { to, amount, memo }),
+            RequestKind::Payment(Payment {
+                token: token.clone(),
+                to,
+                amount,
+                memo,
+            }),
             by,
             evaluation,
         );
-        add_committed(e, amount);
+        add_committed(e, &token, amount);
         let settled = settle(e, request, &info);
         save_request(e, &settled);
         Ok(settled.id)
@@ -375,7 +408,7 @@ impl Organization {
         request.status = Status::Declined;
         request.decided_by = Some(by);
         if let RequestKind::Payment(payment) = &request.kind {
-            add_committed(e, -payment.amount);
+            add_committed(e, &payment.token, -payment.amount);
         }
         save_request(e, &request);
         Ok(())
@@ -473,19 +506,56 @@ fn has_paid(e: &Env, to: &Address) -> bool {
     e.storage().persistent().has(&DataKey::Paid(to.clone()))
 }
 
-fn committed(e: &Env) -> i128 {
-    e.storage().instance().get(&DataKey::Committed).unwrap_or(0)
-}
-
-fn add_committed(e: &Env, delta: i128) {
+fn committed(e: &Env, token: &Address) -> i128 {
     e.storage()
         .instance()
-        .set(&DataKey::Committed, &(committed(e) + delta));
+        .get(&DataKey::Committed(token.clone()))
+        .unwrap_or(0)
 }
 
-fn available(e: &Env, info: &OrgInfo) -> i128 {
-    let balance = token::Client::new(e, &info.token).balance(&e.current_contract_address());
-    balance - committed(e)
+fn add_committed(e: &Env, token: &Address, delta: i128) {
+    e.storage().instance().set(
+        &DataKey::Committed(token.clone()),
+        &(committed(e, token) + delta),
+    );
+}
+
+fn available(e: &Env, token: &Address) -> i128 {
+    let balance = token::Client::new(e, token).balance(&e.current_contract_address());
+    balance - committed(e, token)
+}
+
+fn load_assets(e: &Env) -> Vec<Asset> {
+    e.storage()
+        .instance()
+        .get(&DataKey::Assets)
+        .unwrap_or_else(|| Vec::new(e))
+}
+
+fn save_assets(e: &Env, assets: &Vec<Asset>) {
+    e.storage().instance().set(&DataKey::Assets, assets);
+}
+
+fn find_asset(assets: &Vec<Asset>, token: &Address) -> Result<Asset, Error> {
+    assets
+        .iter()
+        .find(|asset| asset.token == *token)
+        .ok_or(Error::UnknownAsset)
+}
+
+/// Describes a token to accept, refusing one that is already accepted. Symbol and decimals
+/// come from the token contract itself, so a non-token address fails here.
+fn register_asset(e: &Env, accepted: &Vec<Asset>, spec: &AssetSpec) -> Result<Asset, Error> {
+    if find_asset(accepted, &spec.token).is_ok() {
+        return Err(Error::AssetExists);
+    }
+    let client = token::Client::new(e, &spec.token);
+    Ok(Asset {
+        token: spec.token.clone(),
+        currency: spec.currency.clone(),
+        symbol: client.symbol(),
+        decimals: client.decimals(),
+    })
 }
 
 /// Members with the rank of their role (0 = highest).
@@ -536,12 +606,12 @@ fn execute_now(e: &Env, mut request: Request, info: &OrgInfo) -> Request {
     match &request.kind {
         RequestKind::Payment(payment) => {
             // The contract is the direct invoker of the token, so its own authorization is implied.
-            token::Client::new(e, &info.token).transfer(
+            token::Client::new(e, &payment.token).transfer(
                 &e.current_contract_address(),
                 &payment.to,
                 &payment.amount,
             );
-            add_committed(e, -payment.amount);
+            add_committed(e, &payment.token, -payment.amount);
             e.storage()
                 .persistent()
                 .set(&DataKey::Paid(payment.to.clone()), &true);
@@ -599,6 +669,22 @@ fn plan_change(
             rules::validate_policy(updated, &info.roles)?;
             next_policy = updated.clone();
         }
+        Change::AddAsset(spec) => {
+            if find_asset(&load_assets(e), &spec.token).is_ok() {
+                return Err(Error::AssetExists);
+            }
+        }
+        Change::RemoveAsset(token) => {
+            let assets = load_assets(e);
+            find_asset(&assets, token)?;
+            if assets.len() <= 1 {
+                return Err(Error::LastAsset);
+            }
+            let balance = token::Client::new(e, token).balance(&e.current_contract_address());
+            if balance != 0 || committed(e, token) != 0 {
+                return Err(Error::AssetInUse);
+            }
+        }
     }
     let strictest = |p: &Policy| {
         p.tiers
@@ -640,6 +726,21 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
             e.storage()
                 .instance()
                 .set(&DataKey::PolicyHash, document_hash);
+        }
+        Change::AddAsset(spec) => {
+            let mut assets = load_assets(e);
+            let asset = register_asset(e, &assets, spec)?;
+            assets.push_back(asset);
+            save_assets(e, &assets);
+        }
+        Change::RemoveAsset(token) => {
+            let mut kept = Vec::new(e);
+            for asset in load_assets(e).iter() {
+                if asset.token != *token {
+                    kept.push_back(asset);
+                }
+            }
+            save_assets(e, &kept);
         }
     }
     Ok(())

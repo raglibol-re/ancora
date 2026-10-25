@@ -53,3 +53,24 @@
 .section h2 {
 	font-size: var(--text-xl);
 }
+
+.reserveList {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	margin: 0 0 var(--space-3);
+	padding: 0;
+	list-style: none;
+}
+
+.reserveRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.reserveAsset {
+	min-width: 5rem;
+	font-weight: var(--weight-semibold);
+}

@@ -17,6 +17,7 @@ const complete = {
 	VITE_RELAYER_URL: "https://relayer.example",
 	VITE_REGISTRY_CONTRACT: "CREGISTRY",
 	VITE_ORG_WASM_HASH: "def",
+	VITE_ORG_ASSETS: "BlendUSDC:CUSDC:USD,USDC:CCIRCLE:USD",
 };
 
 describe("readTestnetConfig", () => {

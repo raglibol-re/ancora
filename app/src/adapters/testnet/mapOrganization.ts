@@ -4,8 +4,10 @@ import {
 	type Payee,
 	shortAddress,
 } from "../../domain/account.ts";
+import type { Currency } from "../../domain/money.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import {
+	type Asset,
 	type Evaluation,
 	type Org,
 	type Policy,
@@ -28,10 +30,11 @@ export type OnchainSnapshot = {
 	contractId: string;
 	info: Native;
 	policy: Native;
+	assets: Native[];
 	members: Native[];
 	requests: Native[];
-	availableStroops: bigint;
-	balanceStroops: bigint;
+	/** Token balance per accepted token address. */
+	balances: ReadonlyMap<string, bigint>;
 	setupPhase: boolean;
 	policyHash: string;
 };
@@ -68,6 +71,10 @@ const ERROR_CODES: RuleErrorCode[] = [
 	"not-allowed",
 	"invalid-policy",
 	"invalid-amount",
+	"unknown-asset",
+	"asset-exists",
+	"asset-in-use",
+	"last-asset",
 ];
 
 export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
@@ -92,6 +99,10 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	19: "Only the founder can do this during setup.",
 	20: "Unknown template.",
 	21: "That text is too long.",
+	22: "This organization doesn't hold that asset.",
+	23: "The organization already accepts this asset.",
+	24: "This asset still holds money or has open requests, so it can't be removed.",
+	25: "An organization has to accept at least one asset.",
 };
 
 const variant = (value: unknown): [string, unknown[]] => {
@@ -133,6 +144,16 @@ function mapEvaluation(native: Native): Evaluation {
 	};
 }
 
+const currency = (value: unknown): Currency => (str(value) === "EUR" ? "EUR" : "USD");
+
+export function mapAsset(native: Native): Asset {
+	return {
+		token: str(native.token),
+		symbol: str(native.symbol),
+		currency: currency(native.currency),
+	};
+}
+
 function mapChange(value: unknown): GovernanceChange {
 	const [kind, fields] = variant(value);
 	switch (kind) {
@@ -144,12 +165,30 @@ function mapChange(value: unknown): GovernanceChange {
 			return { type: "changeRole", personId: str(fields[0]), roleId: str(fields[1]) };
 		case "UpdatePolicy":
 			return { type: "updatePolicy", policy: mapPolicy(fields[0] as Native) };
+		case "AddAsset": {
+			// The spec names the token and currency; the symbol is read once the asset is accepted.
+			const spec = fields[0] as Native;
+			return {
+				type: "addAsset",
+				asset: {
+					token: str(spec.token),
+					symbol: shortAddress(str(spec.token)),
+					currency: currency(spec.currency),
+				},
+			};
+		}
+		case "RemoveAsset":
+			return { type: "removeAsset", token: str(fields[0]) };
 		default:
 			throw new Error(`Unknown change ${kind}`);
 	}
 }
 
-export function mapRequest(native: Native, now: number): ApprovalRequest {
+export function mapRequest(
+	native: Native,
+	now: number,
+	assets: readonly Asset[] = [],
+): ApprovalRequest {
 	const createdAt = seconds(native.created_at);
 	const executeAfter =
 		native.execute_after === null || native.execute_after === undefined
@@ -187,9 +226,12 @@ export function mapRequest(native: Native, now: number): ApprovalRequest {
 	const [kind, fields] = variant(native.kind);
 	if (kind === "Payment") {
 		const payment = fields[0] as Native;
+		const token = str(payment.token);
 		return {
 			...base,
 			kind: "payment",
+			token,
+			currency: assets.find((a) => a.token === token)?.currency ?? "USD",
 			amount: toCents(big(payment.amount)),
 			recipientId: str(payment.to),
 			recipientIsNew: false,
@@ -211,6 +253,7 @@ export function mapOrganization(
 	const templateId =
 		(["club", "company", "team"] as const).find((t) => t === str(info.template)) ?? null;
 	const roles = (info.roles as unknown[]).map((id) => roleOf(templateId, str(id)));
+	const assets = snapshot.assets.map(mapAsset);
 	const org: Org = {
 		id: snapshot.contractId,
 		name: str(info.name),
@@ -219,8 +262,10 @@ export function mapOrganization(
 		members: snapshot.members.map((m) => ({ personId: str(m.address), roleId: str(m.role) })),
 		policy: mapPolicy(snapshot.policy),
 		founderId: str(info.founder),
+		baseCurrency: currency(info.base_currency),
+		assets,
 	};
-	const requests = snapshot.requests.map((r) => mapRequest(r, now));
+	const requests = snapshot.requests.map((r) => mapRequest(r, now, assets));
 	const payees = new Map<string, Payee>();
 	for (const request of requests) {
 		if (request.kind === "payment" && !payees.has(request.recipientId)) {
@@ -240,6 +285,7 @@ export function mapOrganization(
 						at: r.createdAt,
 						actorId: r.requesterId,
 						kind: "payment-out",
+						token: r.token,
 						amount: r.amount,
 						payeeId: r.recipientId,
 						txHash: null,
@@ -255,14 +301,16 @@ export function mapOrganization(
 		);
 	return {
 		org,
-		currency: "USD",
 		onchain: {
 			contractId: snapshot.contractId,
 			setupPhase: snapshot.setupPhase,
 			policyHash: snapshot.policyHash,
 		},
-		balance: toCents(snapshot.balanceStroops),
-		reserve: 0,
+		balances: assets.map((asset) => ({
+			token: asset.token,
+			balance: toCents(snapshot.balances.get(asset.token) ?? 0n),
+			reserve: 0,
+		})),
 		reserveRateBps: 410,
 		accountNumber: null,
 		logoUrl: null,

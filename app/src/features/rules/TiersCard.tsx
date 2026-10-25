@@ -6,7 +6,7 @@ import { validatePolicy } from "../../domain/rules/policy.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass } from "../../ui/Field.tsx";
-import { formatMoney } from "../../ui/format.ts";
+import { currencySymbol, formatMoney } from "../../ui/format.ts";
 import { describeRequirements } from "../requests/describe.ts";
 import styles from "./TiersCard.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
@@ -15,7 +15,8 @@ const toInput = (cents: number) => String(cents / 100);
 
 /** Edit tier limits, objection windows and the seal threshold; saving proposes a rule change. */
 export function TiersCard({ account }: { account: OrgAccount }) {
-	const { policy } = account.org;
+	const { policy, baseCurrency } = account.org;
+	const unit = currencySymbol(baseCurrency);
 	const { propose, busy } = useProposeChange(account);
 	const [limits, setLimits] = useState(() =>
 		policy.tiers.map((t) => (t.upTo === null ? "" : toInput(t.upTo))),
@@ -59,14 +60,14 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 							<li key={tier.upTo ?? "unbounded"} className={styles.tier}>
 								<div className={styles.range}>
 									{tier.upTo === null ? (
-										<span>Above {formatMoney(previous?.upTo ?? 0, account.currency)}</span>
+										<span>Above {formatMoney(previous?.upTo ?? 0, baseCurrency)}</span>
 									) : (
 										<label>
-											Up to €
+											Up to {unit}
 											<input
 												className={`${controlClass} ${styles.small}`}
 												inputMode="decimal"
-												aria-label={`Tier ${i + 1} upper limit in euros`}
+												aria-label={`Tier ${i + 1} upper limit in ${baseCurrency}`}
 												value={limits[i] ?? ""}
 												onChange={(e) => setLimits(set(limits, i, e.target.value))}
 											/>
@@ -92,7 +93,7 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 					})}
 				</ol>
 				<label className={styles.seal}>
-					Security seal from €
+					Security seal from {unit}
 					<input
 						className={`${controlClass} ${styles.small}`}
 						inputMode="decimal"

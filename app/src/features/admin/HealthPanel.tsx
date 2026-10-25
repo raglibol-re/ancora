@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
@@ -66,8 +67,12 @@ export function HealthPanel({ health, busy, onRefresh }: HealthPanelProps) {
 							</dd>
 							<dt>XLM for fees</dt>
 							<dd>{formatStroops(operator.xlmStroops, "XLM")}</dd>
-							<dt>Test USDC</dt>
-							<dd>{formatStroops(operator.usdcStroops, "USDC")}</dd>
+							{operator.floats.map((float) => (
+								<Fragment key={float.token}>
+									<dt>Test money: {float.symbol}</dt>
+									<dd>{formatStroops(float.stroops, float.symbol)}</dd>
+								</Fragment>
+							))}
 						</dl>
 					) : (
 						<p className={styles.muted}>Not configured.</p>
