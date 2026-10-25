@@ -29,6 +29,11 @@ export async function readView(
 		.build();
 	const simulation = await new rpc.Server(config.rpcUrl).simulateTransaction(tx);
 	if (!rpc.Api.isSimulationSuccess(simulation) || !simulation.result) {
+		const detail = rpc.Api.isSimulationError(simulation) ? simulation.error : "";
+		// The organization contract's NotFound (18): the request id doesn't exist.
+		if (/Error\(Contract, #18\)/.test(detail)) {
+			throw new RequestError("This request doesn't exist.", 404);
+		}
 		throw new RequestError("The organization couldn't be read right now. Try again shortly.", 502);
 	}
 	return scValToNative(simulation.result.retval);

@@ -113,7 +113,7 @@ const write = apiHandler("POST", async (request) => {
 		case "answer": {
 			const entryId = String(body.entryId ?? "");
 			const entry = await findEntry(org, requestId, entryId);
-			if (!entry || entry.kind !== "question") {
+			if (entry?.kind !== "question") {
 				throw new RequestError("Only questions can be marked answered.");
 			}
 			const onchain = (await readView(settings, org, "request", [
