@@ -74,7 +74,10 @@ export type RuleErrorCode =
 	| "cannot-decline"
 	| "not-ready"
 	| "not-in-setup-phase"
-	| "would-lock-account";
+	| "would-lock-account"
+	| "insufficient-funds"
+	| "not-allowed"
+	| "not-found";
 
 export type RuleError = {
 	code: RuleErrorCode;

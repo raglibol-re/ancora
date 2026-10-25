@@ -16,8 +16,9 @@ import { evaluateGovernance, evaluatePayment } from "./policy.ts";
  * ready     → may execute now
  * executed  → done on-chain
  * declined  → rejected by an approver, objected to during the window, or cancelled by the requester
+ * failed    → approved, but execution failed (e.g. a network error or a change that no longer applies)
  */
-export type RequestStatus = "pending" | "scheduled" | "ready" | "executed" | "declined";
+export type RequestStatus = "pending" | "scheduled" | "ready" | "executed" | "declined" | "failed";
 
 type Timestamp = number;
 
@@ -32,6 +33,7 @@ type RequestBase = {
 	status: RequestStatus;
 	executeAfter: Timestamp | null;
 	declinedBy: PersonId | null;
+	failure: RuleError | null;
 };
 
 export type PaymentRequest = RequestBase & {
@@ -39,6 +41,8 @@ export type PaymentRequest = RequestBase & {
 	amount: Cents;
 	recipientId: string;
 	recipientIsNew: boolean;
+	/** Reference shown to approvers and on the statement. */
+	note: string;
 };
 
 export type GovernanceRequest = RequestBase & {
@@ -60,6 +64,7 @@ const blank = (id: string, requesterId: PersonId, now: Timestamp, evaluation: Ev
 	status: "pending" as const,
 	executeAfter: null,
 	declinedBy: null,
+	failure: null,
 });
 
 const notMember = () =>
@@ -71,6 +76,7 @@ export type NewPayment = {
 	amount: Cents;
 	recipientId: string;
 	recipientIsNew: boolean;
+	note: string;
 };
 
 export function createPaymentRequest(
@@ -207,6 +213,11 @@ export function markExecuted<R extends ApprovalRequest>(request: R): Result<R, R
 		return err(ruleError("not-ready", "This request can't be executed yet."));
 	}
 	return ok({ ...request, status: "executed" });
+}
+
+/** Records a failed execution; the demo admin can retry it later. */
+export function markFailed<R extends ApprovalRequest>(request: R, failure: RuleError): R {
+	return { ...request, status: "failed", failure };
 }
 
 export function isFullyApproved(org: Org, request: ApprovalRequest): boolean {

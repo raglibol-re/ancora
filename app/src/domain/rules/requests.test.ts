@@ -27,6 +27,7 @@ const payment = (requesterId: string, amount: number, recipientIsNew = false) =>
 	amount,
 	recipientId: "acme",
 	recipientIsNew,
+	note: "",
 });
 
 describe("payment requests", () => {
