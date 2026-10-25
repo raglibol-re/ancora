@@ -67,13 +67,19 @@ export async function invokeAsServer(
 		.addOperation(operation)
 		.setTimeout(60)
 		.build();
-	const prepared = await server.prepareTransaction(tx);
+	const prepared = await server.prepareTransaction(tx).catch((error: unknown) => {
+		const detail = error instanceof Error ? error.message : String(error);
+		throw new RequestError(`The network refused the transaction: ${detail.slice(0, 300)}`, 502);
+	});
 	prepared.sign(signer);
 	const sent = await server.sendTransaction(prepared);
 	if (sent.status === "ERROR") throw new RequestError("The network rejected the transaction.", 502);
 	const final = await server.pollTransaction(sent.hash, { attempts: 20 });
 	if (final.status !== "SUCCESS") {
-		throw new RequestError("The transaction failed on the network.", 502);
+		throw new RequestError(
+			`The transaction ended with status ${final.status} on the network.`,
+			502,
+		);
 	}
 	return sent.hash;
 }

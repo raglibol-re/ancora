@@ -1,10 +1,14 @@
-import { submitToChannels } from "./_lib/channels.js";
+import { Keypair, Operation } from "@stellar/stellar-sdk";
 import { postHandler, RequestError, readJsonObject } from "./_lib/http.js";
-import { isSmartAccount, simulatedResourceFee } from "./_lib/ledger.js";
+import { invokeAsServer, isSmartAccount, simulatedResourceFee } from "./_lib/ledger.js";
 import { parseSubmission, validateSubmission } from "./_lib/relayRules.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
 
-// Fee-sponsoring relayer for smart-account-kit: validate, cap the fee, forward to OZ Channels.
+// Fee-sponsoring relayer for smart-account-kit: validate, cap the fee, then submit with the demo
+// operator's key as the fee-paying source. The validation guarantees the sponsor only signs the
+// envelope; every authorization in the call comes from the smart account (or the kit's deployer).
+// OpenZeppelin Relayer Channels was the first choice, but its free testnet budget (100 XLM per
+// key per day) can't cover current testnet resource prices (~40–50 XLM per passkey transaction).
 
 // Testnet cap. Deploying a smart account currently costs ~20–40 XLM in resource fees, almost all
 // of it rent for the account's long-lived storage (measured: ~1 KB written, ~2.7M instructions),
@@ -15,8 +19,7 @@ export const config = { maxDuration: 60 };
 
 export default postHandler(async (request) => {
 	const settings = serverConfig();
-	const body = await readJsonObject(request);
-	const submission = parseSubmission(body);
+	const submission = parseSubmission(await readJsonObject(request));
 	await validateSubmission(
 		{
 			accountWasmHash: settings.accountWasmHash,
@@ -31,9 +34,12 @@ export default postHandler(async (request) => {
 			413,
 		);
 	}
-	// Security invariant: the API key is read only after validation and the fee check.
-	return submitToChannels(settings.relayerBaseUrl, required("RELAYER_API_KEY"), {
-		func: body.func as string,
-		auth: body.auth as string[],
-	});
+	// Security invariant: the sponsor key is read only after validation and the fee check.
+	const sponsor = Keypair.fromSecret(required("DEPLOYER_SECRET"));
+	const hash = await invokeAsServer(
+		settings,
+		sponsor,
+		Operation.invokeHostFunction({ func: submission.func, auth: submission.auth }),
+	);
+	return { hash, status: "SUCCESS", transactionId: null };
 });

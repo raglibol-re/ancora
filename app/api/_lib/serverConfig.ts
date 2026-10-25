@@ -1,6 +1,6 @@
 /**
  * Server-side configuration from Vercel environment variables, kept in sync with the testnet by
- * `scripts/setup-testnet.sh --sync-vercel`. Secrets (DEPLOYER_SECRET, RELAYER_API_KEY) exist only
+ * `scripts/setup-testnet.sh --sync-vercel`. The one secret (DEPLOYER_SECRET) exists only
  * here, never in the client bundle.
  */
 export type ServerConfig = {
@@ -9,7 +9,6 @@ export type ServerConfig = {
 	accountWasmHash: string;
 	usdcToken: string;
 	allowedOrigins: Set<string>;
-	relayerBaseUrl: string;
 };
 
 export class ConfigError extends Error {}
@@ -32,6 +31,5 @@ export function serverConfig(): ServerConfig {
 				.map((origin) => origin.trim())
 				.filter(Boolean),
 		),
-		relayerBaseUrl: process.env.RELAYER_BASE_URL ?? "https://channels.openzeppelin.com/testnet",
 	};
 }

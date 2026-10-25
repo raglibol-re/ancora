@@ -5,7 +5,7 @@
 #
 #   scripts/setup-testnet.sh            set up / repair, then write app/.env.testnet
 #   scripts/setup-testnet.sh --check    only verify, change nothing (exit 1 if something is off)
-#   scripts/setup-testnet.sh --sync-vercel  also push the server settings and secrets the
+#   scripts/setup-testnet.sh --sync-vercel  also push the server settings and the deployer secret the
 #                                       Vercel Functions need (relayer, test money) to the project
 #
 # Requires: stellar CLI (28.x), curl. Secret keys stay in the stellar CLI keystore
@@ -35,9 +35,11 @@ KIT_WEBAUTHN_VERIFIER="CC7EKIHQP3TN4CARQDND6CEOY2UXLWWC2X5GHTD5NLAT7BG5GPZIOM3F"
 KIT_ED25519_VERIFIER="CAAVTMCBXEIBPR64EAASKFXERVPYFZA2JYP5A3BG6PESWEFUJX5IHKN4"
 KIT_THRESHOLD_POLICY="CB3FATQKCIRIQOCYRUPCQ2KREQ7T4RPKS7EAEOZWPEPUKWEDRVROBCEG"
 KIT_SPENDING_LIMIT_POLICY="CABXBYJNZ7IUW4G3D6BND5YCAQF3ASSDMDAOKQQ63UYFSO7WUU2TIP5G"
-# Fee sponsoring goes through ancora's own Vercel Function (OZ Relayer Channels behind it).
+# Fee sponsoring goes through ancora's own Vercel Function, paid from the deployer's XLM.
 RELAYER_URL="/api/relay"
-CHANNELS_GEN_URL="https://channels.openzeppelin.com/testnet/gen"
+# Keep at least this much XLM (in stroops) for sponsored fees. Testnet rent is escalated while its
+# Soroban state is above target (~20–50 XLM per passkey transaction; see docs/DECISIONS.md).
+MIN_XLM_FLOAT=30000000000 # 3,000 XLM
 PRODUCTION_ORIGIN="https://ancora-gray.vercel.app"
 NATIVE_XLM_SAC="CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
 
@@ -220,9 +222,6 @@ sync_vercel() {
 	$SYNC_VERCEL || return 0
 	say "Vercel server settings"
 	command -v vercel >/dev/null || die "vercel CLI is required for --sync-vercel."
-	local api_key
-	api_key="$(curl -fsS "$CHANNELS_GEN_URL" | sed -n 's/.*"apiKey" *: *"\([^"]*\)".*/\1/p')"
-	[[ -n "$api_key" ]] || die "Could not mint an OpenZeppelin Channels API key."
 	(
 		cd "$ROOT"
 		vercel_env STELLAR_RPC_URL "$RPC_URL"
@@ -230,15 +229,40 @@ sync_vercel() {
 		vercel_env ACCOUNT_WASM_HASH "$KIT_ACCOUNT_WASM_HASH"
 		vercel_env USDC_TOKEN "$BLEND_USDC"
 		vercel_env ALLOWED_ORIGINS "$PRODUCTION_ORIGIN,http://localhost:5173,http://localhost:4173"
-		vercel_env RELAYER_API_KEY "$api_key" secret
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
+		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
+		vercel env rm RELAYER_API_KEY production --yes >/dev/null 2>&1 || true
+		vercel env rm RELAYER_API_KEY preview --yes >/dev/null 2>&1 || true
 	)
+}
+
+# The deployer pays sponsored fees. Friendbot funds each account once, so a throwaway funded key
+# is merged into the deployer (handing over its ~10,000 XLM) whenever the float runs low.
+ensure_xlm_float() {
+	say "XLM float for sponsored fees"
+	local stroops helper
+	stroops="$(read_contract "$NATIVE_XLM_SAC" balance --id "$DEPLOYER_ADDRESS" | tr -d '"')"
+	if [[ -z "$stroops" || "$stroops" -lt "$MIN_XLM_FLOAT" ]]; then
+		$CHECK_ONLY && {
+			problem "deployer holds ${stroops:-no} XLM stroops (want ≥ $MIN_XLM_FLOAT)"
+			return
+		}
+		helper="ancora-xlm-$(date +%s)"
+		stellar keys generate "$helper" --network "$NETWORK" --fund >/dev/null 2>&1 ||
+			die "Friendbot could not fund a helper key. Try again later."
+		stellar tx new account-merge --source-account "$helper" --account "$DEPLOYER_ADDRESS" \
+			--network "$NETWORK" >/dev/null 2>&1 || die "Could not merge the helper into the deployer."
+		stellar keys rm "$helper" >/dev/null 2>&1 || true
+		stroops="$(read_contract "$NATIVE_XLM_SAC" balance --id "$DEPLOYER_ADDRESS" | tr -d '"')"
+	fi
+	ok "deployer holds $((stroops / 10000000)) XLM"
 }
 
 main() {
 	say "ancora testnet setup$($CHECK_ONLY && printf ' (check only)')"
 	require_tools
 	ensure_deployer
+	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_xlm_float
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_usdc_float
 	verify_external_contracts
 	# ancora's own contracts are deployed here as they land (approval policy and requests: task 6,
