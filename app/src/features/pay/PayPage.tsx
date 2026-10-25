@@ -122,7 +122,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 								label={account.onchain ? "Stellar address" : "IBAN"}
 								htmlFor="payee-account"
 								error={errors.account}
-								hint={account.onchain ? "Starts with G or C. Payments go out as USDC." : undefined}
+								hint={
+									account.onchain
+										? "Starts with G or C. Payments go out as USDC; a G address must already hold USDC (a trustline) on testnet."
+										: undefined
+								}
 							>
 								<input
 									id="payee-account"

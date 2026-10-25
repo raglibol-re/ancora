@@ -30,6 +30,7 @@ import {
 } from "./organizationContract.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
+import { checkRecipient } from "./recipientCheck.ts";
 import { address, changeToScVal, i128, text, toStroops, u64 } from "./scv.ts";
 import type { TestnetConfig } from "./testnetConfig.ts";
 
@@ -272,6 +273,18 @@ export class TestnetDataSource implements DataSource {
 		if (!StrKey.isValidEd25519PublicKey(to) && !StrKey.isValidContract(to)) {
 			return failed("Enter the recipient's Stellar address (starts with G or C).");
 		}
+		const recipient = await checkRecipient(this.config, this.config.usdcToken, to).catch(
+			(error: unknown) => {
+				// The check is a courtesy; if the RPC hiccups the contract still decides.
+				recordError(this.storage, {
+					at: Date.now(),
+					where: "recipient check",
+					message: error instanceof Error ? error.message : String(error),
+				});
+				return null;
+			},
+		);
+		if (recipient && !recipient.ok) return recipient;
 		const result = await this.invoke(orgId, "propose_payment", [
 			address(actorId),
 			address(to),
