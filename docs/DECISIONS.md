@@ -9,3 +9,4 @@
 | 2026-10-25 | Theme tokens use CSS `light-dark()` with `color-scheme` | Each color defined once; `[data-theme]` override needs no duplicated dark block | Duplicated dark values under media query + attribute |
 | 2026-10-25 | Fonts self-hosted via `@fontsource` | Works offline in the PWA; no third-party font requests | Google Fonts CDN |
 | 2026-10-25 | Biome as the single formatter + linter | One fast tool, zero-warning policy is easy to enforce | ESLint + Prettier |
+| 2026-10-25 | Production domain `ancora-gray.vercel.app` (passkey RP ID) | `ancora.vercel.app` is taken; the RP ID must stay stable or existing passkeys stop working | Custom domain later (would require re-enrolling passkeys) |

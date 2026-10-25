@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <strong>Live demo:</strong> <em>LIVE_URL</em> · <strong>Demo video:</strong> <em>coming soon</em> · Built for HackMeridian 2026, Lisbon
+  <strong>Live demo:</strong> <a href="https://ancora-gray.vercel.app">ancora-gray.vercel.app</a> · <strong>Demo video:</strong> <em>coming soon</em> · Built for HackMeridian 2026, Lisbon
 </p>
 
 > ancora is not a bank. Balances are not deposit-insured. This project runs on the Stellar **testnet** only.
@@ -78,7 +78,7 @@ Requirements: Node 24, pnpm 10. Contracts (from task 3 on): Rust 1.90 with the `
 
 A single Vercel project, Root Directory `app`, deploys production from `main` through the Git integration. `app/vercel.json` rewrites every non-API path to the SPA so that deep links work. Environment variables are documented in `app/.env.example`.
 
-Passkeys are bound to the production domain (WebAuthn RP ID = the production hostname).
+Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it: the WebAuthn RP ID is `ancora-gray.vercel.app`, so passkeys created on preview URLs or localhost will not work in production.
 
 ## Limitations
 
