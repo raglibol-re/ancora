@@ -26,6 +26,21 @@ flowchart LR
 
 `app/src/domain` (pure) ← `app/src/adapters` (outside world, behind interfaces) ← `app/src/features/*` (UI) using `app/src/ui` (presentational) and `app/src/styles/tokens.css` (design tokens).
 
+## Approval rules engine
+
+Pure TypeScript in `app/src/domain/rules/`, no I/O:
+
+| Module | Responsibility |
+|--------|----------------|
+| `model.ts` | Org, roles (ranked, 0 = highest), members, policy (tiers, seal threshold, new-recipient rule), errors |
+| `templates.ts` | Club, company and team defaults |
+| `policy.ts` | Policy validation; payment evaluation (tier, required approvals, objection window, seal); governance evaluation (strictest tier) |
+| `approvals.ts` | Slot matching: requester excluded, one slot per person, higher roles fill lower slots |
+| `requests.ts` | Request lifecycle: pending → scheduled (objection window) → ready → executed, or declined |
+| `governance.ts` | Member/rule/template changes, setup phase, template switching by rank, lock-out guard |
+
+The same behaviour is pinned by `contracts/test-vectors/approval-rules.json`, which the Soroban contracts will test against too (task 6).
+
 ## Contracts *(planned)*
 
 One OpenZeppelin smart account per organization; everything else is a module on it: signers (passkeys, ML-DSA via external verifier), policies (approval rules, spending limits), connected contracts (DeFindex vault, confidential token). Shared stateless verifiers; multi-tenant policies keyed by smart account + context rule.

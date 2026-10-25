@@ -1,0 +1,231 @@
+import { type Cents, isValidAmount } from "../money.ts";
+import { err, ok, type Result } from "../result.ts";
+import {
+	approvalProgress,
+	approvalWouldCount,
+	isEligibleApprover,
+	memberRank,
+} from "./approvals.ts";
+import { applyChange, type GovernanceChange } from "./governance.ts";
+import { type Evaluation, type Org, type PersonId, type RuleError, ruleError } from "./model.ts";
+import { evaluateGovernance, evaluatePayment } from "./policy.ts";
+
+/**
+ * pending   → waiting for approvals (and the seal, if required)
+ * scheduled → fully approved, objection window running until executeAfter
+ * ready     → may execute now
+ * executed  → done on-chain
+ * declined  → rejected by an approver, objected to during the window, or cancelled by the requester
+ */
+export type RequestStatus = "pending" | "scheduled" | "ready" | "executed" | "declined";
+
+type Timestamp = number;
+
+type RequestBase = {
+	id: string;
+	requesterId: PersonId;
+	createdAt: Timestamp;
+	/** Snapshot of the rules at creation; later rule changes don't affect requests in flight. */
+	evaluation: Evaluation;
+	approvals: readonly { personId: PersonId; at: Timestamp }[];
+	sealedBy: PersonId | null;
+	status: RequestStatus;
+	executeAfter: Timestamp | null;
+	declinedBy: PersonId | null;
+};
+
+export type PaymentRequest = RequestBase & {
+	kind: "payment";
+	amount: Cents;
+	recipientId: string;
+	recipientIsNew: boolean;
+};
+
+export type GovernanceRequest = RequestBase & {
+	kind: "governance";
+	change: GovernanceChange;
+};
+
+export type ApprovalRequest = PaymentRequest | GovernanceRequest;
+
+const HOUR_MS = 3_600_000;
+
+const blank = (id: string, requesterId: PersonId, now: Timestamp, evaluation: Evaluation) => ({
+	id,
+	requesterId,
+	createdAt: now,
+	evaluation,
+	approvals: [],
+	sealedBy: null,
+	status: "pending" as const,
+	executeAfter: null,
+	declinedBy: null,
+});
+
+const notMember = () =>
+	err(ruleError("not-a-member", "You're not part of this organization, so you can't do this."));
+
+export type NewPayment = {
+	id: string;
+	requesterId: PersonId;
+	amount: Cents;
+	recipientId: string;
+	recipientIsNew: boolean;
+};
+
+export function createPaymentRequest(
+	org: Org,
+	input: NewPayment,
+	now: Timestamp,
+): Result<PaymentRequest, RuleError> {
+	if (memberRank(org, input.requesterId) === undefined) return notMember();
+	if (!isValidAmount(input.amount)) {
+		return err(ruleError("invalid-amount", "Enter an amount above zero."));
+	}
+	const evaluation = evaluatePayment(org.policy, input);
+	return ok(
+		settle(
+			org,
+			{ ...blank(input.id, input.requesterId, now, evaluation), kind: "payment", ...input },
+			now,
+		),
+	);
+}
+
+export function createGovernanceRequest(
+	org: Org,
+	input: { id: string; requesterId: PersonId; change: GovernanceChange },
+	now: Timestamp,
+): Result<GovernanceRequest, RuleError> {
+	if (memberRank(org, input.requesterId) === undefined) return notMember();
+	const preview = applyChange(org, input.change);
+	if (!preview.ok) return preview;
+	const base = blank(input.id, input.requesterId, now, evaluateGovernance(org.policy));
+	return ok(settle(org, { ...base, kind: "governance", change: input.change }, now));
+}
+
+export function approveRequest<R extends ApprovalRequest>(
+	org: Org,
+	request: R,
+	personId: PersonId,
+	now: Timestamp,
+): Result<R, RuleError> {
+	const { approvals } = request.evaluation;
+	const approverIds = request.approvals.map((a) => a.personId);
+	if (request.status !== "pending") return notPending();
+	if (memberRank(org, personId) === undefined) return notMember();
+	if (personId === request.requesterId) {
+		return err(
+			ruleError(
+				"requester-cannot-approve",
+				"You created this request, so someone else has to approve it.",
+			),
+		);
+	}
+	if (approverIds.includes(personId)) {
+		return err(ruleError("already-approved", "You've already approved this request."));
+	}
+	if (!isEligibleApprover(org, approvals, personId)) {
+		return err(ruleError("role-cannot-approve", "Your role can't approve this request."));
+	}
+	if (!approvalWouldCount(org, approvals, approverIds, request.requesterId, personId)) {
+		return err(
+			ruleError(
+				"approval-not-needed",
+				"Your approval isn't needed: the remaining approvals must come from a higher role.",
+			),
+		);
+	}
+	return ok(
+		settle(org, { ...request, approvals: [...request.approvals, { personId, at: now }] }, now),
+	);
+}
+
+/** Adds the security seal (ML-DSA signature) from someone other than the requester. */
+export function sealRequest<R extends ApprovalRequest>(
+	org: Org,
+	request: R,
+	personId: PersonId,
+	now: Timestamp,
+): Result<R, RuleError> {
+	if (request.status !== "pending") return notPending();
+	if (!request.evaluation.sealRequired) {
+		return err(ruleError("seal-not-required", "This request doesn't need the security seal."));
+	}
+	if (request.sealedBy !== null) {
+		return err(ruleError("already-sealed", "This request already has the security seal."));
+	}
+	if (personId === request.requesterId) {
+		return err(
+			ruleError(
+				"requester-cannot-approve",
+				"You created this request, so someone else has to seal it.",
+			),
+		);
+	}
+	if (!isEligibleApprover(org, request.evaluation.approvals, personId)) {
+		return err(ruleError("role-cannot-approve", "Your role can't seal this request."));
+	}
+	return ok(settle(org, { ...request, sealedBy: personId }, now));
+}
+
+/** Decline while pending, or object during the objection window. The requester may cancel. */
+export function declineRequest<R extends ApprovalRequest>(
+	org: Org,
+	request: R,
+	personId: PersonId,
+): Result<R, RuleError> {
+	if (request.status !== "pending" && request.status !== "scheduled") {
+		return err(
+			ruleError("cannot-decline", "This request is already decided and can't be declined."),
+		);
+	}
+	const mayDecline =
+		personId === request.requesterId ||
+		isEligibleApprover(org, request.evaluation.approvals, personId);
+	if (!mayDecline) {
+		return err(ruleError("cannot-decline", "Your role can't decline this request."));
+	}
+	return ok({ ...request, status: "declined", declinedBy: personId });
+}
+
+/** Moves a scheduled request to ready once its objection window has passed. */
+export function advanceRequest<R extends ApprovalRequest>(request: R, now: Timestamp): R {
+	if (
+		request.status === "scheduled" &&
+		request.executeAfter !== null &&
+		now >= request.executeAfter
+	) {
+		return { ...request, status: "ready" };
+	}
+	return request;
+}
+
+/** Records that the request was executed on-chain. */
+export function markExecuted<R extends ApprovalRequest>(request: R): Result<R, RuleError> {
+	if (request.status !== "ready") {
+		return err(ruleError("not-ready", "This request can't be executed yet."));
+	}
+	return ok({ ...request, status: "executed" });
+}
+
+export function isFullyApproved(org: Org, request: ApprovalRequest): boolean {
+	const progress = approvalProgress(
+		org,
+		request.evaluation.approvals,
+		request.approvals.map((a) => a.personId),
+		request.requesterId,
+	);
+	return progress.satisfied && (!request.evaluation.sealRequired || request.sealedBy !== null);
+}
+
+function settle<R extends ApprovalRequest>(org: Org, request: R, now: Timestamp): R {
+	if (request.status !== "pending" || !isFullyApproved(org, request)) return request;
+	const windowHours = request.evaluation.objectionWindowHours;
+	return windowHours > 0
+		? { ...request, status: "scheduled", executeAfter: now + windowHours * HOUR_MS }
+		: { ...request, status: "ready" };
+}
+
+const notPending = () =>
+	err(ruleError("not-pending", "This request is no longer waiting for approvals."));

@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "semantics": [
+    "Amounts are integer cents.",
+    "roles are listed highest rank first; a person fills a slot for their own role or any lower role.",
+    "The payment amount picks the first tier with amount <= upTo (null = unbounded).",
+    "recipientIsNew merges newRecipientApprovals per role, keeping the higher count.",
+    "sealRequired = amount >= sealThreshold. Governance uses the last tier and never the seal.",
+    "The requester never counts; each person counts once; non-members never count.",
+    "Compare expect.approvals as an unordered set. countedCount is the number of filled slots.",
+    "complete = all slots filled and (seal not required or sealed)."
+  ],
+  "orgs": {
+    "club": {
+      "roles": ["treasurer", "board", "member"],
+      "members": [
+        { "personId": "tess", "roleId": "treasurer" },
+        { "personId": "bo", "roleId": "board" },
+        { "personId": "bea", "roleId": "board" },
+        { "personId": "max", "roleId": "member" }
+      ],
+      "policy": {
+        "tiers": [
+          { "upTo": 20000, "approvals": [], "objectionWindowHours": 0 },
+          { "upTo": 200000, "approvals": [{ "roleId": "board", "count": 1 }], "objectionWindowHours": 0 },
+          { "upTo": null, "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48 }
+        ],
+        "sealThreshold": 1000000,
+        "newRecipientApprovals": []
+      }
+    },
+    "clubFounderOnly": {
+      "roles": ["treasurer", "board", "member"],
+      "members": [{ "personId": "tess", "roleId": "treasurer" }],
+      "policy": "club"
+    },
+    "clubFounderAndOneBoard": {
+      "roles": ["treasurer", "board", "member"],
+      "members": [
+        { "personId": "tess", "roleId": "treasurer" },
+        { "personId": "bo", "roleId": "board" }
+      ],
+      "policy": "club"
+    },
+    "company": {
+      "roles": ["director", "finance", "employee"],
+      "members": [
+        { "personId": "dana", "roleId": "director" },
+        { "personId": "dirk", "roleId": "director" },
+        { "personId": "fin", "roleId": "finance" },
+        { "personId": "emil", "roleId": "employee" }
+      ],
+      "policy": {
+        "tiers": [
+          { "upTo": 100000, "approvals": [], "objectionWindowHours": 0 },
+          { "upTo": 2000000, "approvals": [{ "roleId": "director", "count": 1 }], "objectionWindowHours": 0 },
+          { "upTo": null, "approvals": [{ "roleId": "director", "count": 2 }], "objectionWindowHours": 0 }
+        ],
+        "sealThreshold": 5000000,
+        "newRecipientApprovals": [{ "roleId": "director", "count": 1 }]
+      }
+    },
+    "team": {
+      "roles": ["lead", "member"],
+      "members": [
+        { "personId": "lea", "roleId": "lead" },
+        { "personId": "mo", "roleId": "member" },
+        { "personId": "mia", "roleId": "member" },
+        { "personId": "noah", "roleId": "member" }
+      ],
+      "policy": {
+        "tiers": [
+          { "upTo": 10000, "approvals": [], "objectionWindowHours": 0 },
+          { "upTo": 100000, "approvals": [{ "roleId": "lead", "count": 1 }], "objectionWindowHours": 0 },
+          {
+            "upTo": null,
+            "approvals": [
+              { "roleId": "member", "count": 2 },
+              { "roleId": "lead", "count": 1 }
+            ],
+            "objectionWindowHours": 0
+          }
+        ],
+        "sealThreshold": 500000,
+        "newRecipientApprovals": []
+      }
+    }
+  },
+  "payments": [
+    { "name": "club: €150 needs nothing", "org": "club", "amount": 15000, "requester": "max", "recipientIsNew": false, "approvals": [], "sealed": false,
+      "expect": { "tier": 0, "approvals": [], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": true } },
+    { "name": "club: exactly €200 is still tier 0", "org": "club", "amount": 20000, "requester": "max", "recipientIsNew": false, "approvals": [], "sealed": false,
+      "expect": { "tier": 0, "approvals": [], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": true } },
+    { "name": "club: €200.01 needs a board member", "org": "club", "amount": 20001, "requester": "max", "recipientIsNew": false, "approvals": [], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "board", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": false } },
+    { "name": "club: €500 approved by a board member", "org": "club", "amount": 50000, "requester": "max", "recipientIsNew": false, "approvals": ["bo"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "board", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": true } },
+    { "name": "club: requester's own approval never counts", "org": "club", "amount": 50000, "requester": "bo", "recipientIsNew": false, "approvals": ["bo"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "board", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": false } },
+    { "name": "club: a plain member can't fill a board slot", "org": "club", "amount": 50000, "requester": "bo", "recipientIsNew": false, "approvals": ["max"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "board", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": false } },
+    { "name": "club: the treasurer fills a board slot", "org": "club", "amount": 50000, "requester": "max", "recipientIsNew": false, "approvals": ["tess"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "board", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": true } },
+    { "name": "club: duplicate approvals count once", "org": "club", "amount": 200000, "requester": "max", "recipientIsNew": false, "approvals": ["bo", "bo"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "board", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": true } },
+    { "name": "club: above €2,000 needs two board members and 48h", "org": "club", "amount": 200001, "requester": "max", "recipientIsNew": false, "approvals": ["bo"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "sealRequired": false, "countedCount": 1, "complete": false } },
+    { "name": "club: two board members complete tier 2", "org": "club", "amount": 500000, "requester": "max", "recipientIsNew": false, "approvals": ["bo", "bea"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "sealRequired": false, "countedCount": 2, "complete": true } },
+    { "name": "club: outsiders never count", "org": "club", "amount": 500000, "requester": "max", "recipientIsNew": false, "approvals": ["bo", "stranger"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "sealRequired": false, "countedCount": 1, "complete": false } },
+    { "name": "club: €9,999.99 needs no seal", "org": "club", "amount": 999999, "requester": "max", "recipientIsNew": false, "approvals": ["bo", "bea"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "sealRequired": false, "countedCount": 2, "complete": true } },
+    { "name": "club: €10,000 is incomplete without the seal", "org": "club", "amount": 1000000, "requester": "max", "recipientIsNew": false, "approvals": ["bo", "bea"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "sealRequired": true, "countedCount": 2, "complete": false } },
+    { "name": "club: €10,000 with the seal is complete", "org": "club", "amount": 1000000, "requester": "max", "recipientIsNew": false, "approvals": ["bo", "bea"], "sealed": true,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "sealRequired": true, "countedCount": 2, "complete": true } },
+    { "name": "company: €1,000 to a known recipient needs nothing", "org": "company", "amount": 100000, "requester": "fin", "recipientIsNew": false, "approvals": [], "sealed": false,
+      "expect": { "tier": 0, "approvals": [], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": true } },
+    { "name": "company: new recipient adds a director in tier 0", "org": "company", "amount": 100000, "requester": "fin", "recipientIsNew": true, "approvals": [], "sealed": false,
+      "expect": { "tier": 0, "approvals": [{ "roleId": "director", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": false } },
+    { "name": "company: new recipient in tier 1 keeps one director", "org": "company", "amount": 500000, "requester": "fin", "recipientIsNew": true, "approvals": ["dana"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "director", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": true } },
+    { "name": "company: new recipient in tier 2 keeps two directors", "org": "company", "amount": 3000000, "requester": "fin", "recipientIsNew": true, "approvals": ["dana"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "director", "count": 2 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": false } },
+    { "name": "company: finance can't fill a director slot", "org": "company", "amount": 3000000, "requester": "emil", "recipientIsNew": false, "approvals": ["dana", "fin"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "director", "count": 2 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": false } },
+    { "name": "company: a director requesting needs the other director", "org": "company", "amount": 2000000, "requester": "dana", "recipientIsNew": false, "approvals": ["dana", "dirk"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "director", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": true } },
+    { "name": "company: €50,000 with two directors and the seal", "org": "company", "amount": 5000000, "requester": "fin", "recipientIsNew": false, "approvals": ["dana", "dirk"], "sealed": true,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "director", "count": 2 }], "objectionWindowHours": 0, "sealRequired": true, "countedCount": 2, "complete": true } },
+    { "name": "team: €100 needs nothing", "org": "team", "amount": 10000, "requester": "mo", "recipientIsNew": false, "approvals": [], "sealed": false,
+      "expect": { "tier": 0, "approvals": [], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": true } },
+    { "name": "team: a member can't fill the lead slot", "org": "team", "amount": 100000, "requester": "mo", "recipientIsNew": false, "approvals": ["mia"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "lead", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 0, "complete": false } },
+    { "name": "team: the lead approves tier 1", "org": "team", "amount": 100000, "requester": "mo", "recipientIsNew": false, "approvals": ["lea"], "sealed": false,
+      "expect": { "tier": 1, "approvals": [{ "roleId": "lead", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 1, "complete": true } },
+    { "name": "team: above €1,000 needs a lead and two members", "org": "team", "amount": 100001, "requester": "mo", "recipientIsNew": false, "approvals": ["lea", "mia"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "member", "count": 2 }, { "roleId": "lead", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 2, "complete": false } },
+    { "name": "team: lead plus two members complete tier 2", "org": "team", "amount": 200000, "requester": "noah", "recipientIsNew": false, "approvals": ["mia", "lea", "mo"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "member", "count": 2 }, { "roleId": "lead", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 3, "complete": true } },
+    { "name": "team: three members without the lead fall short", "org": "team", "amount": 200000, "requester": "lea", "recipientIsNew": false, "approvals": ["mo", "mia", "noah"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "member", "count": 2 }, { "roleId": "lead", "count": 1 }], "objectionWindowHours": 0, "sealRequired": false, "countedCount": 2, "complete": false } },
+    { "name": "team: €5,000 needs the seal", "org": "team", "amount": 500000, "requester": "noah", "recipientIsNew": false, "approvals": ["mia", "lea", "mo"], "sealed": false,
+      "expect": { "tier": 2, "approvals": [{ "roleId": "member", "count": 2 }, { "roleId": "lead", "count": 1 }], "objectionWindowHours": 0, "sealRequired": true, "countedCount": 3, "complete": false } }
+  ],
+  "governance": [
+    { "name": "club: membership change uses the strictest tier", "org": "club", "requester": "max", "approvals": ["bo", "bea"],
+      "expect": { "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "countedCount": 2, "complete": true } },
+    { "name": "club: governance never needs the seal and still applies four-eyes", "org": "club", "requester": "bo", "approvals": ["bo", "bea"],
+      "expect": { "approvals": [{ "roleId": "board", "count": 2 }], "objectionWindowHours": 48, "countedCount": 1, "complete": false } },
+    { "name": "company: two directors approve a membership change", "org": "company", "requester": "fin", "approvals": ["dana", "dirk"],
+      "expect": { "approvals": [{ "roleId": "director", "count": 2 }], "objectionWindowHours": 0, "countedCount": 2, "complete": true } }
+  ],
+  "setupPhase": [
+    { "name": "a brand-new club with only its founder", "org": "clubFounderOnly", "expect": true },
+    { "name": "founder plus one board member still can't satisfy two board approvals", "org": "clubFounderAndOneBoard", "expect": true },
+    { "name": "a full club is past setup", "org": "club", "expect": false },
+    { "name": "two directors incl. the founder: the founder's own changes could never get two other directors", "org": "company", "expect": true }
+  ]
+}

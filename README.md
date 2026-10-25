@@ -35,7 +35,7 @@ One OpenZeppelin smart account per organization, with everything else as a modul
 | Module | What it does | Status |
 |--------|--------------|--------|
 | App shell | Installable PWA, desktop sidebar + mobile tabs, light/dark | Real |
-| Approval rules | Tiered approvals, four-eyes, objection window, seal threshold | Roadmap (task 1) |
+| Approval rules | Tiered approvals, four-eyes, objection window, seal threshold, membership requests | Engine done (TypeScript, tested against shared vectors); on-chain: task 6 |
 | Passkey smart accounts | WebAuthn signers, sponsored fees | Roadmap (task 4) |
 | Reserve on DeFindex | Variable earnings on idle funds | Roadmap (task 7) |
 | Security seal (ML-DSA) | Quantum-safe approval above a threshold | Roadmap (task 8) |

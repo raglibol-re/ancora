@@ -7,8 +7,8 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | # | Task | Status |
 |---|------|--------|
 | 0 | Scaffold: PWA app shell, routing, tokens, CI, docs, Vercel | Done |
-| 1 | Approval rules engine (pure TS, tested) | Next |
-| 2 | App screens on sample data behind the data-source interface | Planned |
+| 1 | Approval rules engine (pure TS, tested) | Done |
+| 2 | App screens on sample data behind the data-source interface | Next |
 | 3 | Testnet setup script (keys, contract deploys, IDs) | Planned |
 | 4 | Passkey smart accounts + fee-sponsoring relayer | Planned |
 | 5 | Demo admin: data-source fallback switch + health panel | Planned |
