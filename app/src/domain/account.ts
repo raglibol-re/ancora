@@ -188,3 +188,8 @@ function execute(account: OrgAccount, request: ApprovalRequest, now: number): Or
 	};
 	return { ...account, org: applied.value, requests, activity: [entry, ...account.activity] };
 }
+
+/** Rough daily earnings at the current variable rate; real figures come from the vault (task 7). */
+export function estimatedDailyEarnings(account: OrgAccount): Cents {
+	return Math.round((account.reserve * account.reserveRateBps) / 10_000 / 365);
+}

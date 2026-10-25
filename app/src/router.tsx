@@ -1,23 +1,47 @@
 import { createBrowserRouter } from "react-router";
 import { AdminPage } from "./features/admin/AdminPage.tsx";
+import { ApprovalsPage } from "./features/approvals/ApprovalsPage.tsx";
+import { RequestDetailPage } from "./features/approvals/RequestDetailPage.tsx";
+import { InboxPage } from "./features/inbox/InboxPage.tsx";
 import { LandingPage } from "./features/landing/LandingPage.tsx";
+import { NoticeProvider } from "./features/notices/NoticeProvider.tsx";
+import { NewOrgPage } from "./features/orgs/NewOrgPage.tsx";
+import { OverviewPage } from "./features/overview/OverviewPage.tsx";
+import { PasskeyProvider } from "./features/passkey/PasskeyProvider.tsx";
+import { PayPage } from "./features/pay/PayPage.tsx";
+import { RulesPage } from "./features/rules/RulesPage.tsx";
+import { SettingsPage } from "./features/settings/SettingsPage.tsx";
 import { AppShell } from "./features/shell/AppShell.tsx";
 import { NotFoundPage } from "./features/shell/NotFoundPage.tsx";
-import { ScreenPlaceholder } from "./features/shell/ScreenPlaceholder.tsx";
+import { WorkspaceProvider } from "./features/workspace/WorkspaceProvider.tsx";
+
+/** App state, notices and signature prompts exist only under /app; the landing page stays light. */
+function AppProviders() {
+	return (
+		<WorkspaceProvider>
+			<NoticeProvider>
+				<PasskeyProvider>
+					<AppShell />
+				</PasskeyProvider>
+			</NoticeProvider>
+		</WorkspaceProvider>
+	);
+}
 
 export const router = createBrowserRouter([
 	{ path: "/", element: <LandingPage /> },
 	{
 		path: "/app",
-		element: <AppShell />,
+		element: <AppProviders />,
 		children: [
-			{ index: true, element: <ScreenPlaceholder title="Overview" /> },
-			{ path: "inbox", element: <ScreenPlaceholder title="Inbox" /> },
-			{ path: "approvals", element: <ScreenPlaceholder title="Approvals" /> },
-			{ path: "pay", element: <ScreenPlaceholder title="Send money" /> },
-			{ path: "rules", element: <ScreenPlaceholder title="Rules" /> },
-			{ path: "settings", element: <ScreenPlaceholder title="Settings" /> },
-			{ path: "new", element: <ScreenPlaceholder title="New organization" /> },
+			{ index: true, element: <OverviewPage /> },
+			{ path: "inbox", element: <InboxPage /> },
+			{ path: "approvals", element: <ApprovalsPage /> },
+			{ path: "approvals/:requestId", element: <RequestDetailPage /> },
+			{ path: "pay", element: <PayPage /> },
+			{ path: "rules", element: <RulesPage /> },
+			{ path: "settings", element: <SettingsPage /> },
+			{ path: "new", element: <NewOrgPage /> },
 		],
 	},
 	{ path: "/admin", element: <AdminPage /> },

@@ -34,13 +34,15 @@ One OpenZeppelin smart account per organization, with everything else as a modul
 
 | Module | What it does | Status |
 |--------|--------------|--------|
-| App shell | Installable PWA, desktop sidebar + mobile tabs, light/dark | Real |
+| App shell | Installable PWA, desktop sidebar + mobile tabs, light/dark, org switcher, cross-org inbox | Real |
+| App screens | Overview, Inbox, Approvals, Send money with live rule preview, Rules, Settings, New organization | Real UI on **Simulated** sample data (testnet adapter: task 4) |
+| Passkey prompts | Confirm every action with Face ID / fingerprint | **Simulated** (real WebAuthn: task 4) |
 | Approval rules | Tiered approvals, four-eyes, objection window, seal threshold, membership requests | Engine done (TypeScript, tested against shared vectors); on-chain: task 6 |
 | Passkey smart accounts | WebAuthn signers, sponsored fees | Roadmap (task 4) |
-| Reserve on DeFindex | Variable earnings on idle funds | Roadmap (task 7) |
+| Reserve on DeFindex | Variable earnings on idle funds, one-tap moves | **Simulated** in the UI; DeFindex vault: task 7 |
 | Security seal (ML-DSA) | Quantum-safe approval above a threshold | Roadmap (task 8) |
 | Crew / agent keys | Per-key spending limits | Roadmap (task 9) |
-| Euro in/out | SEP-24 test anchor; Bridge IBAN simulated | Roadmap (task 10) |
+| Euro in/out | Account number card (IBAN); SEP-24 test anchor; Bridge | **Simulated** IBAN card; real ramps: task 10 |
 | Confidential payments | Hidden amounts with auditor view | Roadmap (task 14) |
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -83,7 +85,8 @@ Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it: the WebAu
 ## Limitations
 
 - Testnet only, so nothing here holds real money.
-- Anything labeled **Simulated** in the app uses sample data and is labeled the same way here.
+- Anything labeled **Simulated** in the app uses sample data and is labeled the same way here. Right now the whole app runs on sample data (a purple banner says so); sample state is stored in your browser.
+- In sample mode, "Viewing as" (Settings) switches between sample people so you can approve requests from each side. On testnet this is replaced by passkey sign-in.
 
 ## License
 

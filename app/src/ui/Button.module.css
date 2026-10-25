@@ -10,10 +10,17 @@
 	font-weight: var(--weight-medium);
 	text-decoration: none;
 	cursor: pointer;
+	/* Size to content inside stacked (flex column) layouts instead of stretching. */
+	align-self: flex-start;
 	transition: opacity var(--duration-fast);
 }
 
-.button:hover {
+.button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.button:hover:not(:disabled) {
 	opacity: 0.88;
 }
 

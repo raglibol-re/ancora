@@ -1,0 +1,58 @@
+.form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	max-width: 48rem;
+}
+
+.templates {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+	gap: var(--space-3);
+	margin: 0;
+	padding: 0;
+	border: none;
+}
+
+.templates legend {
+	margin-bottom: var(--space-2);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+}
+
+.template {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-4);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	cursor: pointer;
+}
+
+.template:has(input:checked) {
+	border-color: var(--color-accent);
+	box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.template input {
+	accent-color: var(--color-accent);
+}
+
+.templateName {
+	font-family: var(--font-display);
+	font-size: var(--text-lg);
+}
+
+.templateRoles {
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+.tiers {
+	margin: 0;
+	padding-left: var(--space-4);
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}

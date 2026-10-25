@@ -37,6 +37,7 @@
 - Before every push: `cd app && pnpm verify` (biome ci, tsc, vitest, build) and, once crates exist, `cd contracts && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test`.
 - Small conventional commits (`feat(rules): …`, `fix(pay): …`); never mix refactor and feature. Push to `main` after each meaningful step; Vercel deploys production from `main`. Confirm the deploy and live site after each push; a red CI blocks feature work.
 - Secrets only in Vercel env vars / gitignored `.env*` files; `app/.env.example` documents them. `VITE_*` vars are public.
+- **Frontend follows backend:** every technical change (engine, adapter, contract, relayer) ships with its UI in the same task: new states, errors, labels, expert-mode references, Simulated/Real tags.
 - Update docs in the same commit as the feature: README (feature status table), `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `CHANGELOG.md`.
 - Self-review the diff before committing (dead code, duplication, names).
 - After each task: report what's real, simulated, unverified, and the live URL.

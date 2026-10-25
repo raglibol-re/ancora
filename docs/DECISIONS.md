@@ -17,3 +17,8 @@
 | 2026-10-25 | Changes that would make the strictest tier unsatisfiable are refused ("would lock the account") | Prevents an org from locking itself out of its own funds | Allow and warn |
 | 2026-10-25 | Requests snapshot their evaluation at creation | Predictable for approvers; rule changes don't retroactively alter requests in flight | Re-evaluate on every approval |
 | 2026-10-25 | Shared test vectors as JSON in `contracts/test-vectors/` | One language-neutral source both the TS engine and the Rust contracts test against | Duplicated fixtures per language |
+| 2026-10-25 | One `DataSource` interface (snapshot + commands) with a sample adapter that runs every command through the domain engine | Features stay identical when the testnet adapter lands; sample mode is a faithful demo fallback, not a mock | Separate mock UI; per-feature fetchers |
+| 2026-10-25 | Sample state persisted in localStorage; a "Viewing as" person switcher in sample mode | Demo survives reloads and shows both sides of four-eyes approval; replaced by passkey sign-in on testnet | In-memory only; fake login |
+| 2026-10-25 | Moving money between the main account and the Reserve needs no approval; allowed for the top role and anyone who can approve the strictest tier | Money never leaves the organization; one-tap UX | Treat as a payment with approvals |
+| 2026-10-25 | Requests get a `failed` status with a reason | Execution can fail (network, change no longer applies); demo admin retries it (task 13) | Reuse `declined` |
+| 2026-10-25 | Logos resized in the browser to 256×256 WebP and kept in the sample state until Vercel Blob + org registry (task 11) | Same validation and UX now; storage swaps later | Wait for Blob before building the UI |

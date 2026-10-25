@@ -63,3 +63,40 @@ export const PlusIcon = () => (
 		<path d="M12 5v14M5 12h14" />
 	</Icon>
 );
+
+export const FingerprintIcon = () => (
+	<Icon>
+		<path d="M12 11v3a8 8 0 0 1-2 5" />
+		<path d="M8.5 8.5A5 5 0 0 1 17 12v2a12 12 0 0 1-1 5" />
+		<path d="M5 15a14 14 0 0 0 .5-3 6.5 6.5 0 0 1 11-4.7" />
+		<path d="M3.5 10a9 9 0 0 1 15.5-4" />
+	</Icon>
+);
+
+export const SealIcon = () => (
+	<Icon>
+		<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" />
+		<path d="M12 8l1.2 2.8L16 12l-2.8 1.2L12 16l-1.2-2.8L8 12l2.8-1.2z" />
+	</Icon>
+);
+
+export const ReserveIcon = () => (
+	<Icon>
+		<ellipse cx="12" cy="6" rx="7" ry="3" />
+		<path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6" />
+		<path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
+	</Icon>
+);
+
+export const ClockIcon = () => (
+	<Icon>
+		<circle cx="12" cy="12" r="9" />
+		<path d="M12 7v5l3 2" />
+	</Icon>
+);
+
+export const ChevronDownIcon = () => (
+	<Icon>
+		<path d="M6 9l6 6 6-6" />
+	</Icon>
+);

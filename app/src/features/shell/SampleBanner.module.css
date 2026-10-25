@@ -1,0 +1,15 @@
+.banner {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--space-1) var(--space-3);
+	padding: var(--space-1) var(--space-4);
+	background: var(--color-simulated-strong);
+	color: var(--palette-white);
+	font-size: var(--text-xs);
+	text-align: center;
+}
+
+.banner a {
+	font-weight: var(--weight-semibold);
+}

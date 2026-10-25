@@ -1,0 +1,26 @@
+.details {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: var(--space-2) var(--space-4);
+	margin: 0;
+}
+
+.details dt {
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+}
+
+.details dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.iban {
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.02em;
+}
+
+.note {
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}

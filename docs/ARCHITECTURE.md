@@ -41,6 +41,17 @@ Pure TypeScript in `app/src/domain/rules/`, no I/O:
 
 The same behaviour is pinned by `contracts/test-vectors/approval-rules.json`, which the Soroban contracts will test against too (task 6).
 
+## Data sources
+
+Features never talk to the outside world directly. They use one `DataSource` interface (`app/src/domain/dataSource.ts`): a snapshot of the person's workspace plus commands (request payment, approve, seal, decline, propose change, move to/from Reserve, set logo, create organization).
+
+| Implementation | Where | Status |
+|----------------|-------|--------|
+| `SampleDataSource` | `app/src/adapters/sample/` | Labeled sample data; every command runs through the domain engine; persisted in browser storage. Stays as the demo fallback. |
+| Testnet adapter | `app/src/adapters/testnet/` *(task 4)* | Smart accounts, contracts and the relayer on Stellar testnet. |
+
+UI state lives in `features/workspace` (snapshot via `useSyncExternalStore`, preferences, active org). `useCommand` gives every action the same UX: signature prompt → command → plain-language success or error.
+
 ## Contracts *(planned)*
 
 One OpenZeppelin smart account per organization; everything else is a module on it: signers (passkeys, ML-DSA via external verifier), policies (approval rules, spending limits), connected contracts (DeFindex vault, confidential token). Shared stateless verifiers; multi-tenant policies keyed by smart account + context rule.

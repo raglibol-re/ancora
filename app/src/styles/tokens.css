@@ -36,6 +36,8 @@
 	--color-positive: light-dark(#1f7a4d, #5fd39a);
 	--color-negative: light-dark(#b3261e, #ff8a80);
 	--color-simulated: light-dark(#7a4fb3, #c7a6ff);
+	/* Banner background behind white text: dark enough in both themes. */
+	--color-simulated-strong: light-dark(#6b43a3, #55358a);
 
 	/* Typography */
 	--font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;

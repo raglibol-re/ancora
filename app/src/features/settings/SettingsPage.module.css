@@ -1,0 +1,17 @@
+.toggle {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-3);
+	cursor: pointer;
+}
+
+.toggle input {
+	width: 1.25rem;
+	height: 1.25rem;
+	margin-top: 2px;
+	accent-color: var(--color-accent);
+}
+
+.muted {
+	color: var(--color-text-muted);
+}

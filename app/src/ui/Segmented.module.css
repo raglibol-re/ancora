@@ -1,0 +1,56 @@
+.group {
+	display: inline-flex;
+	gap: var(--space-1);
+	margin: 0;
+	padding: var(--space-1);
+	border-radius: var(--radius-pill);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	width: fit-content;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+/* Visually hidden but announced by screen readers. */
+.legend {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.option {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-height: 36px;
+	padding: 0 var(--space-4);
+	border-radius: var(--radius-pill);
+	color: var(--color-text-muted);
+	font-weight: var(--weight-medium);
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.option input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.option:has(input:checked) {
+	background: var(--color-primary);
+	color: var(--color-primary-contrast);
+}
+
+.option:has(input:focus-visible) {
+	outline: 2px solid var(--color-focus);
+	outline-offset: 2px;
+}
+
+.count {
+	font-size: var(--text-xs);
+	opacity: 0.8;
+}
