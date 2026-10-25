@@ -21,7 +21,11 @@ function corsHeaders(origin: string | null): Record<string, string> {
 }
 
 export function json(body: unknown, status: number, origin: string | null): Response {
-	return Response.json(body, { status, headers: corsHeaders(origin) });
+	// Health and admin answers must never be served stale by the edge cache.
+	return Response.json(body, {
+		status,
+		headers: { ...corsHeaders(origin), "Cache-Control": "no-store" },
+	});
 }
 
 /**
