@@ -146,10 +146,14 @@ function mapEvaluation(native: Native): Evaluation {
 
 const currency = (value: unknown): Currency => (str(value) === "EUR" ? "EUR" : "USD");
 
-export function mapAsset(native: Native): Asset {
+/** Several testnet tokens call themselves "USDC"; the allowlist name tells them apart. */
+export type SymbolLookup = (token: string, onchainSymbol: string) => string;
+
+export function mapAsset(native: Native, symbolOf: SymbolLookup = (_, s) => s): Asset {
+	const token = str(native.token);
 	return {
-		token: str(native.token),
-		symbol: str(native.symbol),
+		token,
+		symbol: symbolOf(token, str(native.symbol)),
 		currency: currency(native.currency),
 	};
 }
@@ -248,12 +252,13 @@ export function mapOrganization(
 	snapshot: OnchainSnapshot,
 	nameOf: NameLookup,
 	now: number = Date.now(),
+	symbolOf?: SymbolLookup,
 ): OrgAccount {
 	const info = snapshot.info;
 	const templateId =
 		(["club", "company", "team"] as const).find((t) => t === str(info.template)) ?? null;
 	const roles = (info.roles as unknown[]).map((id) => roleOf(templateId, str(id)));
-	const assets = snapshot.assets.map(mapAsset);
+	const assets = snapshot.assets.map((asset) => mapAsset(asset, symbolOf));
 	const org: Org = {
 		id: snapshot.contractId,
 		name: str(info.name),

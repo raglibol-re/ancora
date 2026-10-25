@@ -135,11 +135,14 @@ export class TestnetDataSource implements DataSource {
 			}
 			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
 			const orgNames = new Map(snapshots.map((s) => [s.contractId, String(s.info.name)]));
+			const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
 			const logos = this.loadLogos();
 			const accounts: OrgAccount[] = snapshots.map((snapshot) => ({
 				...mapOrganization(
 					snapshot,
 					(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
+					Date.now(),
+					(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
 				),
 				logoUrl: logos[snapshot.contractId] ?? null,
 			}));
