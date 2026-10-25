@@ -16,8 +16,8 @@ export const SAMPLE_DEFAULT_PERSON = "ines";
 
 /** The stablecoins sample organizations can accept; labels only, nothing is on Stellar. */
 export const SAMPLE_ASSETS: readonly AssetOption[] = [
-	{ token: "eurc", symbol: "EURC", currency: "EUR", label: "EURC (EUR)" },
-	{ token: "usdc", symbol: "USDC", currency: "USD", label: "USDC (USD)" },
+	{ token: "eurc", symbol: "EURC", currency: "EUR", vault: "sample-vault", label: "EURC (EUR)" },
+	{ token: "usdc", symbol: "USDC", currency: "USD", vault: "sample-vault", label: "USDC (USD)" },
 ];
 const EURC = "eurc";
 const USDC = "usdc";
@@ -54,7 +54,12 @@ function account(
 			policy: template.policy,
 			founderId: members[0]?.[0] ?? "",
 			baseCurrency: "EUR",
-			assets: SAMPLE_ASSETS.map(({ token, symbol, currency }) => ({ token, symbol, currency })),
+			assets: SAMPLE_ASSETS.map(({ token, symbol, currency, vault }) => ({
+				token,
+				symbol,
+				currency,
+				vault,
+			})),
 		},
 		onchain: null,
 		...rest,

@@ -35,6 +35,8 @@ export type OnchainSnapshot = {
 	requests: Native[];
 	/** Token balance per accepted token address. */
 	balances: ReadonlyMap<string, bigint>;
+	/** Reserve value and principal per token that has a vault. */
+	reserves: ReadonlyMap<string, { value: bigint; principal: bigint }>;
 	setupPhase: boolean;
 	policyHash: string;
 };
@@ -75,6 +77,8 @@ const ERROR_CODES: RuleErrorCode[] = [
 	"asset-exists",
 	"asset-in-use",
 	"last-asset",
+	"not-allowed",
+	"not-allowed",
 ];
 
 export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
@@ -103,6 +107,8 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	23: "The organization already accepts this asset.",
 	24: "This asset still holds money or has open requests, so it can't be removed.",
 	25: "An organization has to accept at least one asset.",
+	26: "This asset has no Reserve yet.",
+	27: "Your role can't move money between the account and the Reserve.",
 };
 
 const variant = (value: unknown): [string, unknown[]] => {
@@ -155,6 +161,7 @@ export function mapAsset(native: Native, symbolOf: SymbolLookup = (_, s) => s): 
 		token,
 		symbol: symbolOf(token, str(native.symbol)),
 		currency: currency(native.currency),
+		vault: native.vault ? str(native.vault) : null,
 	};
 }
 
@@ -178,6 +185,7 @@ function mapChange(value: unknown): GovernanceChange {
 					token: str(spec.token),
 					symbol: shortAddress(str(spec.token)),
 					currency: currency(spec.currency),
+					vault: spec.vault ? str(spec.vault) : null,
 				},
 			};
 		}
@@ -311,11 +319,15 @@ export function mapOrganization(
 			setupPhase: snapshot.setupPhase,
 			policyHash: snapshot.policyHash,
 		},
-		balances: assets.map((asset) => ({
-			token: asset.token,
-			balance: toCents(snapshot.balances.get(asset.token) ?? 0n),
-			reserve: 0,
-		})),
+		balances: assets.map((asset) => {
+			const reserve = snapshot.reserves.get(asset.token);
+			return {
+				token: asset.token,
+				balance: toCents(snapshot.balances.get(asset.token) ?? 0n),
+				reserve: toCents(reserve?.value ?? 0n),
+				...(reserve ? { earnings: toCents(reserve.value - reserve.principal) } : {}),
+			};
+		}),
 		reserveRateBps: 410,
 		accountNumber: null,
 		logoUrl: null,

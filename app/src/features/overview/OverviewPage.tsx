@@ -5,6 +5,7 @@ import {
 	balanceOf,
 	canManageTreasury,
 	estimatedDailyEarnings,
+	hasReserve,
 	isForeign,
 	type OrgAccount,
 	primaryToken,
@@ -14,7 +15,7 @@ import type { Asset } from "../../domain/rules/model.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
-import { formatMoney, formatRate } from "../../ui/format.ts";
+import { formatMoney, formatRate, formatSignedMoney } from "../../ui/format.ts";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
@@ -39,11 +40,13 @@ function Overview({ account }: { account: OrgAccount }) {
 		(item) => item.account.org.id === account.org.id,
 	);
 	const mayMove = canManageTreasury(account.org, me.id);
+	const sample = dataSource.kind === "sample";
 	const lead = primaryToken(account);
 	// The rules' currency first, then the rest in the order the organization accepted them.
 	const assets = [...account.org.assets].sort((a, b) =>
 		a.token === lead ? -1 : b.token === lead ? 1 : 0,
 	);
+	const earning = assets.filter(hasReserve);
 
 	return (
 		<div className={styles.page}>
@@ -63,15 +66,28 @@ function Overview({ account }: { account: OrgAccount }) {
 				))}
 			</div>
 
-			<Card title="Reserve" action={dataSource.supportsReserve ? <SimulatedTag /> : null}>
+			<Card title="Reserve" action={sample ? <SimulatedTag /> : null}>
 				<ul className={styles.reserveList}>
 					{assets.map((asset) => {
-						const { reserve } = balanceOf(account, asset.token);
+						const { reserve, earnings } = balanceOf(account, asset.token);
+						if (!hasReserve(asset)) {
+							return (
+								<li key={asset.token} className={styles.reserveRow}>
+									<span className={styles.reserveAsset}>{asset.symbol}</span>
+									<span className={styles.sub}>No Reserve for {asset.symbol} yet.</span>
+								</li>
+							);
+						}
 						return (
 							<li key={asset.token} className={styles.reserveRow}>
 								<span className={styles.reserveAsset}>{asset.symbol}</span>
 								<span className={styles.amount}>{formatMoney(reserve, asset.currency)}</span>
-								{mayMove && dataSource.supportsReserve && (
+								{earnings !== undefined && reserve > 0 && (
+									<span className={styles.sub}>
+										{formatSignedMoney(earnings, asset.currency)} earned so far
+									</span>
+								)}
+								{mayMove && (
 									<span className={styles.actions}>
 										<button
 											type="button"
@@ -94,15 +110,18 @@ function Overview({ account }: { account: OrgAccount }) {
 						);
 					})}
 				</ul>
-				<p className={styles.sub}>
-					Earnings, variable: {formatRate(account.reserveRateBps)} a year right now
-					{assets[0] &&
-						`, about ${formatMoney(estimatedDailyEarnings(account, lead), assets[0].currency)} a day on the ${assets[0].symbol} Reserve`}
-					.
-				</p>
-				{!dataSource.supportsReserve && (
+				{sample ? (
 					<p className={styles.sub}>
-						Not connected on testnet yet. Idle money will earn in a DeFindex vault, asset by asset.
+						Earnings, variable: {formatRate(account.reserveRateBps)} a year right now
+						{earning[0] &&
+							`, about ${formatMoney(estimatedDailyEarnings(account, earning[0].token), earning[0].currency)} a day on the ${earning[0].symbol} Reserve`}
+						.
+					</p>
+				) : (
+					<p className={styles.sub}>
+						The Reserve earns in a DeFindex vault on Stellar testnet (lending on Blend). Earnings
+						are variable and shown as the value above what was moved in. Money never leaves the
+						organization, so moving it needs no approval.
 					</p>
 				)}
 			</Card>

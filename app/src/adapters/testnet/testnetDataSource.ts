@@ -14,6 +14,7 @@ import type {
 	PaymentInput,
 	ProfileInput,
 } from "../../domain/dataSource.ts";
+import type { Cents } from "../../domain/money.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
@@ -52,7 +53,7 @@ const byteLength = (value: string) => new TextEncoder().encode(value).length;
  */
 export class TestnetDataSource implements DataSource {
 	readonly kind = "testnet" as const;
-	readonly supportsReserve = false;
+	readonly supportsReserve = true;
 	readonly identity: IdentitySupport;
 	readonly availableAssets: readonly AssetOption[];
 	private readonly config: TestnetConfig;
@@ -349,12 +350,20 @@ export class TestnetDataSource implements DataSource {
 		return result.ok ? ok(direct ? "applied" : "requested") : result;
 	}
 
-	async moveToReserve(): Promise<Result<void, RuleError>> {
-		return failed("The Reserve isn't connected on testnet yet. It arrives with DeFindex.");
+	moveToReserve(orgId: string, actorId: PersonId, token: string, amount: Cents) {
+		return this.invoke(orgId, "move_to_reserve", [
+			address(actorId),
+			address(token),
+			i128(toStroops(amount)),
+		]);
 	}
 
-	async withdrawFromReserve(): Promise<Result<void, RuleError>> {
-		return failed("The Reserve isn't connected on testnet yet. It arrives with DeFindex.");
+	withdrawFromReserve(orgId: string, actorId: PersonId, token: string, amount: Cents) {
+		return this.invoke(orgId, "withdraw_from_reserve", [
+			address(actorId),
+			address(token),
+			i128(toStroops(amount)),
+		]);
 	}
 
 	async setLogo(orgId: string, _actorId: PersonId, logoUrl: string) {

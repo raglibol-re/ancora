@@ -33,6 +33,24 @@ export async function readOrganization(
 			}),
 		),
 	);
+	// The Reserve of each asset that has a vault: value today and the principal moved in.
+	const reserves = new Map(
+		await Promise.all(
+			assets
+				.filter((asset) => asset.vault)
+				.map(async (asset) => {
+					const token = String(asset.token);
+					const view = (await readContract(network, contractId, "reserve", [address(token)])) as {
+						value: unknown;
+						principal: unknown;
+					};
+					return [
+						token,
+						{ value: BigInt(view.value as bigint), principal: BigInt(view.principal as bigint) },
+					] as const;
+				}),
+		),
+	);
 	return {
 		contractId,
 		info,
@@ -41,6 +59,7 @@ export async function readOrganization(
 		members,
 		requests,
 		balances,
+		reserves,
 		setupPhase,
 		policyHash: hex(policyHash),
 	};

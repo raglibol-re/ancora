@@ -44,6 +44,8 @@ export type Asset = {
 	token: string;
 	symbol: string;
 	currency: Currency;
+	/** The vault the asset's Reserve earns in (DeFindex on testnet); none means no Reserve. */
+	vault?: string | null;
 };
 
 export type Org = {

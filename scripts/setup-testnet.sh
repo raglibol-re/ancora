@@ -242,9 +242,9 @@ VITE_STELLAR_NETWORK_PASSPHRASE=$PASSPHRASE
 # Demo operator (top-ups, deployments). Not a signer on any organization account.
 VITE_DEPLOYER_ADDRESS=$DEPLOYER_ADDRESS
 
-# Assets and the Reserve. VITE_ORG_ASSETS lists what an organization may accept: Symbol:contract:currency.
+# Assets and the Reserve. VITE_ORG_ASSETS lists what an organization may accept: Symbol:contract:currency[:vault].
 VITE_USDC_TOKEN=$BLEND_USDC
-VITE_ORG_ASSETS=BlendUSDC:$BLEND_USDC:USD,USDC:$CIRCLE_USDC:USD
+VITE_ORG_ASSETS=BlendUSDC:$BLEND_USDC:USD:$DEFINDEX_USDC_VAULT,USDC:$CIRCLE_USDC:USD
 VITE_NATIVE_TOKEN=$NATIVE_XLM_SAC
 VITE_DEFINDEX_VAULT=$DEFINDEX_USDC_VAULT
 
@@ -309,7 +309,7 @@ sync_vercel() {
 		vercel_env STELLAR_NETWORK_PASSPHRASE "$PASSPHRASE"
 		vercel_env ACCOUNT_WASM_HASH "$KIT_ACCOUNT_WASM_HASH"
 		vercel_env USDC_TOKEN "$BLEND_USDC"
-		vercel_env ORG_ASSETS "BlendUSDC:$BLEND_USDC:USD,USDC:$CIRCLE_USDC:USD"
+		vercel_env ORG_ASSETS "BlendUSDC:$BLEND_USDC:USD:$DEFINDEX_USDC_VAULT,USDC:$CIRCLE_USDC:USD"
 		vercel_env ALLOWED_ORIGINS "$PRODUCTION_ORIGIN,http://localhost:5173,http://localhost:4173"
 		vercel_env ORG_WASM_HASH "$ORG_WASM_HASH"
 		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"

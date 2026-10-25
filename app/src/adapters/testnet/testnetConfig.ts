@@ -49,16 +49,19 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 
 export type AssetOption = Asset & { label: string };
 
-/** Parses "BlendUSDC:CAQCF…:USD,USDC:CBIEL…:USD" into the assets an organization may accept. */
+/**
+ * Parses "BlendUSDC:CAQCF…:USD:CBMVK…,USDC:CBIEL…:USD" into the assets an organization may
+ * accept; the optional fourth part is the DeFindex vault its Reserve earns in.
+ */
 export function parseAssetOptions(spec: string): AssetOption[] {
 	return spec
 		.split(",")
 		.map((entry) => entry.trim())
 		.filter(Boolean)
 		.flatMap((entry) => {
-			const [symbol, token, currency] = entry.split(":");
+			const [symbol, token, currency, vault] = entry.split(":");
 			if (!symbol || !token || (currency !== "EUR" && currency !== "USD")) return [];
-			return [{ symbol, token, currency, label: `${symbol} (${currency})` }];
+			return [{ symbol, token, currency, vault: vault || null, label: `${symbol} (${currency})` }];
 		});
 }
 

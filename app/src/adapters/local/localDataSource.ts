@@ -115,7 +115,12 @@ export class LocalDataSource implements DataSource {
 			founderId: input.actorId,
 			founderRoleId: input.founderRoleId,
 			baseCurrency: input.baseCurrency,
-			assets: assets.map(({ token, symbol, currency }) => ({ token, symbol, currency })),
+			assets: assets.map(({ token, symbol, currency, vault }) => ({
+				token,
+				symbol,
+				currency,
+				vault,
+			})),
 		});
 		if (!created.ok) return created;
 		this.store.addAccount({

@@ -52,8 +52,12 @@ export function policyToScVal(policy: Policy): xdr.ScVal {
 }
 
 /** The contract's `AssetSpec`: a token to accept and the currency it stands for. */
-export const assetSpec = (token: string, currency: string): xdr.ScVal =>
-	struct({ currency: symbol(currency), token: address(token) });
+export const assetSpec = (token: string, currency: string, vault: string | null): xdr.ScVal =>
+	struct({
+		currency: symbol(currency),
+		token: address(token),
+		vault: vault ? address(vault) : xdr.ScVal.scvVoid(),
+	});
 
 /**
  * The contract's `Change` enum. Rule updates carry the SHA-256 of their policy document (hex);
@@ -85,7 +89,7 @@ export function changeToScVal(change: GovernanceChange, policyHashHex?: string):
 		case "addAsset":
 			return xdr.ScVal.scvVec([
 				symbol("AddAsset"),
-				assetSpec(change.asset.token, change.asset.currency),
+				assetSpec(change.asset.token, change.asset.currency, change.asset.vault ?? null),
 			]);
 		case "removeAsset":
 			return xdr.ScVal.scvVec([symbol("RemoveAsset"), address(change.token)]);

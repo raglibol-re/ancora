@@ -5,6 +5,7 @@ use ancora_registry::{Registry, RegistryClient as RealRegistryClient};
 
 use crate::types::{AssetSpec, Change, Error, Status, CENT};
 use crate::{Organization, OrganizationClient};
+use mock_vault::MockVault;
 
 struct World {
     e: Env,
@@ -33,6 +34,7 @@ fn club(balance_euros: i128) -> World {
         [AssetSpec {
             token: asset.address(),
             currency: symbol_short!("EUR"),
+            vault: None,
         }],
     );
     let org_id = e.register(
@@ -69,6 +71,7 @@ fn add_asset(w: &World, currency: &str, whole: i128) -> Address {
         &Change::AddAsset(AssetSpec {
             token: asset.address(),
             currency: Symbol::new(&w.e, currency),
+            vault: None,
         }),
     );
     token::StellarAssetClient::new(&w.e, &asset.address()).mint(&w.org.address, &euros(whole));
@@ -474,6 +477,7 @@ fn accepts_several_tokens_and_pays_in_each() {
             &Change::AddAsset(AssetSpec {
                 token: eurc,
                 currency: symbol_short!("EUR"),
+                vault: None,
             })
         ),
         Err(Ok(Error::AssetExists))
@@ -536,4 +540,167 @@ fn tokens_in_use_or_alone_cannot_be_removed() {
         .change_directly(&w.founder, &Change::RemoveAsset(eurc.clone()));
     assert_eq!(w.org.assets().len(), 1);
     assert_eq!(w.org.try_available(&eurc), Err(Ok(Error::UnknownAsset)));
+}
+
+/// A stand-in for a DeFindex vault with 1:1 shares and a settable 1% yield, enough to test the
+/// Reserve flow (deposit pulls the asset from the depositor, withdraw pays it back).
+mod mock_vault {
+    use soroban_sdk::{contract, contractimpl, contracttype, token, vec, Address, Env, Val, Vec};
+
+    #[contracttype]
+    #[derive(Clone)]
+    pub enum Key {
+        Asset,
+        Shares(Address),
+        Total,
+        Bonus,
+    }
+
+    #[contract]
+    pub struct MockVault;
+
+    #[contractimpl]
+    impl MockVault {
+        pub fn __constructor(e: &Env, asset: Address) {
+            e.storage().instance().set(&Key::Asset, &asset);
+        }
+
+        fn asset(e: &Env) -> Address {
+            e.storage().instance().get(&Key::Asset).unwrap()
+        }
+
+        /// Adds yield: every share is worth this many extra stroops.
+        pub fn set_bonus(e: &Env, bonus: i128) {
+            e.storage().instance().set(&Key::Bonus, &bonus);
+        }
+
+        pub fn deposit(
+            e: &Env,
+            amounts_desired: Vec<i128>,
+            _amounts_min: Vec<i128>,
+            from: Address,
+            _invest: bool,
+        ) -> (Vec<i128>, i128, Val) {
+            from.require_auth();
+            let amount = amounts_desired.get_unchecked(0);
+            let me = e.current_contract_address();
+            token::Client::new(e, &Self::asset(e)).transfer(&from, &me, &amount);
+            let shares = Self::balance(e, from.clone()) + amount;
+            e.storage().instance().set(&Key::Shares(from), &shares);
+            (vec![e, amount], amount, Val::VOID.into())
+        }
+
+        pub fn withdraw(
+            e: &Env,
+            withdraw_shares: i128,
+            min_amounts_out: Vec<i128>,
+            from: Address,
+        ) -> Vec<i128> {
+            from.require_auth();
+            let held = Self::balance(e, from.clone());
+            assert!(withdraw_shares <= held, "not enough shares");
+            let amount = Self::get_asset_amounts_per_shares(e, withdraw_shares).get_unchecked(0);
+            assert!(amount >= min_amounts_out.get_unchecked(0), "slippage");
+            e.storage()
+                .instance()
+                .set(&Key::Shares(from.clone()), &(held - withdraw_shares));
+            let me = e.current_contract_address();
+            token::Client::new(e, &Self::asset(e)).transfer(&me, &from, &amount);
+            vec![e, amount]
+        }
+
+        pub fn balance(e: &Env, id: Address) -> i128 {
+            e.storage().instance().get(&Key::Shares(id)).unwrap_or(0)
+        }
+
+        pub fn get_asset_amounts_per_shares(e: &Env, vault_shares: i128) -> Vec<i128> {
+            let bonus: i128 = e.storage().instance().get(&Key::Bonus).unwrap_or(0);
+            vec![e, vault_shares + vault_shares / 100 * bonus]
+        }
+    }
+}
+
+/// Accepts a token with a Reserve vault (setup phase) and funds the account with it.
+fn add_asset_with_vault(w: &World, whole: i128) -> (Address, Address) {
+    let asset =
+        w.e.register_stellar_asset_contract_v2(Address::generate(&w.e));
+    let vault = w.e.register(MockVault, (asset.address(),));
+    w.org.change_directly(
+        &w.founder,
+        &Change::AddAsset(AssetSpec {
+            token: asset.address(),
+            currency: symbol_short!("EUR"),
+            vault: Some(vault.clone()),
+        }),
+    );
+    token::StellarAssetClient::new(&w.e, &asset.address()).mint(&w.org.address, &euros(whole));
+    (asset.address(), vault)
+}
+
+#[test]
+fn treasury_moves_need_treasury_rights_but_no_request() {
+    let w = club(1_000);
+    let (usdc, vault) = add_asset_with_vault(&w, 1_000);
+    let max = Address::generate(&w.e);
+    w.org.change_directly(
+        &w.founder,
+        &Change::AddMember(max.clone(), symbol_short!("member")),
+    );
+    assert_eq!(
+        w.org.try_move_to_reserve(&max, &usdc, &euros(100)),
+        Err(Ok(Error::NotTreasurer))
+    );
+    assert_eq!(
+        w.org.try_move_to_reserve(&w.founder, &w.token, &euros(100)),
+        Err(Ok(Error::NoReserve))
+    );
+    assert_eq!(
+        w.org.try_move_to_reserve(&w.founder, &usdc, &euros(1_001)),
+        Err(Ok(Error::InsufficientFunds))
+    );
+    w.org.move_to_reserve(&w.founder, &usdc, &euros(300));
+    assert_eq!(w.org.available(&usdc), euros(700));
+    let reserve = w.org.reserve(&usdc);
+    assert_eq!(reserve.vault, vault);
+    assert_eq!(reserve.value, euros(300));
+    assert_eq!(reserve.principal, euros(300));
+    assert_eq!(w.org.request_count(), 0);
+    // Shares are worth more now; earnings show as value above principal.
+    mock_vault::MockVaultClient::new(&w.e, &vault).set_bonus(&1);
+    assert_eq!(w.org.reserve(&usdc).value, euros(303));
+    w.org.withdraw_from_reserve(&w.founder, &usdc, &euros(100));
+    assert_eq!(w.org.available(&usdc), euros(800));
+    let after = w.org.reserve(&usdc);
+    assert_eq!(after.principal, euros(200));
+    assert!(after.value >= euros(203) - CENT && after.value <= euros(203) + CENT);
+    assert_eq!(
+        w.org
+            .try_withdraw_from_reserve(&w.founder, &usdc, &euros(1_000)),
+        Err(Ok(Error::InsufficientFunds))
+    );
+    // A board member could approve the strictest tier, so they have treasury rights too.
+    let bo = board_member(&w);
+    w.org.move_to_reserve(&bo, &usdc, &euros(50));
+    assert_eq!(w.org.reserve(&usdc).principal, euros(250));
+}
+
+#[test]
+fn reserve_moves_require_the_movers_own_authorization() {
+    let w = club(1_000);
+    let (usdc, _vault) = add_asset_with_vault(&w, 1_000);
+    let stranger = Address::generate(&w.e);
+    w.e.mock_auths(&[MockAuth {
+        address: &stranger,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "move_to_reserve",
+            args: (&w.founder, &usdc, euros(10)).into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(w
+        .org
+        .try_move_to_reserve(&w.founder, &usdc, &euros(10))
+        .is_err());
+    assert_eq!(w.org.available(&usdc), euros(1_000));
 }

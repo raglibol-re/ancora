@@ -12,9 +12,10 @@ mod rules;
 mod templates;
 mod types;
 
+use soroban_sdk::auth::{ContractContext, InvokerContractAuthEntry, SubContractInvocation};
 use soroban_sdk::{
     contract, contractclient, contractevent, contractimpl, contracttype, panic_with_error, token,
-    Address, BytesN, Env, String, Symbol, Vec,
+    vec, Address, BytesN, Env, IntoVal, String, Symbol, Val, Vec,
 };
 use stellar_access::access_control::{self as access_control, AccessControl};
 
@@ -35,6 +36,30 @@ pub trait RegistryInterface {
     fn set_membership(e: Env, org: Address, member: Address, is_member: bool);
 }
 
+/// The part of a DeFindex vault the Reserve uses (paltalabs/defindex `vault`). The vault is also
+/// the share token, so `balance` is the organization's shares.
+#[contractclient(name = "VaultClient")]
+pub trait VaultInterface {
+    fn deposit(
+        e: Env,
+        amounts_desired: Vec<i128>,
+        amounts_min: Vec<i128>,
+        from: Address,
+        invest: bool,
+    ) -> (Vec<i128>, i128, Val);
+    fn withdraw(
+        e: Env,
+        withdraw_shares: i128,
+        min_amounts_out: Vec<i128>,
+        from: Address,
+    ) -> Vec<i128>;
+    fn balance(e: Env, id: Address) -> i128;
+    fn get_asset_amounts_per_shares(e: Env, vault_shares: i128) -> Vec<i128>;
+}
+
+/// Tolerated rounding on a Reserve withdrawal, in basis points of the requested amount.
+const WITHDRAW_TOLERANCE_BPS: i128 = 100;
+
 #[contracttype]
 #[derive(Clone)]
 enum DataKey {
@@ -45,6 +70,8 @@ enum DataKey {
     RequestCount,
     /// Amount promised to open payment requests, per token.
     Committed(Address),
+    /// What was moved into the Reserve of a token and not taken out again.
+    ReservePrincipal(Address),
     Request(u64),
     Paid(Address),
 }
@@ -227,6 +254,92 @@ impl Organization {
     pub fn available(e: &Env, token: Address) -> Result<i128, Error> {
         find_asset(&load_assets(e), &token)?;
         Ok(available(e, &token))
+    }
+
+    /// The Reserve of `token`: shares in its vault, their value today and the principal put in.
+    ///
+    /// Auth: none (read).
+    pub fn reserve(e: &Env, token: Address) -> Result<ReserveView, Error> {
+        let asset = find_asset(&load_assets(e), &token)?;
+        let vault = asset.vault.ok_or(Error::NoReserve)?;
+        let (shares, value) = reserve_value(e, &vault);
+        Ok(ReserveView {
+            vault,
+            shares,
+            value,
+            principal: reserve_principal(e, &token),
+        })
+    }
+
+    /// Moves `amount` of `token` from the account into its Reserve vault. Money never leaves
+    /// the organization, so this needs no request: the top role or anyone who could approve
+    /// the strictest tier may do it.
+    ///
+    /// Auth: `by`, a member with treasury rights.
+    pub fn move_to_reserve(
+        e: &Env,
+        by: Address,
+        token: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let (asset, vault) = reserve_asset(e, &by, &token)?;
+        if amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+        if amount > available(e, &asset.token) {
+            return Err(Error::InsufficientFunds);
+        }
+        let me = e.current_contract_address();
+        // The vault pulls the tokens from this contract, which must authorize that sub-call.
+        e.authorize_as_current_contract(vec![
+            e,
+            InvokerContractAuthEntry::Contract(SubContractInvocation {
+                context: ContractContext {
+                    contract: asset.token.clone(),
+                    fn_name: Symbol::new(e, "transfer"),
+                    args: (me.clone(), vault.clone(), amount).into_val(e),
+                },
+                sub_invocations: vec![e],
+            }),
+        ]);
+        VaultClient::new(e, &vault).deposit(&vec![e, amount], &vec![e, amount], &me, &true);
+        set_reserve_principal(e, &token, reserve_principal(e, &token) + amount);
+        Ok(())
+    }
+
+    /// Takes `amount` of `token` out of its Reserve back to the account.
+    ///
+    /// Auth: `by`, a member with treasury rights.
+    pub fn withdraw_from_reserve(
+        e: &Env,
+        by: Address,
+        token: Address,
+        amount: i128,
+    ) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let (_, vault) = reserve_asset(e, &by, &token)?;
+        if amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+        let (shares, value) = reserve_value(e, &vault);
+        if amount > value || value <= 0 {
+            return Err(Error::InsufficientFunds);
+        }
+        // Shares worth `amount`, rounded up, never more than we hold.
+        let burn = shares
+            .checked_mul(amount)
+            .and_then(|product| product.checked_add(value - 1))
+            .map(|rounded| (rounded / value).min(shares))
+            .ok_or(Error::InvalidAmount)?;
+        let minimum = amount - amount * WITHDRAW_TOLERANCE_BPS / 10_000;
+        let me = e.current_contract_address();
+        VaultClient::new(e, &vault).withdraw(&burn, &vec![e, minimum], &me);
+        let principal = reserve_principal(e, &token);
+        set_reserve_principal(e, &token, principal - amount.min(principal));
+        Ok(())
     }
 
     /// Proposes a payment in one of the accepted tokens. Executes at once if the rules need
@@ -525,6 +638,46 @@ fn available(e: &Env, token: &Address) -> i128 {
     balance - committed(e, token)
 }
 
+/// The asset and its vault, once `by` is known to have treasury rights.
+fn reserve_asset(e: &Env, by: &Address, token: &Address) -> Result<(Asset, Address), Error> {
+    let info = load_info(e);
+    let members = ranked(e, &info.roles);
+    let rank = rules::rank_of_member(&members, by).ok_or(Error::NotMember)?;
+    if !rules::can_manage_treasury(&info.roles, &load_policy(e), Some(rank)) {
+        return Err(Error::NotTreasurer);
+    }
+    let asset = find_asset(&load_assets(e), token)?;
+    let vault = asset.vault.clone().ok_or(Error::NoReserve)?;
+    Ok((asset, vault))
+}
+
+/// Shares held in `vault` and what they are worth in the vault's asset right now.
+fn reserve_value(e: &Env, vault: &Address) -> (i128, i128) {
+    let client = VaultClient::new(e, vault);
+    let shares = client.balance(&e.current_contract_address());
+    if shares <= 0 {
+        return (0, 0);
+    }
+    let value = client
+        .get_asset_amounts_per_shares(&shares)
+        .first()
+        .unwrap_or(0);
+    (shares, value)
+}
+
+fn reserve_principal(e: &Env, token: &Address) -> i128 {
+    e.storage()
+        .instance()
+        .get(&DataKey::ReservePrincipal(token.clone()))
+        .unwrap_or(0)
+}
+
+fn set_reserve_principal(e: &Env, token: &Address, principal: i128) {
+    e.storage()
+        .instance()
+        .set(&DataKey::ReservePrincipal(token.clone()), &principal);
+}
+
 fn load_assets(e: &Env) -> Vec<Asset> {
     e.storage()
         .instance()
@@ -555,6 +708,7 @@ fn register_asset(e: &Env, accepted: &Vec<Asset>, spec: &AssetSpec) -> Result<As
         currency: spec.currency.clone(),
         symbol: client.symbol(),
         decimals: client.decimals(),
+        vault: spec.vault.clone(),
     })
 }
 

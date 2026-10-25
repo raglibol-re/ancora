@@ -31,6 +31,10 @@ function assetSpec(asset: OrgAsset): xdr.ScVal {
 	return xdr.ScVal.scvMap([
 		new xdr.ScMapEntry({ key: symbol("currency"), val: symbol(asset.currency) }),
 		new xdr.ScMapEntry({ key: symbol("token"), val: new Address(asset.token).toScVal() }),
+		new xdr.ScMapEntry({
+			key: symbol("vault"),
+			val: asset.vault ? new Address(asset.vault).toScVal() : xdr.ScVal.scvVoid(),
+		}),
 	]);
 }
 

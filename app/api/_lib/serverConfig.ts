@@ -16,15 +16,21 @@ export type ServerConfig = {
 	orgAssets: ReadonlyMap<string, OrgAsset>;
 };
 
-export type OrgAsset = { token: string; symbol: string; currency: "EUR" | "USD" };
+export type OrgAsset = {
+	token: string;
+	symbol: string;
+	currency: "EUR" | "USD";
+	/** DeFindex vault for the asset's Reserve, if any. */
+	vault: string | null;
+};
 
 /** "BlendUSDC:CAQCF…:USD,USDC:CBIEL…:USD" → assets by token address. */
 export function parseOrgAssets(spec: string): Map<string, OrgAsset> {
 	const assets = new Map<string, OrgAsset>();
 	for (const entry of spec.split(",")) {
-		const [symbol, token, currency] = entry.trim().split(":");
+		const [symbol, token, currency, vault] = entry.trim().split(":");
 		if (symbol && token && (currency === "EUR" || currency === "USD")) {
-			assets.set(token, { token, symbol, currency });
+			assets.set(token, { token, symbol, currency, vault: vault || null });
 		}
 	}
 	return assets;

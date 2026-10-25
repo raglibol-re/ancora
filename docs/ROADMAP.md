@@ -13,7 +13,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 4 | Passkey smart accounts + fee-sponsoring relayer | Done |
 | 5 | Demo admin: data-source fallback switch + health panel | Done |
 | 6 | Approval rules on-chain: organization contract + registry, policy document hash, identities | Done (see below) |
-| 7 | Reserve on DeFindex testnet vault + chunked public/confidential split | Planned |
+| 7 | Reserve on DeFindex testnet vault | Done for BlendUSDC (see below); confidential split moved to task 14 |
 | 8 | Security seal: ML-DSA verifier as OZ external signer (timebox 2h) | Planned |
 | 9 | Crew / agent keys with OZ spending-limit policy | Planned |
 | 10 | Euro in/out: SEP-24 test anchor (real), Bridge (simulated) | Planned |
@@ -36,6 +36,12 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 - **Several stablecoins**: an organization accepts a list of tokens (BlendUSDC and Circle USDC on testnet, from the `ORG_ASSETS` allowlist), each with its own balance, payments and test money; accepting or dropping one is a governance change. Payments in an asset of another currency than the rules take the strictest tier and the seal.
 - **App**: passkey sign-in/sign-out, profile page ("your pass"), invites by ancora ID, commands signed through the person's account (`execute`), "Send now" for due requests via the operator, reads by simulation, 30 s refresh.
 - **Follow-ups**: live FX rate from the Reflector oracle (SEP-40) so payments in another currency hit the right tier; EURC on testnet (Circle issuer, one `ORG_ASSETS` line plus an operator float); template switching on-chain; cumulative crew limits through OZ `spending_limit` installed on the organization's context (task 9); Perch-style IR for function-level constraints once needed.
+
+### Task 7 as built: the Reserve
+
+- The organization contract deposits into and withdraws from the asset's DeFindex vault itself (`move_to_reserve`, `withdraw_from_reserve`); the top role or any strictest-tier approver may do it, no request needed. The vault's token pull is authorized as a sub-invocation.
+- `reserve(token)` reports shares, value and principal; the app shows the value and "earned so far" per asset. Assets without a vault (Circle USDC today) show "No Reserve yet".
+- Follow-ups: auto-sweep rules (keep X on the account, rest in the Reserve), more vaults as DeFindex adds them on testnet, the confidential split (task 14).
 
 ### Task 16: discussions on approval requests
 
@@ -80,7 +86,7 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 
 - **Non-fungible holdings:** membership cards, certificates and tickets as OpenZeppelin NonFungible tokens held by the organization next to its stablecoins (the asset list already pairs a token address with what it stands for; NFTs need no amounts, so they bypass the tiers and use governance for transfers).
 - **Live FX for the rules:** Reflector oracle rates so a EURC payment in a USD organization is evaluated at today's rate instead of the strictest tier.
-- **Per-asset Reserve:** a DeFindex vault per stablecoin once they exist on testnet; today only BlendUSDC has one.
+- **Per-asset Reserve:** a DeFindex vault per stablecoin once they exist on testnet; today only BlendUSDC has one. Auto-sweep rules on top.
 
 ## Later
 

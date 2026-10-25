@@ -32,6 +32,10 @@ pub enum Error {
     AssetExists = 23,
     AssetInUse = 24,
     LastAsset = 25,
+    /// The asset has no Reserve vault.
+    NoReserve = 26,
+    /// Only the top role or someone who could approve the strictest tier moves money to the Reserve.
+    NotTreasurer = 27,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -80,12 +84,14 @@ pub struct Member {
     pub role: Symbol,
 }
 
-/// A token the organization should accept and the fiat currency it stands for ("EUR", "USD").
+/// A token the organization should accept, the fiat currency it stands for ("EUR", "USD") and,
+/// optionally, the DeFindex vault its Reserve earns in.
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub struct AssetSpec {
     pub token: Address,
     pub currency: Symbol,
+    pub vault: Option<Address>,
 }
 
 /// An accepted token, with what the token contract says about itself.
@@ -96,6 +102,18 @@ pub struct Asset {
     pub currency: Symbol,
     pub symbol: String,
     pub decimals: u32,
+    pub vault: Option<Address>,
+}
+
+/// What the organization holds in one asset's Reserve: vault shares, what they are worth today,
+/// and what was put in (so earnings = value - principal).
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct ReserveView {
+    pub vault: Address,
+    pub shares: i128,
+    pub value: i128,
+    pub principal: i128,
 }
 
 #[contracttype]

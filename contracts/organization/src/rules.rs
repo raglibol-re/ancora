@@ -205,6 +205,16 @@ fn pick(pool: &Vec<Ranked>, used: &Vec<bool>, slot_rank: u32) -> Option<u32> {
     best.map(|(index, _)| index)
 }
 
+/// Moving money between the account and the Reserve never leaves the organization: the top
+/// role and anyone who could approve the strictest tier may do it without a request.
+pub fn can_manage_treasury(roles: &Vec<Symbol>, policy: &Policy, rank: Option<u32>) -> bool {
+    match (rank, strictest_tier(policy)) {
+        (Some(0), _) => true,
+        (rank, Some(tier)) => is_eligible(roles, &tier.approvals, rank),
+        (_, None) => false,
+    }
+}
+
 /// Holds a role that could fill at least one of the requirements (or any member if none).
 pub fn is_eligible(
     roles: &Vec<Symbol>,

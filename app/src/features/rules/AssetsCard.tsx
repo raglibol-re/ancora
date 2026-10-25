@@ -25,8 +25,8 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 	const add = async (event: FormEvent) => {
 		event.preventDefault();
 		if (!selected) return;
-		const { token, symbol, currency } = selected;
-		const result = await propose({ type: "addAsset", asset: { token, symbol, currency } });
+		const { token, symbol, currency, vault } = selected;
+		const result = await propose({ type: "addAsset", asset: { token, symbol, currency, vault } });
 		if (result?.ok) setChoice("");
 	};
 
@@ -43,7 +43,8 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 					return (
 						<li key={asset.token} className={styles.person}>
 							<span className={styles.name}>
-								{asset.symbol} ({asset.currency})<span className={styles.id}>{asset.token}</span>
+								{asset.symbol} ({asset.currency}){asset.vault ? " · earns in a Reserve" : ""}
+								<span className={styles.id}>{asset.token}</span>
 							</span>
 							<span className={styles.you}>
 								{formatMoney(balance, asset.currency)}

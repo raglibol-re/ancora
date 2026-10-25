@@ -59,7 +59,14 @@ export type Balance = {
 	token: string;
 	balance: Cents;
 	reserve: Cents;
+	/** Reserve value above what was moved in, when the vault reports it (testnet). */
+	earnings?: Cents;
 };
+
+/** Whether this asset can earn in a Reserve. */
+export function hasReserve(asset: Asset): boolean {
+	return Boolean(asset.vault);
+}
 
 /** Everything one organization's account holds: rules, money, requests and history. */
 export type OrgAccount = {
