@@ -9,6 +9,7 @@ import { LocalDataSource, notAllowed } from "../local/localDataSource.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
 import { samplePeople } from "../sample/seedWorkspace.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
+import { passkeyUserName } from "./passkeyUserName.ts";
 import type { TestnetConfig } from "./testnetConfig.ts";
 
 const STROOPS_PER_CENT = 100_000n; // USDC has 7 decimals
@@ -41,17 +42,12 @@ export class TestnetDataSource extends LocalDataSource {
 	}
 
 	override async createOrganization(input: Parameters<DataSource["createOrganization"]>[0]) {
-		const person = this.getSnapshot().people.find((p) => p.id === input.actorId);
 		let wallet: Awaited<ReturnType<typeof this.kit.createWallet>>;
 		try {
-			// The passkey is named after the person and the organization it secures.
-			wallet = await this.kit.createWallet(
-				"ancora",
-				`${person?.name ?? "Founder"} · ${input.name}`,
-				{
-					autoSubmit: true,
-				},
-			);
+			// The passkey is named after the organization it secures.
+			wallet = await this.kit.createWallet("ancora", passkeyUserName(input.name), {
+				autoSubmit: true,
+			});
 		} catch (error) {
 			return failed(describeKitError(error, "created"));
 		}
