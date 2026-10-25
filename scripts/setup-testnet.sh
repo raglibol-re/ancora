@@ -21,11 +21,13 @@ DEPLOYER="ancora-deployer"
 
 # BlendUSDC: Stellar Asset Contract of USDC:GATALT… issued by Blend's testnet faucet (7 decimals).
 BLEND_USDC="CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU"
-# Circle's testnet USDC (faucet.circle.com). Its contract id is derived below; the operator holds a
-# trustline and a small float that has to be topped up by hand (the faucet is captcha-gated).
+# Circle's testnet USDC and EURC (faucet.circle.com). Contract ids are derived below; the operator
+# holds trustlines and small floats that have to be topped up by hand (the faucet is captcha-gated).
 CIRCLE_USDC_ISSUER="GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"
+CIRCLE_EURC_ISSUER="GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO"
 CIRCLE_USDC=""
-MIN_CIRCLE_USDC_FLOAT=200000000 # 20 USDC
+CIRCLE_EURC=""
+MIN_CIRCLE_FLOAT=200000000 # 20 units
 BLEND_FAUCET="https://ewqw4hx7oa.execute-api.us-east-1.amazonaws.com/getAssets"
 # Keep at least this much BlendUSDC (in stroops, 7 decimals) on the deployer for demo top-ups.
 MIN_USDC_FLOAT=3000000000 # 300 USDC (three test-money grants)
@@ -115,30 +117,37 @@ ensure_deployer() {
 	ok "$DEPLOYER_ADDRESS funded with XLM"
 }
 
-# Resolves Circle USDC's contract id, gives the operator a trustline and reports the float.
-ensure_circle_usdc() {
-	say "Circle USDC"
-	CIRCLE_USDC="$(stellar contract id asset --asset "USDC:$CIRCLE_USDC_ISSUER" --network "$NETWORK" 2>/dev/null)" ||
-		die "Could not derive the contract id of USDC:$CIRCLE_USDC_ISSUER."
-	ok "contract $CIRCLE_USDC"
-	local balance
+# Resolves a Circle asset's contract id, gives the operator a trustline and reports the float.
+# Usage: circle_asset CODE ISSUER → prints the contract id.
+circle_asset() {
+	local code="$1" issuer="$2" contract balance
+	contract="$(stellar contract id asset --asset "$code:$issuer" --network "$NETWORK" 2>/dev/null)" ||
+		die "Could not derive the contract id of $code:$issuer."
+	ok "$code contract $contract" >&2
 	balance="$(curl -s "$HORIZON_URL/accounts/$DEPLOYER_ADDRESS" |
-		python -I -c "import sys,json; print(next((b['balance'] for b in json.load(sys.stdin).get('balances',[]) if b.get('asset_code')=='USDC' and b.get('asset_issuer')=='$CIRCLE_USDC_ISSUER'), ''))" 2>/dev/null)"
+		python -I -c "import sys,json; print(next((b['balance'] for b in json.load(sys.stdin).get('balances',[]) if b.get('asset_code')=='$code' and b.get('asset_issuer')=='$issuer'), ''))" 2>/dev/null)"
 	if [[ -z "$balance" ]]; then
-		$CHECK_ONLY && {
-			problem "deployer has no trustline for USDC:$CIRCLE_USDC_ISSUER"
-			return
-		}
-		stellar tx new change-trust --source-account "$DEPLOYER" --network "$NETWORK" \
-			--line "USDC:$CIRCLE_USDC_ISSUER" >/dev/null 2>&1 || die "Could not add the Circle USDC trustline."
+		if $CHECK_ONLY; then
+			problem "deployer has no trustline for $code:$issuer"
+		else
+			stellar tx new change-trust --source-account "$DEPLOYER" --network "$NETWORK" \
+				--line "$code:$issuer" >/dev/null 2>&1 || die "Could not add the $code trustline."
+		fi
 		balance="0.0000000"
 	fi
 	local stroops=$((10#$(printf '%s' "$balance" | tr -d '.')))
-	if ((stroops < MIN_CIRCLE_USDC_FLOAT)); then
-		say "  ℹ deployer holds $balance Circle USDC; top up by hand at https://faucet.circle.com (Stellar testnet) → $DEPLOYER_ADDRESS" >&2
+	if ((stroops < MIN_CIRCLE_FLOAT)); then
+		say "  ℹ deployer holds $balance Circle $code; top up by hand at https://faucet.circle.com (Stellar testnet) → $DEPLOYER_ADDRESS" >&2
 	else
-		ok "deployer holds $balance Circle USDC"
+		ok "deployer holds $balance Circle $code" >&2
 	fi
+	printf '%s' "$contract"
+}
+
+ensure_circle_assets() {
+	say "Circle USDC and EURC"
+	CIRCLE_USDC="$(circle_asset USDC "$CIRCLE_USDC_ISSUER")"
+	CIRCLE_EURC="$(circle_asset EURC "$CIRCLE_EURC_ISSUER")"
 }
 
 ensure_usdc_float() {
@@ -256,7 +265,7 @@ VITE_DEPLOYER_ADDRESS=$DEPLOYER_ADDRESS
 
 # Assets and the Reserve. VITE_ORG_ASSETS lists what an organization may accept: Symbol:contract:currency[:vault].
 VITE_USDC_TOKEN=$BLEND_USDC
-VITE_ORG_ASSETS=BlendUSDC:$BLEND_USDC:USD:$DEFINDEX_USDC_VAULT,USDC:$CIRCLE_USDC:USD
+VITE_ORG_ASSETS=BlendUSDC:$BLEND_USDC:USD:$DEFINDEX_USDC_VAULT,USDC:$CIRCLE_USDC:USD,EURC:$CIRCLE_EURC:EUR
 VITE_NATIVE_TOKEN=$NATIVE_XLM_SAC
 VITE_DEFINDEX_VAULT=$DEFINDEX_USDC_VAULT
 
@@ -322,7 +331,7 @@ sync_vercel() {
 		vercel_env STELLAR_NETWORK_PASSPHRASE "$PASSPHRASE"
 		vercel_env ACCOUNT_WASM_HASH "$KIT_ACCOUNT_WASM_HASH"
 		vercel_env USDC_TOKEN "$BLEND_USDC"
-		vercel_env ORG_ASSETS "BlendUSDC:$BLEND_USDC:USD:$DEFINDEX_USDC_VAULT,USDC:$CIRCLE_USDC:USD"
+		vercel_env ORG_ASSETS "BlendUSDC:$BLEND_USDC:USD:$DEFINDEX_USDC_VAULT,USDC:$CIRCLE_USDC:USD,EURC:$CIRCLE_EURC:EUR"
 		vercel_env ALLOWED_ORIGINS "$PRODUCTION_ORIGIN,http://localhost:5173,http://localhost:4173"
 		vercel_env ORG_WASM_HASH "$ORG_WASM_HASH"
 		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"
@@ -363,7 +372,7 @@ main() {
 	ensure_deployer
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_xlm_float
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_usdc_float
-	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_circle_usdc
+	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_circle_assets
 	verify_external_contracts
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_ancora_contracts
 	# ancora's own contracts are deployed here as they land (approval policy and requests: task 6,

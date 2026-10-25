@@ -20,8 +20,8 @@ export function NewOrgPage() {
 	const { run, busy } = useCommand();
 	const navigate = useNavigate();
 	const options = dataSource.availableAssets;
-	// Default to the currency the available assets are in; most testnet assets are dollars.
-	const defaultCurrency: Currency = options.some((a) => a.currency === "EUR") ? "EUR" : "USD";
+	// The first allowlisted asset is the one with automatic test money, so its currency leads.
+	const defaultCurrency: Currency = options[0]?.currency ?? "EUR";
 	const [name, setName] = useState("");
 	const [templateId, setTemplateId] = useState<TemplateId>("club");
 	const [roleId, setRoleId] = useState(templates.club.roles[0]?.id ?? "");
