@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-26: Landing page reworked: night hero with a brass-tinted particle globe (still + looping video, self-hosted, no video and no entrance with reduced motion), gradient headline in Fraunces, glass chips, sections for every shipped feature with honest status tags, how it works, security.
 - 2026-10-26: Overview redesigned like a multi-currency banking app: one headline balance in the rules' currency, an "Accounts" list with a currency mark per stablecoin, and a per-asset sheet for Reserve, sending and adding money. EURC (Circle testnet) as a third accepted asset; operator trustlines for Circle USDC and EURC; the rules' default currency follows the first allowlisted asset. Send page checks a typed recipient against every accepted asset and switches to one it can receive.
 - 2026-10-25: Scaffold: PWA app shell (landing, /app screens, /admin), design tokens, placeholder brand mark and icons, CI, docs, Vercel config.
 - 2026-10-25: Approval rules engine (pure TypeScript): tiers, four-eyes, objection window, seal, new-recipient rule, membership/rule requests, setup phase, template switching; shared test vectors.
