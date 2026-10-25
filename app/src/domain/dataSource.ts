@@ -19,6 +19,29 @@ export type ChangeOutcome = "applied" | "requested";
 /** An asset a new organization may accept, with a label for pickers. */
 export type AssetOption = Asset & { label: string };
 
+/** A Stellar wallet the person connected to fund an organization (Freighter, Hana, xBull, Albedo). */
+export type ConnectedWallet = { address: string; walletName: string };
+
+/**
+ * Money from the person's own wallet into an organization. Wallets' plain "send" can't target a
+ * contract address, so the source builds the token transfer and the wallet signs it.
+ */
+export interface FundingSupport {
+	connectWallet(): Promise<Result<ConnectedWallet, RuleError>>;
+	disconnectWallet(): Promise<void>;
+	/** What the wallet holds of `token`, in cents. */
+	walletBalance(token: string, holder: string): Promise<Cents>;
+	/** "USDC:GATALT…" for a classic asset, so the right trustline can be named. */
+	assetName(token: string): Promise<string>;
+	/** Transfers `amount` of `token` from the wallet to the organization; resolves to the tx hash. */
+	depositFromWallet(
+		orgId: string,
+		token: string,
+		from: string,
+		amount: Cents,
+	): Promise<Result<string, RuleError>>;
+}
+
 /** Who the app acts as: a person's address on Stellar (their passkey-secured account). */
 export type Identity = { id: PersonId; name: string | null; avatarUrl: string | null };
 
@@ -54,6 +77,8 @@ export interface DataSource {
 	readonly supportsReserve: boolean;
 	/** The stablecoins an organization may accept on this source. */
 	readonly availableAssets: readonly AssetOption[];
+	/** Funding from the person's own Stellar wallet; null for sample data. */
+	readonly funding: FundingSupport | null;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;
 	/** Re-reads balances and organizations from the network; a no-op for sample data. */

@@ -17,6 +17,7 @@
     "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet"
   },
   "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "2.7.1",
     "@fontsource-variable/fraunces": "5.3.0",
     "@fontsource/ibm-plex-sans": "5.3.0",
     "@stellar/stellar-sdk": "16.3.1",

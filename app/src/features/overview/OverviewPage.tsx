@@ -19,10 +19,10 @@ import { formatMoney, formatRate, formatSignedMoney } from "../../ui/format.ts";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
-import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AccountNumberCard } from "./AccountNumberCard.tsx";
 import { ActivityList } from "./ActivityList.tsx";
+import { AddMoneySheet } from "./AddMoneySheet.tsx";
 import styles from "./OverviewPage.module.css";
 import { type ReserveDirection, ReserveSheet } from "./ReserveSheet.tsx";
 
@@ -160,8 +160,8 @@ function BalanceCard({
 	asset: Asset;
 	lead: boolean;
 }) {
-	const { me, dataSource } = useWorkspace();
-	const { run, busy } = useCommand();
+	const { dataSource } = useWorkspace();
+	const [adding, setAdding] = useState(false);
 	const onTestnet = dataSource.kind === "testnet";
 	const { balance } = balanceOf(account, asset.token);
 	const available = availableBalance(account, asset.token);
@@ -188,14 +188,9 @@ function BalanceCard({
 					<button
 						type="button"
 						className={buttonClass("secondary")}
-						disabled={busy}
-						onClick={() =>
-							run(() => dataSource.addTestMoney(account.org.id, me.id, asset.token), {
-								success: `Test ${asset.symbol} arrived on the account.`,
-							})
-						}
+						onClick={() => setAdding(true)}
 					>
-						Add test {asset.symbol}
+						Add {asset.symbol}
 					</button>
 				) : (
 					<a href="#account-number" className={buttonClass("secondary")}>
@@ -203,6 +198,14 @@ function BalanceCard({
 					</a>
 				)}
 			</div>
+			{onTestnet && (
+				<AddMoneySheet
+					account={account}
+					asset={asset}
+					open={adding}
+					onClose={() => setAdding(false)}
+				/>
+			)}
 		</Card>
 	);
 }

@@ -71,7 +71,7 @@ One passkey, one person, any number of positions: the same address is a board me
 
 ## Data sources
 
-Features never talk to the outside world directly. They use one `DataSource` interface (`app/src/domain/dataSource.ts`): a snapshot of the person's workspace plus commands, and an optional `identity` (sign-in, sign-out, profile) for sources where the person is real.
+Features never talk to the outside world directly. They use one `DataSource` interface (`app/src/domain/dataSource.ts`): a snapshot of the person's workspace plus commands, an optional `identity` (sign-in, sign-out, profile) for sources where the person is real, and an optional `funding` capability (connect a Stellar wallet, deposit into an organization) that the testnet adapter backs with Stellar Wallets Kit, loaded on demand (`walletFunding.ts`).
 
 | Implementation | Where | Status |
 |----------------|-------|--------|

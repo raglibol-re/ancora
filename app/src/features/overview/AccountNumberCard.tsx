@@ -20,7 +20,9 @@ export function AccountNumberCard({ account }: { account: OrgAccount }) {
 					</dl>
 					<p className={styles.note}>
 						The organization's own contract. Any of the stablecoins it accepts (see Rules) sent to
-						this address arrives on its balances.
+						this address arrives on its balances. A plain Stellar payment can't reach a contract
+						address: use "Add money" above to send from your wallet, or a wallet that can pay
+						contracts (Freighter).
 					</p>
 					<ExplorerLink target={account.onchain.contractId} />
 				</Card>

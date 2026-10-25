@@ -9,6 +9,7 @@ import {
 import type {
 	ChangeOutcome,
 	DataSource,
+	FundingSupport,
 	Identity,
 	IdentitySupport,
 	PaymentInput,
@@ -56,6 +57,7 @@ export class TestnetDataSource implements DataSource {
 	readonly supportsReserve = true;
 	readonly identity: IdentitySupport;
 	readonly availableAssets: readonly AssetOption[];
+	readonly funding: FundingSupport;
 	private readonly config: TestnetConfig;
 	private readonly storage: KeyValueStorage | null;
 	private readonly listeners = new Set<() => void>();
@@ -68,6 +70,26 @@ export class TestnetDataSource implements DataSource {
 		this.storage = storage;
 		this.config = config;
 		this.availableAssets = parseAssetOptions(config.orgAssets);
+		// Stellar Wallets Kit and the wallet SDKs load only when someone funds from a wallet.
+		const funding = () => import("./walletFunding.ts");
+		this.funding = {
+			connectWallet: () => funding().then((f) => f.connectWallet()),
+			disconnectWallet: () => funding().then((f) => f.disconnectWallet()),
+			walletBalance: (token, holder) =>
+				funding().then((f) => f.walletBalance(config, token, holder)),
+			assetName: (token) => funding().then((f) => f.assetName(config, token)),
+			depositFromWallet: async (orgId, token, from, amount) => {
+				const result = await (await funding()).depositFromWallet(
+					config,
+					token,
+					from,
+					orgId,
+					amount,
+				);
+				if (result.ok) await this.refresh();
+				return result;
+			},
+		};
 		this.identity = {
 			restoring: () => this.restoringSession,
 			current: () => this.me,

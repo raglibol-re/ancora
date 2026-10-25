@@ -63,6 +63,7 @@ const TEST_MONEY = 500 * 100;
 export class LocalDataSource implements DataSource {
 	readonly kind: DataSourceKind;
 	readonly identity = null;
+	readonly funding = null;
 	readonly payments: "auto" | "manual";
 	readonly supportsReserve: boolean = true;
 	readonly availableAssets: readonly AssetOption[];
