@@ -1,9 +1,9 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatStroops } from "../../ui/format.ts";
-import type { AdminHealth } from "./adminApi.ts";
+import { type AdminHealth, refillXlm } from "./adminApi.ts";
 import styles from "./HealthPanel.module.css";
 
 const MIN_XLM_FLOAT = 3_000n * 10_000_000n;
@@ -17,12 +17,32 @@ function Status({ ok, label }: { ok: boolean; label?: string }) {
 	);
 }
 
-type HealthPanelProps = { health: AdminHealth; busy: boolean; onRefresh: () => void };
+type HealthPanelProps = {
+	health: AdminHealth;
+	busy: boolean;
+	passphrase: string;
+	onRefresh: () => void;
+};
 
-/** Read-only view of everything the demo depends on. */
-export function HealthPanel({ health, busy, onRefresh }: HealthPanelProps) {
+/** Everything the demo depends on, plus the one thing the operator can top up from here. */
+export function HealthPanel({ health, busy, passphrase, onRefresh }: HealthPanelProps) {
 	const { rpc, rent, contracts, operator, relayer } = health;
 	const operatorOk = operator !== null && BigInt(operator.xlmStroops) >= MIN_XLM_FLOAT;
+	const [refilling, setRefilling] = useState(false);
+	const [refillError, setRefillError] = useState<string | null>(null);
+
+	const refill = async () => {
+		setRefilling(true);
+		setRefillError(null);
+		try {
+			await refillXlm(passphrase);
+			onRefresh();
+		} catch (failure) {
+			setRefillError(failure instanceof Error ? failure.message : "The top-up failed.");
+		} finally {
+			setRefilling(false);
+		}
+	};
 
 	return (
 		<>
@@ -79,8 +99,24 @@ export function HealthPanel({ health, busy, onRefresh }: HealthPanelProps) {
 					)}
 					<p className={styles.muted}>
 						Pays sponsored fees and sends test money. Not a signer on any organization account.
-						Refill: <code>scripts/setup-testnet.sh</code>.
 					</p>
+					<button
+						type="button"
+						className={buttonClass("secondary")}
+						disabled={busy || refilling}
+						onClick={refill}
+					>
+						{refilling ? "Asking Friendbot…" : "Top up XLM from Friendbot (~10,000)"}
+					</button>
+					<p className={styles.muted}>
+						BlendUSDC refills through <code>scripts/setup-testnet.sh</code> (Blend faucet); Circle
+						USDC by hand at faucet.circle.com.
+					</p>
+					{refillError && (
+						<p className={styles.bad} role="alert">
+							{refillError}
+						</p>
+					)}
 				</Card>
 
 				<Card title="Relayer">

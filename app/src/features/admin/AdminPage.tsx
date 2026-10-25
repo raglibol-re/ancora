@@ -77,7 +77,12 @@ export function AdminPage() {
 				demo={health.demo}
 				onChange={(demo) => setHealth({ ...health, demo })}
 			/>
-			<HealthPanel health={health} busy={busy} onRefresh={() => load(passphrase)} />
+			<HealthPanel
+				health={health}
+				busy={busy}
+				passphrase={passphrase}
+				onRefresh={() => load(passphrase)}
+			/>
 			{error && (
 				<p className={styles.error} role="alert">
 					{error}

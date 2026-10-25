@@ -135,9 +135,10 @@ Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it: the WebAu
 
 - switch the **site-wide default** between sample data and the Stellar testnet. The testnet falls back to sample data automatically when the Stellar RPC or ancora's own server doesn't answer; the banner says so and offers a retry. People can still choose a source themselves on their pass;
 - show **health**: RPC (ledger, protocol, latency), testnet rent (live state vs. target, current stroops/KB), whether every contract ID this build uses exists, the operator's XLM and USDC floats, relayer origins;
+- **top up the operator's XLM** from Friendbot (a throwaway account is funded and merged into the operator), so sponsored fees never run dry during a demo;
 - list **recent errors** recorded in that browser, and reset the **sample data** in that browser.
 
-It uses the demo operator key, which is **not a signer on any organization account**: it cannot move organization funds or change organization rules. Reset, top-up and retry tools for testnet organizations arrive with task 13.
+It uses the demo operator key, which is **not a signer on any organization account**: it cannot move organization funds or change organization rules. A due request is sent by any member with "Send now"; the operator cannot create, approve or alter requests.
 
 ## Limitations
 

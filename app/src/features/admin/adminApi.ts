@@ -55,6 +55,16 @@ export function fetchAdminHealth(passphrase: string): Promise<AdminHealth> {
 	});
 }
 
+/** Funds a throwaway account with Friendbot and merges it into the operator (about 10,000 XLM). */
+export function refillXlm(
+	passphrase: string,
+): Promise<{ hash: string; xlmStroops: string | null }> {
+	return adminRequest(passphrase, {
+		action: "refill-xlm",
+		nativeToken: testnetConfig?.nativeToken ?? null,
+	});
+}
+
 export function setDemoMode(
 	passphrase: string,
 	mode: DemoMode,

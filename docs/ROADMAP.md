@@ -19,8 +19,8 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 10 | Euro in/out: SEP-24 test anchor (real), Bridge (simulated) | Planned |
 | 11 | Organization logo in Vercel Blob with the URL on the organization contract | Done |
 | 12 | Budgets and bookkeeping | Planned |
-| 13 | Demo admin: reset, top-up, retry stuck requests | Planned |
-| 14 | Confidential pot + auditor view stub | Planned |
+| 13 | Demo admin: reset, top-up, retry stuck requests | Done: sample reset, XLM top-up from Friendbot in /admin, per-asset floats in health; due requests are sent with "Send now" by any member |
+| 14 | Confidential pot + auditor view stub | Documented only (no placeholder UI): see Later |
 | 15 | Integrate the Claude Design package | Done (brand, icons, tokens) |
 | 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Done (notifications, attachments and signed entries: later) |
 | 17 | Recovery ("Lifeline"): guardians, claims with a waiting period, cancel by any signer (see below) | Planned, design accepted 25 Oct |
