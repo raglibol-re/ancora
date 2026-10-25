@@ -124,7 +124,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 								error={errors.account}
 								hint={
 									account.onchain
-										? "Starts with G or C. Payments go out as USDC; a G address must already hold USDC (a trustline) on testnet."
+										? "Starts with G or C. Payments go out as BlendUSDC (USDC issued by GATALT…5V56); a G address must hold a trustline for exactly that asset. Testnet has several assets called USDC."
 										: undefined
 								}
 							>

@@ -3,6 +3,7 @@ import { readTestnetConfig } from "./testnetConfig.ts";
 
 const complete = {
 	VITE_STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",
+	VITE_STELLAR_HORIZON_URL: "https://horizon-testnet.stellar.org",
 	VITE_STELLAR_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015",
 	VITE_DEPLOYER_ADDRESS: "GDEPLOYER",
 	VITE_USDC_TOKEN: "CUSDC",

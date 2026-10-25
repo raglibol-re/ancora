@@ -205,6 +205,7 @@ write_env_file() {
 
 VITE_STELLAR_NETWORK=$NETWORK
 VITE_STELLAR_RPC_URL=$RPC_URL
+VITE_STELLAR_HORIZON_URL=$HORIZON_URL
 VITE_STELLAR_NETWORK_PASSPHRASE=$PASSPHRASE
 
 # Demo operator (top-ups, deployments). Not a signer on any organization account.

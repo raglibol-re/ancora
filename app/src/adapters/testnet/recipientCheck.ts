@@ -6,6 +6,32 @@ import { type Network, readContract } from "./readContract.ts";
 
 const refuse = (message: string) => err(ruleError("not-allowed", message));
 
+export type RecipientNetwork = Network & { horizonUrl: string };
+
+/**
+ * Testnet has several assets called "USDC" (Circle's, Blend's, …). When the recipient holds one
+ * with another issuer, naming it is the only way the person understands what to add. Horizon
+ * lists an account's trustlines; RPC can only look one up by exact asset. [] if unknown.
+ */
+async function otherIssuersOf(
+	horizonUrl: string,
+	account: string,
+	code: string,
+): Promise<string[]> {
+	try {
+		const response = await fetch(`${horizonUrl}/accounts/${account}`);
+		if (!response.ok) return [];
+		const body = (await response.json()) as {
+			balances?: { asset_code?: string; asset_issuer?: string }[];
+		};
+		return (body.balances ?? [])
+			.filter((b) => b.asset_code === code && typeof b.asset_issuer === "string")
+			.map((b) => b.asset_issuer as string);
+	} catch {
+		return [];
+	}
+}
+
 /**
  * A classic Stellar account (G…) can only receive USDC once it holds a trustline for it; a
  * contract address (C…) always can. Checked before a payment is requested, because the token
@@ -13,7 +39,7 @@ const refuse = (message: string) => err(ruleError("not-allowed", message));
  * that the person can't act on.
  */
 export async function checkRecipient(
-	network: Network,
+	network: RecipientNetwork,
 	token: string,
 	to: string,
 ): Promise<Result<void, RuleError>> {
@@ -43,8 +69,13 @@ export async function checkRecipient(
 	const { entries } = await server.getLedgerEntries(key);
 	const entry = entries[0];
 	if (!entry) {
+		const others = await otherIssuersOf(network.horizonUrl, to, code);
+		const holds =
+			others.length > 0
+				? `This address holds ${code} from a different issuer (${others.map(shortAddress).join(", ")}), which ancora doesn't pay out. `
+				: `This Stellar address can't receive ${code} yet: it has no ${code} trustline. `;
 		return refuse(
-			`This Stellar address can't receive ${code} yet: it has no ${code} trustline. Ask the recipient to add ${code} (issuer ${shortAddress(issuer)}) in their wallet, or pay an ancora organization by its address.`,
+			`${holds}Payments go out as ${code} issued by ${issuer}. Ask the recipient to add a trustline for exactly that asset in their wallet, or pay an ancora organization by its address.`,
 		);
 	}
 	const authorized =

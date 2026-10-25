@@ -5,6 +5,8 @@
  */
 export type TestnetConfig = {
 	rpcUrl: string;
+	/** Horizon is only used to describe a recipient's trustlines; everything else goes through RPC. */
+	horizonUrl: string;
 	networkPassphrase: string;
 	deployerAddress: string;
 	usdcToken: string;
@@ -24,6 +26,7 @@ type EnvSource = Record<string, string | boolean | undefined>;
 
 const KEYS: Record<keyof TestnetConfig, string> = {
 	rpcUrl: "VITE_STELLAR_RPC_URL",
+	horizonUrl: "VITE_STELLAR_HORIZON_URL",
 	networkPassphrase: "VITE_STELLAR_NETWORK_PASSPHRASE",
 	deployerAddress: "VITE_DEPLOYER_ADDRESS",
 	usdcToken: "VITE_USDC_TOKEN",
