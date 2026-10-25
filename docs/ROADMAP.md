@@ -11,8 +11,8 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 2 | App screens on sample data behind the data-source interface | Done |
 | 3 | Testnet setup script (keys, contract deploys, IDs) | Done (own contracts join as they land) |
 | 4 | Passkey smart accounts + fee-sponsoring relayer | Done |
-| 5 | Demo admin: data-source fallback switch + health panel | Next |
-| 6 | Approval rules on-chain (OZ policy + request contract, shared test vectors) | Planned |
+| 5 | Demo admin: data-source fallback switch + health panel | Done |
+| 6 | Approval rules on-chain (OZ policy + request contract, shared test vectors) | Next |
 | 7 | Reserve on DeFindex testnet vault + chunked public/confidential split | Planned |
 | 8 | Security seal: ML-DSA verifier as OZ external signer (timebox 2h) | Planned |
 | 9 | Crew / agent keys with OZ spending-limit policy | Planned |

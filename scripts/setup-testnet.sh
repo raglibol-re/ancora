@@ -218,6 +218,21 @@ vercel_env() {
 	ok "Vercel env $name ($kind)"
 }
 
+# The operator passphrase for /admin. Taken from $ADMIN_PASSPHRASE, else from app/.env.local
+# (gitignored), else generated once and saved there. Never printed.
+admin_passphrase() {
+	local env_file="$ROOT/app/.env.local" value="${ADMIN_PASSPHRASE:-}"
+	if [[ -z "$value" && -f "$env_file" ]]; then
+		value="$(sed -n 's/^ADMIN_PASSPHRASE=//p' "$env_file" | head -1)"
+	fi
+	if [[ -z "$value" ]]; then
+		value="$(head -c 18 /dev/urandom | base64 | tr -d '/+=')"
+		printf 'ADMIN_PASSPHRASE=%s\n' "$value" >>"$env_file"
+		say "  ℹ New demo-admin passphrase saved to app/.env.local (gitignored)."
+	fi
+	printf '%s' "$value"
+}
+
 sync_vercel() {
 	$SYNC_VERCEL || return 0
 	say "Vercel server settings"
@@ -230,6 +245,7 @@ sync_vercel() {
 		vercel_env USDC_TOKEN "$BLEND_USDC"
 		vercel_env ALLOWED_ORIGINS "$PRODUCTION_ORIGIN,http://localhost:5173,http://localhost:4173"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
+		vercel_env ADMIN_PASSPHRASE "$(admin_passphrase)" secret
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
 		vercel env rm RELAYER_API_KEY production --yes >/dev/null 2>&1 || true
 		vercel env rm RELAYER_API_KEY preview --yes >/dev/null 2>&1 || true

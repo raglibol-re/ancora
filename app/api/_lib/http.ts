@@ -13,8 +13,8 @@ function corsHeaders(origin: string | null): Record<string, string> {
 	if (!origin) return {};
 	return {
 		"Access-Control-Allow-Origin": origin,
-		"Access-Control-Allow-Methods": "POST, OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type, X-Client-Name, X-Client-Version",
+		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, X-Client-Name, X-Client-Version, X-Ancora-Admin",
 		Vary: "Origin",
 	};
 }
@@ -24,10 +24,10 @@ export function json(body: unknown, status: number, origin: string | null): Resp
 }
 
 /**
- * Shared POST handler shape: origin allowlist for browsers, CORS preflight, and every failure
- * mapped to `{ success: false, error }` (the format the smart-account-kit relayer client reads).
+ * Shared handler shape: origin allowlist for browsers, CORS preflight, and every failure mapped
+ * to `{ success: false, error }` (the format the smart-account-kit relayer client reads).
  */
-export function postHandler(handle: (request: Request) => Promise<unknown>) {
+export function apiHandler(method: "GET" | "POST", handle: (request: Request) => Promise<unknown>) {
 	return {
 		async fetch(request: Request): Promise<Response> {
 			const origin = request.headers.get("Origin");
@@ -38,7 +38,7 @@ export function postHandler(handle: (request: Request) => Promise<unknown>) {
 				if (request.method === "OPTIONS") {
 					return new Response(null, { status: 204, headers: corsHeaders(origin) });
 				}
-				if (request.method !== "POST") throw new RequestError("Use POST.", 405);
+				if (request.method !== method) throw new RequestError(`Use ${method}.`, 405);
 				return json({ success: true, data: await handle(request) }, 200, origin);
 			} catch (error) {
 				if (error instanceof RequestError) {

@@ -1,8 +1,10 @@
 import { useCallback, useState } from "react";
+import { recordError } from "../../adapters/local/recentErrors.ts";
 import type { Result } from "../../domain/result.ts";
 import type { RuleError } from "../../domain/rules/model.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { type SignaturePrompt, useConfirmSignature } from "../passkey/PasskeyContext.ts";
+import { browserStorage } from "./preferences.ts";
 import { useWorkspace } from "./WorkspaceContext.ts";
 
 type CommandOptions<T> = {
@@ -38,6 +40,11 @@ export function useCommand() {
 			setBusy(false);
 			if (!result.ok) {
 				notify({ tone: "error", text: result.error.message });
+				recordError(browserStorage(), {
+					at: Date.now(),
+					where: window.location.pathname,
+					message: result.error.message,
+				});
 			} else if (options.success) {
 				const text =
 					typeof options.success === "string" ? options.success : options.success(result.value);

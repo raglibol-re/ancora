@@ -4,7 +4,19 @@ import styles from "./DataSourceBanner.module.css";
 
 /** Always visible in the app, so nobody mistakes sample data or test money for the real thing. */
 export function DataSourceBanner() {
-	const { dataSource, me } = useWorkspace();
+	const { dataSource, me, sourceStatus } = useWorkspace();
+	if (sourceStatus.fallbackReason) {
+		return (
+			<p className={styles.banner}>
+				<span>
+					<strong>Sample data:</strong> {sourceStatus.fallbackReason} Showing sample data instead.
+				</span>
+				<button type="button" className={styles.retry} onClick={sourceStatus.retry}>
+					Retry
+				</button>
+			</p>
+		);
+	}
 	if (dataSource.kind === "testnet") {
 		return (
 			<p className={`${styles.banner} ${styles.testnet}`}>

@@ -1,13 +1,13 @@
 import { SAMPLE_DEFAULT_PERSON } from "../../adapters/sample/seedWorkspace.ts";
-import type { DataSourceKind } from "../../domain/dataSource.ts";
+import type { SourcePreference } from "./resolveDataSource.ts";
 
 export type ThemePreference = "system" | "light" | "dark";
 
 /** Per-browser conveniences only; nothing here affects money or rules. */
 export type Preferences = {
 	theme: ThemePreference;
-	/** Sample data or the Stellar testnet. The demo admin takes this over in task 5. */
-	dataSource: DataSourceKind;
+	/** Follow the site default set by the demo admin, or force sample data / the testnet. */
+	dataSource: SourcePreference;
 	expertMode: boolean;
 	/** Whose eyes the demo is seen through. Signing always uses the passkeys on this device. */
 	personId: string;
@@ -18,7 +18,7 @@ const KEY = "ancora.prefs.v1";
 
 export const defaultPreferences: Preferences = {
 	theme: "system",
-	dataSource: "sample",
+	dataSource: "auto",
 	expertMode: false,
 	personId: SAMPLE_DEFAULT_PERSON,
 	activeOrgId: null,

@@ -1,5 +1,5 @@
 import { Keypair, Operation } from "@stellar/stellar-sdk";
-import { postHandler, RequestError, readJsonObject } from "./_lib/http.js";
+import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer, isSmartAccount, simulatedResourceFee } from "./_lib/ledger.js";
 import { parseSubmission, validateSubmission } from "./_lib/relayRules.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
@@ -17,7 +17,7 @@ const MAX_RESOURCE_FEE_STROOPS = 1_000_000_000n;
 
 export const config = { maxDuration: 60 };
 
-export default postHandler(async (request) => {
+export default apiHandler("POST", async (request) => {
 	const settings = serverConfig();
 	const submission = parseSubmission(await readJsonObject(request));
 	await validateSubmission(

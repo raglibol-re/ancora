@@ -7,6 +7,7 @@ import {
 	useSyncExternalStore,
 } from "react";
 import { SampleDataSource } from "../../adapters/sample/sampleDataSource.ts";
+import { fetchSiteHealth } from "../../adapters/site/siteHealth.ts";
 import { testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
 import { accountsOf } from "../../domain/account.ts";
 import type { DataSource } from "../../domain/dataSource.ts";
@@ -16,7 +17,8 @@ import {
 	type Preferences,
 	savePreferences,
 } from "./preferences.ts";
-import { WorkspaceContext, type WorkspaceValue } from "./WorkspaceContext.ts";
+import { resolveDataSource, type SiteHealth } from "./resolveDataSource.ts";
+import { type SourceStatus, WorkspaceContext, type WorkspaceValue } from "./WorkspaceContext.ts";
 import styles from "./WorkspaceProvider.module.css";
 
 const storage = browserStorage();
@@ -40,8 +42,17 @@ const BALANCE_REFRESH_MS = 30_000;
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const [preferences, setPreferences] = useState(() => loadPreferences(storage));
+	const [health, setHealth] = useState<SiteHealth | null>(null);
 	const [testnetSource, setTestnetSource] = useState(testnet);
-	const wantsTestnet = preferences.dataSource === "testnet" && testnetConfig !== null;
+
+	const checkHealth = useCallback(() => {
+		setHealth(null);
+		void fetchSiteHealth().then(setHealth);
+	}, []);
+	useEffect(checkHealth, [checkHealth]);
+
+	const resolution = resolveDataSource(preferences.dataSource, health, testnetConfig !== null);
+	const wantsTestnet = resolution?.effective === "testnet";
 
 	useEffect(() => {
 		if (wantsTestnet && !testnetSource) void loadTestnet().then(setTestnetSource);
@@ -61,11 +72,18 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		else root.dataset.theme = preferences.theme;
 	}, [preferences.theme]);
 
+	if (!resolution) return <p className={styles.connecting}>Checking the Stellar testnet…</p>;
 	const dataSource = wantsTestnet ? testnetSource : sample;
 	if (!dataSource) return <p className={styles.connecting}>Connecting to Stellar testnet…</p>;
+
 	return (
 		<WorkspaceState
 			dataSource={dataSource}
+			sourceStatus={{
+				demoMode: resolution.demoMode,
+				fallbackReason: resolution.fallbackReason,
+				retry: checkHealth,
+			}}
 			preferences={preferences}
 			updatePreferences={updatePreferences}
 		>
@@ -76,6 +94,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
 type WorkspaceStateProps = {
 	dataSource: DataSource;
+	sourceStatus: SourceStatus;
 	preferences: Preferences;
 	updatePreferences: (patch: Partial<Preferences>) => void;
 	children: ReactNode;
@@ -83,6 +102,7 @@ type WorkspaceStateProps = {
 
 function WorkspaceState({
 	dataSource,
+	sourceStatus,
 	preferences,
 	updatePreferences,
 	children,
@@ -108,6 +128,7 @@ function WorkspaceState({
 		const names = new Map(workspace.people.map((p) => [p.id, p.name]));
 		return {
 			dataSource,
+			sourceStatus,
 			workspace,
 			preferences,
 			updatePreferences,
@@ -116,7 +137,7 @@ function WorkspaceState({
 			active,
 			personName: (personId) => names.get(personId) ?? "Unknown person",
 		};
-	}, [dataSource, workspace, preferences, updatePreferences]);
+	}, [dataSource, sourceStatus, workspace, preferences, updatePreferences]);
 
 	return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

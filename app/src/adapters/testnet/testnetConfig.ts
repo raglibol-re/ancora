@@ -42,3 +42,16 @@ export function readTestnetConfig(env: EnvSource): TestnetConfig | null {
 }
 
 export const testnetConfig = readTestnetConfig(import.meta.env);
+
+/** The deployments this build is wired to, labeled for people. */
+export function listDeployments(config: TestnetConfig): { label: string; id: string }[] {
+	return [
+		{ label: "USDC (BlendUSDC)", id: config.usdcToken },
+		{ label: "Reserve vault (DeFindex)", id: config.defindexVault },
+		{ label: "Passkey verifier", id: config.webauthnVerifier },
+		{ label: "Ed25519 verifier", id: config.ed25519Verifier },
+		{ label: "Threshold policy", id: config.thresholdPolicy },
+		{ label: "Spending-limit policy", id: config.spendingLimitPolicy },
+		{ label: "Native XLM token", id: config.nativeToken },
+	];
+}

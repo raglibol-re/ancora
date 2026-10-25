@@ -45,6 +45,7 @@ One OpenZeppelin smart account per organization, with everything else as a modul
 | Crew / agent keys | Per-key spending limits | Roadmap (task 9) |
 | Euro in/out | Account number card (IBAN); SEP-24 test anchor; Bridge | **Simulated** IBAN card; real ramps: task 10 |
 | Confidential payments | Hidden amounts with auditor view | Roadmap (task 14) |
+| Demo admin | `/admin` (passphrase): site-wide demo mode with automatic fallback, health panel (RPC, testnet rent, contracts, operator floats), recent errors, sample reset | Real (operator tool, testnet only) |
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -106,6 +107,16 @@ A single Vercel project, Root Directory `app`, deploys production from `main` th
 Vercel Functions in `app/api/`: `/api/relay` sponsors fees for smart-account-kit submissions after fail-closed validation (allowlisted deployments, transfers and account calls, exact authorization matching, fee cap); `/api/test-money` sends 100 test USDC from the operator to an ancora smart account. The operator key is never a signer on any organization account.
 
 Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it: the WebAuthn RP ID is `ancora-gray.vercel.app`, so passkeys created on preview URLs or localhost will not work in production.
+
+## Demo admin
+
+`/admin` is an operator tool for the hackathon demo, not an end-user feature. It is gated by the `ADMIN_PASSPHRASE` environment variable (`scripts/setup-testnet.sh --sync-vercel` generates one and saves it to `app/.env.local`, gitignored). It can:
+
+- switch the **site-wide default** between sample data and the Stellar testnet. The testnet falls back to sample data automatically when the Stellar RPC or ancora's own server doesn't answer; the banner says so and offers a retry. People can still choose a source themselves in Settings;
+- show **health**: RPC (ledger, protocol, latency), testnet rent (live state vs. target, current stroops/KB), whether every contract ID this build uses exists, the operator's XLM and USDC floats, relayer origins;
+- list **recent errors** recorded in that browser, and reset the **sample data** in that browser.
+
+It uses the demo operator key, which is **not a signer on any organization account**: it cannot move organization funds or change organization rules. Reset, top-up and retry tools for testnet organizations arrive with task 13.
 
 ## Limitations
 

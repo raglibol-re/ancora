@@ -1,4 +1,4 @@
-import { testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
+import { listDeployments, testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
 import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import styles from "./TestnetDeployments.module.css";
@@ -15,13 +15,7 @@ export function TestnetDeployments() {
 		);
 	}
 	const rows: [string, string][] = [
-		["USDC (BlendUSDC)", testnetConfig.usdcToken],
-		["Reserve vault (DeFindex)", testnetConfig.defindexVault],
-		["Passkey verifier", testnetConfig.webauthnVerifier],
-		["Ed25519 verifier", testnetConfig.ed25519Verifier],
-		["Threshold policy", testnetConfig.thresholdPolicy],
-		["Spending-limit policy", testnetConfig.spendingLimitPolicy],
-		["Native XLM token", testnetConfig.nativeToken],
+		...listDeployments(testnetConfig).map((d): [string, string] => [d.label, d.id]),
 		["Demo operator (not a signer)", testnetConfig.deployerAddress],
 	];
 

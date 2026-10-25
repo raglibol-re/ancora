@@ -8,13 +8,13 @@
 flowchart LR
   subgraph Vercel["One Vercel project (root: app/)"]
     SPA["PWA: landing /, app /app/*, /admin"]
-    API["Vercel Functions /api/*<br/>(relayer proxy, ramps, admin, logo upload)"]
+    API["Vercel Functions /api/*<br/>(relay, test-money, health, admin)"]
   end
   Browser["Browser / installed PWA<br/>passkeys (WebAuthn)"] --> SPA
   SPA --> API
   SPA --> RPC["Stellar testnet RPC"]
   API --> RPC
-  API --> Blob["Vercel Blob (logos)"]
+  API --> Blob["Vercel Blob (demo mode, logos)"]
   RPC --> Contracts["Soroban contracts<br/>OZ smart account per org, policies, verifiers"]
 ```
 
@@ -49,6 +49,8 @@ Features never talk to the outside world directly. They use one `DataSource` int
 |----------------|-------|--------|
 | `SampleDataSource` | `app/src/adapters/sample/` | Labeled sample data; every command runs through the domain engine; persisted in browser storage. Stays as the demo fallback. |
 | `TestnetDataSource` | `app/src/adapters/testnet/` (lazy-loaded chunk) | Real on Stellar testnet: creating an organization deploys an OpenZeppelin smart account through smart-account-kit 0.8.0 with a passkey signer; balances are on-chain USDC; a fully approved payment is signed by a signer's passkey and sent. Public IDs come from `app/.env.testnet` (Vite `--mode testnet`). Shares `LocalDataSource`/`WorkspaceStore` with the sample adapter for rules, requests and history. |
+
+**Choosing the source.** On load the app asks `/api/health` (site-wide demo mode from Vercel Blob, plus whether the Stellar RPC answers; 4 s timeout). `resolveDataSource` combines that with the person's own preference (follow the site default, sample, or testnet): sample data never waits for the network; the testnet is used only when the build has its configuration and the RPC is reachable, otherwise sample data is shown with the reason in the banner and a retry. The demo admin (`/admin`, passphrase) sets the site-wide default and sees the health checks.
 
 UI state lives in `features/workspace` (snapshot via `useSyncExternalStore`, preferences, active org). `useCommand` gives every action the same UX: signature prompt → command → plain-language success or error.
 

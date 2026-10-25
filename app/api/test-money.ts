@@ -1,6 +1,6 @@
 import { Address, Contract, Keypair, nativeToScVal, StrKey } from "@stellar/stellar-sdk";
 import { tokenBalance } from "../shared/tokenBalance.js";
-import { postHandler, RequestError, readJsonObject } from "./_lib/http.js";
+import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer, isSmartAccount } from "./_lib/ledger.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
 
@@ -13,7 +13,7 @@ const MAX_BALANCE_FOR_GRANT = 5_000n * STROOPS_PER_USDC;
 
 export const config = { maxDuration: 60 };
 
-export default postHandler(async (request) => {
+export default apiHandler("POST", async (request) => {
 	const settings = serverConfig();
 	const { contractId } = await readJsonObject(request);
 	if (typeof contractId !== "string" || !StrKey.isValidContract(contractId)) {

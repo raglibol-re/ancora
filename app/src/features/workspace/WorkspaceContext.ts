@@ -2,9 +2,20 @@ import { createContext, useContext } from "react";
 import type { OrgAccount, Person, Workspace } from "../../domain/account.ts";
 import type { DataSource } from "../../domain/dataSource.ts";
 import type { Preferences } from "./preferences.ts";
+import type { DemoMode } from "./resolveDataSource.ts";
+
+export type SourceStatus = {
+	/** Site-wide default set by the demo admin; null while unknown. */
+	demoMode: DemoMode | null;
+	/** Set when the testnet was wanted but sample data is shown instead. */
+	fallbackReason: string | null;
+	/** Re-checks the site health and switches back to the testnet if it answers. */
+	retry: () => void;
+};
 
 export type WorkspaceValue = {
 	dataSource: DataSource;
+	sourceStatus: SourceStatus;
 	workspace: Workspace;
 	preferences: Preferences;
 	updatePreferences: (patch: Partial<Preferences>) => void;

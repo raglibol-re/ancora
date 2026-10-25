@@ -20,6 +20,13 @@ export function formatSignedMoney(cents: Cents, currency: Currency = "EUR"): str
 	return `${cents > 0 ? "+" : "−"}${formatMoney(Math.abs(cents), currency)}`;
 }
 
+/** On-chain token amounts (7-decimal stroops) for operator views: "9,853.50 XLM". */
+export function formatStroops(stroops: string, symbol: string): string {
+	const whole = Number(BigInt(stroops) / 10_000_000n);
+	const fraction = Number((BigInt(stroops) % 10_000_000n) / 100_000n);
+	return `${whole.toLocaleString(LOCALE)}.${String(fraction).padStart(2, "0")} ${symbol}`;
+}
+
 export function formatRate(basisPoints: number): string {
 	return `${(basisPoints / 100).toLocaleString(LOCALE, { minimumFractionDigits: 2 })}%`;
 }
