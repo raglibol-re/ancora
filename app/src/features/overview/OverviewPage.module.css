@@ -74,3 +74,72 @@
 	min-width: 5rem;
 	font-weight: var(--weight-semibold);
 }
+
+.eyebrow {
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.assetList {
+	display: flex;
+	flex-direction: column;
+	margin: 0 0 var(--space-3);
+	padding: 0;
+	list-style: none;
+}
+
+.assetRow {
+	display: grid;
+	grid-template-columns: auto 1fr auto auto;
+	align-items: center;
+	gap: var(--space-3);
+	width: 100%;
+	padding: var(--space-3) var(--space-2);
+	border: none;
+	border-bottom: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	background: none;
+	color: var(--color-text);
+	text-align: left;
+	cursor: pointer;
+}
+
+.assetRow:hover {
+	background: var(--color-bg);
+}
+
+.assetList li:last-child .assetRow {
+	border-bottom: none;
+}
+
+.assetText {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.assetSymbol {
+	font-weight: var(--weight-semibold);
+}
+
+.assetAmount {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	text-align: right;
+}
+
+.assetBalance {
+	font-family: var(--font-display);
+	font-size: var(--text-lg);
+	white-space: nowrap;
+}
+
+.chevron {
+	display: inline-flex;
+	color: var(--color-text-muted);
+	transform: rotate(-90deg);
+}
