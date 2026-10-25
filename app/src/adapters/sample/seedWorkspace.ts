@@ -41,8 +41,8 @@ function account(
 	name: string,
 	templateId: TemplateId,
 	members: [string, RoleId][],
-	rest: Omit<OrgAccount, "org" | "onchain" | "discussions"> &
-		Partial<Pick<OrgAccount, "discussions">>,
+	rest: Omit<OrgAccount, "org" | "onchain" | "discussions" | "budgets"> &
+		Partial<Pick<OrgAccount, "discussions" | "budgets">>,
 ): OrgAccount {
 	const template = templates[templateId];
 	const memberList: Member[] = members.map(([personId, roleId]) => ({ personId, roleId }));
@@ -65,6 +65,7 @@ function account(
 		},
 		onchain: null,
 		discussions: {},
+		budgets: [],
 		...rest,
 	};
 }
@@ -150,7 +151,7 @@ export function seedWorkspace(now: number): Workspace {
 					amount: euros(450),
 					recipientId: "boat-supplies",
 					recipientIsNew: false,
-					note: "Two pairs of sculling oars",
+					note: "Two pairs of sculling oars #equipment",
 				}),
 				payment("club", {
 					id: "req-regatta",
@@ -159,7 +160,7 @@ export function seedWorkspace(now: number): Workspace {
 					amount: euros(3_200),
 					recipientId: "regatta-assoc",
 					recipientIsNew: false,
-					note: "Spring regatta entry fees",
+					note: "Spring regatta entry fees #events",
 					approvals: [
 						{ personId: "tomas", at: now - 19 * HOUR },
 						{ personId: "marta", at: now - 18 * HOUR },
@@ -167,6 +168,22 @@ export function seedWorkspace(now: number): Workspace {
 					status: "scheduled",
 					executeAfter: now + 30 * HOUR,
 				}),
+				payment("club", {
+					id: "req-repairs",
+					requesterId: "ines",
+					createdAt: now - 4 * DAY,
+					amount: euros(640),
+					recipientId: "boat-supplies",
+					recipientIsNew: false,
+					note: "Hull repairs after the storm #equipment",
+					approvals: [{ personId: "tomas", at: now - 4 * DAY + HOUR }],
+					status: "executed",
+				}),
+			],
+			budgets: [
+				{ category: "equipment", amount: euros(1_500) },
+				{ category: "events", amount: euros(4_000) },
+				{ category: "travel", amount: euros(600) },
 			],
 			activity: [
 				entry({
@@ -185,7 +202,7 @@ export function seedWorkspace(now: number): Workspace {
 					actorId: "ines",
 					kind: "payment-out",
 					token: EURC,
-					amount: euros(180),
+					amount: euros(640),
 					payeeId: "boat-supplies",
 					txHash: null,
 				}),

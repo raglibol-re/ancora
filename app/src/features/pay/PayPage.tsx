@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { assetOf, isNewRecipient, type OrgAccount, primaryToken } from "../../domain/account.ts";
+import { withCategory } from "../../domain/budgets.ts";
 import { parseAmountInput } from "../../domain/money.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
@@ -35,6 +36,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 	const [newAccount, setNewAccount] = useState("");
 	const [amountInput, setAmountInput] = useState("");
 	const [note, setNote] = useState("");
+	const [category, setCategory] = useState("");
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	/** Per accepted token: null = can receive, a message = why not; absent = not checked yet. */
 	const [reachable, setReachable] = useState<Record<string, string | null>>({});
@@ -115,7 +117,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 							: { id: payeeId },
 					token,
 					amount,
-					note,
+					note: withCategory(note, category || null),
 				}),
 			{
 				signature: {
@@ -234,6 +236,27 @@ function PayForm({ account }: { account: OrgAccount }) {
 						amount={amount}
 						recipientIsNew={recipientIsNew}
 					/>
+					{account.budgets.length > 0 && (
+						<Field
+							label="Budget category"
+							htmlFor="category"
+							hint="Optional. Added to the reference as a tag so the payment counts against the budget."
+						>
+							<select
+								id="category"
+								className={controlClass}
+								value={category}
+								onChange={(e) => setCategory(e.target.value)}
+							>
+								<option value="">None</option>
+								{account.budgets.map((budget) => (
+									<option key={budget.category} value={budget.category}>
+										#{budget.category}
+									</option>
+								))}
+							</select>
+						</Field>
+					)}
 					<Field label="Reference" htmlFor="note" hint="Shown to approvers and on the statement.">
 						<input
 							id="note"

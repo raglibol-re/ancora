@@ -1,11 +1,13 @@
 import type { xdr } from "@stellar/stellar-sdk";
 import { StrKey } from "@stellar/stellar-sdk";
 import {
+	canManageTreasury,
 	type OrgAccount,
 	type Person,
 	shortAddress,
 	type Workspace,
 } from "../../domain/account.ts";
+import type { Budget } from "../../domain/budgets.ts";
 import type {
 	ChangeOutcome,
 	DataSource,
@@ -171,9 +173,10 @@ export class TestnetDataSource implements DataSource {
 		const me = this.me.id;
 		try {
 			const orgIds = await readOrganizationsOf(this.config, this.config.registryContract, me);
-			const [snapshots, threads] = await Promise.all([
+			const [snapshots, threads, budgetLists] = await Promise.all([
 				Promise.all(orgIds.map((id) => readOrganization(this.config, id))),
 				Promise.all(orgIds.map((id) => this.loadDiscussions(id))),
+				Promise.all(orgIds.map((id) => this.loadBudgets(id))),
 			]);
 			const everyone = new Set<string>([me]);
 			for (const snapshot of snapshots) {
@@ -190,6 +193,7 @@ export class TestnetDataSource implements DataSource {
 					(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
 				),
 				discussions: threads[index] ?? {},
+				budgets: budgetLists[index] ?? [],
 			}));
 			const people: Person[] = [...everyone].map((id) => ({
 				id,
@@ -455,6 +459,35 @@ export class TestnetDataSource implements DataSource {
 			threads[entry.requestId] = thread;
 		}
 		return threads;
+	}
+
+	/** The organization's budgets from ancora's server; none when it can't be reached. */
+	private async loadBudgets(orgId: string): Promise<Budget[]> {
+		const response = await fetch(`/api/budgets?org=${encodeURIComponent(orgId)}`).catch(() => null);
+		const payload = (await response?.json().catch(() => null)) as {
+			data?: { budgets?: Budget[] };
+		} | null;
+		return payload?.data?.budgets ?? [];
+	}
+
+	async saveBudgets(
+		orgId: string,
+		actorId: PersonId,
+		budgets: readonly Budget[],
+	): Promise<Result<void, RuleError>> {
+		const account = this.account(orgId);
+		if (account && !canManageTreasury(account.org, actorId)) {
+			return err(
+				ruleError(
+					"not-allowed",
+					"Only the top role or a strictest-tier approver sets the budgets.",
+				),
+			);
+		}
+		const response = await this.post("/api/budgets", { org: orgId, person: actorId, budgets });
+		if (!response.ok) return response;
+		await this.refresh();
+		return ok(undefined);
 	}
 
 	private async discuss(body: Record<string, unknown>): Promise<Result<void, RuleError>> {

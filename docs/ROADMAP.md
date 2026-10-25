@@ -18,7 +18,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 9 | Crew / agent keys with spending limits | Done, natively in the organization contract (see DECISIONS: why not OZ `spending_limit`) |
 | 10 | Bank in/out: SEP-24 with the SDF test anchor (real on testnet); a licensed euro anchor or Bridge later | Done for deposits and the withdrawal request (see below) |
 | 11 | Organization logo in Vercel Blob with the URL on the organization contract | Done |
-| 12 | Budgets and bookkeeping | Planned |
+| 12 | Budgets and bookkeeping | Done: monthly budgets per category (off-chain plans), spend from tagged references, CSV statement |
 | 13 | Demo admin: reset, top-up, retry stuck requests | Done: sample reset, XLM top-up from Friendbot in /admin, per-asset floats in health; due requests are sent with "Send now" by any member |
 | 14 | Confidential pot + auditor view stub | Documented only (no placeholder UI): see Later |
 | 15 | Integrate the Claude Design package | Done (brand, icons, tokens) |
@@ -47,6 +47,18 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 
 - `contracts/seal_verifier`: ML-DSA-44 (FIPS 204) verification in a 15 KB Soroban contract with OpenZeppelin's external-verifier interface; shared vector from `@noble/post-quantum`; deployed once by the setup script and checked on-chain (valid → true, tampered → false).
 - Still to do (SCF milestone): generate the ML-DSA key on the approving device, store it in the browser's IndexedDB (non-extractable where the platform allows), add it to the person's smart account as an external signer on a context rule that only covers `seal`, and sign the seal with it; swap the verifier body for the native host function after Protocol 30.
+
+### Task 9 as built: spending limits for crew and agent keys
+
+A member can carry a spending limit: an amount per day, week or 30 days in the rules' currency, granted or removed through the governance change `SetSpendingLimit` (a request after the setup phase, like any rule change). A payment inside the requester's remaining allowance executes at once and is booked against a rolling window in the organization contract; beyond it, or in another currency, the normal rules apply. An agent is a member whose key has a limit: any address that can authorize can be added. The Rules page shows what is left per person and lets the top role edit limits; the Send page says when a payment fits.
+
+### Task 10 as built: bank in and out through a Stellar anchor
+
+`adapters/testnet/anchorRamp.ts` speaks SEP-1, SEP-10 and SEP-24 with the anchor named by `VITE_ANCHOR_HOME_DOMAIN` (the SDF test anchor, which pays out test USDC). The person's wallet signs the anchor's challenge; the anchor's hosted form takes the bank details; ancora follows the transaction status. Deposits land in the wallet and move on to the organization through the existing wallet funding; a withdrawal turns the anchor's instructions (account and reference) into a payment request from the organization, so it follows the rules. Verified: the protocol end-to-end with a keypair; not yet: the hosted form in a browser session and the anchor's payout after the organization pays. A euro anchor or Bridge needs KYB and comes with the licensed partner.
+
+### Task 12 as built: budgets and the statement
+
+Budgets are monthly plans per category in the home currency, kept off-chain per organization (`/api/budgets`, Vercel Blob) and edited by whoever may manage the treasury. A payment counts against a budget when its reference carries the category as a tag (`Oars #equipment`); the Send page offers the tag. Spend is read from executed on-chain requests, so the books can be rebuilt from the chain plus one small file. "Download statement (CSV)" on the Activity card exports executed payments, deposits and Reserve moves with references and categories. Not enforced: the rules do that; budget enforcement is a later rules feature.
 
 ### Task 16: discussions on approval requests
 

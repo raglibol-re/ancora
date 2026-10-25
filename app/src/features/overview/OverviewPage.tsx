@@ -22,6 +22,7 @@ import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AccountNumberCard } from "./AccountNumberCard.tsx";
 import { ActivityList } from "./ActivityList.tsx";
 import { AssetSheet } from "./AssetSheet.tsx";
+import { BudgetsCard } from "./BudgetsCard.tsx";
 import styles from "./OverviewPage.module.css";
 import { describeAsset, TokenBadge } from "./TokenBadge.tsx";
 
@@ -143,6 +144,8 @@ function Overview({ account }: { account: OrgAccount }) {
 					))}
 				</section>
 			)}
+
+			<BudgetsCard account={account} />
 
 			<div className={styles.grid}>
 				<ActivityList account={account} />

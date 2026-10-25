@@ -1,3 +1,4 @@
+import type { Budget } from "./budgets.ts";
 import type { DiscussionEntry } from "./discussion.ts";
 import type { Cents, Currency } from "./money.ts";
 import { err, ok, type Result } from "./result.ts";
@@ -85,6 +86,8 @@ export type OrgAccount = {
 	activity: readonly ActivityEntry[];
 	/** Discussion entries per request id (off-chain; see docs/DECISIONS.md). */
 	discussions: Readonly<Record<string, readonly DiscussionEntry[]>>;
+	/** Monthly budgets per category (off-chain plans; see docs/DECISIONS.md). */
+	budgets: readonly Budget[];
 };
 
 /** The discussion on one request; tolerant of accounts stored before discussions existed. */

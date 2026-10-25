@@ -13,6 +13,7 @@ import {
 	type Workspace,
 	withdrawFromReserve,
 } from "../../domain/account.ts";
+import type { Budget } from "../../domain/budgets.ts";
 import type {
 	AssetOption,
 	ChangeOutcome,
@@ -186,8 +187,23 @@ export class LocalDataSource implements DataSource {
 			requests: [],
 			activity: [],
 			discussions: {},
+			budgets: [],
 		});
 		return ok(id);
+	}
+
+	async saveBudgets(orgId: string, actorId: PersonId, budgets: readonly Budget[]) {
+		return this.store.mutate(orgId, (account) => {
+			if (!canManageTreasury(account.org, actorId)) {
+				return err(
+					ruleError(
+						"not-allowed",
+						"Only the top role or a strictest-tier approver sets the budgets.",
+					),
+				);
+			}
+			return ok({ ...account, budgets: [...budgets] });
+		});
 	}
 
 	private async mutateThread(

@@ -2,7 +2,7 @@ import { LocalDataSource } from "../local/localDataSource.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
 import { SAMPLE_ASSETS, seedWorkspace } from "./seedWorkspace.ts";
 
-export const SAMPLE_STORAGE_KEY = "ancora.sample.v5";
+export const SAMPLE_STORAGE_KEY = "ancora.sample.v6";
 
 /**
  * Labeled demo data that behaves like the real thing: every command goes through the domain

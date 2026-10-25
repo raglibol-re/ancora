@@ -5,13 +5,27 @@ import { formatDateTime, formatMoney, formatSignedMoney } from "../../ui/format.
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ActivityList.module.css";
 import { describeActivity } from "./describeActivity.ts";
+import { downloadStatement } from "./downloadStatement.ts";
 
 export function ActivityList({ account }: { account: OrgAccount }) {
 	const { personName } = useWorkspace();
 	const entries = account.activity.slice(0, 12);
 
 	return (
-		<Card title="Activity">
+		<Card
+			title="Activity"
+			action={
+				account.activity.length > 0 && (
+					<button
+						type="button"
+						className={styles.export}
+						onClick={() => downloadStatement(account, personName)}
+					>
+						Download statement (CSV)
+					</button>
+				)
+			}
+		>
 			{entries.length === 0 ? (
 				<p className={styles.empty}>
 					Nothing yet. Deposits, payments and changes will appear here.

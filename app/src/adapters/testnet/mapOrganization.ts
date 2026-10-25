@@ -362,5 +362,6 @@ export function mapOrganization(
 		requests,
 		activity,
 		discussions: {},
+		budgets: [],
 	};
 }
