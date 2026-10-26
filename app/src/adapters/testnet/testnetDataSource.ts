@@ -24,6 +24,7 @@ import type {
 import type { DiscussionEntry } from "../../domain/discussion.ts";
 import type { RecoveryPlan } from "../../domain/lifeline.ts";
 import type { Cents } from "../../domain/money.ts";
+import { withWork } from "../../domain/pendingWork.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
@@ -422,9 +423,10 @@ export class TestnetDataSource implements DataSource {
 			return failed("Enter a name of up to 64 characters.");
 		}
 		try {
-			const wallet = await this.kit.createWallet("ancora", passkeyUserName(trimmed), {
-				autoSubmit: true,
-			});
+			const wallet = await withWork(
+				"Creating your pass on Stellar… confirm with your passkey.",
+				() => this.kit.createWallet("ancora", passkeyUserName(trimmed), { autoSubmit: true }),
+			);
 			if (wallet.submitResult && !wallet.submitResult.success) {
 				return failed(
 					`Your account couldn't be created on Stellar: ${wallet.submitResult.error.message}`,
@@ -447,7 +449,9 @@ export class TestnetDataSource implements DataSource {
 
 	private async signIn(): Promise<Result<Identity, RuleError>> {
 		try {
-			const session = await this.kit.connectWallet({ fresh: true });
+			const session = await withWork("Waiting for your passkey…", () =>
+				this.kit.connectWallet({ fresh: true }),
+			);
 			if (!session) return failed("No passkey was chosen.");
 			await this.becomeIdentity(session.contractId);
 			return this.me ? ok(this.me) : failed("Signing in didn't complete. Try again.");
@@ -784,7 +788,7 @@ export class TestnetDataSource implements DataSource {
 				passkeyUserName(label),
 				{ nickname: label },
 			);
-			const result = await this.kit.signAndSubmitAdmin(transaction);
+			const result = await withWork(SIGNING, () => this.kit.signAndSubmitAdmin(transaction));
 			if (!result.success) return failed(describeKitError(result.error, "added"));
 			this.memo.delete("passkeys");
 			return ok(undefined);
@@ -801,7 +805,7 @@ export class TestnetDataSource implements DataSource {
 		describeContractError: (message: string) => string = contractMessage,
 	): Promise<Result<void, RuleError>> {
 		try {
-			const result = await this.kit.executeAndSubmit(target, fn, args);
+			const result = await withWork(SIGNING, () => this.kit.executeAndSubmit(target, fn, args));
 			if (!result.success) return failed(describeContractError(result.error.message));
 		} catch (error) {
 			return failed(describeKitError(error, "done"));
@@ -830,15 +834,23 @@ export class TestnetDataSource implements DataSource {
 		}
 	}
 
+	/**
+	 * Calls one of ancora's own routes. Most of them submit a transaction for the organization
+	 * (creation, due requests, standing orders, test money, recovery), so the working bar shows
+	 * "Sending to Stellar"; the off-chain stores (discussions, registry names) only say "Saving".
+	 */
 	private async post<T = unknown>(
 		path: string,
 		body: Record<string, unknown>,
 	): Promise<Result<T, RuleError>> {
-		const response = await fetch(path, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(body),
-		}).catch(() => null);
+		const label = OFF_CHAIN_ROUTES.has(path) ? "Saving…" : "Sending to Stellar…";
+		const response = await withWork(label, () =>
+			fetch(path, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body),
+			}).catch(() => null),
+		);
 		const payload = (await response?.json().catch(() => null)) as {
 			success?: boolean;
 			data?: T;
@@ -852,6 +864,10 @@ export class TestnetDataSource implements DataSource {
 		return ok(payload.data);
 	}
 }
+
+/** Shown on the working bar while the passkey signs and the transaction travels to Stellar. */
+const SIGNING = "Sending to Stellar… confirm with your passkey if asked.";
+const OFF_CHAIN_ROUTES = new Set(["/api/discussions", "/api/registry-name"]);
 
 /** Turns the kit's "Error(Contract, #6)" into the organization contract's plain-language text. */
 function contractMessage(message: string): string {

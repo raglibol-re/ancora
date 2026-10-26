@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import { recordError } from "../../adapters/local/recentErrors.ts";
+import { beginWork } from "../../domain/pendingWork.ts";
 import type { Result } from "../../domain/result.ts";
 import type { RuleError } from "../../domain/rules/model.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { type SignaturePrompt, useConfirmSignature } from "../passkey/PasskeyContext.ts";
-import { beginCommand } from "./pendingCommands.ts";
 import { browserStorage } from "./preferences.ts";
 import { useWorkspace } from "./WorkspaceContext.ts";
 
@@ -37,13 +37,9 @@ export function useCommand() {
 				options.signature && (dataSource.kind === "sample" || options.signature.kind === "seal");
 			if (simulated && options.signature && !(await confirm(options.signature))) return null;
 			setBusy(true);
-			// The shell shows a working bar meanwhile: a passkey prompt and a Stellar transaction
-			// take a few seconds, and silence would read as nothing happening.
-			const done = beginCommand(
-				dataSource.kind === "sample"
-					? "Working…"
-					: "Sending to Stellar… confirm with your passkey if asked.",
-			);
+			// The shell shows a working bar meanwhile; the testnet adapter names the step (passkey,
+			// transaction) while one is in flight, so a wait never reads as nothing happening.
+			const done = beginWork("Working…");
 			let result: Result<T, RuleError>;
 			try {
 				result = await command();

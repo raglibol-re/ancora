@@ -2,9 +2,9 @@ import { usePendingCommand } from "../features/workspace/pendingCommands.ts";
 import styles from "./WorkingBar.module.css";
 
 /**
- * A thin moving line under the top bar and a short status while a command runs: a passkey
- * prompt, a transaction on its way to Stellar. Appears after a moment so instant commands
- * don't flash it; with reduced motion the line glows instead of moving.
+ * A thin moving line under the top bar and a short status while anything runs in the
+ * background: a passkey prompt, a wallet signing, a transaction on its way to Stellar. Appears
+ * after a moment so instant commands don't flash it; with reduced motion the line glows.
  */
 export function WorkingBar() {
 	const label = usePendingCommand();

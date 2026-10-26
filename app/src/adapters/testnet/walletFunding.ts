@@ -3,6 +3,7 @@ import { tokenBalance } from "../../../shared/tokenBalance.ts";
 import { shortAddress } from "../../domain/account.ts";
 import type { ConnectedWallet } from "../../domain/dataSource.ts";
 import type { Cents } from "../../domain/money.ts";
+import { withWork } from "../../domain/pendingWork.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import { type RuleError, ruleError } from "../../domain/rules/model.ts";
 import type { Network } from "./readContract.ts";
@@ -128,12 +129,14 @@ export async function depositFromWallet(
 	}
 	let signedXdr: string;
 	try {
-		signedXdr = await signWithWallet(prepared.toXDR(), network.networkPassphrase, from);
+		signedXdr = await withWork("Waiting for your wallet to sign…", () =>
+			signWithWallet(prepared.toXDR(), network.networkPassphrase, from),
+		);
 	} catch (error) {
 		return failed(describe(error, "The wallet didn't sign the transfer."));
 	}
-	const sent = await server.sendTransaction(
-		TransactionBuilder.fromXDR(signedXdr, network.networkPassphrase),
+	const sent = await withWork("Sending to Stellar…", () =>
+		server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, network.networkPassphrase)),
 	);
 	if (sent.status === "ERROR") {
 		return failed(
