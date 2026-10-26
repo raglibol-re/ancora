@@ -7,7 +7,11 @@ import {
 	useSyncExternalStore,
 } from "react";
 import { SampleDataSource } from "../../adapters/sample/sampleDataSource.ts";
-import { fetchSiteHealth } from "../../adapters/site/siteHealth.ts";
+import {
+	fetchSiteHealth,
+	loadCachedHealth,
+	saveCachedHealth,
+} from "../../adapters/site/siteHealth.ts";
 import { testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
 import { accountsOf, type Person, shortAddress } from "../../domain/account.ts";
 import type { DataSource } from "../../domain/dataSource.ts";
@@ -43,14 +47,22 @@ const REFRESH_MS = 30_000;
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const [preferences, setPreferences] = useState(() => loadPreferences(storage));
-	const [health, setHealth] = useState<SiteHealth | null>(null);
+	// A remembered healthy answer starts the app at once; the live check follows behind.
+	const [health, setHealth] = useState<SiteHealth | null>(() => loadCachedHealth(storage));
 	const [testnetSource, setTestnetSource] = useState(testnet);
 
 	const checkHealth = useCallback(() => {
-		setHealth(null);
-		void fetchSiteHealth().then(setHealth);
+		void fetchSiteHealth().then((answer) => {
+			saveCachedHealth(storage, answer);
+			setHealth(answer);
+		});
 	}, []);
 	useEffect(checkHealth, [checkHealth]);
+
+	// The testnet adapter (SDK, passkey kit) downloads while the health check runs.
+	useEffect(() => {
+		if (testnetConfig && preferences.dataSource !== "sample" && !testnet) void loadTestnet();
+	}, [preferences.dataSource]);
 
 	const resolution = resolveDataSource(preferences.dataSource, health, testnetConfig !== null);
 	const wantsTestnet = resolution?.effective === "testnet";

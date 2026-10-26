@@ -47,6 +47,7 @@ import { passkeyUserName } from "./passkeyUserName.ts";
 import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
 import { address, bool, changeToScVal, i128, optionalSymbol, text, toStroops, u64 } from "./scv.ts";
+import { clearCachedSession, loadCachedSession, saveCachedSession } from "./sessionCache.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
 import { inspectToken } from "./tokenInspect.ts";
 
@@ -73,7 +74,10 @@ export class TestnetDataSource implements DataSource {
 	readonly funding: FundingSupport;
 	readonly ramps: RampSupport;
 	readonly lifeline: LifelineSupport = {
-		overview: (person) => this.readLifeline((c) => readOverview(c, c.recoveryContract, person)),
+		overview: (person) =>
+			this.remember(`lifeline:${person}`, 20_000, () =>
+				this.readLifeline((c) => readOverview(c, c.recoveryContract, person)),
+			),
 		claimOf: (person) => this.readLifeline((c) => readClaimStatus(c, c.recoveryContract, person)),
 		setPlan: (person, plan: RecoveryPlan) =>
 			this.invokeRecovery("set_plan", setPlanArgs(person, plan)),
@@ -108,12 +112,23 @@ export class TestnetDataSource implements DataSource {
 	private snapshot: Workspace = EMPTY;
 	private me: Identity | null = null;
 	private restoringSession = true;
+	private syncingChain = false;
 	private profiles = new Map<string, Profile | null>();
+	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
+	private readonly memo = new Map<string, { at: number; value: Promise<unknown> }>();
 
 	constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
 		this.storage = storage;
 		this.config = config;
 		this.availableAssets = parseAssetOptions(config.orgAssets);
+		// What this device saw last time shows at once; the chain is read again right after.
+		const cached = loadCachedSession(storage);
+		if (cached) {
+			this.me = cached.me;
+			this.snapshot = cached.workspace;
+			this.profiles = new Map(cached.profiles);
+			this.restoringSession = false;
+		}
 		// Stellar Wallets Kit and the wallet SDKs load only when someone funds from a wallet.
 		const funding = () => import("./walletFunding.ts");
 		this.funding = {
@@ -145,6 +160,7 @@ export class TestnetDataSource implements DataSource {
 		};
 		this.identity = {
 			restoring: () => this.restoringSession,
+			syncing: () => this.syncingChain,
 			current: () => this.me,
 			createIdentity: (name) => this.createIdentity(name),
 			signIn: () => this.signIn(),
@@ -173,18 +189,46 @@ export class TestnetDataSource implements DataSource {
 	}
 
 	private async restore() {
+		const cachedId = this.me?.id ?? null;
 		try {
-			const session = await Promise.race([
-				this.kit.connectWallet(),
-				new Promise<null>((resolve) => setTimeout(() => resolve(null), RESTORE_TIMEOUT_MS)),
+			// The passkey session check and the chain reads don't depend on each other.
+			const [session] = await Promise.all([
+				Promise.race([
+					this.kit.connectWallet(),
+					new Promise<null>((resolve) => setTimeout(() => resolve(null), RESTORE_TIMEOUT_MS)),
+				]),
+				cachedId ? this.refresh() : Promise.resolve(),
 			]);
-			if (session) await this.becomeIdentity(session.contractId);
+			if (session && session.contractId !== cachedId) {
+				await this.becomeIdentity(session.contractId);
+			} else if (!session && cachedId) {
+				// The cache belonged to a session this device no longer has.
+				this.forget();
+			}
 		} catch {
 			// No usable session on this device: the sign-in page takes over.
+			if (cachedId) this.forget();
 		} finally {
 			this.restoringSession = false;
 			this.notify();
 		}
+	}
+
+	private forget() {
+		this.me = null;
+		this.snapshot = EMPTY;
+		this.profiles = new Map();
+		this.memo.clear();
+		clearCachedSession(this.storage);
+	}
+
+	/** Reuses an in-flight or recent read for `ttlMs`, so parallel screens cost one request. */
+	private remember<T>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
+		const hit = this.memo.get(key);
+		if (hit && Date.now() - hit.at < ttlMs) return hit.value as Promise<T>;
+		const value = load();
+		this.memo.set(key, { at: Date.now(), value });
+		return value;
 	}
 
 	private async becomeIdentity(id: string) {
@@ -204,6 +248,8 @@ export class TestnetDataSource implements DataSource {
 			return;
 		}
 		const me = this.me.id;
+		this.syncingChain = true;
+		this.notify();
 		try {
 			const orgIds = await readOrganizationsOf(this.config, this.config.registryContract, me);
 			const [snapshots, threads] = await Promise.all([
@@ -232,6 +278,13 @@ export class TestnetDataSource implements DataSource {
 				avatarUrl: this.profiles.get(id)?.avatarUrl ?? null,
 			}));
 			this.snapshot = { people, accounts };
+			if (this.me?.id === me) {
+				saveCachedSession(this.storage, {
+					me: this.me,
+					workspace: this.snapshot,
+					profiles: [...this.profiles.entries()],
+				});
+			}
 		} catch (error) {
 			// A failed poll keeps the last snapshot; the health check handles a dead RPC.
 			recordError(this.storage, {
@@ -240,6 +293,7 @@ export class TestnetDataSource implements DataSource {
 				message: error instanceof Error ? error.message : String(error),
 			});
 		}
+		this.syncingChain = false;
 		this.notify();
 	}
 
@@ -285,8 +339,7 @@ export class TestnetDataSource implements DataSource {
 
 	private async signOut(): Promise<void> {
 		await this.kit.disconnect();
-		this.me = null;
-		this.snapshot = EMPTY;
+		this.forget();
 		this.notify();
 	}
 
@@ -553,13 +606,15 @@ export class TestnetDataSource implements DataSource {
 		return rule;
 	}
 
-	private async passkeyCount(): Promise<Result<number, RuleError>> {
-		try {
-			const rule = await this.everydayRule();
-			return ok(rule.signers.filter((signer) => signer.tag === "External").length);
-		} catch (error) {
-			return failed(describeKitError(error, "read"));
-		}
+	private passkeyCount(): Promise<Result<number, RuleError>> {
+		return this.remember("passkeys", 60_000, async () => {
+			try {
+				const rule = await this.everydayRule();
+				return ok(rule.signers.filter((signer) => signer.tag === "External").length);
+			} catch (error) {
+				return failed(describeKitError(error, "read"));
+			}
+		});
 	}
 
 	private async addPasskey(label: string): Promise<Result<void, RuleError>> {
@@ -573,6 +628,7 @@ export class TestnetDataSource implements DataSource {
 			);
 			const result = await this.kit.signAndSubmitAdmin(transaction);
 			if (!result.success) return failed(describeKitError(result.error, "added"));
+			this.memo.delete("passkeys");
 			return ok(undefined);
 		} catch (error) {
 			return failed(describeKitError(error, "added"));
@@ -596,8 +652,10 @@ export class TestnetDataSource implements DataSource {
 		return ok(undefined);
 	}
 
-	private invokeRecovery(fn: string, args: xdr.ScVal[]): Promise<Result<void, RuleError>> {
-		return this.invoke(this.config.recoveryContract, fn, args, recoveryMessage);
+	private async invokeRecovery(fn: string, args: xdr.ScVal[]): Promise<Result<void, RuleError>> {
+		const result = await this.invoke(this.config.recoveryContract, fn, args, recoveryMessage);
+		for (const key of this.memo.keys()) if (key.startsWith("lifeline:")) this.memo.delete(key);
+		return result;
 	}
 
 	private async readLifeline<T>(

@@ -162,6 +162,8 @@ export type ProfileInput = { name: string; avatarUrl: string | null };
 export interface IdentitySupport {
 	/** True while a stored session is being restored after load. */
 	restoring(): boolean;
+	/** True while the chain is being read again behind data shown from this device's cache. */
+	syncing(): boolean;
 	current(): Identity | null;
 	createIdentity(name: string): Promise<Result<Identity, RuleError>>;
 	signIn(): Promise<Result<Identity, RuleError>>;

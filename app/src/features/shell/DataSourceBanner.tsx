@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { Link } from "react-router";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./DataSourceBanner.module.css";
@@ -5,6 +6,10 @@ import styles from "./DataSourceBanner.module.css";
 /** Always visible in the app, so nobody mistakes sample data or test money for the real thing. */
 export function DataSourceBanner() {
 	const { dataSource, me, sourceStatus } = useWorkspace();
+	const syncing = useSyncExternalStore(
+		dataSource.subscribe,
+		() => dataSource.identity?.syncing() ?? false,
+	);
 	if (sourceStatus.fallbackReason) {
 		return (
 			<p className={styles.banner}>
@@ -22,7 +27,7 @@ export function DataSourceBanner() {
 			<p className={`${styles.banner} ${styles.testnet}`}>
 				<span>
 					<strong>Stellar testnet:</strong> real transactions with test money; the rules run in your
-					organization's contract. Signed in as {me.name}.
+					organization's contract. Signed in as {me.name}.{syncing ? " Updating from Stellar…" : ""}
 				</span>
 				<Link to="/app/me#data-source">Change</Link>
 			</p>
