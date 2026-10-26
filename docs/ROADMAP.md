@@ -112,7 +112,7 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 
 - Switch the security seal from the in-contract ML-DSA verifier to the native ML-DSA host function after Protocol 30 "Bell" (mainnet vote 23 Nov 2026).
 - Lifeline in full (inactivity path, succession plans, professional guardians).
-- Licensed ramp partner integration (EUR IBAN/SEPA, USD/ACH) in production mode.
+- Licensed ramp partner integration (EUR IBAN/SEPA, USD/ACH) in production mode, and cash in and out through MoneyGram Access (SEP-24 like the test anchor, so `anchorRamp.ts` takes a second home domain) for organizations that handle cash.
 - Security review of the organization, registry and recovery contracts; mainnet readiness.
 
 ## Outlook
