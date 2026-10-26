@@ -44,6 +44,10 @@ pub enum Error {
     BudgetExceeded = 30,
     /// The rules have no budget for this category.
     UnknownBudget = 31,
+    /// The request is not an escrowed payment waiting for confirmations.
+    NotEscrowed = 32,
+    /// Only the recipient, the requester or an eligible approver act on an escrow.
+    NotEscrowParty = 33,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -202,6 +206,8 @@ pub struct Payment {
     pub memo: String,
     /// The budget category this payment counts against, if any.
     pub category: Option<Symbol>,
+    /// Held after approval until the recipient and the sender's side both confirm.
+    pub escrow: bool,
 }
 
 #[contracttype]
@@ -220,6 +226,16 @@ pub enum Status {
     Executed,
     Declined,
     Failed,
+    /// Approved and funded, held until both the recipient and the sender's side confirm.
+    Escrowed,
+}
+
+/// Who has confirmed an escrowed payment so far.
+#[contracttype]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct EscrowState {
+    pub recipient_ok: bool,
+    pub sender_ok: bool,
 }
 
 #[contracttype]

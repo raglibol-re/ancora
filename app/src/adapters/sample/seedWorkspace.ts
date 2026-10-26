@@ -87,7 +87,12 @@ type SeedPayment = Pick<
 	PaymentRequest,
 	"id" | "requesterId" | "createdAt" | "amount" | "recipientId" | "recipientIsNew" | "note"
 > &
-	Partial<Pick<PaymentRequest, "approvals" | "status" | "executeAfter" | "category">>;
+	Partial<
+		Pick<
+			PaymentRequest,
+			"approvals" | "status" | "executeAfter" | "category" | "escrow" | "escrowConfirmed"
+		>
+	>;
 
 function payment(templateId: TemplateId, fields: SeedPayment): PaymentRequest {
 	return {
@@ -103,6 +108,8 @@ function payment(templateId: TemplateId, fields: SeedPayment): PaymentRequest {
 		failure: null,
 		executionRef: null,
 		category: null,
+		escrow: false,
+		escrowConfirmed: null,
 		...fields,
 	};
 }
@@ -179,6 +186,20 @@ export function seedWorkspace(now: number): Workspace {
 					],
 					status: "scheduled",
 					executeAfter: now + 30 * HOUR,
+				}),
+				payment("club", {
+					id: "req-boat-deposit",
+					requesterId: "ines",
+					createdAt: now - DAY,
+					amount: euros(1_200),
+					recipientId: "boat-supplies",
+					recipientIsNew: false,
+					note: "Deposit for the new coxless four",
+					category: "equipment",
+					approvals: [{ personId: "tomas", at: now - DAY + HOUR }],
+					status: "escrowed",
+					escrow: true,
+					escrowConfirmed: { recipient: true, sender: false },
 				}),
 				payment("club", {
 					id: "req-repairs",

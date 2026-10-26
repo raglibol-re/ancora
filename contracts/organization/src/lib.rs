@@ -77,6 +77,8 @@ enum DataKey {
     Limit(Address),
     /// Spent per budget category in the running window.
     BudgetUse(Symbol),
+    /// Confirmations of an escrowed payment, by request id.
+    Escrow(u64),
     Request(u64),
     Paid(Address),
 }
@@ -466,6 +468,7 @@ impl Organization {
     /// A token of another currency than the rules' takes the strictest tier and the seal.
     ///
     /// Auth: `by`, a member.
+    #[allow(clippy::too_many_arguments)]
     pub fn propose_payment(
         e: &Env,
         by: Address,
@@ -474,6 +477,7 @@ impl Organization {
         amount: i128,
         memo: String,
         category: Option<Symbol>,
+        escrow: bool,
     ) -> Result<u64, Error> {
         by.require_auth();
         extend_instance(e);
@@ -524,6 +528,7 @@ impl Organization {
                 amount,
                 memo,
                 category,
+                escrow,
             }),
             by,
             evaluation,
@@ -694,6 +699,78 @@ impl Organization {
         save_request(e, &executed);
         Ok(())
     }
+
+    /// Confirms an escrowed payment: the recipient confirms on their side, the requester or an
+    /// eligible approver confirms release. Once both have, the money goes out.
+    ///
+    /// Auth: `by`.
+    pub fn confirm_escrow(e: &Env, by: Address, id: u64) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        let mut request = load_request(e, id)?;
+        let RequestKind::Payment(payment) = request.kind.clone() else {
+            return Err(Error::NotEscrowed);
+        };
+        if request.status != Status::Escrowed {
+            return Err(Error::NotEscrowed);
+        }
+        let mut state = load_escrow(e, id);
+        if by == payment.to {
+            state.recipient_ok = true;
+        } else if is_sender_side(e, &info, &request, &by) {
+            state.sender_ok = true;
+        } else {
+            return Err(Error::NotEscrowParty);
+        }
+        if state.recipient_ok && state.sender_ok {
+            pay_out(e, &payment);
+            request.status = Status::Executed;
+            request.decided_by = Some(by);
+            e.storage().persistent().remove(&DataKey::Escrow(id));
+        } else {
+            let key = DataKey::Escrow(id);
+            e.storage().persistent().set(&key, &state);
+            e.storage()
+                .persistent()
+                .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+        }
+        save_request(e, &request);
+        Ok(())
+    }
+
+    /// Cancels an escrowed payment and frees the money. The sender's side decides; a recipient
+    /// who disagrees simply doesn't confirm.
+    ///
+    /// Auth: `by`, the requester or an eligible approver.
+    pub fn cancel_escrow(e: &Env, by: Address, id: u64) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        let mut request = load_request(e, id)?;
+        if request.status != Status::Escrowed {
+            return Err(Error::NotEscrowed);
+        }
+        if !is_sender_side(e, &info, &request, &by) {
+            return Err(Error::NotEscrowParty);
+        }
+        if let RequestKind::Payment(payment) = &request.kind {
+            add_committed(e, &payment.token, -payment.amount);
+            release_budget(e, &info, payment);
+        }
+        request.status = Status::Declined;
+        request.decided_by = Some(by);
+        e.storage().persistent().remove(&DataKey::Escrow(id));
+        save_request(e, &request);
+        Ok(())
+    }
+
+    /// Who has confirmed an escrowed payment so far.
+    ///
+    /// Auth: none (read).
+    pub fn escrow(e: &Env, id: u64) -> EscrowState {
+        load_escrow(e, id)
+    }
 }
 
 /// Read-only AccessControl entry points (`has_role`, member enumeration). The admin is the
@@ -740,6 +817,36 @@ fn save_request(e: &Env, request: &Request) {
         status: request.status as u32,
     }
     .publish(e);
+}
+
+/// Moves the money: the contract is the direct invoker of the token, so its own authorization
+/// is implied.
+fn pay_out(e: &Env, payment: &Payment) {
+    token::Client::new(e, &payment.token).transfer(
+        &e.current_contract_address(),
+        &payment.to,
+        &payment.amount,
+    );
+    add_committed(e, &payment.token, -payment.amount);
+    e.storage()
+        .persistent()
+        .set(&DataKey::Paid(payment.to.clone()), &true);
+}
+
+fn load_escrow(e: &Env, id: u64) -> EscrowState {
+    e.storage()
+        .persistent()
+        .get(&DataKey::Escrow(id))
+        .unwrap_or_default()
+}
+
+/// The requester, or anyone whose role could have approved the request.
+fn is_sender_side(e: &Env, info: &OrgInfo, request: &Request, who: &Address) -> bool {
+    if *who == request.requester {
+        return true;
+    }
+    let rank = rules::rank_of_member(&ranked(e, &info.roles), who);
+    rules::is_eligible(&info.roles, &request.evaluation.approvals, rank)
 }
 
 fn new_request(e: &Env, kind: RequestKind, requester: Address, evaluation: Evaluation) -> Request {
@@ -904,17 +1011,13 @@ fn settle(e: &Env, mut request: Request, info: &OrgInfo) -> Request {
 fn execute_now(e: &Env, mut request: Request, info: &OrgInfo) -> Request {
     match &request.kind {
         RequestKind::Payment(payment) => {
-            // The contract is the direct invoker of the token, so its own authorization is implied.
-            token::Client::new(e, &payment.token).transfer(
-                &e.current_contract_address(),
-                &payment.to,
-                &payment.amount,
-            );
-            add_committed(e, &payment.token, -payment.amount);
-            e.storage()
-                .persistent()
-                .set(&DataKey::Paid(payment.to.clone()), &true);
-            request.status = Status::Executed;
+            if payment.escrow {
+                // Approved and funded; paid out once both sides confirm (see `confirm_escrow`).
+                request.status = Status::Escrowed;
+            } else {
+                pay_out(e, payment);
+                request.status = Status::Executed;
+            }
         }
         RequestKind::Change(change) => match apply_change(e, info, change) {
             Ok(()) => request.status = Status::Executed,

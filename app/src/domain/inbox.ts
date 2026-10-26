@@ -3,6 +3,8 @@ import type { Org, PersonId } from "./rules/model.ts";
 import {
 	type ApprovalRequest,
 	approveRequest,
+	cancelEscrow,
+	confirmEscrow,
 	declineRequest,
 	sealRequest,
 } from "./rules/requests.ts";
@@ -11,6 +13,9 @@ export type RequestActions = {
 	approve: boolean;
 	seal: boolean;
 	decline: boolean;
+	/** The sender's side may confirm the release of a held handover. */
+	confirmEscrow: boolean;
+	cancelEscrow: boolean;
 };
 
 /**
@@ -26,6 +31,13 @@ export function availableActions(
 		approve: approveRequest(org, request, personId, request.createdAt).ok,
 		seal: sealRequest(org, request, personId, request.createdAt).ok,
 		decline: declineRequest(org, request, personId).ok,
+		confirmEscrow:
+			request.kind === "payment" &&
+			request.status === "escrowed" &&
+			!request.escrowConfirmed?.sender &&
+			personId !== request.recipientId &&
+			confirmEscrow(org, request, personId).ok,
+		cancelEscrow: cancelEscrow(org, request, personId).ok,
 	};
 }
 

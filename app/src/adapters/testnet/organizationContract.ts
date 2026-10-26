@@ -1,11 +1,15 @@
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
 import { mapBudgetUse, mapLimit, type OnchainSnapshot } from "./mapOrganization.ts";
 import { ContractReadError, type Network, readContract } from "./readContract.ts";
-import { address, u32 } from "./scv.ts";
+import { address, u32, u64 } from "./scv.ts";
 
 type Native = Record<string, unknown>;
 
 const REQUEST_PAGE = 50;
+
+/** A unit enum variant arrives as `["Name"]` or `"Name"` depending on the decoder path. */
+const statusName = (value: unknown): string =>
+	Array.isArray(value) ? String(value[0]) : String(value);
 
 const hex = (bytes: Uint8Array): string =>
 	Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -56,6 +60,20 @@ export async function readOrganization(
 	const limits = new Map(
 		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
 	);
+	// Held handovers carry their confirmations in a separate entry.
+	const escrows = new Map(
+		await Promise.all(
+			requests
+				.filter((request) => statusName(request.status) === "Escrowed")
+				.map(async (request) => {
+					const id = String(request.id);
+					const state = (await readContract(network, contractId, "escrow", [
+						u64(Number(id)),
+					])) as Native;
+					return [id, state] as const;
+				}),
+		),
+	);
 	// One balance per accepted token, from the token contracts themselves.
 	const balances = new Map(
 		await Promise.all(
@@ -94,6 +112,7 @@ export async function readOrganization(
 		reserves,
 		limits,
 		budgetUse: mapBudgetUse(budgetRows),
+		escrows,
 		setupPhase,
 		policyHash: hex(policyHash),
 	};

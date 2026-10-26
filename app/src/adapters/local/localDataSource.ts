@@ -9,6 +9,7 @@ import {
 	moveToReserve,
 	type OnchainAccount,
 	type OrgAccount,
+	payOutEscrow,
 	syncBalances,
 	type Workspace,
 	withdrawFromReserve,
@@ -43,6 +44,8 @@ import { type PersonId, type RuleError, ruleError } from "../../domain/rules/mod
 import {
 	type ApprovalRequest,
 	approveRequest,
+	cancelEscrow,
+	confirmEscrow,
 	createGovernanceRequest,
 	createPaymentRequest,
 	declineRequest,
@@ -278,6 +281,7 @@ export class LocalDataSource implements DataSource {
 					recipientIsNew: isNewRecipient(account, payee.id),
 					note: input.note.trim(),
 					category,
+					escrow: input.escrow ?? false,
 					overBudget: verdict.value,
 				},
 				now,
@@ -313,6 +317,38 @@ export class LocalDataSource implements DataSource {
 		return this.mutateRequest(orgId, requestId, (account, request) =>
 			sealRequest(account.org, request, actorId, this.clock()),
 		);
+	}
+
+	async confirmEscrow(orgId: string, requestId: string, actorId: PersonId) {
+		return this.store.mutate(orgId, (account) => {
+			const request = account.requests.find((r) => r.id === requestId);
+			if (!request) return notFound();
+			const confirmed = confirmEscrow(account.org, request, actorId);
+			if (!confirmed.ok) return confirmed;
+			const requests = account.requests.map((r) => (r.id === requestId ? confirmed.value : r));
+			return ok(
+				confirmed.value.status === "executed"
+					? payOutEscrow({ ...account, requests }, confirmed.value, this.clock(), null)
+					: { ...account, requests },
+			);
+		});
+	}
+
+	async cancelEscrow(orgId: string, requestId: string, actorId: PersonId) {
+		return this.mutateRequest(orgId, requestId, (account, request) =>
+			cancelEscrow(account.org, request, actorId),
+		);
+	}
+
+	async escrowOf(orgId: string, requestId: string) {
+		const account = this.store.account(orgId);
+		const request = account?.requests.find((r) => r.id === requestId);
+		if (!account || request?.kind !== "payment" || !request.escrow) {
+			return err(
+				ruleError("not-found", "There is no held handover with this reference. Check the link."),
+			);
+		}
+		return ok({ orgName: account.org.name, currency: request.currency, request });
 	}
 
 	async decline(orgId: string, requestId: string, actorId: PersonId) {

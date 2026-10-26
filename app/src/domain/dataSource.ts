@@ -5,6 +5,7 @@ import type { Cents, Currency } from "./money.ts";
 import type { Result } from "./result.ts";
 import type { GovernanceChange } from "./rules/governance.ts";
 import type { Asset, PersonId, RoleId, RuleError, TemplateId } from "./rules/model.ts";
+import type { PaymentRequest } from "./rules/requests.ts";
 
 export type DataSourceKind = "sample" | "testnet";
 
@@ -16,6 +17,15 @@ export type PaymentInput = {
 	note: string;
 	/** Budget category the payment counts against (one of the rules' budgets). */
 	category?: string | null;
+	/** Secure handover: hold the money after approval until both sides confirm. */
+	escrow?: boolean;
+};
+
+/** A held handover as its recipient sees it, without being a member of the organization. */
+export type EscrowView = {
+	orgName: string;
+	currency: Currency;
+	request: PaymentRequest;
 };
 
 export type ChangeOutcome = "applied" | "requested";
@@ -208,6 +218,20 @@ export interface DataSource {
 		input: PaymentInput,
 	): Promise<Result<string, RuleError>>;
 	approve(orgId: string, requestId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
+	/** One side of a secure handover confirms; with both confirmations the money goes out. */
+	confirmEscrow(
+		orgId: string,
+		requestId: string,
+		actorId: PersonId,
+	): Promise<Result<void, RuleError>>;
+	/** The sender's side frees the held money. */
+	cancelEscrow(
+		orgId: string,
+		requestId: string,
+		actorId: PersonId,
+	): Promise<Result<void, RuleError>>;
+	/** A held handover by organization and request, readable by its recipient. */
+	escrowOf(orgId: string, requestId: string): Promise<Result<EscrowView, RuleError>>;
 	seal(orgId: string, requestId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
 	decline(orgId: string, requestId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
 

@@ -10,6 +10,7 @@ import type {
 	ChangeOutcome,
 	DataSource,
 	DiscussionSupport,
+	EscrowView,
 	FundingSupport,
 	Identity,
 	IdentitySupport,
@@ -29,7 +30,12 @@ import { templates } from "../../domain/rules/templates.ts";
 import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
 import { readClaimStatus, readOverview, recoveryMessage, setPlanArgs } from "./lifelineContract.ts";
-import { CONTRACT_ERROR_MESSAGES, mapOrganization } from "./mapOrganization.ts";
+import {
+	CONTRACT_ERROR_MESSAGES,
+	mapAsset,
+	mapOrganization,
+	mapRequest,
+} from "./mapOrganization.ts";
 import {
 	type Profile,
 	readOrganization,
@@ -38,8 +44,9 @@ import {
 } from "./organizationContract.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
+import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
-import { address, changeToScVal, i128, optionalSymbol, text, toStroops, u64 } from "./scv.ts";
+import { address, bool, changeToScVal, i128, optionalSymbol, text, toStroops, u64 } from "./scv.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
 
 const EMPTY: Workspace = { people: [], accounts: [] };
@@ -372,6 +379,7 @@ export class TestnetDataSource implements DataSource {
 			i128(toStroops(input.amount)),
 			text(input.note.trim()),
 			optionalSymbol(input.category ?? null),
+			bool(input.escrow ?? false),
 		]);
 		if (!result.ok) return result;
 		const latest = this.account(orgId)?.requests[0];
@@ -444,6 +452,42 @@ export class TestnetDataSource implements DataSource {
 		const uploaded = await this.uploadAvatar(image);
 		if (!uploaded.ok) return uploaded;
 		return this.invoke(orgId, "set_logo", [address(actorId), text(uploaded.value)]);
+	}
+
+	confirmEscrow(orgId: string, requestId: string, actorId: PersonId) {
+		return this.invoke(orgId, "confirm_escrow", [address(actorId), u64(Number(requestId))]);
+	}
+
+	cancelEscrow(orgId: string, requestId: string, actorId: PersonId) {
+		return this.invoke(orgId, "cancel_escrow", [address(actorId), u64(Number(requestId))]);
+	}
+
+	/** Reads one organization's request directly, so a recipient needs no membership. */
+	async escrowOf(orgId: string, requestId: string): Promise<Result<EscrowView, RuleError>> {
+		try {
+			const id = u64(Number(requestId));
+			const [info, native, assets, state] = await Promise.all([
+				readContract(this.config, orgId, "info") as Promise<Record<string, unknown>>,
+				readContract(this.config, orgId, "request", [id]) as Promise<Record<string, unknown>>,
+				readContract(this.config, orgId, "assets") as Promise<Record<string, unknown>[]>,
+				readContract(this.config, orgId, "escrow", [id]) as Promise<Record<string, unknown>>,
+			]);
+			const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
+			const mapped = assets.map((a) =>
+				mapAsset(a, (token, onchain) => symbols.get(token) ?? onchain),
+			);
+			const request = mapRequest(native, Date.now(), mapped, state);
+			if (request.kind !== "payment" || !request.escrow) {
+				return failed("This request isn't a held handover. Check the link.");
+			}
+			return ok({ orgName: String(info.name), currency: request.currency, request });
+		} catch (error) {
+			return failed(
+				error instanceof Error
+					? `This handover couldn't be read. ${error.message}`
+					: "This handover couldn't be read.",
+			);
+		}
 	}
 
 	async executeRequest(orgId: string, requestId: string) {

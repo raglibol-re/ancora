@@ -36,6 +36,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 	const [amountInput, setAmountInput] = useState("");
 	const [note, setNote] = useState("");
 	const [category, setCategory] = useState("");
+	const [escrow, setEscrow] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	/** Per accepted token: null = can receive, a message = why not; absent = not checked yet. */
 	const [reachable, setReachable] = useState<Record<string, string | null>>({});
@@ -118,6 +119,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 					amount,
 					note,
 					category: category || null,
+					escrow,
 				}),
 			{
 				signature: {
@@ -258,6 +260,14 @@ function PayForm({ account }: { account: OrgAccount }) {
 							</select>
 						</Field>
 					)}
+					<label className={styles.toggle}>
+						<input type="checkbox" checked={escrow} onChange={(e) => setEscrow(e.target.checked)} />
+						<span>
+							<strong>Secure handover.</strong> After approval the money is set aside and only paid
+							out once the recipient and {account.org.name} both confirm. You get a link to send the
+							recipient.
+						</span>
+					</label>
 					<Field label="Reference" htmlFor="note" hint="Shown to approvers and on the statement.">
 						<input
 							id="note"

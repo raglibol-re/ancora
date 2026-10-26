@@ -25,3 +25,19 @@
 	font-size: var(--text-sm);
 	color: var(--color-positive);
 }
+
+.toggle {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-3);
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+	cursor: pointer;
+}
+
+.toggle input {
+	margin-top: 3px;
+}

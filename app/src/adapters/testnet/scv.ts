@@ -18,6 +18,7 @@ export const address = (value: string): xdr.ScVal => new Address(value).toScVal(
 export const symbol = (value: string): xdr.ScVal => xdr.ScVal.scvSymbol(value);
 export const text = (value: string): xdr.ScVal => xdr.ScVal.scvString(value);
 export const u32 = (value: number): xdr.ScVal => nativeToScVal(value, { type: "u32" });
+export const bool = (value: boolean): xdr.ScVal => xdr.ScVal.scvBool(value);
 export const u64 = (value: number): xdr.ScVal => nativeToScVal(value, { type: "u64" });
 export const i128 = (value: bigint): xdr.ScVal => nativeToScVal(value, { type: "i128" });
 

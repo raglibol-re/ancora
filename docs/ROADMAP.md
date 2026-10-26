@@ -25,6 +25,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Done (notifications, attachments and signed entries: later) |
 | 17 | Recovery ("Lifeline"): guardians, claims with a waiting period, cancel by the current pass (see below) | Done for the position handover (see "as built"); inactivity path and succession plans: next |
 | 18 | Recovery device in onboarding: second device, hardware key, pairing by QR (see below) | Done on the pass page ("Devices": count and "Add a passkey", the browser's own QR flow reaches another phone); onboarding step and reminder banner: next |
+| 19 | Secure handover: escrowed payments released only when recipient and sender confirm | Done (organization contract + recipient link page) |
 | — | Submission polish: README with a short GIF of the flow, screenshots, demo video link | Before the deadline |
 
 ### Task 6 as built: one passkey per person, one contract per organization

@@ -125,7 +125,9 @@ export type RuleErrorCode =
 	| "last-asset"
 	| "invalid-limit"
 	| "budget-exceeded"
-	| "unknown-budget";
+	| "unknown-budget"
+	| "not-escrowed"
+	| "not-escrow-party";
 
 export type RuleError = {
 	code: RuleErrorCode;

@@ -11,6 +11,7 @@ import {
 	advanceRequest,
 	markExecuted,
 	markFailed,
+	type PaymentRequest,
 } from "./rules/requests.ts";
 
 export type Person = {
@@ -162,7 +163,12 @@ export function canEditProfile(org: Org, personId: PersonId): boolean {
 	return memberRank(org, personId) === 0;
 }
 
-const OPEN_STATUSES: readonly ApprovalRequest["status"][] = ["pending", "scheduled", "ready"];
+const OPEN_STATUSES: readonly ApprovalRequest["status"][] = [
+	"pending",
+	"scheduled",
+	"ready",
+	"escrowed",
+];
 
 /** Main-balance money in `token` not yet promised to open payment requests. */
 export function availableBalance(account: OrgAccount, token: string): Cents {
@@ -284,6 +290,8 @@ function execute(
 	if (!executed.ok) return account;
 	const done = { ...executed.value, executionRef: txHash };
 	const requests = account.requests.map((r) => (r.id === request.id ? done : r));
+	// A secure handover is funded but held: nothing leaves yet (see `payOutEscrow`).
+	if (done.status === "escrowed") return { ...account, requests };
 	const base = { id: `act-${request.id}`, at: now, actorId: request.requesterId };
 
 	if (request.kind === "payment") {
@@ -321,6 +329,33 @@ function execute(
 	return {
 		...syncBalances({ ...account, org: applied.value }),
 		requests,
+		activity: [entry, ...account.activity],
+	};
+}
+
+/** Books the payout of a held handover once both sides confirmed. */
+export function payOutEscrow(
+	account: OrgAccount,
+	request: PaymentRequest,
+	now: number,
+	txHash: string | null,
+): OrgAccount {
+	const { balance } = balanceOf(account, request.token);
+	const entry: ActivityEntry = {
+		id: `act-${request.id}`,
+		at: now,
+		actorId: request.requesterId,
+		kind: "payment-out",
+		token: request.token,
+		amount: request.amount,
+		payeeId: request.recipientId,
+		txHash,
+	};
+	return {
+		...withBalance(account, request.token, { balance: balance - request.amount }),
+		requests: account.requests.map((r) =>
+			r.id === request.id ? { ...request, executionRef: txHash } : r,
+		),
 		activity: [entry, ...account.activity],
 	};
 }

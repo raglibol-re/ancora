@@ -97,4 +97,5 @@ export const statusLabels: Readonly<Record<RequestStatus, string>> = {
 	executed: "Done",
 	declined: "Declined",
 	failed: "Failed",
+	escrowed: "Held until both confirm",
 };

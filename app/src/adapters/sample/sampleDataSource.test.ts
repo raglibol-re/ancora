@@ -141,8 +141,9 @@ describe("SampleDataSource", () => {
 
 	it("counts open requests against the available balance", () => {
 		const club = accountOf(source(), "tejo-rowing");
+		// Pending, scheduled and held (secure handover) payments are all set aside.
 		expect(availableBalance(club, "eurc")).toBe(
-			balanceOf(club, "eurc").balance - euros(450) - euros(3_200),
+			balanceOf(club, "eurc").balance - euros(450) - euros(3_200) - euros(1_200),
 		);
 	});
 
@@ -255,7 +256,7 @@ describe("SampleDataSource", () => {
 
 	it("falls back to the seed when stored data is corrupt", () => {
 		const storage = memoryStorage();
-		storage.setItem("ancora.sample.v7", "{not json");
+		storage.setItem("ancora.sample.v8", "{not json");
 		expect(source(storage).getSnapshot().accounts).toHaveLength(3);
 	});
 });

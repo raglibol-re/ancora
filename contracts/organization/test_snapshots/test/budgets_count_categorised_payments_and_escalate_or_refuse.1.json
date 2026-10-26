@@ -394,6 +394,9 @@
                 },
                 {
                   "symbol": "events"
+                },
+                {
+                  "bool": false
                 }
               ]
             }
@@ -430,6 +433,9 @@
                 },
                 {
                   "symbol": "events"
+                },
+                {
+                  "bool": false
                 }
               ]
             }
@@ -489,6 +495,9 @@
                 },
                 {
                   "symbol": "gear"
+                },
+                {
+                  "bool": false
                 }
               ]
             }
@@ -524,6 +533,9 @@
                 },
                 {
                   "symbol": "gear"
+                },
+                {
+                  "bool": false
                 }
               ]
             }
@@ -556,7 +568,10 @@
                 {
                   "string": ""
                 },
-                "void"
+                "void",
+                {
+                  "bool": false
+                }
               ]
             }
           },
@@ -1199,6 +1214,14 @@
                             },
                             {
                               "key": {
+                                "symbol": "escrow"
+                              },
+                              "val": {
+                                "bool": false
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "memo"
                               },
                               "val": {
@@ -1427,6 +1450,14 @@
                               },
                               "val": {
                                 "symbol": "events"
+                              }
+                            },
+                            {
+                              "key": {
+                                "symbol": "escrow"
+                              },
+                              "val": {
+                                "bool": false
                               }
                             },
                             {
@@ -1661,6 +1692,14 @@
                             },
                             {
                               "key": {
+                                "symbol": "escrow"
+                              },
+                              "val": {
+                                "bool": false
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "memo"
                               },
                               "val": {
@@ -1891,6 +1930,14 @@
                             },
                             {
                               "key": {
+                                "symbol": "escrow"
+                              },
+                              "val": {
+                                "bool": false
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "memo"
                               },
                               "val": {
@@ -2095,6 +2142,14 @@
                                 "symbol": "category"
                               },
                               "val": "void"
+                            },
+                            {
+                              "key": {
+                                "symbol": "escrow"
+                              },
+                              "val": {
+                                "bool": false
+                              }
                             },
                             {
                               "key": {

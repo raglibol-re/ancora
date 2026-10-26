@@ -43,6 +43,8 @@ export type OnchainSnapshot = {
 	limits: ReadonlyMap<string, SpendingLimit>;
 	/** Booked per budget category (empty for organizations built before budgets). */
 	budgetUse: Readonly<Record<string, BudgetUse>>;
+	/** Confirmations of held handovers, by request id. */
+	escrows: ReadonlyMap<string, Native>;
 	setupPhase: boolean;
 	policyHash: string;
 };
@@ -54,6 +56,7 @@ const STATUS: Record<string, RequestStatus> = {
 	Executed: "executed",
 	Declined: "declined",
 	Failed: "failed",
+	Escrowed: "escrowed",
 };
 
 /** Contract error codes, in the order of the contract's `Error` enum. */
@@ -89,6 +92,8 @@ const ERROR_CODES: RuleErrorCode[] = [
 	"invalid-limit",
 	"budget-exceeded",
 	"unknown-budget",
+	"not-escrowed",
+	"not-escrow-party",
 ];
 
 export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
@@ -123,6 +128,8 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	29: "A spending limit needs an amount above zero and a period.",
 	30: "This goes beyond what is left of a hard budget this period, so it isn't accepted.",
 	31: "The rules have no budget with that name.",
+	32: "This payment isn't a held handover waiting for confirmations.",
+	33: "Only the recipient, the requester or an eligible approver can act on this handover.",
 };
 
 const variant = (value: unknown): [string, unknown[]] => {
@@ -249,6 +256,7 @@ export function mapRequest(
 	native: Native,
 	now: number,
 	assets: readonly Asset[] = [],
+	escrow: Native | null = null,
 ): ApprovalRequest {
 	const createdAt = seconds(native.created_at);
 	const executeAfter =
@@ -297,6 +305,10 @@ export function mapRequest(
 			recipientId: str(payment.to),
 			recipientIsNew: false,
 			note: str(payment.memo),
+			escrow: Boolean(payment.escrow),
+			escrowConfirmed: escrow
+				? { recipient: Boolean(escrow.recipient_ok), sender: Boolean(escrow.sender_ok) }
+				: null,
 			category:
 				payment.category === null || payment.category === undefined ? null : str(payment.category),
 		};
@@ -332,7 +344,9 @@ export function mapOrganization(
 		baseCurrency: currency(info.base_currency),
 		assets,
 	};
-	const requests = snapshot.requests.map((r) => mapRequest(r, now, assets));
+	const requests = snapshot.requests.map((r) =>
+		mapRequest(r, now, assets, snapshot.escrows.get(String(r.id)) ?? null),
+	);
 	const payees = new Map<string, Payee>();
 	for (const request of requests) {
 		if (request.kind === "payment" && !payees.has(request.recipientId)) {

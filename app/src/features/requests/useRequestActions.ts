@@ -40,6 +40,27 @@ export function useRequestActions(account: OrgAccount, request: ApprovalRequest)
 				signature: { kind: "seal", title: `Seal ${title}` },
 				success: "Security seal added.",
 			}),
+		confirmEscrow: () =>
+			run(() => dataSource.confirmEscrow(orgId, request.id, me.id), {
+				signature: { kind: "passkey", title: `Release ${title}` },
+				success: "Release confirmed. It goes out once the recipient has confirmed too.",
+			}),
+		cancelEscrow: () =>
+			run(() => dataSource.cancelEscrow(orgId, request.id, me.id), {
+				signature: { kind: "passkey", title: `Cancel the handover ${title}` },
+				success: "Handover cancelled. The money is free again.",
+			}),
+		/** Sample data only: the recipient has no pass here, so their confirmation is simulated. */
+		simulateRecipient: () =>
+			run(
+				() =>
+					dataSource.confirmEscrow(
+						orgId,
+						request.id,
+						request.kind === "payment" ? request.recipientId : me.id,
+					),
+				{ success: "Recipient confirmation simulated." },
+			),
 		decline: () =>
 			run(() => dataSource.decline(orgId, request.id, me.id), {
 				signature: {

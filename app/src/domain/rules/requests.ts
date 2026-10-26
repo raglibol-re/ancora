@@ -19,7 +19,18 @@ import { evaluateGovernance, evaluatePayment, limitEvaluation } from "./policy.t
  * declined  → rejected by an approver, objected to during the window, or cancelled by the requester
  * failed    → approved, but execution failed (e.g. a network error or a change that no longer applies)
  */
-export type RequestStatus = "pending" | "scheduled" | "ready" | "executed" | "declined" | "failed";
+export type RequestStatus =
+	| "pending"
+	| "scheduled"
+	| "ready"
+	| "executed"
+	| "declined"
+	| "failed"
+	/** Approved and funded, held until the recipient and the sender's side both confirm. */
+	| "escrowed";
+
+/** Who has confirmed a secure handover so far. */
+export type EscrowConfirmations = { recipient: boolean; sender: boolean };
 
 type Timestamp = number;
 
@@ -51,6 +62,9 @@ export type PaymentRequest = RequestBase & {
 	note: string;
 	/** The budget category it counts against, if any. */
 	category: string | null;
+	/** Secure handover: held after approval until both sides confirm. */
+	escrow: boolean;
+	escrowConfirmed: EscrowConfirmations | null;
 };
 
 export type GovernanceRequest = RequestBase & {
@@ -82,6 +96,7 @@ const notMember = () =>
 export type NewPayment = {
 	id: string;
 	category?: string | null;
+	escrow?: boolean;
 	/** The data source checked the budget: beyond a soft one, the strictest tier applies. */
 	overBudget?: boolean;
 	requesterId: PersonId;
@@ -125,6 +140,8 @@ export function createPaymentRequest(
 				kind: "payment",
 				...fields,
 				category: fields.category ?? null,
+				escrow: fields.escrow ?? false,
+				escrowConfirmed: null,
 				currency: asset.currency,
 			},
 			now,
@@ -241,12 +258,77 @@ export function advanceRequest<R extends ApprovalRequest>(request: R, now: Times
 	return request;
 }
 
-/** Records that the request was executed on-chain. */
+/** Records that the request was executed on-chain; a secure handover is held instead. */
 export function markExecuted<R extends ApprovalRequest>(request: R): Result<R, RuleError> {
 	if (request.status !== "ready") {
 		return err(ruleError("not-ready", "This request can't be executed yet."));
 	}
+	if (request.kind === "payment" && request.escrow) {
+		return ok({
+			...request,
+			status: "escrowed",
+			escrowConfirmed: { recipient: false, sender: false },
+		});
+	}
 	return ok({ ...request, status: "executed" });
+}
+
+const notEscrowed = () =>
+	err(ruleError("not-escrowed", "This payment isn't a held handover waiting for confirmations."));
+
+/** The requester, or anyone whose role could have approved the request. */
+export function isSenderSide(org: Org, request: ApprovalRequest, personId: PersonId): boolean {
+	return (
+		personId === request.requesterId ||
+		isEligibleApprover(org, request.evaluation.approvals, personId)
+	);
+}
+
+/**
+ * One side of a secure handover confirms: the recipient (by id) or the sender's side. Once both
+ * have, the payment is executed; the caller moves the money.
+ */
+export function confirmEscrow(
+	org: Org,
+	request: ApprovalRequest,
+	personId: PersonId,
+): Result<PaymentRequest, RuleError> {
+	if (request.kind !== "payment" || request.status !== "escrowed") return notEscrowed();
+	const confirmed = request.escrowConfirmed ?? { recipient: false, sender: false };
+	let next: EscrowConfirmations;
+	if (personId === request.recipientId) next = { ...confirmed, recipient: true };
+	else if (isSenderSide(org, request, personId)) next = { ...confirmed, sender: true };
+	else {
+		return err(
+			ruleError(
+				"not-escrow-party",
+				"Only the recipient, the requester or an eligible approver can confirm this handover.",
+			),
+		);
+	}
+	return ok({
+		...request,
+		escrowConfirmed: next,
+		status: next.recipient && next.sender ? "executed" : "escrowed",
+	});
+}
+
+/** The sender's side frees the money again; the recipient can only decline by not confirming. */
+export function cancelEscrow(
+	org: Org,
+	request: ApprovalRequest,
+	personId: PersonId,
+): Result<PaymentRequest, RuleError> {
+	if (request.kind !== "payment" || request.status !== "escrowed") return notEscrowed();
+	if (!isSenderSide(org, request, personId)) {
+		return err(
+			ruleError(
+				"not-escrow-party",
+				"Only the requester or an eligible approver can cancel this handover.",
+			),
+		);
+	}
+	return ok({ ...request, status: "declined", declinedBy: personId });
 }
 
 /** Records a failed execution; the demo admin can retry it later. */

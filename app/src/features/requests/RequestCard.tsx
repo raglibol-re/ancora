@@ -6,6 +6,7 @@ import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatRelative } from "../../ui/format.ts";
+import { useNotify } from "../notices/NoticeContext.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { requestTitle } from "./describe.ts";
 import styles from "./RequestCard.module.css";
@@ -21,8 +22,28 @@ type RequestCardProps = {
 };
 
 export function RequestCard({ account, request, showOrg = false }: RequestCardProps) {
-	const { personName, me } = useWorkspace();
-	const { allowed, busy, approve, seal, decline, send } = useRequestActions(account, request);
+	const { personName, me, dataSource } = useWorkspace();
+	const notify = useNotify();
+	const {
+		allowed,
+		busy,
+		approve,
+		seal,
+		decline,
+		send,
+		confirmEscrow,
+		cancelEscrow,
+		simulateRecipient,
+	} = useRequestActions(account, request);
+	const escrowLink = `${window.location.origin}/app/escrow/${encodeURIComponent(account.org.id)}/${encodeURIComponent(request.id)}`;
+	const copyEscrowLink = async () => {
+		try {
+			await navigator.clipboard.writeText(escrowLink);
+			notify({ tone: "success", text: "Link copied. Send it to the recipient to confirm." });
+		} catch {
+			notify({ tone: "error", text: `Couldn't copy. The link is ${escrowLink}` });
+		}
+	};
 	const title = requestTitle(account, request, personName);
 	const requester = request.requesterId === me.id ? "you" : personName(request.requesterId);
 	const discussion = describeSummary(summarize(discussionOf(account, request.id)));
@@ -56,7 +77,46 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 				</Link>
 			)}
 			<RequestProgress account={account} request={request} />
+			{request.kind === "payment" && request.escrow && (
+				<p className={styles.meta}>
+					Secure handover: approved and set aside, paid out once both sides confirm.
+					{request.escrowConfirmed &&
+						` Recipient ${request.escrowConfirmed.recipient ? "confirmed" : "not yet"} · ${account.org.name} ${request.escrowConfirmed.sender ? "confirmed" : "not yet"}.`}
+				</p>
+			)}
 			{request.executionRef && <ExplorerLink target={request.executionRef} />}
+			{request.kind === "payment" && request.status === "escrowed" && (
+				<div className={styles.actions}>
+					{allowed.confirmEscrow && (
+						<button type="button" className={buttonClass()} onClick={confirmEscrow} disabled={busy}>
+							Confirm release
+						</button>
+					)}
+					<button type="button" className={buttonClass("secondary")} onClick={copyEscrowLink}>
+						Copy link for the recipient
+					</button>
+					{dataSource.kind === "sample" && !request.escrowConfirmed?.recipient && (
+						<button
+							type="button"
+							className={buttonClass("secondary")}
+							onClick={simulateRecipient}
+							disabled={busy}
+						>
+							Simulate recipient confirmation
+						</button>
+					)}
+					{allowed.cancelEscrow && (
+						<button
+							type="button"
+							className={buttonClass("secondary")}
+							onClick={cancelEscrow}
+							disabled={busy}
+						>
+							Cancel handover
+						</button>
+					)}
+				</div>
+			)}
 			{(allowed.approve || allowed.seal || allowed.decline || allowed.send) && (
 				<div className={styles.actions}>
 					{allowed.send && (

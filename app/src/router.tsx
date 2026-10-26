@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { AdminPage } from "./features/admin/AdminPage.tsx";
 import { ApprovalsPage } from "./features/approvals/ApprovalsPage.tsx";
 import { RequestDetailPage } from "./features/approvals/RequestDetailPage.tsx";
+import { EscrowPage } from "./features/escrow/EscrowPage.tsx";
 import { InboxPage } from "./features/inbox/InboxPage.tsx";
 import { LandingPage } from "./features/landing/LandingPage.tsx";
 import { NoticeProvider } from "./features/notices/NoticeProvider.tsx";
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
 			{ path: "approvals", element: <ApprovalsPage /> },
 			{ path: "approvals/:requestId", element: <RequestDetailPage /> },
 			{ path: "pay", element: <PayPage /> },
+			{ path: "escrow/:orgId/:requestId", element: <EscrowPage /> },
 			{ path: "rules", element: <RulesPage /> },
 			{ path: "settings", element: <SettingsPage /> },
 			{ path: "me", element: <ProfilePage /> },

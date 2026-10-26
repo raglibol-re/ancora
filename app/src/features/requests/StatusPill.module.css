@@ -13,7 +13,8 @@
 	color: var(--color-accent-text);
 }
 
-.scheduled {
+.scheduled,
+.escrowed {
 	color: var(--color-focus);
 }
 

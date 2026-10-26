@@ -190,7 +190,10 @@
                 {
                   "string": ""
                 },
-                "void"
+                "void",
+                {
+                  "bool": false
+                }
               ]
             }
           },
@@ -761,6 +764,14 @@
                                 "symbol": "category"
                               },
                               "val": "void"
+                            },
+                            {
+                              "key": {
+                                "symbol": "escrow"
+                              },
+                              "val": {
+                                "bool": false
+                              }
                             },
                             {
                               "key": {
