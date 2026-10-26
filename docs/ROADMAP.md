@@ -26,6 +26,7 @@ Status legend: **Real on testnet** · **Simulated** (labeled sample data in the 
 | 17 | Recovery ("Lifeline"): guardians, claims with a waiting period, cancel by the current pass (see below) | Done for the position handover (see "as built"); inactivity path and succession plans: next |
 | 18 | Recovery device in onboarding: second device, hardware key, pairing by QR (see below) | Done: "Devices" on the pass page (count, "Add a passkey", the browser's own QR flow reaches another phone) and a reminder across the app until a second passkey or guardians exist |
 | 19 | Secure handover: escrowed payments released only when recipient and sender confirm | Done (organization contract + recipient link page) |
+| 20 | Standing orders: repeating payments under the rules | Done (organization contract + Send page); a server-side scheduler that runs due orders without anyone opening the app: next |
 | — | Submission polish: README with a short GIF of the flow, screenshots, demo video link | GIF and screenshots done; the demo video link is added by the team at submission |
 
 ### Task 6 as built: one passkey per person, one contract per organization
@@ -105,7 +106,8 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 
 - Stellar Registry: publish the four contract Wasm files as named, versioned releases (`scripts/publish-registry.sh`, dry run by default), show the release name and version next to the contract hash in expert mode, then deploy organizations through `stellar registry deploy` so an organization's code is a public release rather than an operator-held hash; attested builds through the registry's GitHub action once the repo is public.
 - Perch adoption in three steps: publish ancora's document in perch's IR where it fits, lower per-member allowances onto perch `cap` rules once organizations can be perch accounts, and propose `i128` range predicates and asynchronous approvals upstream so the tiers can move too.
-- Custom roles (editable list and ranks through governance; templates become presets), per-member limits per category and asset, recipient allowlists, recurring payments.
+- Custom roles (editable list and ranks through governance; templates become presets), per-member limits per category and asset, recipient allowlists.
+- A scheduler (Vercel cron over the registry's organizations) that runs due standing orders; today a due order runs when a member opens the organization or presses "Run now".
 - History beyond RPC's week for devices that were away: an indexer (Mercury or SubQuery) or the explorer's API behind the same `orgHistory.ts` interface.
 
 - Switch the security seal from the in-contract ML-DSA verifier to the native ML-DSA host function after Protocol 30 "Bell" (mainnet vote 23 Nov 2026).

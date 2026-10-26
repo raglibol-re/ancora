@@ -2,6 +2,7 @@ import {
 	type ActivityEntry,
 	type OrgAccount,
 	type Payee,
+	type StandingOrder,
 	shortAddress,
 } from "../../domain/account.ts";
 import type { BudgetUse } from "../../domain/budgets.ts";
@@ -52,6 +53,8 @@ export type OnchainSnapshot = {
 	escrows: ReadonlyMap<string, Native>;
 	/** Token transfers in and out of the organization, from the ledger's events. */
 	transfers: readonly ChainTransfer[];
+	/** `standing_orders` rows; null when this organization's code has none. */
+	standingOrders: readonly Native[] | null;
 	setupPhase: boolean;
 	policyHash: string;
 };
@@ -174,6 +177,26 @@ export function mapPolicy(native: Native): Policy {
 			hard: Boolean(budget.hard),
 		})),
 	};
+}
+
+/** The `standing_orders` view rows; null when the organization's code predates them. */
+function mapStandingOrders(rows: readonly Native[] | null): StandingOrder[] | null {
+	if (rows === null) return null;
+	return rows.map((row) => ({
+		id: String(row.id),
+		by: String(row.by),
+		token: String(row.token),
+		to: String(row.to),
+		amount: toCents(BigInt(row.amount as bigint)),
+		memo: str(row.memo),
+		category: row.category === null || row.category === undefined ? null : str(row.category),
+		intervalSeconds: Number(row.interval_seconds),
+		nextAt: Number(row.next_at) * 1000,
+		active: Boolean(row.active),
+		runs: Number(row.runs),
+		lastRequestId:
+			row.last_request === null || row.last_request === undefined ? null : String(row.last_request),
+	}));
 }
 
 /** The `budgets` view rows → what was booked per category. */
@@ -454,5 +477,6 @@ export function mapOrganization(
 		activity,
 		discussions: {},
 		budgetUse: snapshot.budgetUse,
+		standingOrders: mapStandingOrders(snapshot.standingOrders),
 	};
 }

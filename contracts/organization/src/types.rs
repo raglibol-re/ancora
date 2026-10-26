@@ -48,6 +48,16 @@ pub enum Error {
     NotEscrowed = 32,
     /// Only the recipient, the requester or an eligible approver act on an escrow.
     NotEscrowParty = 33,
+    /// No standing order with this id.
+    UnknownOrder = 34,
+    /// The standing order's next payment isn't due yet.
+    OrderNotDue = 35,
+    /// A standing order repeats at least hourly.
+    InvalidInterval = 36,
+    /// Only the member who set a standing order, or the top role, may stop it.
+    NotOrderOwner = 37,
+    /// The standing order was stopped.
+    OrderStopped = 38,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -253,6 +263,28 @@ pub struct Request {
     pub decided_by: Option<Address>,
     /// Error code when execution failed (a change that no longer applies).
     pub failure: Option<u32>,
+}
+
+/// A standing order: a payment the organization repeats on a schedule. Every run is proposed
+/// as a payment from `by` under the rules of that moment (spending limit, tiers, budgets), so
+/// setting one up needs only the member's own signature and takes nothing past the rules.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StandingOrder {
+    pub id: u64,
+    pub by: Address,
+    pub token: Address,
+    pub to: Address,
+    pub amount: i128,
+    pub memo: String,
+    pub category: Option<Symbol>,
+    pub interval_seconds: u64,
+    /// Ledger time the next run is due; missed runs are skipped, never caught up.
+    pub next_at: u64,
+    pub active: bool,
+    pub runs: u32,
+    /// The request the last run created.
+    pub last_request: Option<u64>,
 }
 
 #[contracttype]

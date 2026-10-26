@@ -30,6 +30,16 @@ async function readSpendingLimits(network: Network, contractId: string): Promise
 	}
 }
 
+/** `standing_orders` arrived on 26 Oct 2026; older organizations answer null (no support). */
+async function readStandingOrders(network: Network, contractId: string): Promise<Native[] | null> {
+	try {
+		return (await readContract(network, contractId, "standing_orders")) as Native[];
+	} catch (error) {
+		if (error instanceof ContractReadError) return null;
+		throw error;
+	}
+}
+
 /** Same tolerance for `budgets`, which organizations before 26 Oct 2026 don't have. */
 async function readBudgets(network: Network, contractId: string): Promise<Native[]> {
 	try {
@@ -49,20 +59,29 @@ export async function readOrganization(
 	contractId: string,
 	history: HistoryCache | null = null,
 ): Promise<OnchainSnapshot> {
-	const [info, policy, assets, members, requests, setupPhase, policyHash, limitRows, budgetRows] =
-		await Promise.all([
-			readContract(network, contractId, "info") as Promise<Native>,
-			readContract(network, contractId, "policy") as Promise<Native>,
-			readContract(network, contractId, "assets") as Promise<Native[]>,
-			readContract(network, contractId, "members") as Promise<Native[]>,
-			readContract(network, contractId, "requests", [u32(0), u32(REQUEST_PAGE)]) as Promise<
-				Native[]
-			>,
-			readContract(network, contractId, "is_setup_phase") as Promise<boolean>,
-			readContract(network, contractId, "policy_hash") as Promise<Uint8Array>,
-			readSpendingLimits(network, contractId),
-			readBudgets(network, contractId),
-		]);
+	const [
+		info,
+		policy,
+		assets,
+		members,
+		requests,
+		setupPhase,
+		policyHash,
+		limitRows,
+		budgetRows,
+		standingOrderRows,
+	] = await Promise.all([
+		readContract(network, contractId, "info") as Promise<Native>,
+		readContract(network, contractId, "policy") as Promise<Native>,
+		readContract(network, contractId, "assets") as Promise<Native[]>,
+		readContract(network, contractId, "members") as Promise<Native[]>,
+		readContract(network, contractId, "requests", [u32(0), u32(REQUEST_PAGE)]) as Promise<Native[]>,
+		readContract(network, contractId, "is_setup_phase") as Promise<boolean>,
+		readContract(network, contractId, "policy_hash") as Promise<Uint8Array>,
+		readSpendingLimits(network, contractId),
+		readBudgets(network, contractId),
+		readStandingOrders(network, contractId),
+	]);
 	const limits = new Map(
 		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
 	);
@@ -90,6 +109,7 @@ export async function readOrganization(
 		budgetUse: mapBudgetUse(budgetRows),
 		escrows,
 		transfers: (page ?? known)?.transfers ?? [],
+		standingOrders: standingOrderRows,
 		setupPhase,
 		policyHash: hex(policyHash),
 	};

@@ -81,6 +81,9 @@ enum DataKey {
     Escrow(u64),
     Request(u64),
     Paid(Address),
+    /// A standing order (repeating payment) by id.
+    Order(u64),
+    OrderCount,
 }
 
 /// Emitted whenever a request is created or changes status.
@@ -90,6 +93,16 @@ pub struct RequestEvent {
     #[topic]
     pub id: u64,
     pub status: u32,
+}
+
+/// Emitted when a standing order is set, runs (with the request it created) or stops.
+#[contractevent]
+#[derive(Clone, Debug, PartialEq)]
+pub struct StandingOrderEvent {
+    #[topic]
+    pub id: u64,
+    pub active: bool,
+    pub request: Option<u64>,
 }
 
 /// Emitted when a Lifeline recovery hands a position to a new pass.
@@ -481,62 +494,135 @@ impl Organization {
     ) -> Result<u64, Error> {
         by.require_auth();
         extend_instance(e);
+        propose_payment_from(e, by, token, to, amount, memo, category, escrow)
+    }
+
+    /// Sets up a standing order: `amount` of `token` to `to` every `interval_seconds` (at least
+    /// an hour), first due at `first_at` (now if earlier). Each run proposes the payment from
+    /// `by` under the rules of that moment, so it pays out at once inside their spending limit
+    /// and otherwise waits for approvals like any payment. Missed runs are skipped.
+    ///
+    /// Auth: `by`, a member.
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_standing_order(
+        e: &Env,
+        by: Address,
+        token: Address,
+        to: Address,
+        amount: i128,
+        memo: String,
+        category: Option<Symbol>,
+        interval_seconds: u64,
+        first_at: u64,
+    ) -> Result<u64, Error> {
+        by.require_auth();
+        extend_instance(e);
         let info = load_info(e);
         let members = ranked(e, &info.roles);
         rules::rank_of_member(&members, &by).ok_or(Error::NotMember)?;
-        let asset = find_asset(&load_assets(e), &token)?;
+        find_asset(&load_assets(e), &token)?;
         if amount <= 0 {
             return Err(Error::InvalidAmount);
         }
         if memo.len() > MAX_MEMO_LEN {
             return Err(Error::TextTooLong);
         }
-        if amount > available(e, &token) {
-            return Err(Error::InsufficientFunds);
+        if interval_seconds < SECONDS_PER_HOUR {
+            return Err(Error::InvalidInterval);
         }
-        let policy = load_policy(e);
-        let amount_in_base = (asset.currency == info.base_currency).then_some(amount);
-        // Budgets are measured in the rules' currency: a payment in another currency can't be
-        // counted, so a hard budget refuses it and a soft one treats it as over budget.
-        let budget = match &category {
-            Some(name) => Some(find_budget(&policy, name)?),
-            None => None,
-        };
-        let over_budget = match (&budget, amount_in_base) {
-            (None, _) => false,
-            (Some(b), Some(a)) if a <= budget_room(e, b) => false,
-            (Some(b), _) if b.hard => return Err(Error::BudgetExceeded),
-            (Some(_), _) => true,
-        };
-        // Inside the requester's spending limit (rules' currency only) nothing needs approval,
-        // unless the payment is over its budget: then approvers must see it.
-        let within_limit =
-            !over_budget && amount_in_base.and_then(|a| use_limit(e, &by, a)).is_some();
-        let evaluation = if within_limit {
-            rules::limit_evaluation(e)
-        } else {
-            rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to), over_budget)?
-        };
-        if let (Some(b), Some(a)) = (&budget, amount_in_base) {
-            book_budget(e, b, a);
+        if let Some(name) = &category {
+            find_budget(&load_policy(e), name)?;
         }
-        let request = new_request(
-            e,
-            RequestKind::Payment(Payment {
-                token: token.clone(),
-                to,
-                amount,
-                memo,
-                category,
-                escrow,
-            }),
+        let id = load_order_count(e) + 1;
+        e.storage().instance().set(&DataKey::OrderCount, &id);
+        let order = StandingOrder {
+            id,
             by,
-            evaluation,
-        );
-        add_committed(e, &token, amount);
-        let settled = settle(e, request, &info);
-        save_request(e, &settled);
-        Ok(settled.id)
+            token,
+            to,
+            amount,
+            memo,
+            category,
+            interval_seconds,
+            next_at: first_at.max(e.ledger().timestamp()),
+            active: true,
+            runs: 0,
+            last_request: None,
+        };
+        save_order(e, &order, None);
+        Ok(id)
+    }
+
+    /// Stops a standing order. Payments its earlier runs created are not affected.
+    ///
+    /// Auth: `by`, the member who set it or a holder of the top role.
+    pub fn cancel_standing_order(e: &Env, by: Address, id: u64) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        let mut order = load_order(e, id)?;
+        if !order.active {
+            return Err(Error::OrderStopped);
+        }
+        let members = ranked(e, &info.roles);
+        let rank = rules::rank_of_member(&members, &by).ok_or(Error::NotMember)?;
+        if order.by != by && rank != 0 {
+            return Err(Error::NotOrderOwner);
+        }
+        order.active = false;
+        save_order(e, &order, None);
+        Ok(())
+    }
+
+    /// Runs a standing order that is due: proposes its payment from the member who set it,
+    /// under the rules of this moment, and moves the next due time past now (missed runs are
+    /// skipped). Anyone may call it; ancora's server does when an order is due. A run the
+    /// rules refuse (no funds, hard budget) changes nothing and can be tried again.
+    ///
+    /// Auth: none (the member authorized the schedule when setting it).
+    pub fn run_standing_order(e: &Env, id: u64) -> Result<u64, Error> {
+        extend_instance(e);
+        let mut order = load_order(e, id)?;
+        if !order.active {
+            return Err(Error::OrderStopped);
+        }
+        let now = e.ledger().timestamp();
+        if now < order.next_at {
+            return Err(Error::OrderNotDue);
+        }
+        while order.next_at <= now {
+            order.next_at += order.interval_seconds;
+        }
+        let request = propose_payment_from(
+            e,
+            order.by.clone(),
+            order.token.clone(),
+            order.to.clone(),
+            order.amount,
+            order.memo.clone(),
+            order.category.clone(),
+            false,
+        )?;
+        order.runs += 1;
+        order.last_request = Some(request);
+        save_order(e, &order, Some(request));
+        Ok(request)
+    }
+
+    /// The standing orders, newest first (at most `MAX_PAGE`), stopped ones included.
+    ///
+    /// Auth: none (read).
+    pub fn standing_orders(e: &Env) -> Vec<StandingOrder> {
+        let count = load_order_count(e);
+        let mut orders = Vec::new(e);
+        let mut id = count;
+        while id > 0 && orders.len() < MAX_PAGE {
+            if let Some(order) = e.storage().persistent().get(&DataKey::Order(id)) {
+                orders.push_back(order);
+            }
+            id -= 1;
+        }
+        orders
     }
 
     /// Proposes a membership or rule change. Always uses the strictest tier.
@@ -815,6 +901,104 @@ fn save_request(e: &Env, request: &Request) {
     RequestEvent {
         id: request.id,
         status: request.status as u32,
+    }
+    .publish(e);
+}
+
+/// The path a one-off payment and a standing order's run share: membership, asset, funds,
+/// budgets, the requester's spending limit, then the rules. `by` must already be authorized.
+#[allow(clippy::too_many_arguments)]
+fn propose_payment_from(
+    e: &Env,
+    by: Address,
+    token: Address,
+    to: Address,
+    amount: i128,
+    memo: String,
+    category: Option<Symbol>,
+    escrow: bool,
+) -> Result<u64, Error> {
+    let info = load_info(e);
+    let members = ranked(e, &info.roles);
+    rules::rank_of_member(&members, &by).ok_or(Error::NotMember)?;
+    let asset = find_asset(&load_assets(e), &token)?;
+    if amount <= 0 {
+        return Err(Error::InvalidAmount);
+    }
+    if memo.len() > MAX_MEMO_LEN {
+        return Err(Error::TextTooLong);
+    }
+    if amount > available(e, &token) {
+        return Err(Error::InsufficientFunds);
+    }
+    let policy = load_policy(e);
+    let amount_in_base = (asset.currency == info.base_currency).then_some(amount);
+    // Budgets are measured in the rules' currency: a payment in another currency can't be
+    // counted, so a hard budget refuses it and a soft one treats it as over budget.
+    let budget = match &category {
+        Some(name) => Some(find_budget(&policy, name)?),
+        None => None,
+    };
+    let over_budget = match (&budget, amount_in_base) {
+        (None, _) => false,
+        (Some(b), Some(a)) if a <= budget_room(e, b) => false,
+        (Some(b), _) if b.hard => return Err(Error::BudgetExceeded),
+        (Some(_), _) => true,
+    };
+    // Inside the requester's spending limit (rules' currency only) nothing needs approval,
+    // unless the payment is over its budget: then approvers must see it.
+    let within_limit = !over_budget && amount_in_base.and_then(|a| use_limit(e, &by, a)).is_some();
+    let evaluation = if within_limit {
+        rules::limit_evaluation(e)
+    } else {
+        rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to), over_budget)?
+    };
+    if let (Some(b), Some(a)) = (&budget, amount_in_base) {
+        book_budget(e, b, a);
+    }
+    let request = new_request(
+        e,
+        RequestKind::Payment(Payment {
+            token: token.clone(),
+            to,
+            amount,
+            memo,
+            category,
+            escrow,
+        }),
+        by,
+        evaluation,
+    );
+    add_committed(e, &token, amount);
+    let settled = settle(e, request, &info);
+    save_request(e, &settled);
+    Ok(settled.id)
+}
+
+fn load_order_count(e: &Env) -> u64 {
+    e.storage()
+        .instance()
+        .get(&DataKey::OrderCount)
+        .unwrap_or(0)
+}
+
+fn load_order(e: &Env, id: u64) -> Result<StandingOrder, Error> {
+    e.storage()
+        .persistent()
+        .get(&DataKey::Order(id))
+        .ok_or(Error::UnknownOrder)
+}
+
+fn save_order(e: &Env, order: &StandingOrder, request: Option<u64>) {
+    let key = DataKey::Order(order.id);
+    e.storage().persistent().set(&key, order);
+    e.storage()
+        .persistent()
+        .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+    StandingOrderEvent {
+        id: order.id,
+        active: order.active,
+        request,
     }
     .publish(e);
 }

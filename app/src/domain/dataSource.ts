@@ -21,6 +21,20 @@ export type PaymentInput = {
 	escrow?: boolean;
 };
 
+/** A standing order to set up: the payment, how often it repeats and when it starts. */
+export type StandingOrderInput = {
+	/** The recipient's account (Stellar address, or IBAN in sample data). */
+	to: string;
+	token: string;
+	amount: Cents;
+	note: string;
+	category?: string | null;
+	/** At least an hour. */
+	intervalSeconds: number;
+	/** First run, ms; now if in the past. */
+	firstAt: number;
+};
+
 /** A held handover as its recipient sees it, without being a member of the organization. */
 export type EscrowView = {
 	orgName: string;
@@ -278,6 +292,21 @@ export interface DataSource {
 		amount: Cents,
 	): Promise<Result<void, RuleError>>;
 	setLogo(orgId: string, actorId: PersonId, logoUrl: string): Promise<Result<void, RuleError>>;
+
+	/** A payment repeated on a schedule; every run follows the rules like a one-off payment. */
+	setStandingOrder(
+		orgId: string,
+		actorId: PersonId,
+		input: StandingOrderInput,
+	): Promise<Result<void, RuleError>>;
+	/** Stops a standing order: the person who set it, or the top role. */
+	cancelStandingOrder(
+		orgId: string,
+		actorId: PersonId,
+		orderId: string,
+	): Promise<Result<void, RuleError>>;
+	/** Runs a due standing order now; anyone may (on testnet the operator pays the fee). */
+	runStandingOrder(orgId: string, orderId: string): Promise<Result<void, RuleError>>;
 
 	/** Sends a fully approved request whose objection window has passed. */
 	executeRequest(

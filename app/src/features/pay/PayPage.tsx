@@ -18,6 +18,7 @@ import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./PayPage.module.css";
 import { RulePreview } from "./RulePreview.tsx";
+import { REPEAT_OPTIONS, type RepeatValue, StandingOrdersCard } from "./StandingOrdersCard.tsx";
 
 const NEW_RECIPIENT = "new";
 /** Other organizations on Stellar in this browser, payable without typing their address. */
@@ -49,6 +50,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 	const [note, setNote] = useState("");
 	const [category, setCategory] = useState("");
 	const [escrow, setEscrow] = useState(false);
+	const [repeat, setRepeat] = useState<"once" | RepeatValue>("once");
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	/** Per accepted token: null = can receive, a message = why not; absent = not checked yet. */
 	const [reachable, setReachable] = useState<Record<string, string | null>>({});
@@ -118,6 +120,40 @@ function PayForm({ account }: { account: OrgAccount }) {
 		}
 		setErrors(found);
 		if (amount === null || Object.keys(found).length > 0) return;
+
+		const repeatOption = REPEAT_OPTIONS.find((option) => option.value === repeat);
+		if (repeatOption) {
+			const to = isNew
+				? newAccount.trim()
+				: orgPayee && orgAddress
+					? orgAddress
+					: (account.payees.find((p) => p.id === payeeId)?.account ?? "");
+			const set = await run(
+				() =>
+					dataSource.setStandingOrder(account.org.id, me.id, {
+						to,
+						token,
+						amount,
+						note,
+						category: category || null,
+						intervalSeconds: repeatOption.seconds,
+						firstAt: Date.now(),
+					}),
+				{
+					signature: {
+						kind: "passkey",
+						title: `Pay ${formatMoney(amount, currency)} to ${recipientName} ${repeatOption.label}`,
+					},
+					success: "Standing order set. The first payment runs now, under the rules.",
+				},
+			);
+			if (set?.ok) {
+				setRepeat("once");
+				setAmountInput("");
+				setNote("");
+			}
+			return;
+		}
 
 		const result = await run(
 			() =>
@@ -276,14 +312,41 @@ function PayForm({ account }: { account: OrgAccount }) {
 							</select>
 						</Field>
 					)}
-					<label className={styles.toggle}>
-						<input type="checkbox" checked={escrow} onChange={(e) => setEscrow(e.target.checked)} />
-						<span>
-							<strong>Secure handover.</strong> After approval the money is set aside and only paid
-							out once the recipient and {account.org.name} both confirm. You get a link to send the
-							recipient.
-						</span>
-					</label>
+					{account.standingOrders !== null && (
+						<Field
+							label="Repeat"
+							htmlFor="repeat"
+							hint="A standing order pays again on schedule; every run follows the rules like a one-off payment."
+						>
+							<select
+								id="repeat"
+								className={controlClass}
+								value={repeat}
+								onChange={(e) => setRepeat(e.target.value as "once" | RepeatValue)}
+							>
+								<option value="once">Once</option>
+								{REPEAT_OPTIONS.map((option) => (
+									<option key={option.value} value={option.value}>
+										{option.title}
+									</option>
+								))}
+							</select>
+						</Field>
+					)}
+					{repeat === "once" && (
+						<label className={styles.toggle}>
+							<input
+								type="checkbox"
+								checked={escrow}
+								onChange={(e) => setEscrow(e.target.checked)}
+							/>
+							<span>
+								<strong>Secure handover.</strong> After approval the money is set aside and only
+								paid out once the recipient and {account.org.name} both confirm. You get a link to
+								send the recipient.
+							</span>
+						</label>
+					)}
 					<Field label="Reference" htmlFor="note" hint="Shown to approvers and on the statement.">
 						<input
 							id="note"
@@ -293,10 +356,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 						/>
 					</Field>
 					<button type="submit" className={buttonClass()} disabled={busy}>
-						Continue
+						{repeat === "once" ? "Continue" : "Set standing order"}
 					</button>
 				</form>
 			</Card>
+			<StandingOrdersCard account={account} />
 		</Page>
 	);
 }

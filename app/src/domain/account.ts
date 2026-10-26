@@ -80,6 +80,27 @@ export function hasReserve(asset: Asset): boolean {
 }
 
 /** Everything one organization's account holds: rules, money, requests and history. */
+/**
+ * A payment the organization repeats on a schedule. Each run is proposed as a payment from
+ * `by` under the rules of that moment, so it needs no special permission beyond membership.
+ */
+export type StandingOrder = {
+	id: string;
+	by: PersonId;
+	token: string;
+	/** The recipient's account (Stellar address, or IBAN in sample data). */
+	to: string;
+	amount: Cents;
+	memo: string;
+	category: string | null;
+	intervalSeconds: number;
+	/** When the next run is due, ms. Missed runs are skipped, never caught up. */
+	nextAt: number;
+	active: boolean;
+	runs: number;
+	lastRequestId: string | null;
+};
+
 export type OrgAccount = {
 	org: Org;
 	/** Null for sample data. */
@@ -97,7 +118,14 @@ export type OrgAccount = {
 	discussions: Readonly<Record<string, readonly DiscussionEntry[]>>;
 	/** What the contract booked against each budget category in its running window. */
 	budgetUse: Readonly<Record<string, BudgetUse>>;
+	/** Repeating payments; null when the organization's code predates them (before 26 Oct 2026). */
+	standingOrders: readonly StandingOrder[] | null;
 };
+
+/** The person's name for a standing order's recipient, or the account shortened. */
+export function recipientLabel(account: OrgAccount, to: string): string {
+	return account.payees.find((p) => p.account === to)?.name ?? shortAddress(to);
+}
 
 /** The discussion on one request; tolerant of accounts stored before discussions existed. */
 export function discussionOf(account: OrgAccount, requestId: string): readonly DiscussionEntry[] {

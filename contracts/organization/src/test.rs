@@ -1137,3 +1137,201 @@ fn confirming_an_escrow_requires_the_confirming_partys_authorization() {
     assert!(w.org.try_confirm_escrow(&shop, &id).is_err());
     assert!(!w.org.escrow(&id).recipient_ok);
 }
+
+#[test]
+fn standing_orders_repeat_a_payment_under_the_rules_and_skip_missed_runs() {
+    let w = club(5_000);
+    let coach = Address::generate(&w.e);
+    w.e.ledger().set_timestamp(1_000);
+    // Monthly, first due at once; the founder's small payment needs no approval.
+    let id = w.org.set_standing_order(
+        &w.founder,
+        &w.token,
+        &coach,
+        &euros(150),
+        &String::from_str(&w.e, "Coaching"),
+        &None,
+        &(30 * 86_400),
+        &0,
+    );
+    let order = w.org.standing_orders().get(0).unwrap();
+    assert_eq!(order.id, id);
+    assert_eq!(order.next_at, 1_000);
+    assert!(order.active);
+
+    let request_id = w.org.run_standing_order(&id);
+    assert_eq!(w.org.request(&request_id).status, Status::Executed);
+    assert_eq!(w.token_client.balance(&coach), euros(150));
+    let order = w.org.standing_orders().get(0).unwrap();
+    assert_eq!(order.runs, 1);
+    assert_eq!(order.last_request, Some(request_id));
+    assert_eq!(order.next_at, 1_000 + 30 * 86_400);
+    // Not due again until the next month.
+    assert_eq!(
+        w.org.try_run_standing_order(&id),
+        Err(Ok(Error::OrderNotDue))
+    );
+
+    // Three months pass unattended: one run, and the next due time lands in the future.
+    w.e.ledger().set_timestamp(1_000 + 95 * 86_400);
+    w.org.run_standing_order(&id);
+    let order = w.org.standing_orders().get(0).unwrap();
+    assert_eq!(order.runs, 2);
+    assert_eq!(order.next_at, 1_000 + 120 * 86_400);
+    assert_eq!(w.token_client.balance(&coach), euros(300));
+}
+
+#[test]
+fn standing_orders_are_validated_and_stop_only_for_their_owner_or_the_top_role() {
+    let w = club(5_000);
+    let bo = board_member(&w);
+    let max = Address::generate(&w.e);
+    w.org.change_directly(
+        &w.founder,
+        &Change::AddMember(max.clone(), symbol_short!("member")),
+    );
+    let landlord = Address::generate(&w.e);
+    let memo = String::from_str(&w.e, "Rent");
+    assert_eq!(
+        w.org.try_set_standing_order(
+            &Address::generate(&w.e),
+            &w.token,
+            &landlord,
+            &euros(10),
+            &memo,
+            &None,
+            &86_400,
+            &0
+        ),
+        Err(Ok(Error::NotMember))
+    );
+    assert_eq!(
+        w.org
+            .try_set_standing_order(&max, &w.token, &landlord, &0, &memo, &None, &86_400, &0),
+        Err(Ok(Error::InvalidAmount))
+    );
+    assert_eq!(
+        w.org.try_set_standing_order(
+            &max,
+            &w.token,
+            &landlord,
+            &euros(10),
+            &memo,
+            &None,
+            &600,
+            &0
+        ),
+        Err(Ok(Error::InvalidInterval))
+    );
+    assert_eq!(
+        w.org.try_set_standing_order(
+            &max,
+            &w.token,
+            &landlord,
+            &euros(10),
+            &memo,
+            &Some(symbol_short!("travel")),
+            &86_400,
+            &0
+        ),
+        Err(Ok(Error::UnknownBudget))
+    );
+    let id = w.org.set_standing_order(
+        &max,
+        &w.token,
+        &landlord,
+        &euros(10),
+        &memo,
+        &None,
+        &86_400,
+        &0,
+    );
+    // A board member isn't the owner and not the top role; the treasurer (top role) is.
+    assert_eq!(
+        w.org.try_cancel_standing_order(&bo, &id),
+        Err(Ok(Error::NotOrderOwner))
+    );
+    assert_eq!(
+        w.org
+            .try_cancel_standing_order(&Address::generate(&w.e), &id),
+        Err(Ok(Error::NotMember))
+    );
+    w.org.cancel_standing_order(&w.founder, &id);
+    assert!(!w.org.standing_orders().get(0).unwrap().active);
+    assert_eq!(
+        w.org.try_run_standing_order(&id),
+        Err(Ok(Error::OrderStopped))
+    );
+    assert_eq!(
+        w.org.try_cancel_standing_order(&max, &id),
+        Err(Ok(Error::OrderStopped))
+    );
+    assert_eq!(
+        w.org.try_run_standing_order(&99),
+        Err(Ok(Error::UnknownOrder))
+    );
+}
+
+#[test]
+fn a_standing_orders_run_waits_for_approvals_like_any_payment() {
+    let w = club(50_000);
+    let bo = board_member(&w);
+    let builder = Address::generate(&w.e);
+    // Beyond the first tier: the run creates a pending request instead of paying.
+    let id = w.org.set_standing_order(
+        &bo,
+        &w.token,
+        &builder,
+        &euros(2_000),
+        &String::from_str(&w.e, "Boathouse works"),
+        &None,
+        &(7 * 86_400),
+        &0,
+    );
+    let request_id = w.org.run_standing_order(&id);
+    assert_eq!(w.org.request(&request_id).status, Status::Pending);
+    assert_eq!(w.token_client.balance(&builder), 0);
+    assert_eq!(w.org.available(&w.token), euros(48_000));
+}
+
+#[test]
+fn setting_a_standing_order_requires_the_members_authorization() {
+    let w = club(5_000);
+    let landlord = Address::generate(&w.e);
+    let memo = String::from_str(&w.e, "Rent");
+    // Only a stranger is authorized: the founder's signature is missing.
+    let stranger = Address::generate(&w.e);
+    w.e.mock_auths(&[MockAuth {
+        address: &stranger,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "set_standing_order",
+            args: (
+                &w.founder,
+                &w.token,
+                &landlord,
+                euros(10),
+                &memo,
+                None::<Symbol>,
+                86_400u64,
+                0u64,
+            )
+                .into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(w
+        .org
+        .try_set_standing_order(
+            &w.founder,
+            &w.token,
+            &landlord,
+            &euros(10),
+            &memo,
+            &None,
+            &86_400,
+            &0
+        )
+        .is_err());
+    assert_eq!(w.org.standing_orders().len(), 0);
+}

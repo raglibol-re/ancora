@@ -10,6 +10,8 @@ import {
 	type OnchainAccount,
 	type OrgAccount,
 	payOutEscrow,
+	type StandingOrder,
+	shortAddress,
 	syncBalances,
 	type Workspace,
 	withdrawFromReserve,
@@ -23,6 +25,7 @@ import type {
 	DiscussionSupport,
 	PaymentInput,
 	RegistryNameSupport,
+	StandingOrderInput,
 	TokenInfo,
 } from "../../domain/dataSource.ts";
 import {
@@ -248,8 +251,88 @@ export class LocalDataSource implements DataSource {
 			activity: [],
 			discussions: {},
 			budgetUse: {},
+			standingOrders: [],
 		});
 		return ok(id);
+	}
+
+	async setStandingOrder(orgId: string, actorId: PersonId, input: StandingOrderInput) {
+		const id = this.newId();
+		const now = this.clock();
+		const set = this.store.mutate(orgId, (account) => {
+			if (!account.org.members.some((m) => m.personId === actorId)) {
+				return notAllowed("Only members can set standing orders.");
+			}
+			if (input.amount <= 0) return notAllowed("Enter an amount above zero.");
+			if (input.intervalSeconds < 3_600) return notAllowed("Repeat at least every hour.");
+			const order: StandingOrder = {
+				id,
+				by: actorId,
+				token: input.token,
+				to: input.to.trim(),
+				amount: input.amount,
+				memo: input.note.trim(),
+				category: input.category ?? null,
+				intervalSeconds: input.intervalSeconds,
+				nextAt: Math.max(input.firstAt, now),
+				active: true,
+				runs: 0,
+				lastRequestId: null,
+			};
+			return ok({ ...account, standingOrders: [order, ...(account.standingOrders ?? [])] });
+		});
+		if (!set.ok) return set;
+		return input.firstAt <= now ? this.runStandingOrder(orgId, id) : set;
+	}
+
+	async cancelStandingOrder(orgId: string, actorId: PersonId, orderId: string) {
+		return this.store.mutate(orgId, (account) => {
+			const order = (account.standingOrders ?? []).find((o) => o.id === orderId);
+			if (!order) return notFound();
+			if (!order.active) return notAllowed("This standing order was already stopped.");
+			const member = account.org.members.find((m) => m.personId === actorId);
+			// Like the contract: the owner, or a holder of the top role (roles are highest first).
+			const isTop = member !== undefined && member.roleId === account.org.roles[0]?.id;
+			if (order.by !== actorId && !isTop) {
+				return notAllowed(
+					"Only the person who set this standing order, or the top role, can stop it.",
+				);
+			}
+			return ok({
+				...account,
+				standingOrders: (account.standingOrders ?? []).map((o) =>
+					o.id === orderId ? { ...o, active: false } : o,
+				),
+			});
+		});
+	}
+
+	async runStandingOrder(orgId: string, orderId: string) {
+		const account = this.store.account(orgId);
+		const order = account?.standingOrders?.find((o) => o.id === orderId);
+		if (!account || !order) return notFound();
+		if (!order.active) return notAllowed("This standing order was stopped.");
+		const now = this.clock();
+		if (now < order.nextAt) return notAllowed("This standing order isn't due yet.");
+		const payee = account.payees.find((p) => p.account === order.to);
+		const result = await this.requestPayment(orgId, order.by, {
+			payee: payee ? { id: payee.id } : { name: shortAddress(order.to), account: order.to },
+			token: order.token,
+			amount: order.amount,
+			note: order.memo,
+			category: order.category,
+		});
+		if (!result.ok) return result;
+		let nextAt = order.nextAt;
+		while (nextAt <= now) nextAt += order.intervalSeconds * 1000;
+		return this.store.mutate(orgId, (current) =>
+			ok({
+				...current,
+				standingOrders: (current.standingOrders ?? []).map((o) =>
+					o.id === orderId ? { ...o, nextAt, runs: o.runs + 1, lastRequestId: result.value } : o,
+				),
+			}),
+		);
 	}
 
 	private async mutateThread(

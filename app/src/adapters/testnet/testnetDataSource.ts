@@ -19,6 +19,7 @@ import type {
 	ProfileInput,
 	RampSupport,
 	RegistryNameSupport,
+	StandingOrderInput,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
 import type { RecoveryPlan } from "../../domain/lifeline.ts";
@@ -122,6 +123,8 @@ export class TestnetDataSource implements DataSource {
 	private restoringSession = true;
 	private syncingChain = false;
 	private profiles = new Map<string, Profile | null>();
+	/** Standing orders already tried this visit, so a refused run isn't retried on every refresh. */
+	private readonly attemptedOrders = new Set<string>();
 	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
 	private readonly memo = new Map<string, { at: number; value: Promise<unknown> }>();
 
@@ -300,6 +303,7 @@ export class TestnetDataSource implements DataSource {
 			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
 			this.publish(me, snapshots, threads, everyone);
 			void this.backfillHistory(me, snapshots, threads, everyone);
+			void this.runDueOrders(me);
 		} catch (error) {
 			// A failed poll keeps the last snapshot; the health check handles a dead RPC.
 			recordError(this.storage, {
@@ -310,6 +314,40 @@ export class TestnetDataSource implements DataSource {
 		}
 		this.syncingChain = false;
 		this.notify();
+	}
+
+	/**
+	 * Due standing orders run when the organization is opened (the contract lets anyone run
+	 * them; the operator pays the fee). Each is tried once per visit.
+	 */
+	private async runDueOrders(me: string): Promise<void> {
+		const now = Date.now();
+		const due = this.snapshot.accounts.flatMap((account) =>
+			(account.standingOrders ?? [])
+				.filter(
+					(order) =>
+						order.active &&
+						order.nextAt <= now &&
+						!this.attemptedOrders.has(`${account.org.id}:${order.id}`),
+				)
+				.map((order) => ({ orgId: account.org.id, id: order.id })),
+		);
+		if (due.length === 0 || this.me?.id !== me) return;
+		for (const order of due) {
+			this.attemptedOrders.add(`${order.orgId}:${order.id}`);
+			const result = await this.post("/api/run-standing-order", {
+				organization: order.orgId,
+				orderId: Number(order.id),
+			});
+			if (!result.ok) {
+				recordError(this.storage, {
+					at: Date.now(),
+					where: "standing order",
+					message: result.error.message,
+				});
+			}
+		}
+		await this.refresh();
 	}
 
 	/** The workspace built from what was read, shown now and saved for the next visit. */
@@ -629,6 +667,34 @@ export class TestnetDataSource implements DataSource {
 		const response = await this.post("/api/execute-request", {
 			organization: orgId,
 			requestId: Number(requestId),
+		});
+		if (!response.ok) return response;
+		await this.refresh();
+		return ok(undefined);
+	}
+
+	async setStandingOrder(orgId: string, actorId: PersonId, input: StandingOrderInput) {
+		const result = await this.invoke(orgId, "set_standing_order", [
+			address(actorId),
+			address(input.token),
+			address(input.to.trim()),
+			i128(toStroops(input.amount)),
+			text(input.note.trim()),
+			optionalSymbol(input.category ?? null),
+			u64(input.intervalSeconds),
+			u64(Math.floor(input.firstAt / 1000)),
+		]);
+		return result.ok ? ok(undefined) : result;
+	}
+
+	cancelStandingOrder(orgId: string, actorId: PersonId, orderId: string) {
+		return this.invoke(orgId, "cancel_standing_order", [address(actorId), u64(Number(orderId))]);
+	}
+
+	async runStandingOrder(orgId: string, orderId: string) {
+		const response = await this.post("/api/run-standing-order", {
+			organization: orgId,
+			orderId: Number(orderId),
 		});
 		if (!response.ok) return response;
 		await this.refresh();
