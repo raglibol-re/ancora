@@ -140,6 +140,11 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	31: "The rules have no budget with that name.",
 	32: "This payment isn't a held handover waiting for confirmations.",
 	33: "Only the recipient, the requester or an eligible approver can act on this handover.",
+	34: "There is no standing order with this number.",
+	35: "This standing order isn't due yet.",
+	36: "A standing order repeats at least every hour.",
+	37: "Only the person who set this standing order, or the top role, can stop it.",
+	38: "This standing order was stopped.",
 };
 
 const variant = (value: unknown): [string, unknown[]] => {
