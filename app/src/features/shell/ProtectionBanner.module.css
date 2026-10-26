@@ -1,0 +1,28 @@
+.banner {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	gap: var(--space-1) var(--space-3);
+	padding: var(--space-2) var(--space-4);
+	background: var(--color-surface-raised);
+	color: var(--color-text);
+	border-bottom: 1px solid var(--color-border);
+	font-size: var(--text-sm);
+	text-align: center;
+}
+
+.banner a {
+	font-weight: var(--weight-semibold);
+	color: var(--color-accent-text);
+}
+
+.dismiss {
+	padding: 0;
+	border: none;
+	background: none;
+	color: var(--color-text-muted);
+	text-decoration: underline;
+	cursor: pointer;
+	font-size: inherit;
+}

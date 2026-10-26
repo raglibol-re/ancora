@@ -48,6 +48,7 @@ import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
 import { address, bool, changeToScVal, i128, optionalSymbol, text, toStroops, u64 } from "./scv.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
+import { inspectToken } from "./tokenInspect.ts";
 
 const EMPTY: Workspace = { people: [], accounts: [] };
 const MAX_NAME_BYTES = 64;
@@ -502,6 +503,10 @@ export class TestnetDataSource implements DataSource {
 
 	canReceive(token: string, recipient: string) {
 		return checkRecipient(this.config, token, recipient.trim());
+	}
+
+	inspectToken(reference: string) {
+		return inspectToken(this.config, reference);
 	}
 
 	async addTestMoney(orgId: string, _actorId: PersonId, token: string) {

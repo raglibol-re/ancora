@@ -10,7 +10,7 @@ import { OrgRequired } from "../shell/OrgRequired.tsx";
 type Filter = "open" | "scheduled" | "done";
 
 const statusesFor: Readonly<Record<Filter, readonly RequestStatus[]>> = {
-	open: ["pending", "ready"],
+	open: ["pending", "ready", "escrowed"],
 	scheduled: ["scheduled"],
 	done: ["executed", "declined", "failed"],
 };

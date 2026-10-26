@@ -33,6 +33,9 @@ export type ChangeOutcome = "applied" | "requested";
 /** An asset a new organization may accept, with a label for pickers. */
 export type AssetOption = Asset & { label: string };
 
+/** What a token contract says about itself, before an organization accepts it. */
+export type TokenInfo = { token: string; symbol: string; name: string; decimals: number };
+
 /** A Stellar wallet the person connected to fund an organization (Freighter, Hana, xBull, Albedo). */
 export type ConnectedWallet = { address: string; walletName: string };
 
@@ -269,4 +272,9 @@ export interface DataSource {
 	 * a trustline for exactly that asset). Sample data accepts everything.
 	 */
 	canReceive(token: string, recipient: string): Promise<Result<void, RuleError>>;
+	/**
+	 * Describes any Stellar asset by contract address (C…) or classic CODE:ISSUER, so an
+	 * organization can accept tokens beyond the operator's list.
+	 */
+	inspectToken(reference: string): Promise<Result<TokenInfo, RuleError>>;
 }

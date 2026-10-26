@@ -12,6 +12,8 @@ export type Preferences = {
 	/** Whose eyes the demo is seen through. Signing always uses the passkeys on this device. */
 	personId: string;
 	activeOrgId: string | null;
+	/** When the "protect your pass" reminder was dismissed on this device; null if never. */
+	protectionReminderDismissedAt: number | null;
 };
 
 const KEY = "ancora.prefs.v1";
@@ -22,6 +24,7 @@ export const defaultPreferences: Preferences = {
 	expertMode: false,
 	personId: SAMPLE_DEFAULT_PERSON,
 	activeOrgId: null,
+	protectionReminderDismissedAt: null,
 };
 
 /** localStorage, or null where the browser blocks it (some private modes, sandboxed previews). */

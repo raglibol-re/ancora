@@ -1,9 +1,12 @@
 import { type FormEvent, useState } from "react";
 import { assetInUse, balanceOf, type OrgAccount } from "../../domain/account.ts";
+import type { TokenInfo } from "../../domain/dataSource.ts";
+import type { Currency } from "../../domain/money.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
+import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./PeopleCard.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
@@ -21,6 +24,36 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 	);
 	const [choice, setChoice] = useState(options[0]?.token ?? "");
 	const selected = options.find((o) => o.token === choice) ?? options[0];
+	const { run: inspect, busy: inspecting } = useCommand();
+	const [reference, setReference] = useState("");
+	const [found, setFound] = useState<TokenInfo | null>(null);
+	const [currency, setCurrency] = useState<Currency>(org.baseCurrency);
+	const [vault, setVault] = useState("");
+	const onTestnet = dataSource.kind === "testnet";
+
+	const check = async (event: FormEvent) => {
+		event.preventDefault();
+		setFound(null);
+		const result = await inspect(() => dataSource.inspectToken(reference));
+		if (result?.ok) setFound(result.value);
+	};
+
+	const acceptFound = async () => {
+		if (!found) return;
+		if (org.assets.some((a) => a.token === found.token)) {
+			setFound(null);
+			return;
+		}
+		const result = await propose({
+			type: "addAsset",
+			asset: { token: found.token, symbol: found.symbol, currency, vault: vault.trim() || null },
+		});
+		if (result?.ok) {
+			setFound(null);
+			setReference("");
+			setVault("");
+		}
+	};
 
 	const add = async (event: FormEvent) => {
 		event.preventDefault();
@@ -90,6 +123,73 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 					</button>
 				</form>
 			)}
+			<form className={styles.invite} onSubmit={check}>
+				<Field
+					label="Accept any Stellar asset"
+					htmlFor="asset-reference"
+					hint="A token contract address (C…) or a classic asset as CODE:ISSUER. The token itself says what it is; the organization's contract checks the same when it accepts it."
+				>
+					<input
+						id="asset-reference"
+						className={controlClass}
+						value={reference}
+						placeholder="C… or EURC:GB3Q…"
+						spellCheck={false}
+						autoComplete="off"
+						onChange={(e) => {
+							setReference(e.target.value);
+							setFound(null);
+						}}
+					/>
+				</Field>
+				<Field label="Stands for" htmlFor="asset-currency">
+					<select
+						id="asset-currency"
+						className={controlClass}
+						value={currency}
+						onChange={(e) => setCurrency(e.target.value as Currency)}
+					>
+						<option value="EUR">EUR</option>
+						<option value="USD">USD</option>
+					</select>
+				</Field>
+				{onTestnet && (
+					<Field
+						label="Reserve vault (optional)"
+						htmlFor="asset-vault"
+						hint="A DeFindex vault for this token, if one exists."
+					>
+						<input
+							id="asset-vault"
+							className={controlClass}
+							value={vault}
+							placeholder="C…"
+							spellCheck={false}
+							autoComplete="off"
+							onChange={(e) => setVault(e.target.value)}
+						/>
+					</Field>
+				)}
+				{found ? (
+					<>
+						<p className={styles.you}>
+							Found <strong>{found.symbol}</strong> ({found.name}, {found.decimals} decimals) at{" "}
+							<span className={styles.id}>{found.token}</span>
+						</p>
+						<button type="button" className={buttonClass()} disabled={busy} onClick={acceptFound}>
+							Accept {found.symbol} as {currency}
+						</button>
+					</>
+				) : (
+					<button
+						type="submit"
+						className={buttonClass("secondary")}
+						disabled={inspecting || !reference.trim()}
+					>
+						{inspecting ? "Asking the token…" : "Check"}
+					</button>
+				)}
+			</form>
 		</Card>
 	);
 }

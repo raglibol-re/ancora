@@ -9,6 +9,7 @@ import styles from "./AppShell.module.css";
 import { DataSourceBanner } from "./DataSourceBanner.tsx";
 import { tabBarItems } from "./navigation.tsx";
 import { OrgSwitcher } from "./OrgSwitcher.tsx";
+import { ProtectionBanner } from "./ProtectionBanner.tsx";
 import { SideNav } from "./SideNav.tsx";
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
@@ -60,6 +61,7 @@ export function AppShell() {
 			<div ref={topbar} className={styles.topbar}>
 				<DataSourceBanner />
 				<ClaimBanner />
+				<ProtectionBanner />
 			</div>
 			<div className={styles.shell}>
 				<aside className={styles.sidebar}>

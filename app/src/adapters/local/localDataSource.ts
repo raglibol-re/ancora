@@ -22,6 +22,7 @@ import type {
 	DataSourceKind,
 	DiscussionSupport,
 	PaymentInput,
+	TokenInfo,
 } from "../../domain/dataSource.ts";
 import {
 	canMarkAnswered,
@@ -434,6 +435,22 @@ export class LocalDataSource implements DataSource {
 
 	async canReceive(): Promise<Result<void, RuleError>> {
 		return ok(undefined);
+	}
+
+	/** Sample data: any plausible reference becomes a simulated token. */
+	async inspectToken(reference: string): Promise<Result<TokenInfo, RuleError>> {
+		const text = reference.trim();
+		const code = text.includes(":") ? (text.split(":")[0] ?? "") : text.slice(0, 6);
+		if (!/^[A-Za-z0-9]{1,12}$/.test(code) || (!text.includes(":") && text.length < 20)) {
+			return err(
+				ruleError(
+					"unknown-asset",
+					"Enter a token contract address (C…) or a classic asset as CODE:ISSUER.",
+				),
+			);
+		}
+		const symbol = code.toUpperCase();
+		return ok({ token: text, symbol, name: `${symbol} (sample token)`, decimals: 7 });
 	}
 
 	/** Sample data: a simulated incoming transfer of 500 in the chosen asset. */
