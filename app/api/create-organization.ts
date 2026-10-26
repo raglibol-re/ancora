@@ -11,6 +11,7 @@ import {
 import { deployedContractId, isSmartAccount } from "./_lib/contracts.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer } from "./_lib/ledger.js";
+import { rememberOrganization } from "./_lib/organizationIndex.js";
 import { type OrgAsset, required, serverConfig } from "./_lib/serverConfig.js";
 
 // The operator deploys the organization contract and registers it. The founder (a person's
@@ -112,5 +113,12 @@ export default apiHandler("POST", async (request) => {
 			new Address(founder).toScVal(),
 		),
 	);
+	try {
+		await rememberOrganization(contractId);
+	} catch (error) {
+		// The organization exists on-chain either way; the app indexes it again when opened.
+		// biome-ignore lint/suspicious/noConsole: server-side log line for the operator
+		console.warn(`[api] organization index: ${error instanceof Error ? error.message : error}`);
+	}
 	return { contractId, deployHash, registerHash };
 });

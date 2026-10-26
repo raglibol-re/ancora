@@ -124,6 +124,8 @@ export class TestnetDataSource implements DataSource {
 	private restoringSession = true;
 	private syncingChain = false;
 	private profiles = new Map<string, Profile | null>();
+	/** Organizations already reported to the server's index this visit. */
+	private readonly indexed = new Set<string>();
 	/** Standing orders already tried this visit, so a refused run isn't retried on every refresh. */
 	private readonly attemptedOrders = new Set<string>();
 	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
@@ -305,6 +307,7 @@ export class TestnetDataSource implements DataSource {
 			this.publish(me, snapshots, threads, everyone);
 			void this.backfillHistory(me, snapshots, threads, everyone);
 			void this.runDueOrders(me);
+			void this.indexOrganizations(orgIds);
 		} catch (error) {
 			// A failed poll keeps the last snapshot; the health check handles a dead RPC.
 			recordError(this.storage, {
@@ -315,6 +318,22 @@ export class TestnetDataSource implements DataSource {
 		}
 		this.syncingChain = false;
 		this.notify();
+	}
+
+	/**
+	 * Tells the server about each organization once, so the scheduler visits organizations that
+	 * predate its index. Best effort and silent: the server also indexes what it deploys.
+	 */
+	private async indexOrganizations(orgIds: readonly string[]): Promise<void> {
+		for (const organization of orgIds) {
+			if (this.indexed.has(organization)) continue;
+			this.indexed.add(organization);
+			await fetch("/api/organizations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ organization }),
+			}).catch(() => null);
+		}
 	}
 
 	/**

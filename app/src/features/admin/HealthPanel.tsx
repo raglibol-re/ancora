@@ -3,7 +3,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatStroops } from "../../ui/format.ts";
-import { type AdminHealth, refillXlm } from "./adminApi.ts";
+import { type AdminHealth, type DueOrdersReport, refillXlm, runDueOrdersNow } from "./adminApi.ts";
 import styles from "./HealthPanel.module.css";
 
 const MIN_XLM_FLOAT = 3_000n * 10_000_000n;
@@ -30,6 +30,20 @@ export function HealthPanel({ health, busy, passphrase, onRefresh }: HealthPanel
 	const operatorOk = operator !== null && BigInt(operator.xlmStroops) >= MIN_XLM_FLOAT;
 	const [refilling, setRefilling] = useState(false);
 	const [refillError, setRefillError] = useState<string | null>(null);
+	const [running, setRunning] = useState(false);
+	const [ordersReport, setOrdersReport] = useState<DueOrdersReport | string | null>(null);
+
+	const runOrders = async () => {
+		setRunning(true);
+		setOrdersReport(null);
+		try {
+			setOrdersReport(await runDueOrdersNow(passphrase));
+		} catch (failure) {
+			setOrdersReport(failure instanceof Error ? failure.message : "The run failed.");
+		} finally {
+			setRunning(false);
+		}
+	};
 
 	const refill = async () => {
 		setRefilling(true);
@@ -108,6 +122,28 @@ export function HealthPanel({ health, busy, passphrase, onRefresh }: HealthPanel
 					>
 						{refilling ? "Asking Friendbot…" : "Top up XLM from Friendbot (~10,000)"}
 					</button>
+					<button
+						type="button"
+						className={buttonClass("secondary")}
+						disabled={busy || running}
+						onClick={runOrders}
+					>
+						{running ? "Running due standing orders…" : "Run due standing orders now"}
+					</button>
+					{typeof ordersReport === "string" && (
+						<p className={styles.bad} role="alert">
+							{ordersReport}
+						</p>
+					)}
+					{ordersReport !== null && typeof ordersReport !== "string" && (
+						<p className={styles.muted} role="status">
+							{ordersReport.organizations} organizations visited, {ordersReport.due} due,{" "}
+							{ordersReport.runs.filter((run) => run.hash).length} run,{" "}
+							{ordersReport.runs.filter((run) => run.error).length} refused
+							{ordersReport.unreadable > 0 && `, ${ordersReport.unreadable} on older code`}. The
+							cron does the same every day at 07:00 UTC.
+						</p>
+					)}
 					<p className={styles.muted}>
 						BlendUSDC refills through <code>scripts/setup-testnet.sh</code> (Blend faucet); Circle
 						USDC by hand at faucet.circle.com.

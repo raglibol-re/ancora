@@ -22,6 +22,18 @@ export class AdminError extends Error {
 	}
 }
 
+export type DueOrdersReport = {
+	organizations: number;
+	due: number;
+	unreadable: number;
+	runs: { organization: string; orderId: number; hash?: string; error?: string }[];
+};
+
+/** Runs every due standing order now, as the daily cron would. */
+export function runDueOrdersNow(passphrase: string): Promise<DueOrdersReport> {
+	return adminRequest<DueOrdersReport>(passphrase, { action: "run-due-orders" });
+}
+
 async function adminRequest<T>(passphrase: string, body: Record<string, unknown>): Promise<T> {
 	let response: Response;
 	try {

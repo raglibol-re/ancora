@@ -4,6 +4,12 @@
 	"installCommand": "pnpm install --frozen-lockfile",
 	"buildCommand": "pnpm build",
 	"outputDirectory": "dist",
+	"crons": [
+		{
+			"path": "/api/run-due-orders",
+			"schedule": "0 7 * * *"
+		}
+	],
 	"rewrites": [
 		{
 			"source": "/((?!api/).*)",

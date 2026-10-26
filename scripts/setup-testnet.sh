@@ -366,6 +366,20 @@ admin_passphrase() {
 	printf '%s' "$value"
 }
 
+# The bearer token Vercel's cron sends to /api/run-due-orders. Same handling as the passphrase.
+cron_secret() {
+	local env_file="$ROOT/app/.env.local" value="${CRON_SECRET:-}"
+	if [[ -z "$value" && -f "$env_file" ]]; then
+		value="$(sed -n 's/^CRON_SECRET=//p' "$env_file" | head -1)"
+	fi
+	if [[ -z "$value" ]]; then
+		value="$(head -c 24 /dev/urandom | base64 | tr -d '/+=')"
+		printf 'CRON_SECRET=%s\n' "$value" >>"$env_file"
+		say "  ℹ New cron secret saved to app/.env.local (gitignored)." >&2
+	fi
+	printf '%s' "$value"
+}
+
 sync_vercel() {
 	$SYNC_VERCEL || return 0
 	say "Vercel server settings"
@@ -385,6 +399,7 @@ sync_vercel() {
 		vercel_env STELLAR_REGISTRY_CONTRACT "$STELLAR_REGISTRY_CONTRACT"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
 		vercel_env ADMIN_PASSPHRASE "$(admin_passphrase)" secret
+		vercel_env CRON_SECRET "$(cron_secret)" secret
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
 		vercel env rm RELAYER_API_KEY production --yes >/dev/null 2>&1 || true
 		vercel env rm RELAYER_API_KEY preview --yes >/dev/null 2>&1 || true
