@@ -29,3 +29,21 @@
 	font-size: var(--text-sm);
 	overflow-wrap: anywhere;
 }
+
+.form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.warn {
+	font-size: var(--text-sm);
+	color: var(--color-negative);
+}

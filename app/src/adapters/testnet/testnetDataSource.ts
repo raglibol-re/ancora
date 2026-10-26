@@ -18,6 +18,7 @@ import type {
 	PaymentInput,
 	ProfileInput,
 	RampSupport,
+	RegistryNameSupport,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
 import type { RecoveryPlan } from "../../domain/lifeline.ts";
@@ -46,6 +47,7 @@ import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
 import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
+import { registerContractArgs, resolveRegistryName } from "./registryNames.ts";
 import { address, bool, changeToScVal, i128, optionalSymbol, text, toStroops, u64 } from "./scv.ts";
 import { clearCachedSession, loadCachedSession, saveCachedSession } from "./sessionCache.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
@@ -73,6 +75,7 @@ export class TestnetDataSource implements DataSource {
 	readonly availableAssets: readonly AssetOption[];
 	readonly funding: FundingSupport;
 	readonly ramps: RampSupport;
+	readonly registryNames: RegistryNameSupport | null;
 	readonly lifeline: LifelineSupport = {
 		overview: (person) =>
 			this.remember(`lifeline:${person}`, 20_000, () =>
@@ -149,6 +152,34 @@ export class TestnetDataSource implements DataSource {
 				return result;
 			},
 		};
+		const registry = config.stellarRegistryContract;
+		this.registryNames = registry
+			? {
+					channel: () => "unverified",
+					current: async (orgId) => {
+						const name = await this.loadRegistryName(orgId);
+						if (!name) return ok({ name: null, verified: false });
+						const target = await resolveRegistryName(config, registry, name);
+						return ok({ name, verified: target === orgId });
+					},
+					isFree: async (name) => ok((await resolveRegistryName(config, registry, name)) === null),
+					register: async (orgId, actorId, name) => {
+						const result = await this.invoke(
+							registry,
+							"register_contract",
+							registerContractArgs(name, orgId, actorId),
+							(message) => `The registry refused the name: ${message}`,
+						);
+						if (!result.ok) return result;
+						const saved = await this.post("/api/registry-name", {
+							org: orgId,
+							person: actorId,
+							name,
+						});
+						return saved.ok ? ok(undefined) : saved;
+					},
+				}
+			: null;
 		// The anchor client loads with the same laziness; it also needs the wallet kit to sign in.
 		const ramp = () => import("./anchorRamp.ts");
 		this.ramps = {
@@ -585,6 +616,17 @@ export class TestnetDataSource implements DataSource {
 			threads[entry.requestId] = thread;
 		}
 		return threads;
+	}
+
+	/** The name ancora remembered for the organization, from its server. */
+	private async loadRegistryName(orgId: string): Promise<string | null> {
+		const response = await fetch(`/api/registry-name?org=${encodeURIComponent(orgId)}`).catch(
+			() => null,
+		);
+		const payload = (await response?.json().catch(() => null)) as {
+			data?: { name?: unknown };
+		} | null;
+		return typeof payload?.data?.name === "string" ? payload.data.name : null;
 	}
 
 	private async discuss(body: Record<string, unknown>): Promise<Result<void, RuleError>> {

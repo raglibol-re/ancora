@@ -22,6 +22,7 @@ const complete = {
 	VITE_ANCHOR_HOME_DOMAIN: "testanchor.stellar.org",
 	VITE_RECOVERY_CONTRACT: "CRECOVERY",
 	VITE_FX_RATES_URL: "https://rates.example",
+	VITE_STELLAR_REGISTRY_CONTRACT: "",
 };
 
 describe("readTestnetConfig", () => {

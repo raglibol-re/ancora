@@ -32,7 +32,12 @@ export type TestnetConfig = {
 	orgAssets: string;
 	/** Home domain of the SEP-24 anchor for bank deposits and withdrawals (the SDF test anchor). */
 	anchorHomeDomain: string;
+	/** The Stellar Registry's open channel on this network; empty when not configured. */
+	stellarRegistryContract: string;
 };
+
+/** Keys that may be empty without disabling the testnet. */
+const OPTIONAL: ReadonlySet<keyof TestnetConfig> = new Set(["stellarRegistryContract"]);
 
 type EnvSource = Record<string, string | boolean | undefined>;
 
@@ -57,6 +62,7 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	fxRatesUrl: "VITE_FX_RATES_URL",
 	orgAssets: "VITE_ORG_ASSETS",
 	anchorHomeDomain: "VITE_ANCHOR_HOME_DOMAIN",
+	stellarRegistryContract: "VITE_STELLAR_REGISTRY_CONTRACT",
 };
 
 export type AssetOption = Asset & { label: string };
@@ -79,8 +85,14 @@ export function parseAssetOptions(spec: string): AssetOption[] {
 
 export function readTestnetConfig(env: EnvSource): TestnetConfig | null {
 	// Every key must be present; the asset list must parse to at least one asset.
-	const entries = Object.entries(KEYS).map(([field, key]) => [field, env[key]] as const);
-	if (entries.some(([, value]) => typeof value !== "string" || value === "")) return null;
+	const entries = Object.entries(KEYS).map(
+		([field, key]) => [field, typeof env[key] === "string" ? env[key] : ""] as const,
+	);
+	if (
+		entries.some(([field, value]) => value === "" && !OPTIONAL.has(field as keyof TestnetConfig))
+	) {
+		return null;
+	}
 	const config = Object.fromEntries(entries) as TestnetConfig;
 	return parseAssetOptions(config.orgAssets).length > 0 ? config : null;
 }

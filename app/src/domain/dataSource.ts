@@ -33,6 +33,22 @@ export type ChangeOutcome = "applied" | "requested";
 /** An asset a new organization may accept, with a label for pickers. */
 export type AssetOption = Asset & { label: string };
 
+/** The name an organization holds on the Stellar Registry, checked against the registry. */
+export type RegistryNameStatus = { name: string | null; verified: boolean };
+
+/**
+ * Names on the Stellar Registry (stellar-registry/contracts): the highest role registers the
+ * organization's contract under a name in the registry's open channel; ancora remembers the
+ * name and verifies it against the registry on every read.
+ */
+export interface RegistryNameSupport {
+	/** The registry channel names go into, for the UI; null when unknown. */
+	channel(): string | null;
+	current(orgId: string): Promise<Result<RegistryNameStatus, RuleError>>;
+	isFree(name: string): Promise<Result<boolean, RuleError>>;
+	register(orgId: string, actorId: PersonId, name: string): Promise<Result<void, RuleError>>;
+}
+
 /** What a token contract says about itself, before an organization accepts it. */
 export type TokenInfo = { token: string; symbol: string; name: string; decimals: number };
 
@@ -200,6 +216,8 @@ export interface DataSource {
 	readonly ramps: RampSupport | null;
 	/** Lifeline recovery: guardians, claims, handover of positions (simulated on sample data). */
 	readonly lifeline: LifelineSupport;
+	/** Names on the Stellar Registry; null when this source has no registry configured. */
+	readonly registryNames: RegistryNameSupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

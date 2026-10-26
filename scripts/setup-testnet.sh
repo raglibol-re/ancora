@@ -20,6 +20,10 @@ HORIZON_URL="https://horizon-testnet.stellar.org"
 ANCHOR_HOME_DOMAIN="${ANCHOR_HOME_DOMAIN:-testanchor.stellar.org}"
 # Exchange rates for the headline total (display only; ECB reference rates via Frankfurter).
 FX_RATES_URL="${FX_RATES_URL:-https://api.frankfurter.app}"
+# The Stellar Registry's root on testnet (stellar-registry/contracts); its open "unverified"
+# channel is resolved from it, and that is where organizations register their names.
+STELLAR_REGISTRY_ROOT="${STELLAR_REGISTRY_ROOT:-CAAXJETKPYAATU4HVVQUTE2FFBULNFGZNEOC3MS635U5K3GZLAY2HI4M}"
+STELLAR_REGISTRY_CONTRACT=""
 PASSPHRASE="Test SDF Network ; September 2015"
 DEPLOYER="ancora-deployer"
 
@@ -266,6 +270,18 @@ ensure_ancora_contracts() {
 	ok "recovery (Lifeline) $RECOVERY_CONTRACT"
 }
 
+# The Stellar Registry's open channel, read from the root registry each run (public contract).
+resolve_stellar_registry() {
+	say "Stellar Registry"
+	STELLAR_REGISTRY_CONTRACT="$(read_contract "$STELLAR_REGISTRY_ROOT" fetch_contract_id --contract_name unverified | tr -d '"')"
+	if [[ "$STELLAR_REGISTRY_CONTRACT" == C* ]]; then
+		ok "open channel (unverified) $STELLAR_REGISTRY_CONTRACT"
+	else
+		STELLAR_REGISTRY_CONTRACT=""
+		say "  ℹ registry root $STELLAR_REGISTRY_ROOT didn't answer; names on the registry stay off"
+	fi
+}
+
 write_env_file() {
 	$CHECK_ONLY && return
 	cat >"$ENV_FILE" <<EOF
@@ -305,6 +321,9 @@ VITE_ANCHOR_HOME_DOMAIN=$ANCHOR_HOME_DOMAIN
 
 # Exchange rates for the headline total only (the rules never use them).
 VITE_FX_RATES_URL=$FX_RATES_URL
+
+# The Stellar Registry's open channel on this network (empty keeps the feature off).
+VITE_STELLAR_REGISTRY_CONTRACT=$STELLAR_REGISTRY_CONTRACT
 EOF
 	ok "wrote ${ENV_FILE#"$ROOT/"}"
 }
@@ -361,6 +380,7 @@ sync_vercel() {
 		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"
 		vercel_env SEAL_VERIFIER "$SEAL_VERIFIER"
 		vercel_env RECOVERY_CONTRACT "$RECOVERY_CONTRACT"
+		vercel_env STELLAR_REGISTRY_CONTRACT "$STELLAR_REGISTRY_CONTRACT"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
 		vercel_env ADMIN_PASSPHRASE "$(admin_passphrase)" secret
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
@@ -400,6 +420,7 @@ main() {
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_circle_assets
 	verify_external_contracts
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && ensure_ancora_contracts
+	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && resolve_stellar_registry
 	# ancora's own contracts are deployed here as they land (approval policy and requests: task 6,
 	# Reserve split: task 7, seal verifier: task 8, org registry: task 11). See docs/ROADMAP.md.
 	[[ -n "${DEPLOYER_ADDRESS:-}" ]] && write_env_file

@@ -14,6 +14,8 @@ export type ServerConfig = {
 	registryContract: string;
 	/** ancora's Lifeline recovery contract; organizations name it at deployment. */
 	recoveryContract: string;
+	/** The Stellar Registry's open channel, where organizations register their names. */
+	stellarRegistryContract: string;
 	/** The stablecoins an organization may accept, keyed by token address. */
 	orgAssets: ReadonlyMap<string, OrgAsset>;
 };
@@ -55,6 +57,7 @@ export function serverConfig(): ServerConfig {
 		orgWasmHash: (process.env.ORG_WASM_HASH ?? "").toLowerCase(),
 		registryContract: process.env.REGISTRY_CONTRACT ?? "",
 		recoveryContract: process.env.RECOVERY_CONTRACT ?? "",
+		stellarRegistryContract: process.env.STELLAR_REGISTRY_CONTRACT ?? "",
 		orgAssets: parseOrgAssets(process.env.ORG_ASSETS ?? ""),
 		allowedOrigins: new Set(
 			required("ALLOWED_ORIGINS")

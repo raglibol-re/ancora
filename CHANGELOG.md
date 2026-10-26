@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-26: Name on the Stellar Registry: organization settings let the highest role check and register a name for the treasury contract in the registry's open channel; the name is remembered per organization and verified against the registry on every read. The setup script resolves the open channel from the registry root and the relayer sponsors the call.
 - 2026-10-26: Stellar Registry: `scripts/publish-registry.sh` publishes the contract Wasm files as named, versioned releases (dry run by default); decision and next steps documented.
 - 2026-10-26: Overview in the manner of a neobank: round quick actions under the balance (Send, Add, Reserve, Rules), the Reserve as its own card carrying the DeFindex mark with per-asset amounts, earnings and one-tap moves, and the activity grouped by day with an icon per movement. DeFindex is named wherever the Reserve shows.
 - 2026-10-26: Faster start on testnet: the app shows the organizations this device saw last time at once and reads Stellar again behind it ("Updating from Stellar…" in the banner), the passkey session check and the chain reads run in parallel, the last healthy server answer is remembered so the start no longer waits for it, and the Stellar SDK downloads while the server is checked. Lifeline and passkey reads that several screens share are answered once.

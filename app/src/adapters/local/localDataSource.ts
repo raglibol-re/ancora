@@ -22,6 +22,7 @@ import type {
 	DataSourceKind,
 	DiscussionSupport,
 	PaymentInput,
+	RegistryNameSupport,
 	TokenInfo,
 } from "../../domain/dataSource.ts";
 import {
@@ -82,6 +83,28 @@ export class LocalDataSource implements DataSource {
 	readonly funding = null;
 	readonly ramps = null;
 	readonly lifeline: LocalLifeline;
+	/** Sample data: names live in memory and every free name is "on the registry" at once. */
+	private readonly registryNameOf = new Map<string, string>();
+	readonly registryNames: RegistryNameSupport = {
+		channel: () => "simulated",
+		current: async (orgId) => {
+			const name = this.registryNameOf.get(orgId) ?? null;
+			return ok({ name, verified: name !== null });
+		},
+		isFree: async (name) => ok(![...this.registryNameOf.values()].includes(name)),
+		register: async (orgId, actorId, name) => {
+			const account = this.store.account(orgId);
+			if (!account) return notFound();
+			if (!canEditProfile(account.org, actorId)) {
+				return notAllowed("Only the organization's highest role registers its name.");
+			}
+			if ([...this.registryNameOf.values()].includes(name)) {
+				return notAllowed("That name is already taken on the registry.");
+			}
+			this.registryNameOf.set(orgId, name);
+			return ok(undefined);
+		},
+	};
 	readonly discussions: DiscussionSupport = {
 		post: (orgId, requestId, actorId, entry) =>
 			this.mutateThread(orgId, requestId, (account, thread) => {
