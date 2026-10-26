@@ -339,13 +339,15 @@ vercel_env() {
 		flag="--sensitive"
 		targets=(production preview)
 	fi
-	for target in production preview development; do
-		vercel env rm "$name" "$target" --yes >/dev/null 2>&1 || true
-	done
+	# Overwrite in place: removing and re-adding left the live functions without the deployer
+	# secret once (26 Oct 2026), and a build that starts in between would miss the value too.
 	for target in "${targets[@]}"; do
-		printf '%s' "$value" | vercel env add "$name" "$target" "$flag" >/dev/null 2>&1 ||
+		printf '%s' "$value" | vercel env add "$name" "$target" "$flag" --force >/dev/null 2>&1 ||
 			die "Could not set $name on Vercel ($target)."
 	done
+	if [[ "$kind" == "secret" ]]; then
+		vercel env rm "$name" development --yes >/dev/null 2>&1 || true
+	fi
 	ok "Vercel env $name ($kind)"
 }
 
@@ -386,6 +388,12 @@ sync_vercel() {
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
 		vercel env rm RELAYER_API_KEY production --yes >/dev/null 2>&1 || true
 		vercel env rm RELAYER_API_KEY preview --yes >/dev/null 2>&1 || true
+		# The functions read their settings when a deployment is built: rebuild the live one.
+		if vercel redeploy "$PRODUCTION_ORIGIN" --non-interactive >/dev/null 2>&1; then
+			ok "Production rebuilt with these settings"
+		else
+			say "  ! Rebuild production (vercel redeploy <deployment url>) so the functions see them."
+		fi
 	)
 }
 

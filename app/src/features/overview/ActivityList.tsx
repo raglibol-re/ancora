@@ -96,6 +96,12 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 					})}
 				</ul>
 			)}
+			{account.onchain && (
+				<p className={styles.note}>
+					Movements come from the Stellar ledger: about the last week is read, and what this device
+					has read stays listed. Older ones are on the explorer.
+				</p>
+			)}
 		</Card>
 	);
 }

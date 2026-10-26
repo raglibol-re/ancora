@@ -19,8 +19,13 @@ import {
 	type SpendingLimit,
 	type TemplateId,
 } from "../../domain/rules/model.ts";
-import type { ApprovalRequest, RequestStatus } from "../../domain/rules/requests.ts";
+import type {
+	ApprovalRequest,
+	PaymentRequest,
+	RequestStatus,
+} from "../../domain/rules/requests.ts";
 import { templates } from "../../domain/rules/templates.ts";
+import type { ChainTransfer } from "./orgHistory.ts";
 import { toCents } from "./scv.ts";
 
 // Pure mapping from the organization contract's decoded values (scValToNative output) to the
@@ -45,6 +50,8 @@ export type OnchainSnapshot = {
 	budgetUse: Readonly<Record<string, BudgetUse>>;
 	/** Confirmations of held handovers, by request id. */
 	escrows: ReadonlyMap<string, Native>;
+	/** Token transfers in and out of the organization, from the ledger's events. */
+	transfers: readonly ChainTransfer[];
 	setupPhase: boolean;
 	policyHash: string;
 };
@@ -357,7 +364,7 @@ export function mapOrganization(
 			});
 		}
 	}
-	const activity: ActivityEntry[] = requests
+	const requestActivity: ActivityEntry[] = requests
 		.filter((r) => r.status === "executed")
 		.map((r) =>
 			r.kind === "payment"
@@ -380,6 +387,48 @@ export function mapOrganization(
 						viaRequest: true,
 					},
 		);
+	// What the ledger says happened: deposits, payments, Reserve moves, each with its transaction.
+	const vaults = new Set(assets.flatMap((a) => (a.vault ? [a.vault] : [])));
+	const chainActivity: ActivityEntry[] = snapshot.transfers.map((t) => {
+		const base = { id: `evt-${t.id}`, at: t.at, txHash: t.txHash };
+		const amount = toCents(t.amount);
+		if (t.to === snapshot.contractId) {
+			return vaults.has(t.from)
+				? { ...base, actorId: null, kind: "reserve-out", token: t.token, amount }
+				: { ...base, actorId: null, kind: "deposit", token: t.token, amount, from: t.from };
+		}
+		if (vaults.has(t.to)) {
+			return { ...base, actorId: null, kind: "reserve-in", token: t.token, amount };
+		}
+		const request = requests.find(
+			(r): r is PaymentRequest =>
+				r.kind === "payment" &&
+				r.status === "executed" &&
+				r.token === t.token &&
+				r.recipientId === t.to &&
+				r.amount === amount,
+		);
+		return {
+			...base,
+			actorId: request?.requesterId ?? null,
+			kind: "payment-out",
+			token: t.token,
+			amount,
+			payeeId: request?.recipientId ?? t.to,
+		};
+	});
+	// A payment the ledger already shows isn't listed a second time from the request list.
+	const covered = new Set(
+		chainActivity.flatMap((e) =>
+			e.kind === "payment-out" ? [`${e.token}:${e.payeeId}:${e.amount}`] : [],
+		),
+	);
+	const activity = [
+		...chainActivity,
+		...requestActivity.filter(
+			(e) => e.kind !== "payment-out" || !covered.has(`${e.token}:${e.payeeId}:${e.amount}`),
+		),
+	].sort((a, b) => b.at - a.at);
 	return {
 		org,
 		onchain: {

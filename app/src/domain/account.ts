@@ -37,7 +37,13 @@ export type Payee = {
 export type ActivityEntry = { id: string; at: number; actorId: PersonId | null } & (
 	| { kind: "payment-out"; token: string; amount: Cents; payeeId: string; txHash: string | null }
 	| { kind: "deposit"; token: string; amount: Cents; from: string; txHash: string | null }
-	| { kind: "reserve-in" | "reserve-out" | "earnings"; token: string; amount: Cents }
+	| {
+			kind: "reserve-in" | "reserve-out" | "earnings";
+			token: string;
+			amount: Cents;
+			/** The transaction on Stellar, when the entry comes from the ledger. */
+			txHash?: string | null;
+	  }
 	| { kind: "governance"; change: GovernanceChange; viaRequest: boolean }
 	| { kind: "logo" }
 );

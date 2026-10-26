@@ -1,5 +1,7 @@
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
+import type { HistoryCache } from "./historyCache.ts";
 import { mapBudgetUse, mapLimit, type OnchainSnapshot } from "./mapOrganization.ts";
+import { type HistoryPage, readTransfers } from "./orgHistory.ts";
 import { ContractReadError, type Network, readContract } from "./readContract.ts";
 import { address, u32, u64 } from "./scv.ts";
 
@@ -38,10 +40,14 @@ async function readBudgets(network: Network, contractId: string): Promise<Native
 	}
 }
 
-/** Everything the app shows about one organization, read from its contract in two rounds. */
+/**
+ * Everything the app shows about one organization, read from its contract in two rounds.
+ * `history` is where this device keeps the ledger history read so far.
+ */
 export async function readOrganization(
 	network: Network,
 	contractId: string,
+	history: HistoryCache | null = null,
 ): Promise<OnchainSnapshot> {
 	const [info, policy, assets, members, requests, setupPhase, policyHash, limitRows, budgetRows] =
 		await Promise.all([
@@ -60,8 +66,42 @@ export async function readOrganization(
 	const limits = new Map(
 		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
 	);
-	// Held handovers carry their confirmations in a separate entry.
-	const escrows = new Map(
+	const tokens = assets.map((asset) => String(asset.token));
+	const known = history?.load(contractId) ?? null;
+	const [escrows, balances, reserves, page] = await Promise.all([
+		readEscrows(network, contractId, requests),
+		readBalances(network, contractId, tokens),
+		readReserves(network, contractId, assets),
+		// The ledger's own record of money in and out. A failed read keeps what this device has
+		// rather than hiding the organization; the next read tries again.
+		readTransfers(network, contractId, tokens, known).catch((): HistoryPage | null => null),
+	]);
+	if (page && page !== known) history?.save(contractId, page);
+	return {
+		contractId,
+		info,
+		policy,
+		assets,
+		members,
+		requests,
+		balances,
+		reserves,
+		limits,
+		budgetUse: mapBudgetUse(budgetRows),
+		escrows,
+		transfers: (page ?? known)?.transfers ?? [],
+		setupPhase,
+		policyHash: hex(policyHash),
+	};
+}
+
+/** Held handovers carry their confirmations in a separate entry. */
+async function readEscrows(
+	network: Network,
+	contractId: string,
+	requests: Native[],
+): Promise<Map<string, Native>> {
+	return new Map(
 		await Promise.all(
 			requests
 				.filter((request) => statusName(request.status) === "Escrowed")
@@ -74,17 +114,28 @@ export async function readOrganization(
 				}),
 		),
 	);
-	// One balance per accepted token, from the token contracts themselves.
-	const balances = new Map(
+}
+
+/** One balance per accepted token, from the token contracts themselves. */
+async function readBalances(
+	network: Network,
+	contractId: string,
+	tokens: readonly string[],
+): Promise<Map<string, bigint>> {
+	return new Map(
 		await Promise.all(
-			assets.map(async (asset) => {
-				const token = String(asset.token);
-				return [token, await tokenBalance(network, token, contractId)] as const;
-			}),
+			tokens.map(async (token) => [token, await tokenBalance(network, token, contractId)] as const),
 		),
 	);
-	// The Reserve of each asset that has a vault: value today and the principal moved in.
-	const reserves = new Map(
+}
+
+/** The Reserve of each asset that has a vault: value today and the principal moved in. */
+async function readReserves(
+	network: Network,
+	contractId: string,
+	assets: Native[],
+): Promise<Map<string, { value: bigint; principal: bigint }>> {
+	return new Map(
 		await Promise.all(
 			assets
 				.filter((asset) => asset.vault)
@@ -101,21 +152,6 @@ export async function readOrganization(
 				}),
 		),
 	);
-	return {
-		contractId,
-		info,
-		policy,
-		assets,
-		members,
-		requests,
-		balances,
-		reserves,
-		limits,
-		budgetUse: mapBudgetUse(budgetRows),
-		escrows,
-		setupPhase,
-		policyHash: hex(policyHash),
-	};
 }
 
 /** Organizations a person belongs to, from the registry. */

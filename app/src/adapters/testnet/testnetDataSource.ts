@@ -30,12 +30,14 @@ import { rulesHash } from "../../domain/rules/policyDocument.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
+import { type HistoryCache, historyCache } from "./historyCache.ts";
 import { readClaimStatus, readOverview, recoveryMessage, setPlanArgs } from "./lifelineContract.ts";
 import {
 	CONTRACT_ERROR_MESSAGES,
 	mapAsset,
 	mapOrganization,
 	mapRequest,
+	type OnchainSnapshot,
 } from "./mapOrganization.ts";
 import {
 	type Profile,
@@ -43,6 +45,7 @@ import {
 	readOrganizationsOf,
 	readProfiles,
 } from "./organizationContract.ts";
+import { backfillTransfers, merge } from "./orgHistory.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
 import { readContract } from "./readContract.ts";
@@ -111,6 +114,8 @@ export class TestnetDataSource implements DataSource {
 	};
 	private readonly config: TestnetConfig;
 	private readonly storage: KeyValueStorage | null;
+	/** Ledger history read so far, per organization, so each visit scans only what is new. */
+	private readonly history: HistoryCache;
 	private readonly listeners = new Set<() => void>();
 	private snapshot: Workspace = EMPTY;
 	private me: Identity | null = null;
@@ -122,6 +127,7 @@ export class TestnetDataSource implements DataSource {
 
 	constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
 		this.storage = storage;
+		this.history = historyCache(storage);
 		this.config = config;
 		this.availableAssets = parseAssetOptions(config.orgAssets);
 		// What this device saw last time shows at once; the chain is read again right after.
@@ -284,7 +290,7 @@ export class TestnetDataSource implements DataSource {
 		try {
 			const orgIds = await readOrganizationsOf(this.config, this.config.registryContract, me);
 			const [snapshots, threads] = await Promise.all([
-				Promise.all(orgIds.map((id) => readOrganization(this.config, id))),
+				Promise.all(orgIds.map((id) => readOrganization(this.config, id, this.history))),
 				Promise.all(orgIds.map((id) => this.loadDiscussions(id))),
 			]);
 			const everyone = new Set<string>([me]);
@@ -292,30 +298,8 @@ export class TestnetDataSource implements DataSource {
 				for (const member of snapshot.members) everyone.add(String(member.address));
 			}
 			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
-			const orgNames = new Map(snapshots.map((s) => [s.contractId, String(s.info.name)]));
-			const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
-			const accounts: OrgAccount[] = snapshots.map((snapshot, index) => ({
-				...mapOrganization(
-					snapshot,
-					(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
-					Date.now(),
-					(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
-				),
-				discussions: threads[index] ?? {},
-			}));
-			const people: Person[] = [...everyone].map((id) => ({
-				id,
-				name: this.profiles.get(id)?.name ?? shortAddress(id),
-				avatarUrl: this.profiles.get(id)?.avatarUrl ?? null,
-			}));
-			this.snapshot = { people, accounts };
-			if (this.me?.id === me) {
-				saveCachedSession(this.storage, {
-					me: this.me,
-					workspace: this.snapshot,
-					profiles: [...this.profiles.entries()],
-				});
-			}
+			this.publish(me, snapshots, threads, everyone);
+			void this.backfillHistory(me, snapshots, threads, everyone);
 		} catch (error) {
 			// A failed poll keeps the last snapshot; the health check handles a dead RPC.
 			recordError(this.storage, {
@@ -325,6 +309,72 @@ export class TestnetDataSource implements DataSource {
 			});
 		}
 		this.syncingChain = false;
+		this.notify();
+	}
+
+	/** The workspace built from what was read, shown now and saved for the next visit. */
+	private publish(
+		me: string,
+		snapshots: readonly OnchainSnapshot[],
+		threads: readonly OrgAccount["discussions"][],
+		everyone: ReadonlySet<string>,
+	): void {
+		const orgNames = new Map(snapshots.map((s) => [s.contractId, String(s.info.name)]));
+		const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
+		const accounts: OrgAccount[] = snapshots.map((snapshot, index) => ({
+			...mapOrganization(
+				snapshot,
+				(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
+				Date.now(),
+				(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
+			),
+			discussions: threads[index] ?? {},
+		}));
+		const people: Person[] = [...everyone].map((id) => ({
+			id,
+			name: this.profiles.get(id)?.name ?? shortAddress(id),
+			avatarUrl: this.profiles.get(id)?.avatarUrl ?? null,
+		}));
+		this.snapshot = { people, accounts };
+		if (this.me?.id === me) {
+			saveCachedSession(this.storage, {
+				me: this.me,
+				workspace: this.snapshot,
+				profiles: [...this.profiles.entries()],
+			});
+		}
+	}
+
+	/**
+	 * An organization loads with only its newest ledger history; the rest of RPC's week is read
+	 * here afterwards, one organization at a time, and the activity grows once it is in.
+	 */
+	private async backfillHistory(
+		me: string,
+		snapshots: readonly OnchainSnapshot[],
+		threads: readonly OrgAccount["discussions"][],
+		everyone: ReadonlySet<string>,
+	): Promise<void> {
+		const filled: OnchainSnapshot[] = [];
+		for (const snapshot of snapshots) {
+			const known = this.history.load(snapshot.contractId);
+			const tokens = snapshot.assets.map((asset) => String(asset.token));
+			const older = known
+				? await backfillTransfers(this.config, snapshot.contractId, tokens, known).catch(() => null)
+				: null;
+			if (!older) {
+				filled.push(snapshot);
+				continue;
+			}
+			// A refresh may have read newer ledgers meanwhile; the saved page keeps both.
+			const page = merge(older, this.history.load(snapshot.contractId));
+			this.history.save(snapshot.contractId, page);
+			filled.push({ ...snapshot, transfers: page.transfers });
+		}
+		if (this.me?.id !== me || filled.every((snapshot, index) => snapshot === snapshots[index])) {
+			return;
+		}
+		this.publish(me, filled, threads, everyone);
 		this.notify();
 	}
 

@@ -38,6 +38,7 @@ One passkey per person, one contract per organization:
 |--------|--------------|--------|
 | App shell | Installable PWA, desktop sidebar + mobile tabs, light/dark, org switcher, cross-org inbox | Real |
 | App screens | Overview, Inbox, Approvals, Send money with live rule preview, Rules, Organization settings, New organization | Real; runs on sample data or the Stellar testnet (switch on your pass) |
+| Activity | Movements of the organization's money read from the Stellar ledger's events (deposits, payments, Reserve moves, each with its transaction on the explorer), plus approved changes from the request list; CSV statement | **Real on testnet**: Soroban RPC keeps about a week of events, read in chunks and kept on the device so the list outlives the week |
 | Identity ("your pass") | Passkey sign-in/sign-out, on-chain profile (name, picture), ancora ID with QR code, your positions, recovery status, device preferences | **Real on testnet** (sample mode uses "Viewing as") |
 | Approval rules | Tiered approvals, four-eyes, objection window, seal threshold, membership and rule requests, setup phase, lock-out guard | **Real on testnet**: enforced by the organization contract (Rust, tested against the same vectors as the TypeScript engine); policy-document hash verified on the Rules page |
 | Organizations on Stellar | Each organization is an `ancora_organization` contract with OZ AccessControl roles; people are invited by ancora ID; payments leave the contract once its rules are satisfied; fees sponsored by ancora's relayer | **Real on testnet** |
