@@ -1,6 +1,12 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { assetOf, isNewRecipient, type OrgAccount, primaryToken } from "../../domain/account.ts";
+import {
+	assetOf,
+	availableBalance,
+	isNewRecipient,
+	type OrgAccount,
+	primaryToken,
+} from "../../domain/account.ts";
 import { parseAmountInput } from "../../domain/money.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
@@ -27,8 +33,14 @@ function PayForm({ account }: { account: OrgAccount }) {
 	const navigate = useNavigate();
 	const [params] = useSearchParams();
 	const requested = params.get("token");
+	// Assets with the most available money first; empty ones go last.
+	const assetsByAvailable = [...account.org.assets].sort(
+		(a, b) => availableBalance(account, b.token) - availableBalance(account, a.token),
+	);
 	const [token, setToken] = useState(
-		requested && assetOf(account.org, requested) ? requested : primaryToken(account),
+		requested && assetOf(account.org, requested)
+			? requested
+			: (assetsByAvailable[0]?.token ?? primaryToken(account)),
 	);
 	const [payeeId, setPayeeId] = useState(account.payees[0]?.id ?? NEW_RECIPIENT);
 	const [newName, setNewName] = useState("");
@@ -147,16 +159,20 @@ function PayForm({ account }: { account: OrgAccount }) {
 								value={token}
 								onChange={(e) => setToken(e.target.value)}
 							>
-								{account.org.assets.map((a) => (
-									<option key={a.token} value={a.token}>
-										{a.symbol} ({a.currency})
-										{reachable[a.token] === null
-											? " · recipient can receive it"
-											: reachable[a.token]
-												? " · recipient can't receive it"
-												: ""}
-									</option>
-								))}
+								{assetsByAvailable.map((a) => {
+									const free = availableBalance(account, a.token);
+									return (
+										<option key={a.token} value={a.token}>
+											{a.symbol} ({a.currency}) ·{" "}
+											{free > 0 ? `${formatMoney(free, a.currency)} available` : "no balance"}
+											{reachable[a.token] === null
+												? " · recipient can receive it"
+												: reachable[a.token]
+													? " · recipient can't receive it"
+													: ""}
+										</option>
+									);
+								})}
 							</select>
 						</Field>
 					)}

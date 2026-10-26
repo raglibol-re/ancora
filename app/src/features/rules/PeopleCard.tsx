@@ -27,6 +27,17 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 	const [inviteId, setInviteId] = useState(onTestnet ? "" : (outside[0]?.id ?? ""));
 	const [inviteRole, setInviteRole] = useState(lowestRole);
 	const [editingLimit, setEditingLimit] = useState<string | null>(null);
+	// Removing the only member, or the only holder of the top role, would lock the organization
+	// out of its own rules; the contract refuses it (WouldLockAccount) and so does the button.
+	const topRole = org.roles[0]?.id;
+	const wouldLock = (personId: string) => {
+		const member = org.members.find((m) => m.personId === personId);
+		if (!member) return false;
+		if (org.members.length === 1) return true;
+		return (
+			member.roleId === topRole && org.members.filter((m) => m.roleId === topRole).length === 1
+		);
+	};
 
 	const invite = async (event: FormEvent) => {
 		event.preventDefault();
@@ -77,7 +88,12 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 								<button
 									type="button"
 									className={buttonClass("secondary")}
-									disabled={busy}
+									disabled={busy || wouldLock(member.personId)}
+									title={
+										wouldLock(member.personId)
+											? "The organization needs at least one member who can approve its rules; the contract refuses this too."
+											: undefined
+									}
 									onClick={() => propose({ type: "removeMember", personId: member.personId })}
 								>
 									Remove

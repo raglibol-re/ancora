@@ -54,7 +54,8 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 		>
 			{entries.length === 0 ? (
 				<p className={styles.empty}>
-					Nothing yet. Deposits, payments and changes will appear here.
+					No movements yet. Add money to the account to see the first deposit here; payments,
+					Reserve moves and approved changes follow, each with its transaction on Stellar.
 				</p>
 			) : (
 				<ul className={styles.list}>

@@ -49,21 +49,20 @@ export function RulesHashCard({ account }: { account: OrgAccount }) {
 				verdict === null ? null : (
 					<span className={verdict.matches ? styles.ok : styles.bad}>
 						{verdict.matches
-							? verdict.version === 3
-								? "Matches the contract"
-								: "Matches the contract (document v2)"
+							? `Active: v${verdict.version} (matches the contract)`
 							: "Does not match the contract"}
 					</span>
 				)
 			}
 		>
 			<p className={styles.muted}>
-				The rules above are one readable document (version 3, canonical JSON in the style of
-				stellar-registry/perch). Its fingerprint (SHA-256) is{" "}
+				The rules above are one readable document. Its fingerprint (SHA-256) is{" "}
 				{onchainHash ? "stored in the organization's contract" : "shown here"}, so anyone can check
 				that the active rules are exactly these.
 				{verdict?.version === 2 &&
-					" This organization was created with document version 2; its next rule change moves it to version 3."}
+					" This organization's active document is version 2; its next approved rule change is written as version 3."}
+				{preferences.expertMode &&
+					" Version 3 is canonical JSON in the style of stellar-registry/perch (sorted keys, no whitespace, amounts as decimal strings)."}
 			</p>
 			<code className={styles.hash}>{local ?? "computing…"}</code>
 			{preferences.expertMode && (

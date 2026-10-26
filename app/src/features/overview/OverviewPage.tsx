@@ -70,22 +70,21 @@ function Overview({ account }: { account: OrgAccount }) {
 									<TokenBadge asset={asset} />
 									<span className={styles.assetText}>
 										<span className={styles.assetSymbol}>{asset.symbol}</span>
-										<span className={styles.sub}>
-											{describeAsset(asset)}
-											{hasReserve(asset) &&
-												reserve > 0 &&
-												` · ${formatMoney(reserve, asset.currency)} in Reserve`}
-										</span>
+										<span className={styles.sub}>{describeAsset(asset)}</span>
 									</span>
 									<span className={styles.assetAmount}>
 										<span className={styles.assetBalance}>
-											{formatMoney(balance, asset.currency)}
+											{formatMoney(available, asset.currency)}
 										</span>
-										{available !== balance && (
-											<span className={styles.sub}>
-												{formatMoney(available, asset.currency)} available
-											</span>
-										)}
+										<span className={styles.sub}>
+											available
+											{hasReserve(asset) && reserve > 0
+												? ` · Reserve ${formatMoney(reserve, asset.currency)}`
+												: ""}
+											{balance !== available || reserve > 0
+												? ` · total ${formatMoney(balance + reserve, asset.currency)}`
+												: ""}
+										</span>
 									</span>
 									<span className={styles.chevron}>
 										<ChevronDownIcon />

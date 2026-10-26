@@ -21,8 +21,8 @@ const features = [
 		status: "Real on testnet",
 	},
 	{
-		title: "A Reserve that earns",
-		body: "Move idle money into a DeFindex vault with one tap and back whenever you need it. Earnings are variable and shown as they come in.",
+		title: "A Reserve, not a savings account",
+		body: "Idle money goes into a DeFindex vault on Stellar with one tap and comes back whenever you need it. Earnings are variable and come from Blend lending, not from the stablecoin itself. Not a bank deposit, not insured.",
 		status: "Real on testnet (BlendUSDC)",
 	},
 	{
@@ -55,7 +55,7 @@ const steps = [
 const chips = [
 	{ label: "€ EURC", className: styles.chipOne },
 	{ label: "$ USDC", className: styles.chipTwo },
-	{ label: "ML-DSA", className: styles.chipThree },
+	{ label: "Quantum-safe", className: styles.chipThree },
 	{ label: "⚓ Stellar", className: styles.chipFour },
 ];
 
@@ -97,7 +97,7 @@ export function LandingPage() {
 						<a href="#how">How it works</a>
 						<a href="#security">Security</a>
 						<a href="https://github.com/raglibol-re/ancora" target="_blank" rel="noreferrer">
-							Roadmap
+							Roadmap (GitHub)
 						</a>
 					</nav>
 					<div className={styles.navActions}>
@@ -105,7 +105,7 @@ export function LandingPage() {
 							Sign in
 						</Link>
 						<Link to="/app" className={styles.pillSolid}>
-							Open ancora
+							Get started
 						</Link>
 					</div>
 				</header>
@@ -121,12 +121,11 @@ export function LandingPage() {
 					</h1>
 					<p className={styles.lead}>
 						For clubs, companies, NGOs and teams. One passkey per person, one account per
-						organization, rules the account enforces itself. Several stablecoins, a Reserve that
-						earns, a quantum-safe seal.
+						organization, rules the account enforces itself.
 					</p>
 					<div className={styles.ctas}>
 						<Link to="/app" className={styles.pillSolid}>
-							Open ancora →
+							Get started →
 						</Link>
 						<a href="#how" className={styles.pillOutline}>
 							How it works
@@ -142,7 +141,7 @@ export function LandingPage() {
 
 				<a href="#features" className={styles.scrollHint} aria-label="Scroll to features">
 					<span className={styles.mouse} />
-					<span>EURC · USDC</span>
+					<span>See how it works</span>
 				</a>
 			</section>
 
@@ -173,7 +172,7 @@ export function LandingPage() {
 					</ol>
 					<div className={styles.ctas}>
 						<Link to="/app" className={styles.pillSolid}>
-							Open ancora
+							Get started
 						</Link>
 						<InstallHint />
 					</div>

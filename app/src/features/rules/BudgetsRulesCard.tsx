@@ -118,8 +118,8 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 					value={mode}
 					onChange={setMode}
 					options={[
-						{ value: "soft", label: "Strictest tier" },
-						{ value: "hard", label: "Refuse" },
+						{ value: "soft", label: "Soft: strictest tier" },
+						{ value: "hard", label: "Hard: refuse" },
 					]}
 				/>
 				{error && (
