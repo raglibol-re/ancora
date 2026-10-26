@@ -79,8 +79,11 @@ A person signs with their passkey through their own account; the organization co
 </p>
 
 <p align="center">
-  <img src="docs/media/overview.png" width="440" alt="Overview: one balance card per accepted stablecoin, the Reserve per asset, and a request waiting for approval" />
+  <img src="docs/media/overview.png" width="440" alt="Overview: total in the home currency with the allocation bar, accounts per stablecoin, a request waiting for approval, and the budget meters" />
   <img src="docs/media/pass.png" width="440" alt="Your pass: picture, name, ancora ID with QR code, positions across organizations" />
+  <img src="docs/media/rules.png" width="440" alt="Rules: approval tiers, on-chain budgets with soft and hard envelopes, the rules document hash" />
+  <img src="docs/media/secure-handover.png" width="440" alt="Secure handover: a held payment waiting for the recipient's and the organization's confirmation" />
+  <img src="docs/media/phone-drawer.png" width="220" alt="Phone: the side panel as a drawer over the overview" />
 </p>
 
 Sample-data screens, labeled as such in the app; on the Stellar testnet the same screens read from the organization's contract.
