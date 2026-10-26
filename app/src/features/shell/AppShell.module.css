@@ -6,6 +6,35 @@
 	min-height: 100dvh;
 }
 
+/* The banners are always in view; everything below scrolls under them. */
+.topbar {
+	position: sticky;
+	top: 0;
+	z-index: 30;
+}
+
+@keyframes pageIn {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes drawerIn {
+	from {
+		transform: translateX(-100%);
+	}
+
+	to {
+		transform: none;
+	}
+}
+
 .badge {
 	display: inline-flex;
 	align-items: center;
@@ -45,6 +74,7 @@
 	margin: 0 auto;
 	padding: var(--space-5) var(--space-4)
 		calc(var(--tabbar-height) + var(--space-5) + env(safe-area-inset-bottom));
+	animation: pageIn var(--duration-base) var(--ease-out);
 }
 
 /* Mobile first: header on top, tab bar at the bottom, the panel in a drawer. */
@@ -53,6 +83,9 @@
 }
 
 .mobileHeader {
+	position: sticky;
+	top: var(--topbar-height, 0px);
+	z-index: 20;
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
@@ -80,12 +113,10 @@
 	background: var(--color-surface);
 	color: var(--color-text);
 	box-shadow: var(--shadow-md);
-	transform: translateX(-100%);
-	transition: transform 220ms ease;
 }
 
 .drawer[open] {
-	transform: translateX(0);
+	animation: drawerIn var(--duration-base) var(--ease-out);
 }
 
 .drawer::backdrop {
@@ -107,8 +138,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.drawer {
-		transition: none;
+	.content,
+	.drawer[open] {
+		animation: none;
 	}
 }
 
@@ -146,17 +178,19 @@
 }
 
 @media (min-width: 900px) {
+	/* The panel is pinned to the viewport's left edge below the banners; content flows beside it. */
 	.shell {
-		display: grid;
-		grid-template-columns: var(--sidebar-width) 1fr;
+		padding-left: var(--sidebar-width);
 	}
 
-	/* Fixed-width panel, full viewport height, scrolls on its own. */
 	.sidebar {
-		position: sticky;
-		top: 0;
+		position: fixed;
+		top: var(--topbar-height, 0px);
+		bottom: 0;
+		left: 0;
+		z-index: 10;
 		display: block;
-		height: 100dvh;
+		width: var(--sidebar-width);
 		background: var(--color-surface);
 		border-right: 1px solid var(--color-border);
 	}

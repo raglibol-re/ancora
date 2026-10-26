@@ -85,6 +85,8 @@
 	--tabbar-height: 64px;
 	--content-max: 1080px;
 	--duration-fast: 120ms;
+	--duration-base: 220ms;
+	--ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 :root[data-theme="light"] {

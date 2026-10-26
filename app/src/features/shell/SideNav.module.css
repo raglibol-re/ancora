@@ -61,6 +61,9 @@
 	text-align: left;
 	text-decoration: none;
 	cursor: pointer;
+	transition:
+		background-color var(--duration-fast),
+		color var(--duration-fast);
 }
 
 .item:hover {
@@ -142,6 +145,7 @@
 	color: var(--color-text-muted);
 	font-size: var(--text-sm);
 	text-decoration: none;
+	transition: color var(--duration-fast);
 }
 
 .child:hover {

@@ -12,7 +12,25 @@
 	cursor: pointer;
 	/* Size to content inside stacked (flex column) layouts instead of stretching. */
 	align-self: flex-start;
-	transition: opacity var(--duration-fast);
+	transition:
+		opacity var(--duration-fast),
+		background-color var(--duration-fast),
+		border-color var(--duration-fast),
+		transform var(--duration-fast);
+}
+
+.button:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.button {
+		transition: none;
+	}
+
+	.button:active:not(:disabled) {
+		transform: none;
+	}
 }
 
 .button:disabled {
@@ -33,4 +51,9 @@
 	background: transparent;
 	border-color: var(--color-border);
 	color: var(--color-text);
+}
+
+.secondary:hover:not(:disabled) {
+	opacity: 1;
+	background: var(--color-bg);
 }

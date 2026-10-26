@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { inboxFor } from "../../domain/inbox.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
@@ -25,6 +25,19 @@ export function AppShell() {
 	const waiting = inboxFor(workspace, me.id).length;
 	const drawer = useRef<HTMLDialogElement>(null);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	// The banners stay pinned; the side panel and the phone header sit right below them.
+	const topbar = useRef<HTMLDivElement>(null);
+	const [topbarHeight, setTopbarHeight] = useState(0);
+
+	useEffect(() => {
+		const element = topbar.current;
+		if (!element) return;
+		const update = () => setTopbarHeight(Math.round(element.getBoundingClientRect().height));
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, []);
 
 	useEffect(() => {
 		const dialog = drawer.current;
@@ -40,9 +53,14 @@ export function AppShell() {
 	}, [location.pathname, location.hash]);
 
 	return (
-		<div className={styles.frame}>
-			<DataSourceBanner />
-			<ClaimBanner />
+		<div
+			className={styles.frame}
+			style={{ "--topbar-height": `${topbarHeight}px` } as CSSProperties}
+		>
+			<div ref={topbar} className={styles.topbar}>
+				<DataSourceBanner />
+				<ClaimBanner />
+			</div>
 			<div className={styles.shell}>
 				<aside className={styles.sidebar}>
 					<SideNav />
@@ -80,7 +98,7 @@ export function AppShell() {
 					{drawerOpen && <SideNav onNavigate={() => setDrawerOpen(false)} />}
 				</dialog>
 
-				<main className={styles.content}>
+				<main key={location.pathname} className={styles.content}>
 					<Outlet />
 				</main>
 
