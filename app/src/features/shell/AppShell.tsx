@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router";
 import { inboxFor } from "../../domain/inbox.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { CloseIcon, MenuIcon } from "../../ui/icons.tsx";
+import { WorkingBar } from "../../ui/WorkingBar.tsx";
 import { ClaimBanner } from "../lifeline/ClaimBanner.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AppShell.module.css";
@@ -62,6 +63,7 @@ export function AppShell() {
 				<DataSourceBanner />
 				<ClaimBanner />
 				<ProtectionBanner />
+				<WorkingBar />
 			</div>
 			<div className={styles.shell}>
 				<aside className={styles.sidebar}>

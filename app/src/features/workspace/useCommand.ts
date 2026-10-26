@@ -4,6 +4,7 @@ import type { Result } from "../../domain/result.ts";
 import type { RuleError } from "../../domain/rules/model.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { type SignaturePrompt, useConfirmSignature } from "../passkey/PasskeyContext.ts";
+import { beginCommand } from "./pendingCommands.ts";
 import { browserStorage } from "./preferences.ts";
 import { useWorkspace } from "./WorkspaceContext.ts";
 
@@ -36,8 +37,20 @@ export function useCommand() {
 				options.signature && (dataSource.kind === "sample" || options.signature.kind === "seal");
 			if (simulated && options.signature && !(await confirm(options.signature))) return null;
 			setBusy(true);
-			const result = await command();
-			setBusy(false);
+			// The shell shows a working bar meanwhile: a passkey prompt and a Stellar transaction
+			// take a few seconds, and silence would read as nothing happening.
+			const done = beginCommand(
+				dataSource.kind === "sample"
+					? "Working…"
+					: "Sending to Stellar… confirm with your passkey if asked.",
+			);
+			let result: Result<T, RuleError>;
+			try {
+				result = await command();
+			} finally {
+				done();
+				setBusy(false);
+			}
 			if (!result.ok) {
 				notify({ tone: "error", text: result.error.message });
 				recordError(browserStorage(), {
