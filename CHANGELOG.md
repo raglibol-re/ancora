@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-26: Sheets (add money, withdraw, passkey prompts) show the working status inside: a turning ring and the step's label while a passkey, a wallet or a transaction is in flight.
 - 2026-10-26: A working bar under the top bar (moving line and a short status) for every on-chain step: passkey prompt, pass creation, wallet signing, every contract call, every transaction ancora's server submits. Glows instead of moving with reduced motion.
 - 2026-10-26: Test money says when it can't help: the health answer carries, per asset, whether the operator's float can hand anything out, and the add-money sheet shows a note instead of the button (Circle's testnet faucet is down, so USDC and EURC floats are empty).
 - 2026-10-26: Standing orders: a payment repeated weekly, fortnightly or monthly, set from the Send page; each run goes through the organization's rules, due orders run when the organization is opened or with "Run now", the owner or the top role stops them. New organization Wasm (organizations created before today don't have the feature).

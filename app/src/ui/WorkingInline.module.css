@@ -1,0 +1,60 @@
+.working {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin: 0;
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid color-mix(in oklab, var(--color-accent) 35%, var(--color-border));
+	border-radius: var(--radius-md);
+	background: color-mix(in oklab, var(--color-accent) 8%, var(--color-surface));
+	font-size: var(--text-sm);
+	color: var(--color-text);
+	animation: appear var(--duration-base) var(--ease-out);
+}
+
+.ring {
+	flex: none;
+	width: 18px;
+	height: 18px;
+	border: 2px solid color-mix(in oklab, var(--color-accent) 30%, transparent);
+	border-top-color: var(--color-accent);
+	border-radius: var(--radius-pill);
+	animation: turn 0.9s linear infinite;
+}
+
+@keyframes turn {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes appear {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.working {
+		animation: none;
+	}
+	.ring {
+		border-top-color: color-mix(in oklab, var(--color-accent) 30%, transparent);
+		background: var(--color-accent);
+		animation: pulse 1.6s ease-in-out infinite;
+	}
+	@keyframes pulse {
+		0%,
+		100% {
+			opacity: 0.4;
+		}
+		50% {
+			opacity: 1;
+		}
+	}
+}

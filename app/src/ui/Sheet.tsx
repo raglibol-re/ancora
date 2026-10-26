@@ -1,5 +1,6 @@
 import { type MouseEvent, type ReactNode, useEffect, useId, useRef } from "react";
 import styles from "./Sheet.module.css";
+import { WorkingInline } from "./WorkingInline.tsx";
 
 type SheetProps = {
 	open: boolean;
@@ -65,6 +66,8 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
 					</svg>
 				</button>
 			</div>
+			{/* Every sheet shows what runs in the background; the shell's bar is hidden behind it. */}
+			<WorkingInline />
 			{children}
 		</dialog>
 	);
