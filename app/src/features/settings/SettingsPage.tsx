@@ -53,7 +53,7 @@ function OnStellarCard({ account }: { account: OrgAccount }) {
 		<Card title="On Stellar">
 			<dl className={styles.facts}>
 				<div>
-					<dt>Organization contract</dt>
+					<dt>Account address on Stellar</dt>
 					<dd>
 						<code className={styles.code}>{account.onchain.contractId}</code>
 						<ExplorerLink target={account.onchain.contractId}>View on Stellar</ExplorerLink>
