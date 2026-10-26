@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-26: The hero headline no longer jumps while the display font loads: Fraunces is self-hosted and preloaded, and its largest size leaves room for the fallback serif. Every screen names the browser tab ("Send money · ancora"); the landing page's title describes the product.
 - 2026-10-26: Standing orders run on their own: a daily cron visits every known organization and runs the due ones (also "Run due standing orders now" in the demo admin). Organizations are indexed when deployed and when opened.
 - 2026-10-26: Sheets (add money, withdraw, passkey prompts) show the working status inside: a turning ring and the step's label while a passkey, a wallet or a transaction is in flight.
 - 2026-10-26: A working bar under the top bar (moving line and a short status) for every on-chain step: passkey prompt, pass creation, wallet signing, every contract call, every transaction ancora's server submits. Glows instead of moving with reduced motion.

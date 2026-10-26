@@ -10,9 +10,6 @@ importers:
       "@creit.tech/stellar-wallets-kit":
         specifier: 2.7.1
         version: 2.7.1(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(near-api-js@5.1.1)(react@19.3.1)(tslib@2.8.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@fontsource-variable/fraunces":
-        specifier: 5.3.0
-        version: 5.3.0
       "@fontsource/ibm-plex-sans":
         specifier: 5.3.0
         version: 5.3.0
@@ -1028,12 +1025,6 @@ packages:
     peerDependenciesMeta:
       "@noble/hashes":
         optional: true
-
-  "@fontsource-variable/fraunces@5.3.0":
-    resolution:
-      {
-        integrity: sha512-9BYGySn4AHEJdgp9Z28tQ3X+laJMEOITXkQarZXeloWQZDq5oOvXJ3kDA8c7MGIfpogIaZfjrQBqmda8POOCKA==,
-      }
 
   "@fontsource/ibm-plex-sans@5.3.0":
     resolution:
@@ -7364,8 +7355,6 @@ snapshots:
   "@exodus/bytes@1.16.0(@noble/hashes@2.4.0)":
     optionalDependencies:
       "@noble/hashes": 2.4.0
-
-  "@fontsource-variable/fraunces@5.3.0": {}
 
   "@fontsource/ibm-plex-sans@5.3.0": {}
 

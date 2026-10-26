@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { BrandMark } from "../../ui/BrandMark.tsx";
 import { InstallHint } from "../install/InstallHint.tsx";
@@ -67,6 +67,9 @@ function prefersMotion(): boolean {
 export function LandingPage() {
 	const [motion] = useState(prefersMotion);
 	const [videoReady, setVideoReady] = useState(false);
+	useEffect(() => {
+		document.title = "ancora: the business account your organization controls";
+	}, []);
 
 	return (
 		<div className={`${styles.page} ${motion ? styles.animated : ""}`}>
