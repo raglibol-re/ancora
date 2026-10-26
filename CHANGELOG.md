@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-26: Test money says when it can't help: the health answer carries, per asset, whether the operator's float can hand anything out, and the add-money sheet shows a note instead of the button (Circle's testnet faucet is down, so USDC and EURC floats are empty).
 - 2026-10-26: Standing orders: a payment repeated weekly, fortnightly or monthly, set from the Send page; each run goes through the organization's rules, due orders run when the organization is opened or with "Run now", the owner or the top role stops them. New organization Wasm (organizations created before today don't have the feature).
 - 2026-10-26: Signing in with an existing passkey works again on any device: ancora serves the smart-account index the passkey kit asks for, completing the wallet's creation transaction from the ledger where Mercury's indexer leaves it empty. Plain-language message when an account can't be confirmed yet.
 - 2026-10-26: Activity now comes from the ledger: token transfers in and out of the organization (deposits, payments, Reserve moves) read from Soroban RPC events for the last week, each with its transaction; payments the ledger shows replace the request-derived entry. Addresses read shortened, payees by name.

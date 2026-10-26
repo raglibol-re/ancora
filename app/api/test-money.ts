@@ -4,25 +4,15 @@ import { isOrganization } from "./_lib/contracts.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer } from "./_lib/ledger.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
+import { grantFor, STROOPS_PER_UNIT } from "./_lib/testMoney.js";
 
 // Testnet only: the demo operator sends test money in one of the accepted stablecoins from its
 // float to an ancora organization. The operator holds no role in any organization; it can only
 // give, not take.
 
-const STROOPS_PER_UNIT = 10_000_000n;
-const FULL_GRANT = 100n * STROOPS_PER_UNIT;
 const MAX_BALANCE_FOR_GRANT = 5_000n * STROOPS_PER_UNIT;
 
 export const config = { maxDuration: 60 };
-
-/**
- * 100 units while the float is comfortable; a tenth of what is left when it runs low, so a
- * hand-filled float (Circle's faucet) serves many demos instead of one.
- */
-export function grantFor(float: bigint): bigint {
-	if (float >= 5n * FULL_GRANT) return FULL_GRANT;
-	return float / 10n;
-}
 
 export default apiHandler("POST", async (request) => {
 	const settings = serverConfig();

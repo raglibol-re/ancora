@@ -7,7 +7,14 @@ export type DemoMode = "sample" | "testnet";
 export type SourcePreference = "auto" | DataSourceKind;
 
 /** Answer from /api/health, or "unreachable" when ancora's own server doesn't answer. */
-export type SiteHealth = { mode: DemoMode; rpcOk: boolean } | "unreachable";
+export type SiteHealth =
+	| {
+			mode: DemoMode;
+			rpcOk: boolean;
+			/** Per accepted asset (token address): whether the operator can send test money now. */
+			testMoney?: Readonly<Record<string, boolean>>;
+	  }
+	| "unreachable";
 
 export type Resolution = {
 	effective: DataSourceKind;

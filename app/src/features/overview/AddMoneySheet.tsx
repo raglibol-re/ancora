@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { loadCachedHealth } from "../../adapters/site/siteHealth.ts";
 import { type OrgAccount, shortAddress } from "../../domain/account.ts";
 import type { ConnectedWallet } from "../../domain/dataSource.ts";
 import { parseAmountInput } from "../../domain/money.ts";
@@ -8,6 +9,7 @@ import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { Sheet } from "../../ui/Sheet.tsx";
 import { useNotify } from "../notices/NoticeContext.ts";
+import { browserStorage } from "../workspace/preferences.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AddMoneySheet.module.css";
@@ -109,6 +111,10 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 	};
 
 	const issuer = assetName?.includes(":") ? assetName.split(":")[1] : null;
+	// The health answer on load says which floats the operator can draw on right now.
+	const health = loadCachedHealth(browserStorage());
+	const floatEmpty =
+		health !== null && health !== "unreachable" && health.testMoney?.[asset.token] === false;
 
 	return (
 		<Sheet open={open} title={`Add ${asset.symbol}`} onClose={onClose}>
@@ -184,14 +190,22 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 					<p className={styles.muted}>
 						ancora's demo operator sends test {asset.symbol} from its float. Not real money.
 					</p>
-					<button
-						type="button"
-						className={buttonClass("secondary")}
-						disabled={busy}
-						onClick={testMoney}
-					>
-						Add test {asset.symbol}
-					</button>
+					{floatEmpty ? (
+						<p className={styles.warning}>
+							The operator's float of {asset.symbol} is empty right now: the issuer's testnet faucet
+							isn't handing any out. Pick another asset for test money, or send {asset.symbol} from
+							your own wallet.
+						</p>
+					) : (
+						<button
+							type="button"
+							className={buttonClass("secondary")}
+							disabled={busy}
+							onClick={testMoney}
+						>
+							Add test {asset.symbol}
+						</button>
+					)}
 				</section>
 
 				<section className={styles.section}>
