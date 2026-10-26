@@ -133,3 +133,10 @@ export const SignalIcon = () => (
 		<path d="M3 12h4l2-6 4 12 2-6h6" />
 	</Icon>
 );
+
+export const ReceiveIcon = () => (
+	<Icon>
+		<path d="M12 5v14" />
+		<path d="M6 13l6 6 6-6" />
+	</Icon>
+);

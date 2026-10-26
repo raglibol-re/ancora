@@ -11,6 +11,7 @@ import {
 } from "../../domain/account.ts";
 import type { Asset } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
+import { DefindexBadge } from "../../ui/DefindexBadge.tsx";
 import { formatMoney, formatRate, formatSignedMoney } from "../../ui/format.ts";
 import { Sheet } from "../../ui/Sheet.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -105,7 +106,10 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 					</div>
 
 					<section className={styles.reserve}>
-						<h3>Reserve</h3>
+						<div className={styles.reserveHead}>
+							<h3>Reserve</h3>
+							<DefindexBadge compact />
+						</div>
 						{hasReserve(asset) ? (
 							<>
 								<p className={styles.reserveValue}>{formatMoney(inReserve, asset.currency)}</p>

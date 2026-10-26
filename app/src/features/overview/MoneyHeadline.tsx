@@ -1,12 +1,11 @@
-import { Link } from "react-router";
 import { availableBalance, balanceOf, isForeign, type OrgAccount } from "../../domain/account.ts";
 import { convertCents, formatRate, type Quote } from "../../domain/fx.ts";
 import type { Cents } from "../../domain/money.ts";
 import type { Asset } from "../../domain/rules/model.ts";
-import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import styles from "./MoneyHeadline.module.css";
+import { QuickActions } from "./QuickActions.tsx";
 import { useFxRates } from "./useFxRates.ts";
 
 type MoneyHeadlineProps = {
@@ -105,20 +104,11 @@ export function MoneyHeadline({ account, onAdd }: MoneyHeadlineProps) {
 				</li>
 				<li>
 					<span className={`${styles.dot} ${styles.dotReserve}`} />
-					<span className={styles.legendLabel}>In the Reserve, earning</span>
+					<span className={styles.legendLabel}>In the Reserve · DeFindex</span>
 					<strong>{formatMoney(reserve, base)}</strong>
 				</li>
 			</ul>
-			<div className={styles.actions}>
-				<Link to="/app/pay" className={buttonClass()}>
-					Send money
-				</Link>
-				{onAdd && (
-					<button type="button" className={buttonClass("secondary")} onClick={onAdd}>
-						Add money
-					</button>
-				)}
-			</div>
+			<QuickActions onAdd={onAdd} />
 		</Card>
 	);
 }

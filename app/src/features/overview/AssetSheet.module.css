@@ -43,3 +43,10 @@
 	font-family: var(--font-display);
 	font-size: var(--text-xl);
 }
+
+.reserveHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+}

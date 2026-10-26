@@ -23,6 +23,7 @@ import { AssetSheet } from "./AssetSheet.tsx";
 import { BudgetsCard } from "./BudgetsCard.tsx";
 import { MoneyHeadline } from "./MoneyHeadline.tsx";
 import styles from "./OverviewPage.module.css";
+import { ReserveCard } from "./ReserveCard.tsx";
 import { describeAsset, TokenBadge } from "./TokenBadge.tsx";
 
 export function OverviewPage() {
@@ -101,6 +102,8 @@ function Overview({ account }: { account: OrgAccount }) {
 					. Tap an account for its Reserve and the ways to add money.
 				</p>
 			</Card>
+
+			<ReserveCard account={account} />
 
 			{waiting.length > 0 && (
 				<section className={styles.section}>
