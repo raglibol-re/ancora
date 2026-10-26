@@ -114,6 +114,45 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 - Licensed ramp partner integration (EUR IBAN/SEPA, USD/ACH) in production mode, and cash in and out through MoneyGram Access (SEP-24 like the test anchor, so `anchorRamp.ts` takes a second home domain) for organizations that handle cash.
 - Security review of the organization, registry and recovery contracts; mainnet readiness.
 
+## Production: what a real user app still needs (assessed 26 Oct 2026)
+
+Measured against Revolut Business for everyday banking, Squads (Solana) and Safe (EVM) for treasury governance. Ordered by what blocks real use first; each item names what exists today.
+
+### A. Trust and safety, before any mainnet
+
+1. **End-to-end tests with a virtual passkey.** Today every signed flow is verified by hand. Playwright with Chromium's WebAuthn virtual authenticator can create a pass, an organization, a payment, an approval, a standing order and a Lifeline claim against the testnet, nightly in CI. This is the single biggest quality lever.
+2. **External security review** of the organization, registry and recovery contracts, plus a threat model for the relayer (fee sponsorship), the wallet index and the Blob stores.
+3. **Mainnet profile.** Network settings per environment, the operator key in a KMS rather than a Vercel secret, a fee budget with alerts, rate limits on every function, backups of the Blob data (discussions, registry names, organization index), an upgrade path for organizations (a governed `upgrade` of an organization's Wasm; today a new organization is needed).
+4. **Monitoring.** Error tracking for app and functions, an uptime check on `/api/health`, alerts when the operator's XLM or stablecoin floats run low. Today: recent errors per browser and the admin health panel.
+5. **Legal and partners.** KYB and fiat through a licensed partner (euro SEPA anchor, MoneyGram Access for cash), terms and privacy, the "not a bank" wording reviewed per jurisdiction.
+
+### B. Everyday banking parity (Revolut Business)
+
+6. **Notifications.** Web push (service worker exists) and email through a partner: approval needed, money received, payment sent, standing order run or refused, Lifeline claim started. Needs a subscription store and triggers from the scheduler and the ledger events.
+7. **Address book.** Saved recipients per organization with name, note and last payment; today payees are inferred from executed payments.
+8. **Statements and search.** Filters and search in activity, monthly statements as PDF and CSV, receipts and attachments per payment (Blob, hash on the request).
+9. **Batch payments.** Payroll and reimbursements as one request with many lines, approved once.
+10. **Payment requests and links.** An organization asks for money (membership fees, invoices) with a link or QR and sees who paid; reminders for fees.
+11. **Sub-accounts.** Pots per project or team with their own budgets and views.
+12. **Exchange inside the app.** EURC ↔ USDC through path payments with a quote (Reflector or SDEX) and a rule-aware preview; today another currency takes the strictest tier.
+13. **Languages and access.** German and Portuguese, a WCAG AA audit, onboarding tour, help pages, skeleton states while the chain is read.
+
+### C. Treasury governance parity (Squads, Safe)
+
+14. **Custom roles** with ranks through governance (templates become presets), per-category and per-asset spending limits, recipient allowlists. Contract change.
+15. **Any action under the rules.** Approve arbitrary calls to allowlisted contracts the way Safe's transaction builder does, with a simulation preview; today only payments and governance changes.
+16. **More policy.** Velocity limits per period for the whole organization, emergency freeze by a quorum, time locks per tier (the objection window exists).
+17. **Keys.** Hardware security keys through the passkey flow (exists, untested), the ML-DSA device key for the seal, passkey re-authentication for sensitive actions.
+18. **Integrations.** Signed audit-log export, webhooks, an SDK, accounting exports (DATEV, QuickBooks).
+19. **Lifeline in full.** Inactivity path and succession plans (recovery contract change).
+
+### D. Platform
+
+20. **Releases through the Stellar Registry**: every contract version published and named, organizations deployed by name, attested builds.
+21. **Preferences across devices** through the profile store, and a settings page that explains every switch.
+
+Suggested order: A1, then C14, B7, B6, B8, B9, A3 and A4 in parallel with the rest, and A2 before mainnet.
+
 ## Outlook
 
 - **Non-fungible holdings:** membership cards, certificates and tickets as OpenZeppelin NonFungible tokens held by the organization next to its stablecoins (the asset list already pairs a token address with what it stands for; NFTs need no amounts, so they bypass the tiers and use governance for transfers).
