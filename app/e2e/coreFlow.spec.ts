@@ -42,6 +42,16 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await expect(page).toHaveURL(/\/app\/rules$/);
 	});
 
+	await test.step("add a role of the organization's own", async () => {
+		// Still the setup phase: the founder's change applies directly, on-chain.
+		await page.locator("#role-name").fill("Coach");
+		await page.getByRole("button", { name: "Add role" }).click();
+		await page.getByRole("button", { name: "Save roles" }).click();
+		await expect(page.getByRole("button", { name: "Save roles" })).toBeHidden();
+		await page.reload();
+		await expect(page.getByRole("button", { name: "Remove Coach" })).toBeVisible();
+	});
+
 	await test.step("take test money", async () => {
 		await page.goto("/app");
 		await expect(page.getByText(name).first()).toBeVisible();
