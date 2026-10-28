@@ -80,5 +80,11 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
 	});
 
+	await test.step("the new recipient is in the address book", async () => {
+		await page.goto("/app/payees");
+		await expect(page.getByText("Operator").first()).toBeVisible();
+		await expect(page.getByRole("button", { name: "Remove" }).first()).toBeVisible();
+	});
+
 	expect(failures).toEqual([]);
 });
