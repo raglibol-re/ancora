@@ -328,7 +328,7 @@ export class TestnetDataSource implements DataSource {
 		for (const organization of orgIds) {
 			if (this.indexed.has(organization)) continue;
 			this.indexed.add(organization);
-			await fetch("/api/organizations", {
+			await fetch("/api/standing-orders", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ organization }),
@@ -355,7 +355,7 @@ export class TestnetDataSource implements DataSource {
 		if (due.length === 0 || this.me?.id !== me) return;
 		for (const order of due) {
 			this.attemptedOrders.add(`${order.orgId}:${order.id}`);
-			const result = await this.post("/api/run-standing-order", {
+			const result = await this.post("/api/standing-orders", {
 				organization: order.orgId,
 				orderId: Number(order.id),
 			});
@@ -720,7 +720,7 @@ export class TestnetDataSource implements DataSource {
 	}
 
 	async runStandingOrder(orgId: string, orderId: string) {
-		const response = await this.post("/api/run-standing-order", {
+		const response = await this.post("/api/standing-orders", {
 			organization: orgId,
 			orderId: Number(orderId),
 		});
