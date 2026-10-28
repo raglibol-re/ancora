@@ -451,16 +451,21 @@ export class TestnetDataSource implements DataSource {
 					`Your account couldn't be created on Stellar: ${wallet.submitResult.error.message}`,
 				);
 			}
-			this.me = { id: wallet.contractId, name: trimmed, avatarUrl: null };
-			this.notify();
+			// The sign-in screen stays until the name is on-chain too: showing the app earlier let
+			// people leave while the name was still being written, and it was lost.
 			const named = await this.invoke(this.config.registryContract, "set_profile", [
 				address(wallet.contractId),
 				text(trimmed),
 				text(""),
 			]);
-			if (!named.ok) return named;
 			await this.becomeIdentity(wallet.contractId);
-			return ok({ id: wallet.contractId, name: trimmed, avatarUrl: null });
+			if (!named.ok) {
+				// The account exists either way; the name can be set again on the pass page.
+				return failed(
+					`Your pass was created, but your name couldn't be saved: ${named.error.message} Add it on your pass page.`,
+				);
+			}
+			return ok(this.me ?? { id: wallet.contractId, name: trimmed, avatarUrl: null });
 		} catch (error) {
 			return failed(describeKitError(error, "created"));
 		}
