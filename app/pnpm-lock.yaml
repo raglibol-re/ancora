@@ -41,6 +41,9 @@ importers:
       "@biomejs/biome":
         specifier: 2.6.3
         version: 2.6.3
+      "@playwright/test":
+        specifier: 1.64.1
+        version: 1.64.1
       "@types/node":
         specifier: 24.19.2
         version: 24.19.2
@@ -1349,6 +1352,14 @@ packages:
       {
         integrity: sha512-JcvQkZxvcX2jK+QCclm8+e8HXqtdFW9xV4/kk2aL9Y3dJA2oQVt+pzbv1orkumz3rfx4K9mn9fDoMr1He1yr7Q==,
       }
+
+  "@playwright/test@1.64.1":
+    resolution:
+      {
+        integrity: sha512-IaYGml/nSOiZWROfPtuIL7neuu9qDOZ3TNvNljUIrhDMxiGTgPjzj/g9p9RxpS2tSepPDRY+UwAaEeiKtUvIAg==,
+      }
+    engines: { node: ">=20" }
+    hasBin: true
 
   "@preact/signals-core@1.14.4":
     resolution:
@@ -5076,6 +5087,22 @@ packages:
       }
     hasBin: true
 
+  playwright-core@1.64.1:
+    resolution:
+      {
+        integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==,
+      }
+    engines: { node: ">=20" }
+    hasBin: true
+
+  playwright@1.64.1:
+    resolution:
+      {
+        integrity: sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==,
+      }
+    engines: { node: ">=20" }
+    hasBin: true
+
   pngjs@5.0.0:
     resolution:
       {
@@ -7596,6 +7623,10 @@ snapshots:
   "@phosphor-icons/webcomponents@2.1.5":
     dependencies:
       lit: 3.3.0
+
+  "@playwright/test@1.64.1":
+    dependencies:
+      playwright: 1.64.1
 
   "@preact/signals-core@1.14.4": {}
 
@@ -10632,6 +10663,12 @@ snapshots:
       slow-redact: 0.3.2
       sonic-boom: 4.2.1
       thread-stream: 3.2.0
+
+  playwright-core@1.64.1: {}
+
+  playwright@1.64.1:
+    dependencies:
+      playwright-core: 1.64.1
 
   pngjs@5.0.0: {}
 

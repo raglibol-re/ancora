@@ -16,6 +16,7 @@
 	},
 	"linter": {
 		"enabled": true,
+		"domains": { "playwright": "none" },
 		"rules": {
 			"preset": "recommended",
 			"correctness": {
@@ -51,6 +52,10 @@
 					}
 				}
 			}
+		},
+		{
+			"includes": ["e2e/**", "playwright.config.ts"],
+			"linter": { "domains": { "playwright": "recommended" } }
 		},
 		{
 			"includes": ["package.json"],

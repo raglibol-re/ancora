@@ -14,7 +14,8 @@
     "test": "vitest run",
     "typecheck": "tsc -b",
     "check": "biome check .",
-    "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet"
+    "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "2.7.1",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
+    "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
     "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",

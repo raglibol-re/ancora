@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: End-to-end test of the core path on the real testnet with a virtual passkey (`pnpm e2e`): create a pass, sign out and back in, found an organization, take test money, pay. It found and led to a fix: a new pass's name could be lost when leaving the sign-in screen early.
 - 2026-10-26: Roadmap gains a production assessment: what a real user app still needs against Revolut Business, Squads and Safe, in order.
 - 2026-10-26: The hero headline no longer jumps while the display font loads: Fraunces is self-hosted and preloaded, and its largest size leaves room for the fallback serif. Every screen names the browser tab ("Send money · ancora"); the landing page's title describes the product.
 - 2026-10-26: Standing orders run on their own: a daily cron visits every known organization and runs the due ones (also "Run due standing orders now" in the demo admin). Organizations are indexed when deployed and when opened.
