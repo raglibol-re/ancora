@@ -19,7 +19,7 @@ HORIZON_URL="https://horizon-testnet.stellar.org"
 # SEP-24 anchor for bank deposits and withdrawals (SDF test anchor; pays out test USDC).
 ANCHOR_HOME_DOMAIN="${ANCHOR_HOME_DOMAIN:-testanchor.stellar.org}"
 # Exchange rates for the headline total (display only; ECB reference rates via Frankfurter).
-FX_RATES_URL="${FX_RATES_URL:-https://api.frankfurter.app}"
+FX_RATES_URL="${FX_RATES_URL:-https://api.frankfurter.dev/v1}"
 # The Stellar Registry's root on testnet (stellar-registry/contracts); its open "unverified"
 # channel is resolved from it, and that is where organizations register their names.
 STELLAR_REGISTRY_ROOT="${STELLAR_REGISTRY_ROOT:-CAAXJETKPYAATU4HVVQUTE2FFBULNFGZNEOC3MS635U5K3GZLAY2HI4M}"

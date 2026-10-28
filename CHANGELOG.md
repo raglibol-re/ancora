@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: Live exchange rates work again: Frankfurter moved to api.frankfurter.dev/v1 and the old address redirects without CORS, so the headline total had fallen back to the simulated rate.
 - 2026-10-28: Account sheets no longer vanish when "Add money", the Reserve or "To a bank account" opens from them (a sheet stepping aside was reported as closed). The end-to-end test runs nightly in GitHub Actions.
 - 2026-10-28: Production deploys again: the scheduler's two extra routes had pushed the app past Vercel Hobby's twelve functions, so every deployment since 26 Oct was refused after building. Running one order, the daily run and the organization index now share `/api/standing-orders`; a unit test keeps the count at twelve or below.
 - 2026-10-28: End-to-end test of the core path on the real testnet with a virtual passkey (`pnpm e2e`): create a pass, sign out and back in, found an organization, take test money, pay. It found and led to a fix: a new pass's name could be lost when leaving the sign-in screen early.
