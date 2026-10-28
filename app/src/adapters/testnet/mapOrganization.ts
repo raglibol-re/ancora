@@ -25,6 +25,7 @@ import type {
 	PaymentRequest,
 	RequestStatus,
 } from "../../domain/rules/requests.ts";
+import { customRole } from "../../domain/rules/roles.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import type { ChainTransfer } from "./orgHistory.ts";
 import { toCents } from "./scv.ts";
@@ -57,6 +58,8 @@ export type OnchainSnapshot = {
 	standingOrders: readonly Native[] | null;
 	setupPhase: boolean;
 	policyHash: string;
+	/** `version()` of the organization's code; 0 for organizations from before that view. */
+	version: number;
 };
 
 const STATUS: Record<string, RequestStatus> = {
@@ -143,6 +146,8 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	34: "There is no standing order with this number.",
 	35: "This standing order isn't due yet.",
 	36: "A standing order repeats at least every hour.",
+	39: "Someone still holds a role you're removing. Give them another role first.",
+	40: "An organization has one to eight roles, each with its own name.",
 	37: "Only the person who set this standing order, or the top role, can stop it.",
 	38: "This standing order was stopped.",
 };
@@ -158,7 +163,7 @@ const str = (value: unknown): string => String(value);
 
 function roleOf(templateId: TemplateId | null, id: string): Role {
 	const known = templateId ? templates[templateId].roles.find((r) => r.id === id) : undefined;
-	return known ?? { id, name: id, plural: `${id}s` };
+	return known ?? customRole(id);
 }
 
 function requirements(value: unknown): Requirement[] {
@@ -281,6 +286,11 @@ function mapChange(value: unknown): GovernanceChange {
 				personId: str(fields[0]),
 				amount: toCents(big(fields[1])),
 				periodSeconds: num(fields[2]),
+			};
+		case "SetRoles":
+			return {
+				type: "setRoles",
+				roles: (fields[0] as unknown[]).map((id) => customRole(str(id))),
 			};
 		default:
 			throw new Error(`Unknown change ${kind}`);
@@ -464,6 +474,7 @@ export function mapOrganization(
 			setupPhase: snapshot.setupPhase,
 			policyHash: snapshot.policyHash,
 			supportsRecovery: Boolean(snapshot.info.recovery),
+			customRoles: snapshot.version >= 3,
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

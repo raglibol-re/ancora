@@ -63,6 +63,8 @@ export type OnchainAccount = {
 	policyHash: string;
 	/** Built with the Lifeline recovery contract: positions can be handed to a new pass. */
 	supportsRecovery: boolean;
+	/** The contract accepts custom roles (`SetRoles`, interface version 3 or later). */
+	customRoles: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */

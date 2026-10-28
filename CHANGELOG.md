@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: Custom roles. An organization adds its own roles, reorders them and removes roles nobody holds, from a Roles card on the Rules page; saved as one rule change under the usual approvals. New organization Wasm `3121d0ec…` with `SetRoles` and a `version()` view; older organizations show their roles read-only.
 - 2026-10-28: Live exchange rates work again: Frankfurter moved to api.frankfurter.dev/v1 and the old address redirects without CORS, so the headline total had fallen back to the simulated rate.
 - 2026-10-28: Account sheets no longer vanish when "Add money", the Reserve or "To a bank account" opens from them (a sheet stepping aside was reported as closed). The end-to-end test runs nightly in GitHub Actions.
 - 2026-10-28: Production deploys again: the scheduler's two extra routes had pushed the app past Vercel Hobby's twelve functions, so every deployment since 26 Oct was refused after building. Running one order, the daily run and the organization index now share `/api/standing-orders`; a unit test keeps the count at twelve or below.

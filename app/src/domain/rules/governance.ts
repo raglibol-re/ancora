@@ -7,12 +7,14 @@ import {
 	type Org,
 	type PersonId,
 	type Policy,
+	type Role,
 	type RoleId,
 	type RuleError,
 	ruleError,
 	type TemplateId,
 } from "./model.ts";
 import { strictestTier, validatePolicy } from "./policy.ts";
+import { validateRoles } from "./roles.ts";
 import { templates } from "./templates.ts";
 
 export type GovernanceChange =
@@ -24,7 +26,9 @@ export type GovernanceChange =
 	| { type: "addAsset"; asset: Asset }
 	| { type: "removeAsset"; token: string }
 	/** Amount 0 removes the limit. */
-	| { type: "setSpendingLimit"; personId: PersonId; amount: Cents; periodSeconds: number };
+	| { type: "setSpendingLimit"; personId: PersonId; amount: Cents; periodSeconds: number }
+	/** The organization's own roles, highest first (add, reorder, drop roles nobody holds). */
+	| { type: "setRoles"; roles: readonly Role[] };
 
 export type NewOrgInput = {
 	id: string;
@@ -140,6 +144,10 @@ function nextOrg(org: Org, change: GovernanceChange): Result<Org, RuleError> {
 		}
 		case "switchTemplate":
 			return ok(switchTemplate(org, change.templateId));
+		case "setRoles": {
+			const valid = validateRoles(org, change.roles);
+			return valid.ok ? ok({ ...org, roles: [...change.roles] }) : valid;
+		}
 		case "addAsset":
 			if (org.assets.some((a) => a.token === change.asset.token)) {
 				return err(ruleError("asset-exists", "The organization already accepts this asset."));

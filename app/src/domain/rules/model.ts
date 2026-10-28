@@ -127,7 +127,9 @@ export type RuleErrorCode =
 	| "budget-exceeded"
 	| "unknown-budget"
 	| "not-escrowed"
-	| "not-escrow-party";
+	| "not-escrow-party"
+	| "role-in-use"
+	| "invalid-roles";
 
 export type RuleError = {
 	code: RuleErrorCode;

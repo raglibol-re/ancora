@@ -30,6 +30,10 @@ const MAX_MEMO_LEN: u32 = 140;
 const MAX_NAME_LEN: u32 = 64;
 const MAX_LOGO_LEN: u32 = 256;
 const MAX_PAGE: u32 = 50;
+const MAX_ROLES: u32 = 8;
+/// Raised whenever the interface gains something the app needs to know about: 2 = standing
+/// orders, 3 = custom roles (`SetRoles`). Organizations before this view report nothing.
+const CONTRACT_VERSION: u32 = 3;
 const SECONDS_PER_HOUR: u64 = 3_600;
 
 #[contractclient(name = "RegistryClient")]
@@ -182,6 +186,14 @@ impl Organization {
             .set(&DataKey::PolicyHash, &policy_hash);
         e.storage().instance().set(&DataKey::RequestCount, &0u64);
         extend_instance(e);
+    }
+
+    /// Which interface this organization's code offers (see `CONTRACT_VERSION`), so the app can
+    /// show only what the contract supports.
+    ///
+    /// Auth: none (read).
+    pub fn version(_e: &Env) -> u32 {
+        CONTRACT_VERSION
     }
 
     /// Name, template, base currency, registry, founder, ranked roles and logo.
@@ -1228,7 +1240,19 @@ fn plan_change(
         after.push_back(member);
     }
     let mut next_policy = policy.clone();
+    let mut roles_after = info.roles.clone();
     match change {
+        Change::SetRoles(roles, _) => {
+            plan_roles(e, info, roles, policy)?;
+            // Members keep their role; its rank follows the new order.
+            after = Vec::new(e);
+            for (who, rank) in members.iter() {
+                let role = info.roles.get(rank).ok_or(Error::UnknownRole)?;
+                let new_rank = rules::rank_of(roles, &role).ok_or(Error::RoleInUse)?;
+                after.push_back((who, new_rank));
+            }
+            roles_after = roles.clone();
+        }
         Change::AddMember(who, role) => {
             if rules::rank_of_member(members, who).is_some() {
                 return Err(Error::AlreadyMember);
@@ -1287,11 +1311,32 @@ fn plan_change(
     let satisfiable_now =
         rules::can_be_satisfied(e, &info.roles, members, &strictest(policy), None);
     let satisfiable_after =
-        rules::can_be_satisfied(e, &info.roles, &after, &strictest(&next_policy), None);
+        rules::can_be_satisfied(e, &roles_after, &after, &strictest(&next_policy), None);
     if satisfiable_now && !satisfiable_after {
         return Err(Error::WouldLockAccount);
     }
     Ok((after, next_policy))
+}
+
+/// Checks a new role list: one to eight distinct roles, every role that has members kept, and
+/// the current rules naming only roles that still exist.
+fn plan_roles(e: &Env, info: &OrgInfo, roles: &Vec<Symbol>, policy: &Policy) -> Result<(), Error> {
+    if roles.is_empty() || roles.len() > MAX_ROLES {
+        return Err(Error::InvalidRoles);
+    }
+    for (index, role) in roles.iter().enumerate() {
+        if rules::rank_of(roles, &role) != Some(index as u32) {
+            return Err(Error::InvalidRoles);
+        }
+    }
+    for role in info.roles.iter() {
+        if rules::rank_of(roles, &role).is_none()
+            && access_control::get_role_member_count(e, &role) > 0
+        {
+            return Err(Error::RoleInUse);
+        }
+    }
+    rules::validate_policy(policy, roles)
 }
 
 fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
@@ -1315,6 +1360,14 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
         Change::ChangeRole(who, role) => {
             revoke_current_role(e, info, who);
             access_control::grant_role_no_auth(e, who, role, &me);
+        }
+        Change::SetRoles(roles, document_hash) => {
+            let mut updated = info.clone();
+            updated.roles = roles.clone();
+            e.storage().instance().set(&DataKey::Info, &updated);
+            e.storage()
+                .instance()
+                .set(&DataKey::PolicyHash, document_hash);
         }
         Change::UpdatePolicy(_, document_hash) => {
             e.storage().instance().set(&DataKey::Policy, &next_policy);

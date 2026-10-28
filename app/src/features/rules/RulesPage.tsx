@@ -9,6 +9,7 @@ import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AssetsCard } from "./AssetsCard.tsx";
 import { BudgetsRulesCard } from "./BudgetsRulesCard.tsx";
 import { PeopleCard } from "./PeopleCard.tsx";
+import { RolesCard } from "./RolesCard.tsx";
 import { RulesHashCard } from "./RulesHashCard.tsx";
 import { TemplateCard } from "./TemplateCard.tsx";
 import { TiersCard } from "./TiersCard.tsx";
@@ -48,6 +49,7 @@ function Rules({ account }: { account: OrgAccount }) {
 			<div id="people">
 				<PeopleCard key={`people-${account.org.id}`} account={account} />
 			</div>
+			<RolesCard key={`roles-${account.org.id}`} account={account} />
 			<AssetsCard key={`assets-${account.org.id}`} account={account} />
 			<TemplateCard key={`template-${account.org.id}`} account={account} />
 		</Page>

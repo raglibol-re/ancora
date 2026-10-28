@@ -139,7 +139,7 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 ### C. Treasury governance parity (Squads, Safe)
 
-14. **Custom roles** with ranks through governance (templates become presets), per-category and per-asset spending limits, recipient allowlists. Contract change.
+14. **Custom roles**: done 28 Oct (add, reorder, drop through governance; templates are presets). Still open: per-category and per-asset spending limits, recipient allowlists. Contract change.
 15. **Any action under the rules.** Approve arbitrary calls to allowlisted contracts the way Safe's transaction builder does, with a simulation preview; today only payments and governance changes.
 16. **More policy.** Velocity limits per period for the whole organization, emergency freeze by a quorum, time locks per tier (the objection window exists).
 17. **Keys.** Hardware security keys through the passkey flow (exists, untested), the ML-DSA device key for the seal, passkey re-authentication for sensitive actions.

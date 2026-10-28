@@ -609,6 +609,7 @@ export class TestnetDataSource implements DataSource {
 		if (change.type === "addMember" && !StrKey.isValidContract(change.personId.trim())) {
 			return failed("Enter the person's ancora ID (their account address, starts with C).");
 		}
+		// Rule and role changes carry the fingerprint of the rules document they leave behind.
 		const policyHash =
 			change.type === "updatePolicy"
 				? await rulesHash(
@@ -617,7 +618,14 @@ export class TestnetDataSource implements DataSource {
 						change.policy,
 						account.org.baseCurrency,
 					)
-				: undefined;
+				: change.type === "setRoles"
+					? await rulesHash(
+							account.org.templateId,
+							change.roles,
+							account.org.policy,
+							account.org.baseCurrency,
+						)
+					: undefined;
 		const encoded = changeToScVal(
 			change.type === "addMember" ? { ...change, personId: change.personId.trim() } : change,
 			policyHash,

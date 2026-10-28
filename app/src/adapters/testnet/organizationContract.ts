@@ -40,6 +40,16 @@ async function readStandingOrders(network: Network, contractId: string): Promise
 	}
 }
 
+/** The interface version (`version()`, from 28 Oct 2026); 0 for older organizations. */
+async function readVersion(network: Network, contractId: string): Promise<number> {
+	try {
+		return Number(await readContract(network, contractId, "version"));
+	} catch (error) {
+		if (error instanceof ContractReadError) return 0;
+		throw error;
+	}
+}
+
 /** Same tolerance for `budgets`, which organizations before 26 Oct 2026 don't have. */
 async function readBudgets(network: Network, contractId: string): Promise<Native[]> {
 	try {
@@ -70,6 +80,7 @@ export async function readOrganization(
 		limitRows,
 		budgetRows,
 		standingOrderRows,
+		version,
 	] = await Promise.all([
 		readContract(network, contractId, "info") as Promise<Native>,
 		readContract(network, contractId, "policy") as Promise<Native>,
@@ -81,6 +92,7 @@ export async function readOrganization(
 		readSpendingLimits(network, contractId),
 		readBudgets(network, contractId),
 		readStandingOrders(network, contractId),
+		readVersion(network, contractId),
 	]);
 	const limits = new Map(
 		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
@@ -112,6 +124,7 @@ export async function readOrganization(
 		standingOrders: standingOrderRows,
 		setupPhase,
 		policyHash: hex(policyHash),
+		version,
 	};
 }
 

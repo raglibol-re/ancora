@@ -73,6 +73,10 @@ export function describeChange(org: HasRoles, change: GovernanceChange, nameOf: 
 			return `Accept ${change.asset.symbol}`;
 		case "removeAsset":
 			return `Stop accepting ${org.assets?.find((a) => a.token === change.token)?.symbol ?? "an asset"}`;
+		case "setRoles":
+			return `Set the roles to ${change.roles
+				.map((role) => org.roles.find((r) => r.id === role.id)?.name ?? role.name)
+				.join(", ")}`;
 		case "setSpendingLimit":
 			return change.amount === 0
 				? `Remove the spending limit of ${nameOf(change.personId)}`

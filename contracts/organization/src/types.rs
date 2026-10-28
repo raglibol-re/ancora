@@ -58,6 +58,10 @@ pub enum Error {
     NotOrderOwner = 37,
     /// The standing order was stopped.
     OrderStopped = 38,
+    /// A role that still has members can't be dropped; move them to another role first.
+    RoleInUse = 39,
+    /// A role list needs one to eight distinct roles.
+    InvalidRoles = 40,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -205,6 +209,9 @@ pub enum Change {
     RemoveAsset(Address),
     /// Give a member a spending limit (amount per period, rules' currency); amount 0 removes it.
     SetSpendingLimit(Address, i128, u64),
+    /// The organization's own roles, highest first, plus the SHA-256 of the rules document that
+    /// names them: add roles, reorder them, drop roles nobody holds.
+    SetRoles(Vec<Symbol>, BytesN<32>),
 }
 
 #[contracttype]

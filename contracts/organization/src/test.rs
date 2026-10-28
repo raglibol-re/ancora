@@ -1335,3 +1335,142 @@ fn setting_a_standing_order_requires_the_members_authorization() {
         .is_err());
     assert_eq!(w.org.standing_orders().len(), 0);
 }
+
+fn roles(e: &Env, names: &[&str]) -> Vec<Symbol> {
+    let mut list = Vec::new(e);
+    for name in names {
+        list.push_back(Symbol::new(e, name));
+    }
+    list
+}
+
+#[test]
+fn an_organization_adds_reorders_and_drops_its_own_roles() {
+    let w = club(5_000);
+    let hash = BytesN::from_array(&w.e, &[7u8; 32]);
+    // A new role below the board, then a member in it.
+    w.org.change_directly(
+        &w.founder,
+        &Change::SetRoles(
+            roles(&w.e, &["treasurer", "board", "coach", "member"]),
+            hash.clone(),
+        ),
+    );
+    assert_eq!(
+        w.org.info().roles,
+        roles(&w.e, &["treasurer", "board", "coach", "member"])
+    );
+    assert_eq!(w.org.policy_hash(), hash);
+    let coach = Address::generate(&w.e);
+    w.org.change_directly(
+        &w.founder,
+        &Change::AddMember(coach.clone(), Symbol::new(&w.e, "coach")),
+    );
+    assert!(w
+        .org
+        .members()
+        .iter()
+        .any(|m| m.address == coach && m.role == Symbol::new(&w.e, "coach")));
+    // "member" has nobody: it may go. "coach" has someone: it may not.
+    w.org.change_directly(
+        &w.founder,
+        &Change::SetRoles(roles(&w.e, &["treasurer", "board", "coach"]), hash.clone()),
+    );
+    assert_eq!(
+        w.org.try_change_directly(
+            &w.founder,
+            &Change::SetRoles(roles(&w.e, &["treasurer", "board"]), hash.clone())
+        ),
+        Err(Ok(Error::RoleInUse))
+    );
+}
+
+#[test]
+fn role_lists_are_validated_against_members_and_rules() {
+    let w = club(5_000);
+    let hash = BytesN::from_array(&w.e, &[7u8; 32]);
+    let set = |names: &[&str]| Change::SetRoles(roles(&w.e, names), hash.clone());
+    assert_eq!(
+        w.org.try_change_directly(&w.founder, &set(&[])),
+        Err(Ok(Error::InvalidRoles))
+    );
+    assert_eq!(
+        w.org
+            .try_change_directly(&w.founder, &set(&["treasurer", "board", "board", "member"])),
+        Err(Ok(Error::InvalidRoles))
+    );
+    assert_eq!(
+        w.org.try_change_directly(
+            &w.founder,
+            &set(&["treasurer", "board", "a", "b", "c", "d", "e", "f", "g"])
+        ),
+        Err(Ok(Error::InvalidRoles))
+    );
+    // The founder holds "treasurer".
+    assert_eq!(
+        w.org
+            .try_change_directly(&w.founder, &set(&["board", "member"])),
+        Err(Ok(Error::RoleInUse))
+    );
+    // The club's rules ask for board approvals, so "board" can't go even while it's empty.
+    assert_eq!(
+        w.org
+            .try_change_directly(&w.founder, &set(&["treasurer", "member"])),
+        Err(Ok(Error::UnknownRole))
+    );
+}
+
+#[test]
+fn after_the_setup_phase_a_role_change_needs_the_strictest_tier() {
+    let w = club(5_000);
+    let bo = board_member(&w);
+    let ana = board_member(&w);
+    assert!(!w.org.is_setup_phase());
+    let hash = BytesN::from_array(&w.e, &[7u8; 32]);
+    let change = Change::SetRoles(
+        roles(&w.e, &["treasurer", "board", "coach", "member"]),
+        hash,
+    );
+    assert_eq!(
+        w.org.try_change_directly(&w.founder, &change),
+        Err(Ok(Error::NotInSetupPhase))
+    );
+    let id = w.org.propose_change(&w.founder, &change);
+    assert_eq!(w.org.request(&id).status, Status::Pending);
+    w.org.approve(&bo, &id);
+    w.org.approve(&ana, &id);
+    // The strictest tier has an objection window; once it passes the change applies.
+    w.e.ledger()
+        .set_timestamp(w.e.ledger().timestamp() + 48 * 3_600);
+    w.org.execute(&id);
+    assert_eq!(w.org.request(&id).status, Status::Executed);
+    assert_eq!(w.org.info().roles.len(), 4);
+}
+
+#[test]
+fn changing_roles_requires_the_founders_authorization() {
+    let w = club(5_000);
+    let hash = BytesN::from_array(&w.e, &[7u8; 32]);
+    let change = Change::SetRoles(
+        roles(&w.e, &["treasurer", "board", "coach", "member"]),
+        hash,
+    );
+    let stranger = Address::generate(&w.e);
+    w.e.mock_auths(&[MockAuth {
+        address: &stranger,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "change_directly",
+            args: (&w.founder, change.clone()).into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(w.org.try_change_directly(&w.founder, &change).is_err());
+    assert_eq!(w.org.info().roles.len(), 3);
+}
+
+#[test]
+fn the_contract_reports_its_interface_version() {
+    let w = club(1_000);
+    assert_eq!(w.org.version(), 3);
+}

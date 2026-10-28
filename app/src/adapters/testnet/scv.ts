@@ -115,6 +115,13 @@ export function changeToScVal(change: GovernanceChange, policyHashHex?: string):
 				i128(toStroops(change.amount)),
 				u64(change.periodSeconds),
 			]);
+		case "setRoles":
+			if (!policyHashHex) return null;
+			return xdr.ScVal.scvVec([
+				symbol("SetRoles"),
+				xdr.ScVal.scvVec(change.roles.map((role) => symbol(role.id))),
+				xdr.ScVal.scvBytes(Buffer.from(policyHashHex, "hex")),
+			]);
 		case "switchTemplate":
 			return null;
 	}
