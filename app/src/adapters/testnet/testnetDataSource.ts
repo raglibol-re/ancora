@@ -124,6 +124,11 @@ export class TestnetDataSource implements DataSource {
 	private restoringSession = true;
 	private syncingChain = false;
 	private profiles = new Map<string, Profile | null>();
+	/**
+	 * The passkey kit's reconnect started when the page loads. The app shows the cached session
+	 * at once, so a signed action can come before the kit is ready; it waits for this instead.
+	 */
+	private connecting: Promise<unknown> = Promise.resolve();
 	/** Organizations already reported to the server's index this visit. */
 	private readonly indexed = new Set<string>();
 	/** Standing orders already tried this visit, so a refused run isn't retried on every refresh. */
@@ -235,9 +240,11 @@ export class TestnetDataSource implements DataSource {
 		const cachedId = this.me?.id ?? null;
 		try {
 			// The passkey session check and the chain reads don't depend on each other.
+			const connection = this.kit.connectWallet();
+			this.connecting = connection.catch(() => null);
 			const [session] = await Promise.all([
 				Promise.race([
-					this.kit.connectWallet(),
+					connection,
 					new Promise<null>((resolve) => setTimeout(() => resolve(null), RESTORE_TIMEOUT_MS)),
 				]),
 				cachedId ? this.refresh() : Promise.resolve(),
@@ -841,6 +848,7 @@ export class TestnetDataSource implements DataSource {
 				passkeyUserName(label),
 				{ nickname: label },
 			);
+			if (!(await this.ensureConnected())) return failed(SESSION_ENDED);
 			const result = await withWork(SIGNING, () => this.kit.signAndSubmitAdmin(transaction));
 			if (!result.success) return failed(describeKitError(result.error, "added"));
 			this.memo.delete("passkeys");
@@ -857,6 +865,7 @@ export class TestnetDataSource implements DataSource {
 		args: xdr.ScVal[],
 		describeContractError: (message: string) => string = contractMessage,
 	): Promise<Result<void, RuleError>> {
+		if (!(await this.ensureConnected())) return failed(SESSION_ENDED);
 		try {
 			const result = await withWork(SIGNING, () => this.kit.executeAndSubmit(target, fn, args));
 			if (!result.success) return failed(describeContractError(result.error.message));
@@ -865,6 +874,16 @@ export class TestnetDataSource implements DataSource {
 		}
 		await this.refresh();
 		return ok(undefined);
+	}
+
+	/** Waits for the kit's reconnect after a page load; tries once more if it didn't connect. */
+	private async ensureConnected(): Promise<boolean> {
+		if (this.kit.isConnected) return true;
+		await withWork("Reconnecting your passkey…", async () => {
+			await this.connecting;
+			if (!this.kit.isConnected) await this.kit.connectWallet().catch(() => null);
+		});
+		return this.kit.isConnected;
 	}
 
 	private async invokeRecovery(fn: string, args: xdr.ScVal[]): Promise<Result<void, RuleError>> {
@@ -917,6 +936,9 @@ export class TestnetDataSource implements DataSource {
 		return ok(payload.data);
 	}
 }
+
+const SESSION_ENDED =
+	"Your passkey session on this device has ended, so nothing was done. Sign out and sign in again with your passkey.";
 
 /** Shown on the working bar while the passkey signs and the transaction travels to Stellar. */
 const SIGNING = "Sending to Stellar… confirm with your passkey if asked.";
