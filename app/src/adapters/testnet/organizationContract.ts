@@ -40,6 +40,16 @@ async function readStandingOrders(network: Network, contractId: string): Promise
 	}
 }
 
+/** The address book (interface version 4); null for organizations whose code has none. */
+async function readPayees(network: Network, contractId: string): Promise<Native[] | null> {
+	try {
+		return (await readContract(network, contractId, "payees")) as Native[];
+	} catch (error) {
+		if (error instanceof ContractReadError) return null;
+		throw error;
+	}
+}
+
 /** The interface version (`version()`, from 28 Oct 2026); 0 for older organizations. */
 async function readVersion(network: Network, contractId: string): Promise<number> {
 	try {
@@ -81,6 +91,7 @@ export async function readOrganization(
 		budgetRows,
 		standingOrderRows,
 		version,
+		payeeRows,
 	] = await Promise.all([
 		readContract(network, contractId, "info") as Promise<Native>,
 		readContract(network, contractId, "policy") as Promise<Native>,
@@ -93,6 +104,7 @@ export async function readOrganization(
 		readBudgets(network, contractId),
 		readStandingOrders(network, contractId),
 		readVersion(network, contractId),
+		readPayees(network, contractId),
 	]);
 	const limits = new Map(
 		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
@@ -122,6 +134,7 @@ export async function readOrganization(
 		escrows,
 		transfers: (page ?? known)?.transfers ?? [],
 		standingOrders: standingOrderRows,
+		addressBook: payeeRows,
 		setupPhase,
 		policyHash: hex(policyHash),
 		version,

@@ -154,11 +154,13 @@ export function seedWorkspace(now: number): Workspace {
 					id: "boat-supplies",
 					name: "Lisbon Boat Supplies",
 					account: "PT50 0000 0000 0000 0000 7788 1",
+					saved: true,
 				},
 				{
 					id: "regatta-assoc",
 					name: "Regatta Association",
 					account: "PT50 0000 0000 0000 0000 4410 9",
+					saved: true,
 				},
 			],
 			requests: [
@@ -300,8 +302,18 @@ export function seedWorkspace(now: number): Workspace {
 			},
 			logoUrl: null,
 			payees: [
-				{ id: "cloud-co", name: "Nimbus Cloud Hosting", account: "IE00 0000 0000 0000 0000 21" },
-				{ id: "studio-luz", name: "Studio Luz Design", account: "PT50 0000 0000 0000 0000 3302 7" },
+				{
+					id: "cloud-co",
+					name: "Nimbus Cloud Hosting",
+					account: "IE00 0000 0000 0000 0000 21",
+					saved: true,
+				},
+				{
+					id: "studio-luz",
+					name: "Studio Luz Design",
+					account: "PT50 0000 0000 0000 0000 3302 7",
+					saved: true,
+				},
 			],
 			requests: [
 				payment("company", {
@@ -396,7 +408,12 @@ export function seedWorkspace(now: number): Workspace {
 			accountNumber: null,
 			logoUrl: null,
 			payees: [
-				{ id: "hw-shop", name: "Byte Hardware", account: "PT50 0000 0000 0000 0000 9081 4" },
+				{
+					id: "hw-shop",
+					name: "Byte Hardware",
+					account: "PT50 0000 0000 0000 0000 9081 4",
+					saved: true,
+				},
 			],
 			requests: [
 				payment("team", {

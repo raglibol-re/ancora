@@ -723,6 +723,27 @@ export class TestnetDataSource implements DataSource {
 		return result.ok ? ok(undefined) : result;
 	}
 
+	savePayee(
+		orgId: string,
+		actorId: PersonId,
+		payee: { account: string; name: string; note: string },
+	) {
+		const to = payee.account.trim();
+		if (!StrKey.isValidContract(to) && !StrKey.isValidEd25519PublicKey(to)) {
+			return Promise.resolve(failed("Enter a Stellar address (starts with G or C)."));
+		}
+		return this.invoke(orgId, "set_payee", [
+			address(actorId),
+			address(to),
+			text(payee.name.trim()),
+			text(payee.note.trim()),
+		]);
+	}
+
+	removePayee(orgId: string, actorId: PersonId, account: string) {
+		return this.invoke(orgId, "remove_payee", [address(actorId), address(account)]);
+	}
+
 	cancelStandingOrder(orgId: string, actorId: PersonId, orderId: string) {
 		return this.invoke(orgId, "cancel_standing_order", [address(actorId), u64(Number(orderId))]);
 	}

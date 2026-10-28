@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: Address book. Saved recipients shared by every member (name, address, note, last payment, Pay button) under Organization → Address book, and "Save to the address book" when paying someone new. New organization Wasm `d638ab20…` (interface 4); older organizations list paid recipients read-only.
 - 2026-10-28: Custom roles. An organization adds its own roles, reorders them and removes roles nobody holds, from a Roles card on the Rules page; saved as one rule change under the usual approvals. New organization Wasm `3121d0ec…` with `SetRoles` and a `version()` view; older organizations show their roles read-only.
 - 2026-10-28: Live exchange rates work again: Frankfurter moved to api.frankfurter.dev/v1 and the old address redirects without CORS, so the headline total had fallen back to the simulated rate.
 - 2026-10-28: Account sheets no longer vanish when "Add money", the Reserve or "To a bank account" opens from them (a sheet stepping aside was reported as closed). The end-to-end test runs nightly in GitHub Actions.

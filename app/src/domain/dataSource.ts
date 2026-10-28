@@ -293,6 +293,15 @@ export interface DataSource {
 	): Promise<Result<void, RuleError>>;
 	setLogo(orgId: string, actorId: PersonId, logoUrl: string): Promise<Result<void, RuleError>>;
 
+	/** Saves a recipient in the organization's address book, or updates its name and note. */
+	savePayee(
+		orgId: string,
+		actorId: PersonId,
+		payee: { account: string; name: string; note: string },
+	): Promise<Result<void, RuleError>>;
+	/** Removes a recipient from the address book; earlier payments stay as they are. */
+	removePayee(orgId: string, actorId: PersonId, account: string): Promise<Result<void, RuleError>>;
+
 	/** A payment repeated on a schedule; every run follows the rules like a one-off payment. */
 	setStandingOrder(
 		orgId: string,

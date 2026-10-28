@@ -45,6 +45,7 @@ export const organizationGroup: NavGroup = {
 		{ to: "/app/rules", label: "Approval rules" },
 		{ to: "/app/rules#budgets", label: "Budgets" },
 		{ to: "/app/rules#people", label: "People & limits" },
+		{ to: "/app/payees", label: "Address book" },
 		{ to: "/app/settings", label: "Settings & logo" },
 	],
 };

@@ -62,6 +62,10 @@ pub enum Error {
     RoleInUse = 39,
     /// A role list needs one to eight distinct roles.
     InvalidRoles = 40,
+    /// The address book is full.
+    TooManyPayees = 41,
+    /// A saved recipient needs a name.
+    EmptyName = 42,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -292,6 +296,18 @@ pub struct StandingOrder {
     pub runs: u32,
     /// The request the last run created.
     pub last_request: Option<u64>,
+}
+
+/// A recipient saved in the organization's address book: shared by every member, so a name
+/// typed once is what everybody sees when paying that address.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PayeeEntry {
+    pub address: Address,
+    pub name: String,
+    pub note: String,
+    pub saved_by: Address,
+    pub saved_at: u64,
 }
 
 #[contracttype]

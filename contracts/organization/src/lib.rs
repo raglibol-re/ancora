@@ -31,9 +31,10 @@ const MAX_NAME_LEN: u32 = 64;
 const MAX_LOGO_LEN: u32 = 256;
 const MAX_PAGE: u32 = 50;
 const MAX_ROLES: u32 = 8;
+const MAX_PAYEES: u32 = 200;
 /// Raised whenever the interface gains something the app needs to know about: 2 = standing
-/// orders, 3 = custom roles (`SetRoles`). Organizations before this view report nothing.
-const CONTRACT_VERSION: u32 = 3;
+/// orders, 3 = custom roles (`SetRoles`), 4 = address book. Organizations before this view report nothing.
+const CONTRACT_VERSION: u32 = 4;
 const SECONDS_PER_HOUR: u64 = 3_600;
 
 #[contractclient(name = "RegistryClient")]
@@ -88,6 +89,9 @@ enum DataKey {
     /// A standing order (repeating payment) by id.
     Order(u64),
     OrderCount,
+    /// A saved recipient, and the list of saved addresses in the order they were added.
+    Payee(Address),
+    PayeeIndex,
 }
 
 /// Emitted whenever a request is created or changes status.
@@ -621,6 +625,82 @@ impl Organization {
         Ok(request)
     }
 
+    /// Saves a recipient in the address book, or updates its name and note. Any member may: the
+    /// address book is a convenience shared by the organization, not a rule.
+    ///
+    /// Auth: `by`, a member.
+    pub fn set_payee(
+        e: &Env,
+        by: Address,
+        address: Address,
+        name: String,
+        note: String,
+    ) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        rules::rank_of_member(&ranked(e, &info.roles), &by).ok_or(Error::NotMember)?;
+        if name.is_empty() {
+            return Err(Error::EmptyName);
+        }
+        if name.len() > MAX_NAME_LEN || note.len() > MAX_MEMO_LEN {
+            return Err(Error::TextTooLong);
+        }
+        let mut index = payee_index(e);
+        if !index.contains(&address) {
+            if index.len() >= MAX_PAYEES {
+                return Err(Error::TooManyPayees);
+            }
+            index.push_back(address.clone());
+            e.storage().instance().set(&DataKey::PayeeIndex, &index);
+        }
+        let key = DataKey::Payee(address.clone());
+        let entry = PayeeEntry {
+            address,
+            name,
+            note,
+            saved_by: by,
+            saved_at: e.ledger().timestamp(),
+        };
+        e.storage().persistent().set(&key, &entry);
+        e.storage()
+            .persistent()
+            .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+        Ok(())
+    }
+
+    /// Removes a recipient from the address book. Payments already made are not affected.
+    ///
+    /// Auth: `by`, a member.
+    pub fn remove_payee(e: &Env, by: Address, address: Address) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        rules::rank_of_member(&ranked(e, &info.roles), &by).ok_or(Error::NotMember)?;
+        let mut index = payee_index(e);
+        let position = index
+            .iter()
+            .position(|saved| saved == address)
+            .ok_or(Error::NotFound)?;
+        index.remove(position as u32);
+        e.storage().instance().set(&DataKey::PayeeIndex, &index);
+        e.storage().persistent().remove(&DataKey::Payee(address));
+        Ok(())
+    }
+
+    /// The address book, in the order recipients were first saved.
+    ///
+    /// Auth: none (read).
+    pub fn payees(e: &Env) -> Vec<PayeeEntry> {
+        let mut entries = Vec::new(e);
+        for address in payee_index(e).iter() {
+            if let Some(entry) = e.storage().persistent().get(&DataKey::Payee(address)) {
+                entries.push_back(entry);
+            }
+        }
+        entries
+    }
+
     /// The standing orders, newest first (at most `MAX_PAGE`), stopped ones included.
     ///
     /// Auth: none (read).
@@ -985,6 +1065,13 @@ fn propose_payment_from(
     let settled = settle(e, request, &info);
     save_request(e, &settled);
     Ok(settled.id)
+}
+
+fn payee_index(e: &Env) -> Vec<Address> {
+    e.storage()
+        .instance()
+        .get(&DataKey::PayeeIndex)
+        .unwrap_or_else(|| Vec::new(e))
 }
 
 fn load_order_count(e: &Env) -> u64 {

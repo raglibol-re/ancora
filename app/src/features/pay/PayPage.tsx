@@ -43,7 +43,14 @@ function PayForm({ account }: { account: OrgAccount }) {
 			? requested
 			: (assetsByAvailable[0]?.token ?? primaryToken(account)),
 	);
-	const [payeeId, setPayeeId] = useState(account.payees[0]?.id ?? NEW_RECIPIENT);
+	const requestedPayee = params.get("payee");
+	const [payeeId, setPayeeId] = useState(
+		requestedPayee && account.payees.some((p) => p.id === requestedPayee)
+			? requestedPayee
+			: (account.payees[0]?.id ?? NEW_RECIPIENT),
+	);
+	const canSave = !account.onchain || account.onchain.addressBook;
+	const [saveNew, setSaveNew] = useState(true);
 	const [newName, setNewName] = useState("");
 	const [newAccount, setNewAccount] = useState("");
 	const [amountInput, setAmountInput] = useState("");
@@ -176,6 +183,21 @@ function PayForm({ account }: { account: OrgAccount }) {
 				},
 			},
 		);
+		if (result?.ok && isNew && canSave && saveNew) {
+			// A second, small transaction: the name stays with the address for every member.
+			await run(
+				() =>
+					dataSource.savePayee(account.org.id, me.id, {
+						account: newAccount,
+						name: newName,
+						note: "",
+					}),
+				{
+					signature: { kind: "passkey", title: `Save ${newName.trim()} in the address book` },
+					success: `${newName.trim()} is in the address book.`,
+				},
+			);
+		}
 		if (result?.ok) navigate(`/app/approvals/${result.value}`);
 	};
 
@@ -261,6 +283,19 @@ function PayForm({ account }: { account: OrgAccount }) {
 									onChange={(e) => setNewAccount(e.target.value)}
 								/>
 							</Field>
+							{canSave && (
+								<label className={styles.toggle}>
+									<input
+										type="checkbox"
+										checked={saveNew}
+										onChange={(e) => setSaveNew(e.target.checked)}
+									/>
+									<span>
+										<strong>Save to the address book.</strong> Everyone in {account.org.name} then
+										sees this name for the address.
+									</span>
+								</label>
+							)}
 						</div>
 					)}
 					<Field label={`Amount (${currency})`} htmlFor="amount" error={errors.amount}>

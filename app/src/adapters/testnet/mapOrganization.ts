@@ -56,6 +56,8 @@ export type OnchainSnapshot = {
 	transfers: readonly ChainTransfer[];
 	/** `standing_orders` rows; null when this organization's code has none. */
 	standingOrders: readonly Native[] | null;
+	/** `payees` rows (the address book); null when this organization's code has none. */
+	addressBook: readonly Native[] | null;
 	setupPhase: boolean;
 	policyHash: string;
 	/** `version()` of the organization's code; 0 for organizations from before that view. */
@@ -148,6 +150,8 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	36: "A standing order repeats at least every hour.",
 	39: "Someone still holds a role you're removing. Give them another role first.",
 	40: "An organization has one to eight roles, each with its own name.",
+	41: "The address book is full (200 recipients). Remove someone you no longer pay.",
+	42: "Give the recipient a name.",
 	37: "Only the person who set this standing order, or the top role, can stop it.",
 	38: "This standing order was stopped.",
 };
@@ -392,7 +396,19 @@ export function mapOrganization(
 	const requests = snapshot.requests.map((r) =>
 		mapRequest(r, now, assets, snapshot.escrows.get(String(r.id)) ?? null),
 	);
+	// Saved recipients first, with the names members gave them; then anyone paid before.
 	const payees = new Map<string, Payee>();
+	for (const row of snapshot.addressBook ?? []) {
+		const account = str(row.address);
+		payees.set(account, {
+			id: account,
+			name: str(row.name),
+			account,
+			saved: true,
+			note: str(row.note),
+			savedBy: str(row.saved_by),
+		});
+	}
 	for (const request of requests) {
 		if (request.kind === "payment" && !payees.has(request.recipientId)) {
 			payees.set(request.recipientId, {
@@ -475,6 +491,7 @@ export function mapOrganization(
 			policyHash: snapshot.policyHash,
 			supportsRecovery: Boolean(snapshot.info.recovery),
 			customRoles: snapshot.version >= 3,
+			addressBook: snapshot.version >= 4,
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

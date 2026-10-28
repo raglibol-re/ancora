@@ -31,6 +31,10 @@ export type Payee = {
 	name: string;
 	/** IBAN for fiat payouts or a Stellar address; shown, never interpreted here. */
 	account: string;
+	/** Saved in the address book (otherwise only known from an earlier payment). */
+	saved?: boolean;
+	note?: string;
+	savedBy?: PersonId;
 };
 
 /** Structured history; the UI turns entries into words. Money entries name their asset. */
@@ -65,6 +69,8 @@ export type OnchainAccount = {
 	supportsRecovery: boolean;
 	/** The contract accepts custom roles (`SetRoles`, interface version 3 or later). */
 	customRoles: boolean;
+	/** The contract keeps an address book (interface version 4 or later). */
+	addressBook: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */

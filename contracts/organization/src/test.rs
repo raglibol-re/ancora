@@ -1472,5 +1472,75 @@ fn changing_roles_requires_the_founders_authorization() {
 #[test]
 fn the_contract_reports_its_interface_version() {
     let w = club(1_000);
-    assert_eq!(w.org.version(), 3);
+    assert_eq!(w.org.version(), 4);
+}
+
+#[test]
+fn members_share_an_address_book() {
+    let w = club(1_000);
+    let bo = board_member(&w);
+    let shop = Address::generate(&w.e);
+    let name = String::from_str(&w.e, "Lisbon Boat Supplies");
+    let note = String::from_str(&w.e, "Oars and repairs");
+    w.e.ledger().set_timestamp(5_000);
+    w.org.set_payee(&w.founder, &shop, &name, &note);
+    let book = w.org.payees();
+    assert_eq!(book.len(), 1);
+    let entry = book.get(0).unwrap();
+    assert_eq!(entry.name, name);
+    assert_eq!(entry.saved_by, w.founder);
+    assert_eq!(entry.saved_at, 5_000);
+    // Another member renames it: still one entry, now theirs.
+    let renamed = String::from_str(&w.e, "Boat Supplies Lisboa");
+    w.org.set_payee(&bo, &shop, &renamed, &note);
+    assert_eq!(w.org.payees().len(), 1);
+    assert_eq!(w.org.payees().get(0).unwrap().saved_by, bo);
+    w.org.remove_payee(&bo, &shop);
+    assert_eq!(w.org.payees().len(), 0);
+    assert_eq!(w.org.try_remove_payee(&bo, &shop), Err(Ok(Error::NotFound)));
+}
+
+#[test]
+fn the_address_book_checks_members_and_text() {
+    let w = club(1_000);
+    let shop = Address::generate(&w.e);
+    let empty = String::from_str(&w.e, "");
+    let name = String::from_str(&w.e, "Shop");
+    assert_eq!(
+        w.org
+            .try_set_payee(&Address::generate(&w.e), &shop, &name, &empty),
+        Err(Ok(Error::NotMember))
+    );
+    assert_eq!(
+        w.org.try_set_payee(&w.founder, &shop, &empty, &empty),
+        Err(Ok(Error::EmptyName))
+    );
+    let long = String::from_str(&w.e, &"x".repeat(65));
+    assert_eq!(
+        w.org.try_set_payee(&w.founder, &shop, &long, &empty),
+        Err(Ok(Error::TextTooLong))
+    );
+}
+
+#[test]
+fn saving_a_recipient_requires_the_members_authorization() {
+    let w = club(1_000);
+    let shop = Address::generate(&w.e);
+    let name = String::from_str(&w.e, "Shop");
+    let note = String::from_str(&w.e, "");
+    let stranger = Address::generate(&w.e);
+    w.e.mock_auths(&[MockAuth {
+        address: &stranger,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "set_payee",
+            args: (&w.founder, &shop, &name, &note).into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(w
+        .org
+        .try_set_payee(&w.founder, &shop, &name, &note)
+        .is_err());
+    assert_eq!(w.org.payees().len(), 0);
 }

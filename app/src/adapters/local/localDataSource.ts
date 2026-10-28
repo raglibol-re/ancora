@@ -285,6 +285,51 @@ export class LocalDataSource implements DataSource {
 		return input.firstAt <= now ? this.runStandingOrder(orgId, id) : set;
 	}
 
+	async savePayee(
+		orgId: string,
+		actorId: PersonId,
+		payee: { account: string; name: string; note: string },
+	) {
+		const account = payee.account.trim();
+		const name = payee.name.trim();
+		return this.store.mutate(orgId, (current) => {
+			if (!current.org.members.some((m) => m.personId === actorId)) {
+				return notAllowed("Only members can edit the address book.");
+			}
+			if (!name) return notAllowed("Give the recipient a name.");
+			if (!account) return notAllowed("Enter the recipient's account.");
+			const existing = current.payees.find((p) => p.account === account);
+			const saved = {
+				id: existing?.id ?? this.newId(),
+				name,
+				account,
+				saved: true,
+				note: payee.note.trim(),
+				savedBy: actorId,
+			};
+			return ok({
+				...current,
+				payees: existing
+					? current.payees.map((p) => (p.account === account ? saved : p))
+					: [...current.payees, saved],
+			});
+		});
+	}
+
+	async removePayee(orgId: string, _actorId: PersonId, account: string) {
+		return this.store.mutate(orgId, (current) => {
+			const existing = current.payees.find((p) => p.account === account && p.saved);
+			if (!existing) return notFound();
+			// Paid before: stays known for history, just no longer saved.
+			return ok({
+				...current,
+				payees: current.payees.map((p) =>
+					p.account === account ? { id: p.id, name: p.name, account: p.account } : p,
+				),
+			});
+		});
+	}
+
 	async cancelStandingOrder(orgId: string, actorId: PersonId, orderId: string) {
 		return this.store.mutate(orgId, (account) => {
 			const order = (account.standingOrders ?? []).find((o) => o.id === orderId);

@@ -93,6 +93,7 @@ Everything above runs on the Stellar testnet with real contracts. If the testnet
 | Identity ("your pass") | Passkey sign-in and sign-out, on-chain profile (name, picture), ancora ID with QR code, your positions, recovery status, device preferences | **Real on testnet** (sample mode uses "Viewing as") |
 | Approval rules | Tiered approvals, four-eyes, objection window, seal threshold, membership and rule requests, setup phase, lock-out guard | **Real on testnet**: enforced by the organization contract (Rust, tested against the same vectors as the TypeScript engine); the rules document hash is verified on the Rules page |
 | Organizations on Stellar | Each organization is an `ancora_organization` contract with OpenZeppelin AccessControl roles; people are invited by ancora ID; payments leave the contract once its rules are satisfied; fees sponsored by ancora's relayer | **Real on testnet** |
+| Address book | Saved recipients shared by every member: name, address, note, who saved it, when the organization last paid them, a Pay button. Tick "Save to the address book" when paying someone new; recipients paid before but not saved are listed separately | **Real on testnet** (`set_payee`, `remove_payee`, `payees` in the organization contract, interface `version()` 4; up to 200 recipients; organizations created before 28 Oct 2026 list paid recipients read-only) |
 | Custom roles | The organization's own roles, highest first: add a role ("Coach", "Project lead"), reorder, remove roles nobody holds. A higher role approves wherever a lower one is asked for. Saved as one rule change (directly in the setup phase, otherwise a request under the strictest tier); refused if someone still holds a removed role or the tiers still ask for it | **Real on testnet** (`SetRoles` in the organization contract, interface `version()` 3; organizations created before 28 Oct 2026 show their roles read-only) |
 | Standing orders | A payment repeated weekly, fortnightly or monthly, set from the Send page. Every run goes through the organization's rules like a one-off payment: inside the spending limit it pays out at once, otherwise it waits for approvals. Due orders run every day by ancora's scheduler, when the organization is opened, or with "Run now"; the person who set it or the top role stops it | **Real on testnet** (organization contract; a Vercel cron calls `/api/standing-orders` daily; organizations created before 26 Oct 2026 12:00 don't have it) |
 | Activity | Movements of the organization's money read from the ledger's events (deposits, payments, Reserve moves, each with its transaction on the explorer), plus approved changes from the request list; CSV statement | **Real on testnet**: Soroban RPC keeps about a week of events, read in chunks and kept on the device so the list outlives the week |
@@ -145,7 +146,7 @@ Verified and written to `app/.env.testnet` by `scripts/setup-testnet.sh`, which 
 | ancora registry (profiles, organizations per person) | [`CDPQV7…4QCM`](https://stellar.expert/explorer/testnet/contract/CDPQV7C2XRWVDGWBIEHNE6IOMC56KSAITMESJBI7BULJSIGSVAQD4QCM) | `contracts/registry` |
 | ancora seal verifier (ML-DSA-44, OpenZeppelin external-verifier interface) | [`CDUFVN…V4NS`](https://stellar.expert/explorer/testnet/contract/CDUFVNCHZE64O37RQZQQ6ZKYDLS3RZ6YKYJDD66XNEPYHVWW6OO6V4NS) | `contracts/seal_verifier` |
 | ancora Lifeline recovery (guardians, claims, handover) | [`CDO3YV…X2PE`](https://stellar.expert/explorer/testnet/contract/CDO3YV5KMKPZTJLTLODIKNBYSTPJYLDKFKXOAGE52NJXF7FZMLACX2PE) | `contracts/recovery` |
-| ancora organization (one instance per organization) | Wasm `3121d0ec…547c`, deployed by the operator on "Create organization" | `contracts/organization` |
+| ancora organization (one instance per organization) | Wasm `d638ab20…3fc5`, deployed by the operator on "Create organization" | `contracts/organization` |
 | Stellar Registry, open channel for treasury names | [`CDBL7M…HY4S`](https://stellar.expert/explorer/testnet/contract/CDBL7MNO7UI5OAAIC67UIWKQ4P3S6RVQSFCQXUHUW6TOFCXSYRPNHY4S) | stellar-registry/contracts |
 | USDC (BlendUSDC, SAC of `USDC:GATALT…`) | [`CAQCFV…RCJU`](https://stellar.expert/explorer/testnet/contract/CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU) | Blend testnet |
 | EURC (Circle testnet, SAC of `EURC:GB3Q6Q…`) | [`CCUUDM…MCGZ`](https://stellar.expert/explorer/testnet/contract/CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ) | Circle |
@@ -176,7 +177,7 @@ pnpm e2e         # the core path on the real testnet with a virtual passkey (Pla
 
 ```bash
 cd contracts
-cargo test                                             # organization (41 tests) and recovery (6), strict-auth tests included
+cargo test                                             # organization (44 tests) and recovery (6), strict-auth tests included
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 ```
 

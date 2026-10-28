@@ -10,6 +10,7 @@ import { NewOrgPage } from "./features/orgs/NewOrgPage.tsx";
 import { OverviewPage } from "./features/overview/OverviewPage.tsx";
 import { PasskeyProvider } from "./features/passkey/PasskeyProvider.tsx";
 import { PayPage } from "./features/pay/PayPage.tsx";
+import { PayeesPage } from "./features/payees/PayeesPage.tsx";
 import { ProfilePage } from "./features/profile/ProfilePage.tsx";
 import { RulesPage } from "./features/rules/RulesPage.tsx";
 import { SettingsPage } from "./features/settings/SettingsPage.tsx";
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
 			{ path: "approvals", element: <ApprovalsPage /> },
 			{ path: "approvals/:requestId", element: <RequestDetailPage /> },
 			{ path: "pay", element: <PayPage /> },
+			{ path: "payees", element: <PayeesPage /> },
 			{ path: "escrow/:orgId/:requestId", element: <EscrowPage /> },
 			{ path: "rules", element: <RulesPage /> },
 			{ path: "settings", element: <SettingsPage /> },
