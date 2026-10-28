@@ -81,3 +81,8 @@
 	cursor: pointer;
 	font-size: var(--text-sm);
 }
+
+.headerActions {
+	display: inline-flex;
+	gap: var(--space-3);
+}

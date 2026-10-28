@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: Activity and statements. A new Activity page with search (name, reference, category, amount), filters (direction, asset, month), totals and a CSV of what is shown; a monthly statement per asset that prints or saves as PDF. The overview links to it.
 - 2026-10-28: A signed action right after opening or reloading the app no longer fails with "Wallet not connected": it waits for the passkey to reconnect ("Reconnecting your passkey…"). Found by the end-to-end test.
 - 2026-10-28: Push notifications: turn them on per device on your pass page and ancora tells you when something waits for your approval, when your request went through, was approved or declined, and when a guardian starts recovering your pass. The daily scheduler now also sends requests whose objection window has passed; `/api/execute-request` and `/api/standing-orders` became `/api/due`.
 - 2026-10-28: Address book. Saved recipients shared by every member (name, address, note, last payment, Pay button) under Organization → Address book, and "Save to the address book" when paying someone new. New organization Wasm `d638ab20…` (interface 4); older organizations list paid recipients read-only.

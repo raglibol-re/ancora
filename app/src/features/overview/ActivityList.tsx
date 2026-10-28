@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { Link } from "react-router";
 import {
 	type ActivityEntry,
 	balanceEffect,
@@ -42,13 +43,18 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 			title="Activity"
 			action={
 				account.activity.length > 0 && (
-					<button
-						type="button"
-						className={styles.export}
-						onClick={() => downloadStatement(account, personName)}
-					>
-						Download statement (CSV)
-					</button>
+					<span className={styles.headerActions}>
+						<Link to="/app/activity" className={styles.export}>
+							See all and search
+						</Link>
+						<button
+							type="button"
+							className={styles.export}
+							onClick={() => downloadStatement(account, personName)}
+						>
+							CSV
+						</button>
+					</span>
 				)
 			}
 		>

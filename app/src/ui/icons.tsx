@@ -95,6 +95,13 @@ export const ClockIcon = () => (
 	</Icon>
 );
 
+/** A list of movements: lines with a pulse, for the Activity page. */
+export const ActivityIcon = () => (
+	<Icon>
+		<path d="M3 12h4l3-7 4 14 3-7h4" />
+	</Icon>
+);
+
 export const ChevronDownIcon = () => (
 	<Icon>
 		<path d="M6 9l6 6 6-6" />

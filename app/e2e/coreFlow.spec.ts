@@ -80,6 +80,12 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
 	});
 
+	await test.step("the payment is found in the activity", async () => {
+		await page.goto("/app/activity");
+		await page.locator("#activity-search").fill("Operator");
+		await expect(page.getByText("1 movement", { exact: true })).toBeVisible();
+	});
+
 	await test.step("the new recipient is in the address book", async () => {
 		await page.goto("/app/payees");
 		await expect(page.getByText("Operator").first()).toBeVisible();

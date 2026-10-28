@@ -1,4 +1,6 @@
 import { createBrowserRouter } from "react-router";
+import { ActivityPage } from "./features/activity/ActivityPage.tsx";
+import { StatementPage } from "./features/activity/StatementPage.tsx";
 import { AdminPage } from "./features/admin/AdminPage.tsx";
 import { ApprovalsPage } from "./features/approvals/ApprovalsPage.tsx";
 import { RequestDetailPage } from "./features/approvals/RequestDetailPage.tsx";
@@ -43,6 +45,8 @@ export const router = createBrowserRouter([
 			{ path: "approvals/:requestId", element: <RequestDetailPage /> },
 			{ path: "pay", element: <PayPage /> },
 			{ path: "payees", element: <PayeesPage /> },
+			{ path: "activity", element: <ActivityPage /> },
+			{ path: "statement", element: <StatementPage /> },
 			{ path: "escrow/:orgId/:requestId", element: <EscrowPage /> },
 			{ path: "rules", element: <RulesPage /> },
 			{ path: "settings", element: <SettingsPage /> },
