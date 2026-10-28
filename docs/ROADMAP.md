@@ -128,7 +128,7 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 ### B. Everyday banking parity (Revolut Business)
 
-6. **Notifications.** Web push (service worker exists) and email through a partner: approval needed, money received, payment sent, standing order run or refused, Lifeline claim started. Needs a subscription store and triggers from the scheduler and the ledger events.
+6. **Notifications.** Web push done 28 Oct: approval needed, request done/approved/declined, Lifeline claim started. Next: money received (needs ledger events, not the relayer), standing order refused, email through a partner.
 7. **Address book.** Done 28 Oct: saved recipients on the organization contract with name, note, who saved them and last payment; save while paying. Next: recipient allowlists built on it (C14).
 8. **Statements and search.** Filters and search in activity, monthly statements as PDF and CSV, receipts and attachments per payment (Blob, hash on the request).
 9. **Batch payments.** Payroll and reimbursements as one request with many lines, approved once.

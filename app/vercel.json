@@ -6,7 +6,7 @@
 	"outputDirectory": "dist",
 	"crons": [
 		{
-			"path": "/api/standing-orders",
+			"path": "/api/due",
 			"schedule": "0 7 * * *"
 		}
 	],

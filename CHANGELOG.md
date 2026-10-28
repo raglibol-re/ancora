@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: Push notifications: turn them on per device on your pass page and ancora tells you when something waits for your approval, when your request went through, was approved or declined, and when a guardian starts recovering your pass. The daily scheduler now also sends requests whose objection window has passed; `/api/execute-request` and `/api/standing-orders` became `/api/due`.
 - 2026-10-28: Address book. Saved recipients shared by every member (name, address, note, last payment, Pay button) under Organization → Address book, and "Save to the address book" when paying someone new. New organization Wasm `d638ab20…` (interface 4); older organizations list paid recipients read-only.
 - 2026-10-28: Custom roles. An organization adds its own roles, reorders them and removes roles nobody holds, from a Roles card on the Rules page; saved as one rule change under the usual approvals. New organization Wasm `3121d0ec…` with `SetRoles` and a `version()` view; older organizations show their roles read-only.
 - 2026-10-28: Live exchange rates work again: Frankfurter moved to api.frankfurter.dev/v1 and the old address redirects without CORS, so the headline total had fallen back to the simulated rate.

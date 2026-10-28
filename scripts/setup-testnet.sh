@@ -380,6 +380,16 @@ cron_secret() {
 	printf '%s' "$value"
 }
 
+# The web-push key pair, generated once with the app's web-push package and kept in .env.local.
+vapid_key() {
+	local env_file="$ROOT/app/.env.local" which="$1"
+	if ! grep -q '^VAPID_PRIVATE_KEY=' "$env_file" 2>/dev/null; then
+		(cd "$ROOT/app" && node -e "const k=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey);console.log('VAPID_PRIVATE_KEY='+k.privateKey)") >>"$env_file"
+		say "  ℹ New web-push keys saved to app/.env.local (gitignored)." >&2
+	fi
+	sed -n "s/^${which}=//p" "$env_file" | head -1
+}
+
 sync_vercel() {
 	$SYNC_VERCEL || return 0
 	say "Vercel server settings"
@@ -400,6 +410,8 @@ sync_vercel() {
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret
 		vercel_env ADMIN_PASSPHRASE "$(admin_passphrase)" secret
 		vercel_env CRON_SECRET "$(cron_secret)" secret
+		vercel_env VAPID_PUBLIC_KEY "$(vapid_key VAPID_PUBLIC_KEY)"
+		vercel_env VAPID_PRIVATE_KEY "$(vapid_key VAPID_PRIVATE_KEY)" secret
 		# Left over from the OpenZeppelin Channels relayer; the relayer now pays fees itself.
 		vercel env rm RELAYER_API_KEY production --yes >/dev/null 2>&1 || true
 		vercel env rm RELAYER_API_KEY preview --yes >/dev/null 2>&1 || true

@@ -2,7 +2,7 @@ import { Keypair, Operation, rpc, TransactionBuilder } from "@stellar/stellar-sd
 import { tokenBalance } from "../shared/tokenBalance.js";
 import { requireAdmin } from "./_lib/adminAuth.js";
 import { readDemoState, writeDemoState } from "./_lib/demoState.js";
-import { runDueOrders } from "./_lib/dueOrders.js";
+import { runDueOrders, runDueRequests } from "./_lib/dueOrders.js";
 import { contractsHealth, operatorHealth, rentHealth, rpcHealth } from "./_lib/health.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
@@ -87,7 +87,9 @@ export default apiHandler("POST", async (request) => {
 			return { hash, xlmStroops };
 		}
 		case "run-due-orders": {
-			return runDueOrders(settings, Keypair.fromSecret(required("DEPLOYER_SECRET")));
+			const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
+			const orders = await runDueOrders(settings, operator);
+			return { ...orders, requests: await runDueRequests(settings, operator) };
 		}
 		case "set-mode": {
 			if (body.mode !== "sample" && body.mode !== "testnet") {

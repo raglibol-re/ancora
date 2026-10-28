@@ -1,7 +1,9 @@
 import { Keypair, Operation } from "@stellar/stellar-sdk";
+import { waitUntil } from "@vercel/functions";
 import { isOrganization, isSmartAccount } from "./_lib/contracts.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer, simulatedResourceFee } from "./_lib/ledger.js";
+import { notifyAfterRelay } from "./_lib/notify.js";
 import { parseSubmission, validateSubmission } from "./_lib/relayRules.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
 
@@ -48,6 +50,13 @@ export default apiHandler("POST", async (request) => {
 		settings,
 		sponsor,
 		Operation.invokeHostFunction({ func: submission.func, auth: submission.auth }),
+	);
+	// Tell the people concerned (approvers, the requester, a person being recovered) after the
+	// response is sent; a failed notification never affects the transaction.
+	waitUntil(
+		notifyAfterRelay(settings, submission.func).catch((error: unknown) => {
+			console.error("[notify]", error instanceof Error ? error.message : error);
+		}),
 	);
 	return { hash, status: "SUCCESS", transactionId: null };
 });

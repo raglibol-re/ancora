@@ -1,0 +1,9 @@
+.muted {
+	margin: 0 0 var(--space-3);
+	color: var(--color-text-muted);
+}
+
+.state {
+	margin: 0 0 var(--space-3);
+	font-weight: var(--weight-medium);
+}

@@ -9,7 +9,7 @@ importers:
     dependencies:
       "@creit.tech/stellar-wallets-kit":
         specifier: 2.7.1
-        version: 2.7.1(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(near-api-js@5.1.1)(react@19.3.1)(tslib@2.8.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+        version: 2.7.1(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(near-api-js@5.1.1)(react@19.3.1)(tslib@2.8.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@fontsource/ibm-plex-sans":
         specifier: 5.3.0
         version: 5.3.0
@@ -19,6 +19,9 @@ importers:
       "@vercel/blob":
         specifier: 2.8.2
         version: 2.8.2
+      "@vercel/functions":
+        specifier: 3.10.4
+        version: 3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       buffer:
         specifier: 6.0.3
         version: 6.0.3
@@ -37,6 +40,9 @@ importers:
       smart-account-kit:
         specifier: 0.8.0
         version: 0.8.0(@stellar/stellar-sdk@16.3.1)
+      web-push:
+        specifier: 3.6.7
+        version: 3.6.7
     devDependencies:
       "@biomejs/biome":
         specifier: 2.6.3
@@ -56,6 +62,9 @@ importers:
       "@types/react-dom":
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
+      "@types/web-push":
+        specifier: 3.6.4
+        version: 3.6.4
       "@vitejs/plugin-react":
         specifier: 6.1.2
         version: 6.1.2(vite@8.3.4(@types/node@24.19.2)(terser@5.51.2))
@@ -2652,6 +2661,12 @@ packages:
         integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==,
       }
 
+  "@types/web-push@3.6.4":
+    resolution:
+      {
+        integrity: sha512-GnJmSr40H3RAnj0s34FNTcJi1hmWFV5KXugE0mYWnYhgTAHLJ/dJKAwDmvPJYMke0RplY2XE9LnM4hqSqKIjhQ==,
+      }
+
   "@types/ws@7.4.7":
     resolution:
       {
@@ -2677,6 +2692,12 @@ packages:
         integrity: sha512-sISbygqlFXYb8qfPu/+2Cf/A8IjrlAuZePdag3EDQr2PRA455s7UZtl9Ro674CWsB/saBRmz3jEkw0YsQs8OoQ==,
       }
 
+  "@vercel/cli-config@0.3.4":
+    resolution:
+      {
+        integrity: sha512-lkAn8NEC2I1EKN/Ni0M8b/VwWVMzZEcaF7lzT/B5NF51+5vPUx8bEkZGYqWmMUCVO2HFUyWCcX2pZlRDPrUsKQ==,
+      }
+
   "@vercel/cli-exec@1.0.1":
     resolution:
       {
@@ -2684,10 +2705,32 @@ packages:
       }
     engines: { node: ">= 18" }
 
+  "@vercel/functions@3.10.4":
+    resolution:
+      {
+        integrity: sha512-4L74Vs/EYrEfLUKeAmKnlDFTvqqxb2KKKB15zIbc947DdFkq0j+wHxz3I5dHvlrhqfe2/n6U5A93ZTDNbmNVUA==,
+      }
+    engines: { node: ">= 20" }
+    peerDependencies:
+      "@aws-sdk/credential-provider-web-identity": "*"
+      ws: ">=8"
+    peerDependenciesMeta:
+      "@aws-sdk/credential-provider-web-identity":
+        optional: true
+      ws:
+        optional: true
+
   "@vercel/oidc@3.8.10":
     resolution:
       {
         integrity: sha512-sPw1kIfQEA6/2dB+zlAJHnhhNBRJ8t/t4HfFvKO+g0EPBA7NbCKyGovuhgAV6Mnl865ka7HqCEguIy596czdAw==,
+      }
+    engines: { node: ">= 20" }
+
+  "@vercel/oidc@4.0.4":
+    resolution:
+      {
+        integrity: sha512-cWw+jlAXo7vFHU338hbmPdKOsU0SZflRr1+yfPkar8COC9VEm1qyBWxmfxpbuyhAytp0P2OIa5qUzeWGQ4PvkA==,
       }
     engines: { node: ">= 20" }
 
@@ -2977,6 +3020,13 @@ packages:
       }
     engines: { node: ">= 6.0.0" }
 
+  agent-base@7.1.4:
+    resolution:
+      {
+        integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==,
+      }
+    engines: { node: ">= 14" }
+
   agentkeepalive@4.6.0:
     resolution:
       {
@@ -3024,6 +3074,12 @@ packages:
         integrity: sha512-BNoCY6SXXPQ7gF2opIP4GBE+Xw7U+pHMYKuzjgCN3GwiaIR09UUeKfheyIry77QtrCBlC0KK0q5/TER/tYh3PQ==,
       }
     engines: { node: ">= 0.4" }
+
+  asn1.js@5.4.1:
+    resolution:
+      {
+        integrity: sha512-+I//4cYPccV8LdmBLiX8CYvf9Sp3vQsrqu2QNXRcrbiWvcx/UdlFiqUJJzxRQxgsZmvhXhn4cSKeSmoFjVdupA==,
+      }
 
   assertion-error@2.0.1:
     resolution:
@@ -3266,6 +3322,12 @@ packages:
     resolution:
       {
         integrity: sha512-PD0wEnEYg6ijszw/u8s+iI3H17cTymlrwkKhDhPZq+Sokl3AU4htyBFTjAeNAlCCmg0f53g6ih3jATyCKftTfw==,
+      }
+
+  buffer-equal-constant-time@1.0.1:
+    resolution:
+      {
+        integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==,
       }
 
   buffer-from@1.1.2:
@@ -3603,6 +3665,12 @@ packages:
         integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==,
       }
     engines: { node: ">= 0.4" }
+
+  ecdsa-sig-formatter@1.0.11:
+    resolution:
+      {
+        integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==,
+      }
 
   ejs@3.1.10:
     resolution:
@@ -4098,12 +4166,26 @@ packages:
       }
     engines: { node: ">= 0.6" }
 
+  http_ece@1.2.0:
+    resolution:
+      {
+        integrity: sha512-JrF8SSLVmcvc5NducxgyOrKXe3EsyHMgBFgSaIUGmArKe+rwr0uphRkRXvwiom3I+fpIfoItveHrfudL8/rxuA==,
+      }
+    engines: { node: ">=16" }
+
   https-proxy-agent@5.0.1:
     resolution:
       {
         integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==,
       }
     engines: { node: ">= 6" }
+
+  https-proxy-agent@7.0.6:
+    resolution:
+      {
+        integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==,
+      }
+    engines: { node: ">= 14" }
 
   human-signals@2.1.0:
     resolution:
@@ -4535,6 +4617,18 @@ packages:
       }
     engines: { node: ">=0.10.0" }
 
+  jwa@2.0.1:
+    resolution:
+      {
+        integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==,
+      }
+
+  jws@4.0.1:
+    resolution:
+      {
+        integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==,
+      }
+
   keyvaluestorage-interface@1.0.0:
     resolution:
       {
@@ -4781,6 +4875,12 @@ packages:
         integrity: sha512-7o1wEA2RyMP7Iu7GNba9vc0RWWGACJOCZBJX2GJWip0ikV+wcOsgVuY9uE8CPiyQhkGFSlhuSkZPavN7u1c2Fw==,
       }
     engines: { node: ">=10" }
+
+  minimist@1.2.8:
+    resolution:
+      {
+        integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==,
+      }
 
   minipass@7.1.3:
     resolution:
@@ -5405,6 +5505,12 @@ packages:
         integrity: sha512-b3rppTKm9T+PsVCBEOUR46GWI7fdOs00VKZ1+9c1EWDaDMvjQc6tUwuFyIprgGgTcWoVHSKrU8H31ZHA2e0RHA==,
       }
     engines: { node: ">=10" }
+
+  safer-buffer@2.1.2:
+    resolution:
+      {
+        integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==,
+      }
 
   scheduler@0.28.0:
     resolution:
@@ -6221,6 +6327,14 @@ packages:
         optional: true
       jsdom:
         optional: true
+
+  web-push@3.6.7:
+    resolution:
+      {
+        integrity: sha512-OpiIUe8cuGjrj3mMBFWY+e4MMIkW3SVT+7vEIjvD9kejGUypv8GPDf84JdPWskK8zMRIJ6xYGm+Kxr8YkPyA0A==,
+      }
+    engines: { node: ">= 16" }
+    hasBin: true
 
   webidl-conversions@3.0.1:
     resolution:
@@ -7311,7 +7425,7 @@ snapshots:
       - zod
     optional: true
 
-  "@creit.tech/stellar-wallets-kit@2.7.1(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(near-api-js@5.1.1)(react@19.3.1)(tslib@2.8.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@creit.tech/stellar-wallets-kit@2.7.1(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(near-api-js@5.1.1)(react@19.3.1)(tslib@2.8.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@albedo-link/intent": 0.12.0
       "@creit.tech/xbull-wallet-connect": 0.4.0
@@ -7322,15 +7436,15 @@ snapshots:
       "@lobstrco/signer-extension-api": 2.0.0
       "@metamask/connect-stellar": 0.3.0
       "@preact/signals": 2.9.0(preact@10.29.8)
-      "@reown/appkit": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@stellar/freighter-api": 6.0.0
       "@stellar/stellar-sdk": 17.4.0
       "@trezor/connect-web": 10.0.0-beta.1(bufferutil@4.1.0)(tslib@2.8.1)(utf-8-validate@6.0.6)
       "@twind/core": 1.1.3(typescript@6.0.3)
       "@twind/preset-autoprefix": 1.0.7(@twind/core@1.1.3(typescript@6.0.3))(typescript@6.0.3)
       "@twind/preset-tailwind": 1.1.4(@twind/core@1.1.3(typescript@6.0.3))(typescript@6.0.3)
-      "@walletconnect/sign-client": 2.23.0(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@walletconnect/types": 2.23.9(@vercel/blob@2.8.2)
+      "@walletconnect/sign-client": 2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@walletconnect/types": 2.23.9(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       htm: 3.1.1
       preact: 10.29.8
     transitivePeerDependencies:
@@ -7659,11 +7773,11 @@ snapshots:
       - utf-8-validate
       - zod
 
-  "@reown/appkit-controllers@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@reown/appkit-controllers@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@reown/appkit-common": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@reown/appkit-wallet": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
-      "@walletconnect/universal-provider": 2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@walletconnect/universal-provider": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       valtio: 2.1.7(@types/react@19.3.0)(react@19.3.1)
       viem: 2.57.11(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
     transitivePeerDependencies:
@@ -7694,12 +7808,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  "@reown/appkit-pay@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@reown/appkit-pay@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@reown/appkit-common": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-utils": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
+      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-utils": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
       lit: 3.3.0
       valtio: 2.1.7(@types/react@19.3.0)(react@19.3.1)
     transitivePeerDependencies:
@@ -7743,13 +7857,13 @@ snapshots:
     dependencies:
       buffer: 6.0.3
 
-  "@reown/appkit-scaffold-ui@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)":
+  "@reown/appkit-scaffold-ui@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)":
     dependencies:
       "@reown/appkit-common": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-pay": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-utils": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
+      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-pay": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-utils": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
       "@reown/appkit-wallet": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
       lit: 3.3.0
     transitivePeerDependencies:
@@ -7790,11 +7904,11 @@ snapshots:
       - valtio
       - zod
 
-  "@reown/appkit-ui@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@reown/appkit-ui@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@phosphor-icons/webcomponents": 2.1.5
       "@reown/appkit-common": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@reown/appkit-wallet": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
       lit: 3.3.0
       qrcode: 1.5.3
@@ -7826,15 +7940,15 @@ snapshots:
       - utf-8-validate
       - zod
 
-  "@reown/appkit-utils@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)":
+  "@reown/appkit-utils@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)":
     dependencies:
       "@reown/appkit-common": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@reown/appkit-polyfills": 1.8.21
       "@reown/appkit-wallet": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
       "@wallet-standard/wallet": 1.1.0
       "@walletconnect/logger": 3.0.2
-      "@walletconnect/universal-provider": 2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@walletconnect/universal-provider": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       valtio: 2.1.7(@types/react@19.3.0)(react@19.3.1)
       viem: 2.57.11(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
     optionalDependencies:
@@ -7890,17 +8004,17 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  "@reown/appkit@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@reown/appkit@1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@reown/appkit-common": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-pay": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-controllers": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-pay": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@reown/appkit-polyfills": 1.8.21
-      "@reown/appkit-scaffold-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
-      "@reown/appkit-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@reown/appkit-utils": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
+      "@reown/appkit-scaffold-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
+      "@reown/appkit-ui": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@reown/appkit-utils": 1.8.21(@types/react@19.3.0)(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(react@19.3.1)(typescript@6.0.3)(utf-8-validate@6.0.6)(valtio@2.1.7(@types/react@19.3.0)(react@19.3.1))(zod@3.25.76)
       "@reown/appkit-wallet": 1.8.21(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)
-      "@walletconnect/universal-provider": 2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@walletconnect/universal-provider": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       bs58: 6.0.0
       semver: 7.7.2
       valtio: 2.1.7(@types/react@19.3.0)(react@19.3.1)
@@ -8836,6 +8950,10 @@ snapshots:
 
   "@types/uuid@10.0.0": {}
 
+  "@types/web-push@3.6.4":
+    dependencies:
+      "@types/node": 24.19.2
+
   "@types/ws@7.4.7":
     dependencies:
       "@types/node": 24.19.2
@@ -8858,13 +8976,30 @@ snapshots:
       xdg-app-paths: 5.5.1
       zod: 4.1.11
 
+  "@vercel/cli-config@0.3.4":
+    dependencies:
+      xdg-app-paths: 5.5.1
+      zod: 4.1.11
+
   "@vercel/cli-exec@1.0.1":
     dependencies:
       execa: 5.1.1
 
+  "@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))":
+    dependencies:
+      "@vercel/oidc": 4.0.4
+    optionalDependencies:
+      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+
   "@vercel/oidc@3.8.10":
     dependencies:
       "@vercel/cli-config": 0.3.1
+      "@vercel/cli-exec": 1.0.1
+      jose: 5.10.0
+
+  "@vercel/oidc@4.0.4":
+    dependencies:
+      "@vercel/cli-config": 0.3.4
       "@vercel/cli-exec": 1.0.1
       jose: 5.10.0
 
@@ -8894,21 +9029,21 @@ snapshots:
     dependencies:
       "@wallet-standard/base": 1.1.1
 
-  "@walletconnect/core@2.23.0(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@walletconnect/core@2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@walletconnect/heartbeat": 1.2.2
       "@walletconnect/jsonrpc-provider": 1.0.14
       "@walletconnect/jsonrpc-types": 1.0.4
       "@walletconnect/jsonrpc-utils": 1.0.8
       "@walletconnect/jsonrpc-ws-connection": 1.0.16(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.0
       "@walletconnect/relay-api": 1.0.11
       "@walletconnect/relay-auth": 1.1.0
       "@walletconnect/safe-json": 1.0.2
       "@walletconnect/time": 1.0.2
-      "@walletconnect/types": 2.23.0(@vercel/blob@2.8.2)
-      "@walletconnect/utils": 2.23.0(@vercel/blob@2.8.2)(typescript@6.0.3)(zod@3.25.76)
+      "@walletconnect/types": 2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
+      "@walletconnect/utils": 2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(typescript@6.0.3)(zod@3.25.76)
       "@walletconnect/window-getters": 1.0.1
       es-toolkit: 1.39.3
       events: 3.3.0
@@ -8938,21 +9073,21 @@ snapshots:
       - utf-8-validate
       - zod
 
-  "@walletconnect/core@2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@walletconnect/core@2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@walletconnect/heartbeat": 1.2.2
       "@walletconnect/jsonrpc-provider": 1.0.14
       "@walletconnect/jsonrpc-types": 1.0.4
       "@walletconnect/jsonrpc-utils": 1.0.8
       "@walletconnect/jsonrpc-ws-connection": 1.0.16(bufferutil@4.1.0)(utf-8-validate@6.0.6)
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.2
       "@walletconnect/relay-api": 1.0.11
       "@walletconnect/relay-auth": 1.1.0
       "@walletconnect/safe-json": 1.0.2
       "@walletconnect/time": 1.0.2
-      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)
-      "@walletconnect/utils": 2.23.7(@vercel/blob@2.8.2)(typescript@6.0.3)(zod@3.25.76)
+      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
+      "@walletconnect/utils": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(typescript@6.0.3)(zod@3.25.76)
       "@walletconnect/window-getters": 1.0.1
       es-toolkit: 1.44.0
       events: 3.3.0
@@ -9033,11 +9168,11 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  "@walletconnect/keyvaluestorage@1.1.1(@vercel/blob@2.8.2)":
+  "@walletconnect/keyvaluestorage@1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))":
     dependencies:
       "@walletconnect/safe-json": 1.0.2
       idb-keyval: 6.3.0
-      unstorage: 1.17.6(@vercel/blob@2.8.2)(idb-keyval@6.3.0)
+      unstorage: 1.17.6(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(idb-keyval@6.3.0)
     transitivePeerDependencies:
       - "@azure/app-configuration"
       - "@azure/cosmos"
@@ -9084,16 +9219,16 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  "@walletconnect/sign-client@2.23.0(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@walletconnect/sign-client@2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
-      "@walletconnect/core": 2.23.0(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@walletconnect/core": 2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@walletconnect/events": 1.0.1
       "@walletconnect/heartbeat": 1.2.2
       "@walletconnect/jsonrpc-utils": 1.0.8
       "@walletconnect/logger": 3.0.0
       "@walletconnect/time": 1.0.2
-      "@walletconnect/types": 2.23.0(@vercel/blob@2.8.2)
-      "@walletconnect/utils": 2.23.0(@vercel/blob@2.8.2)(typescript@6.0.3)(zod@3.25.76)
+      "@walletconnect/types": 2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
+      "@walletconnect/utils": 2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(typescript@6.0.3)(zod@3.25.76)
       events: 3.3.0
     transitivePeerDependencies:
       - "@azure/app-configuration"
@@ -9120,16 +9255,16 @@ snapshots:
       - utf-8-validate
       - zod
 
-  "@walletconnect/sign-client@2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@walletconnect/sign-client@2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
-      "@walletconnect/core": 2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@walletconnect/core": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       "@walletconnect/events": 1.0.1
       "@walletconnect/heartbeat": 1.2.2
       "@walletconnect/jsonrpc-utils": 1.0.8
       "@walletconnect/logger": 3.0.2
       "@walletconnect/time": 1.0.2
-      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)
-      "@walletconnect/utils": 2.23.7(@vercel/blob@2.8.2)(typescript@6.0.3)(zod@3.25.76)
+      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
+      "@walletconnect/utils": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(typescript@6.0.3)(zod@3.25.76)
       events: 3.3.0
     transitivePeerDependencies:
       - "@azure/app-configuration"
@@ -9160,12 +9295,12 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  "@walletconnect/types@2.23.0(@vercel/blob@2.8.2)":
+  "@walletconnect/types@2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))":
     dependencies:
       "@walletconnect/events": 1.0.1
       "@walletconnect/heartbeat": 1.2.2
       "@walletconnect/jsonrpc-types": 1.0.4
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.0
       events: 3.3.0
     transitivePeerDependencies:
@@ -9189,12 +9324,12 @@ snapshots:
       - ioredis
       - uploadthing
 
-  "@walletconnect/types@2.23.7(@vercel/blob@2.8.2)":
+  "@walletconnect/types@2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))":
     dependencies:
       "@walletconnect/events": 1.0.1
       "@walletconnect/heartbeat": 1.2.2
       "@walletconnect/jsonrpc-types": 1.0.4
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.2
       events: 3.3.0
     transitivePeerDependencies:
@@ -9218,12 +9353,12 @@ snapshots:
       - ioredis
       - uploadthing
 
-  "@walletconnect/types@2.23.9(@vercel/blob@2.8.2)":
+  "@walletconnect/types@2.23.9(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))":
     dependencies:
       "@walletconnect/events": 1.0.1
       "@walletconnect/heartbeat": 1.2.2
       "@walletconnect/jsonrpc-types": 1.0.4
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.2
       events: 3.3.0
     transitivePeerDependencies:
@@ -9247,18 +9382,18 @@ snapshots:
       - ioredis
       - uploadthing
 
-  "@walletconnect/universal-provider@2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
+  "@walletconnect/universal-provider@2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)":
     dependencies:
       "@walletconnect/events": 1.0.1
       "@walletconnect/jsonrpc-http-connection": 1.0.8
       "@walletconnect/jsonrpc-provider": 1.0.14
       "@walletconnect/jsonrpc-types": 1.0.4
       "@walletconnect/jsonrpc-utils": 1.0.8
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.2
-      "@walletconnect/sign-client": 2.23.7(@vercel/blob@2.8.2)(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
-      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)
-      "@walletconnect/utils": 2.23.7(@vercel/blob@2.8.2)(typescript@6.0.3)(zod@3.25.76)
+      "@walletconnect/sign-client": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(bufferutil@4.1.0)(typescript@6.0.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
+      "@walletconnect/utils": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(typescript@6.0.3)(zod@3.25.76)
       es-toolkit: 1.44.0
       events: 3.3.0
     transitivePeerDependencies:
@@ -9287,7 +9422,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  "@walletconnect/utils@2.23.0(@vercel/blob@2.8.2)(typescript@6.0.3)(zod@3.25.76)":
+  "@walletconnect/utils@2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(typescript@6.0.3)(zod@3.25.76)":
     dependencies:
       "@msgpack/msgpack": 3.1.2
       "@noble/ciphers": 1.3.0
@@ -9295,13 +9430,13 @@ snapshots:
       "@noble/hashes": 1.8.0
       "@scure/base": 1.2.6
       "@walletconnect/jsonrpc-utils": 1.0.8
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.0
       "@walletconnect/relay-api": 1.0.11
       "@walletconnect/relay-auth": 1.1.0
       "@walletconnect/safe-json": 1.0.2
       "@walletconnect/time": 1.0.2
-      "@walletconnect/types": 2.23.0(@vercel/blob@2.8.2)
+      "@walletconnect/types": 2.23.0(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/window-getters": 1.0.1
       "@walletconnect/window-metadata": 1.0.1
       blakejs: 1.2.1
@@ -9332,7 +9467,7 @@ snapshots:
       - uploadthing
       - zod
 
-  "@walletconnect/utils@2.23.7(@vercel/blob@2.8.2)(typescript@6.0.3)(zod@3.25.76)":
+  "@walletconnect/utils@2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(typescript@6.0.3)(zod@3.25.76)":
     dependencies:
       "@msgpack/msgpack": 3.1.3
       "@noble/ciphers": 1.3.0
@@ -9340,13 +9475,13 @@ snapshots:
       "@noble/hashes": 1.8.0
       "@scure/base": 1.2.6
       "@walletconnect/jsonrpc-utils": 1.0.8
-      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)
+      "@walletconnect/keyvaluestorage": 1.1.1(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/logger": 3.0.2
       "@walletconnect/relay-api": 1.0.11
       "@walletconnect/relay-auth": 1.1.0
       "@walletconnect/safe-json": 1.0.2
       "@walletconnect/time": 1.0.2
-      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)
+      "@walletconnect/types": 2.23.7(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))
       "@walletconnect/window-getters": 1.0.1
       "@walletconnect/window-metadata": 1.0.1
       blakejs: 1.2.1
@@ -9414,6 +9549,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  agent-base@7.1.4: {}
+
   agentkeepalive@4.6.0:
     dependencies:
       humanize-ms: 1.2.1
@@ -9450,6 +9587,13 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       is-array-buffer: 3.0.5
+
+  asn1.js@5.4.1:
+    dependencies:
+      bn.js: 4.12.5
+      inherits: 2.0.4
+      minimalistic-assert: 1.0.1
+      safer-buffer: 2.1.2
 
   assertion-error@2.0.1: {}
 
@@ -9586,6 +9730,8 @@ snapshots:
   bs58@6.0.0:
     dependencies:
       base-x: 5.0.1
+
+  buffer-equal-constant-time@1.0.1: {}
 
   buffer-from@1.1.2: {}
 
@@ -9752,6 +9898,10 @@ snapshots:
       call-bind-apply-helpers: 1.0.2
       es-errors: 1.3.0
       gopd: 1.2.0
+
+  ecdsa-sig-formatter@1.0.11:
+    dependencies:
+      safe-buffer: 5.2.1
 
   ejs@3.1.10:
     dependencies:
@@ -10098,9 +10248,18 @@ snapshots:
       statuses: 1.5.0
       toidentifier: 1.0.0
 
+  http_ece@1.2.0: {}
+
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
+  https-proxy-agent@7.0.6:
+    dependencies:
+      agent-base: 7.1.4
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
@@ -10337,6 +10496,17 @@ snapshots:
 
   jsonpointer@5.0.1: {}
 
+  jwa@2.0.1:
+    dependencies:
+      buffer-equal-constant-time: 1.0.1
+      ecdsa-sig-formatter: 1.0.11
+      safe-buffer: 5.2.1
+
+  jws@4.0.1:
+    dependencies:
+      jwa: 2.0.1
+      safe-buffer: 5.2.1
+
   keyvaluestorage-interface@1.0.0: {}
 
   leven@3.1.0: {}
@@ -10458,6 +10628,8 @@ snapshots:
   minimatch@5.1.9:
     dependencies:
       brace-expansion: 2.1.7
+
+  minimist@1.2.8: {}
 
   minipass@7.1.3: {}
 
@@ -10890,6 +11062,8 @@ snapshots:
 
   safe-stable-stringify@2.5.0: {}
 
+  safer-buffer@2.1.2: {}
+
   scheduler@0.28.0: {}
 
   secp256k1@5.0.1:
@@ -11214,7 +11388,7 @@ snapshots:
 
   universalify@2.0.1: {}
 
-  unstorage@1.17.6(@vercel/blob@2.8.2)(idb-keyval@6.3.0):
+  unstorage@1.17.6(@vercel/blob@2.8.2)(@vercel/functions@3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)))(idb-keyval@6.3.0):
     dependencies:
       anymatch: 3.1.3
       chokidar: 5.0.0
@@ -11226,6 +11400,7 @@ snapshots:
       ufo: 1.6.4
     optionalDependencies:
       "@vercel/blob": 2.8.2
+      "@vercel/functions": 3.10.4(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       idb-keyval: 6.3.0
 
   upath@1.2.0: {}
@@ -11331,6 +11506,16 @@ snapshots:
       "@types/node": 24.19.2
     transitivePeerDependencies:
       - msw
+
+  web-push@3.6.7:
+    dependencies:
+      asn1.js: 5.4.1
+      http_ece: 1.2.0
+      https-proxy-agent: 7.0.6
+      jws: 4.0.1
+      minimist: 1.2.8
+    transitivePeerDependencies:
+      - supports-color
 
   webidl-conversions@3.0.1: {}
 

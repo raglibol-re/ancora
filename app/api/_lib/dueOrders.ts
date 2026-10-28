@@ -81,3 +81,43 @@ export async function runDueOrders(
 	}
 	return report;
 }
+
+/**
+ * Requests whose objection window has passed are executed too: the decision was taken when the
+ * approvals completed, and anyone may call `execute`; members no longer need to press "Send now".
+ */
+export async function runDueRequests(
+	config: ServerConfig,
+	operator: Keypair,
+	nowSeconds = Math.floor(Date.now() / 1000),
+): Promise<DueRun[]> {
+	const runs: DueRun[] = [];
+	for (const organization of await listOrganizations()) {
+		const requests = (await readView(config, organization, "requests", [
+			nativeToScVal(0, { type: "u32" }),
+			nativeToScVal(50, { type: "u32" }),
+		]).catch(() => [])) as Record<string, unknown>[];
+		for (const request of requests) {
+			const status = Array.isArray(request.status) ? request.status[0] : request.status;
+			const after = request.execute_after;
+			if (status !== "Scheduled" || after === null || after === undefined) continue;
+			if (Number(after) > nowSeconds) continue;
+			const requestId = Number(request.id);
+			try {
+				const hash = await invokeAsServer(
+					config,
+					operator,
+					new Contract(organization).call("execute", nativeToScVal(requestId, { type: "u64" })),
+				);
+				runs.push({ organization, orderId: requestId, hash });
+			} catch (error) {
+				runs.push({
+					organization,
+					orderId: requestId,
+					error: error instanceof Error ? error.message : String(error),
+				});
+			}
+		}
+	}
+	return runs;
+}

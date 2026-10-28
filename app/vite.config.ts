@@ -40,6 +40,8 @@ export default defineConfig({
 				navigateFallback: "/index.html",
 				// API routes are server-side and must never be answered from the SPA shell.
 				navigateFallbackDenylist: [/^\/api\//],
+				// Push notifications: shown by a small hand-written worker next to Workbox's.
+				importScripts: ["/push-sw.js"],
 			},
 		}),
 	],
