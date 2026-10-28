@@ -80,10 +80,30 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
 	});
 
-	await test.step("the payment is found in the activity", async () => {
+	await test.step("pay two recipients as one batch", async () => {
+		await page.goto("/app/pay");
+		await page.getByText("Several (batch)", { exact: true }).click();
+		await page
+			.locator("#batch-asset")
+			.selectOption("CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU");
+		for (const index of [0, 1]) {
+			await page.locator(`#batch-to-${index}`).fill(RECIPIENT);
+			await page.locator(`#batch-amount-${index}`).fill("1");
+			await page.locator(`#batch-note-${index}`).fill(`Line ${index + 1}`);
+		}
+		await page.locator("#batch-note").fill("E2E batch");
+		await page.getByRole("button", { name: "Request the batch" }).click();
+		await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
+		await expect(page.getByText("Line 2").first()).toBeVisible();
+	});
+
+	await test.step("the payments are found in the activity", async () => {
 		await page.goto("/app/activity");
+		// The single payment and both lines of the batch went to the same saved recipient.
 		await page.locator("#activity-search").fill("Operator");
-		await expect(page.getByText("1 movement", { exact: true })).toBeVisible();
+		await expect(page.getByText("3 movements", { exact: true })).toBeVisible();
+		await page.locator("#activity-search").fill("E2E batch");
+		await expect(page.getByText("2 movements", { exact: true })).toBeVisible();
 	});
 
 	await test.step("the new recipient is in the address book", async () => {
