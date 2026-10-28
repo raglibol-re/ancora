@@ -153,6 +153,15 @@
 	margin: 0 auto;
 	padding: var(--space-8) var(--space-4) calc(var(--space-8) * 2);
 	text-align: center;
+	/* A soft night pool right behind the copy: the globe is densest here, and its particles
+	   otherwise run through the words. Fades out well before the edges of the animation. */
+	background: radial-gradient(
+		ellipse 52% 38% at 50% 50%,
+		rgb(11 23 48 / 0.92) 0%,
+		rgb(11 23 48 / 0.8) 45%,
+		rgb(11 23 48 / 0.35) 75%,
+		transparent 100%
+	);
 }
 
 .badge {
@@ -187,6 +196,10 @@
 	line-height: 1.08;
 	letter-spacing: -0.02em;
 	text-wrap: balance;
+	/* The lines clip their gradient to the glyphs, so a text-shadow can't be used; a drop-shadow
+	   on the block gives the same night halo around the letters. */
+	filter: drop-shadow(0 0 3px var(--palette-night)) drop-shadow(0 0 8px var(--palette-night))
+		drop-shadow(0 0 18px var(--palette-night));
 }
 
 .line {
@@ -200,7 +213,14 @@
 .lead {
 	max-width: 40rem;
 	font-size: var(--text-lg);
-	color: var(--landing-muted);
+	/* Opaque, unlike --landing-muted: with alpha, the globe's particles shone through the glyphs. */
+	color: color-mix(in srgb, var(--palette-starlight) 78%, var(--palette-night));
+	/* A night halo keeps the particles off the letters. */
+	text-shadow:
+		0 0 2px var(--palette-night),
+		0 0 6px var(--palette-night),
+		0 0 12px var(--palette-night),
+		0 0 24px var(--palette-night);
 }
 
 .ctas {
