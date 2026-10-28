@@ -60,12 +60,12 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await page.goto("/app/pay");
 		// Option values are the token contracts; this is BlendUSDC.
 		await page
-			.getByLabel("Pay with")
+			.locator("#asset")
 			.selectOption("CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU");
-		await page.getByLabel("Recipient").selectOption("new");
-		await page.getByLabel("Name").fill("Operator");
-		await page.getByLabel(/Stellar address|Account/).fill(RECIPIENT);
-		await page.getByLabel(/^Amount/).fill("5");
+		await page.locator("#payee").selectOption("new");
+		await page.locator("#payee-name").fill("Operator");
+		await page.locator("#payee-account").fill(RECIPIENT);
+		await page.locator("#amount").fill("5");
 		await page.getByRole("button", { name: "Continue" }).click();
 		await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
 	});
