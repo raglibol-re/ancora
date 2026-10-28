@@ -55,3 +55,19 @@
 	flex-wrap: wrap;
 	gap: var(--space-2);
 }
+
+.lines {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: var(--text-sm);
+}
+
+.lines li {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-3);
+}

@@ -26,9 +26,9 @@ export function useRequestActions(account: OrgAccount, request: ApprovalRequest)
 		send: () =>
 			run(() => dataSource.executeRequest(orgId, request.id, me.id), {
 				success:
-					request.kind === "payment"
-						? "Sent. The payment is confirmed on Stellar."
-						: "Applied. The change is on Stellar.",
+					request.kind === "governance"
+						? "Applied. The change is on Stellar."
+						: "Sent. The payment is confirmed on Stellar.",
 			}),
 		approve: () =>
 			run(() => dataSource.approve(orgId, request.id, me.id), {

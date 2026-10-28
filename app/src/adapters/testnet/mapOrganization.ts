@@ -152,6 +152,7 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	40: "An organization has one to eight roles, each with its own name.",
 	41: "The address book is full (200 recipients). Remove someone you no longer pay.",
 	42: "Give the recipient a name.",
+	43: "A batch has one to fifty payments.",
 	37: "Only the person who set this standing order, or the top role, can stop it.",
 	38: "This standing order was stopped.",
 };
@@ -362,6 +363,27 @@ export function mapRequest(
 				payment.category === null || payment.category === undefined ? null : str(payment.category),
 		};
 	}
+	if (kind === "Batch") {
+		const batch = fields[0] as Native;
+		const token = str(batch.token);
+		const lines = (batch.lines as Native[]).map((line) => ({
+			recipientId: str(line.to),
+			amount: toCents(big(line.amount)),
+			note: str(line.memo),
+		}));
+		return {
+			...base,
+			kind: "batch",
+			token,
+			currency: assets.find((a) => a.token === token)?.currency ?? "USD",
+			amount: lines.reduce((sum, line) => sum + line.amount, 0),
+			lines,
+			recipientIsNew: false,
+			note: str(batch.memo),
+			category:
+				batch.category === null || batch.category === undefined ? null : str(batch.category),
+		};
+	}
 	return { ...base, kind: "governance", change: mapChange(fields[0]) };
 }
 
@@ -409,37 +431,57 @@ export function mapOrganization(
 			savedBy: str(row.saved_by),
 		});
 	}
-	for (const request of requests) {
-		if (request.kind === "payment" && !payees.has(request.recipientId)) {
-			payees.set(request.recipientId, {
-				id: request.recipientId,
-				name: nameOf(request.recipientId) ?? shortAddress(request.recipientId),
-				account: request.recipientId,
+	const recipients = requests.flatMap((r) =>
+		r.kind === "payment"
+			? [r.recipientId]
+			: r.kind === "batch"
+				? r.lines.map((l) => l.recipientId)
+				: [],
+	);
+	for (const recipient of recipients) {
+		if (!payees.has(recipient)) {
+			payees.set(recipient, {
+				id: recipient,
+				name: nameOf(recipient) ?? shortAddress(recipient),
+				account: recipient,
 			});
 		}
 	}
 	const requestActivity: ActivityEntry[] = requests
 		.filter((r) => r.status === "executed")
-		.map((r) =>
-			r.kind === "payment"
-				? {
-						id: `req-${r.id}`,
+		.flatMap((r): ActivityEntry[] =>
+			r.kind === "batch"
+				? r.lines.map((line, index) => ({
+						id: `req-${r.id}-${index}`,
 						at: r.createdAt,
 						actorId: r.requesterId,
 						kind: "payment-out",
 						token: r.token,
-						amount: r.amount,
-						payeeId: r.recipientId,
+						amount: line.amount,
+						payeeId: line.recipientId,
 						txHash: null,
-					}
-				: {
-						id: `req-${r.id}`,
-						at: r.createdAt,
-						actorId: r.requesterId,
-						kind: "governance",
-						change: r.change,
-						viaRequest: true,
-					},
+					}))
+				: [
+						r.kind === "payment"
+							? {
+									id: `req-${r.id}`,
+									at: r.createdAt,
+									actorId: r.requesterId,
+									kind: "payment-out",
+									token: r.token,
+									amount: r.amount,
+									payeeId: r.recipientId,
+									txHash: null,
+								}
+							: {
+									id: `req-${r.id}`,
+									at: r.createdAt,
+									actorId: r.requesterId,
+									kind: "governance",
+									change: r.change,
+									viaRequest: true,
+								},
+					],
 		);
 	// What the ledger says happened: deposits, payments, Reserve moves, each with its transaction.
 	const vaults = new Set(assets.flatMap((a) => (a.vault ? [a.vault] : [])));
@@ -492,6 +534,7 @@ export function mapOrganization(
 			supportsRecovery: Boolean(snapshot.info.recovery),
 			customRoles: snapshot.version >= 3,
 			addressBook: snapshot.version >= 4,
+			batches: snapshot.version >= 5,
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

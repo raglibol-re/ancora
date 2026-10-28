@@ -7,6 +7,7 @@ import {
 	type Workspace,
 } from "../../domain/account.ts";
 import type {
+	BatchInput,
 	ChangeOutcome,
 	DataSource,
 	DiscussionSupport,
@@ -53,7 +54,17 @@ import { passkeyUserName } from "./passkeyUserName.ts";
 import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
 import { registerContractArgs, resolveRegistryName } from "./registryNames.ts";
-import { address, bool, changeToScVal, i128, optionalSymbol, text, toStroops, u64 } from "./scv.ts";
+import {
+	address,
+	batchLinesToScVal,
+	bool,
+	changeToScVal,
+	i128,
+	optionalSymbol,
+	text,
+	toStroops,
+	u64,
+} from "./scv.ts";
 import { clearCachedSession, loadCachedSession, saveCachedSession } from "./sessionCache.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
 import { inspectToken } from "./tokenInspect.ts";
@@ -592,6 +603,35 @@ export class TestnetDataSource implements DataSource {
 		if (!result.ok) return result;
 		const latest = this.account(orgId)?.requests[0];
 		return ok(latest?.id ?? "");
+	}
+
+	async requestBatch(orgId: string, actorId: PersonId, input: BatchInput) {
+		const lines = input.lines.map((line) => ({
+			to: ("id" in line.payee ? line.payee.id : line.payee.account).trim(),
+			amount: line.amount,
+			note: line.note.trim(),
+		}));
+		const bad = lines.find(
+			(line) => !StrKey.isValidContract(line.to) && !StrKey.isValidEd25519PublicKey(line.to),
+		);
+		if (bad) return failed(`"${bad.to || "(empty)"}" isn't a Stellar address (G… or C…).`);
+		// Every recipient must be able to take the asset, or the whole batch fails at payout.
+		const checks = await Promise.all(
+			[...new Set(lines.map((line) => line.to))].map((to) =>
+				checkRecipient(this.config, input.token, to).catch(() => null),
+			),
+		);
+		const refused = checks.find((check) => check && !check.ok);
+		if (refused && !refused.ok) return refused;
+		const result = await this.invoke(orgId, "propose_batch", [
+			address(actorId),
+			address(input.token),
+			batchLinesToScVal(lines),
+			text(input.note.trim()),
+			optionalSymbol(input.category ?? null),
+		]);
+		if (!result.ok) return result;
+		return ok(this.account(orgId)?.requests[0]?.id ?? "");
 	}
 
 	approve(orgId: string, requestId: string, actorId: PersonId) {

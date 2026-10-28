@@ -126,3 +126,18 @@ export function changeToScVal(change: GovernanceChange, policyHashHex?: string):
 			return null;
 	}
 }
+
+/** Batch lines as a vector of the organization contract's `BatchLine` structs. */
+export function batchLinesToScVal(
+	lines: readonly { to: string; amount: Cents; note: string }[],
+): xdr.ScVal {
+	return xdr.ScVal.scvVec(
+		lines.map((line) =>
+			struct({
+				amount: i128(toStroops(line.amount)),
+				memo: text(line.note),
+				to: address(line.to),
+			}),
+		),
+	);
+}

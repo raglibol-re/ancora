@@ -66,6 +66,8 @@ pub enum Error {
     TooManyPayees = 41,
     /// A saved recipient needs a name.
     EmptyName = 42,
+    /// A batch has one to fifty lines.
+    InvalidBatch = 43,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -231,11 +233,39 @@ pub struct Payment {
     pub escrow: bool,
 }
 
+/// One payment inside a batch.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BatchLine {
+    pub to: Address,
+    pub amount: i128,
+    pub memo: String,
+}
+
+/// Several payments in one asset, decided once on their total and paid out together (payroll,
+/// reimbursements): either every line goes out or none does.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Batch {
+    pub token: Address,
+    pub lines: Vec<BatchLine>,
+    pub memo: String,
+    pub category: Option<Symbol>,
+}
+
+impl Batch {
+    /// The sum of the lines (each checked positive when proposed).
+    pub fn total(&self) -> i128 {
+        self.lines.iter().map(|line| line.amount).sum()
+    }
+}
+
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub enum RequestKind {
     Payment(Payment),
     Change(Change),
+    Batch(Batch),
 }
 
 #[contracttype]

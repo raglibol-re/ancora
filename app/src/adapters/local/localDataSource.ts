@@ -19,6 +19,7 @@ import {
 import { bookBudget, budgetVerdict, checkBudget, releaseBudget } from "../../domain/budgets.ts";
 import type {
 	AssetOption,
+	BatchInput,
 	ChangeOutcome,
 	DataSource,
 	DataSourceKind,
@@ -51,6 +52,7 @@ import {
 	approveRequest,
 	cancelEscrow,
 	confirmEscrow,
+	createBatchRequest,
 	createGovernanceRequest,
 	createPaymentRequest,
 	declineRequest,
@@ -448,6 +450,65 @@ export class LocalDataSource implements DataSource {
 				: account.org;
 			const budgetUse =
 				category && !foreign ? bookBudget(account, category, input.amount, now) : account.budgetUse;
+			return ok({
+				...account,
+				org,
+				payees,
+				budgetUse,
+				requests: [created.value, ...account.requests],
+			});
+		});
+		return result.ok ? ok(requestId) : result;
+	}
+
+	async requestBatch(orgId: string, actorId: PersonId, input: BatchInput) {
+		const requestId = this.newId();
+		const result = this.store.mutate(orgId, (account) => {
+			const amount = input.lines.reduce((sum, line) => sum + line.amount, 0);
+			const funds = checkFunds(account, input.token, amount);
+			if (!funds.ok) return funds;
+			let payees = [...account.payees];
+			const lines = [];
+			for (const line of input.lines) {
+				const target = line.payee;
+				const payee =
+					"id" in target
+						? payees.find((p) => p.id === target.id)
+						: (payees.find((p) => p.account === target.account.trim()) ?? {
+								id: this.newId(),
+								name: target.name.trim() || target.account.trim(),
+								account: target.account.trim(),
+							});
+				if (!payee) return notFound();
+				if (!payees.some((p) => p.id === payee.id)) payees = [...payees, payee];
+				lines.push({ recipientId: payee.id, amount: line.amount, note: line.note.trim() });
+			}
+			const now = this.clock();
+			const asset = account.org.assets.find((a) => a.token === input.token);
+			const foreign = asset !== undefined && asset.currency !== account.org.baseCurrency;
+			const category = input.category ?? null;
+			const verdict = budgetVerdict(checkBudget(account, category, amount, foreign, now));
+			if (!verdict.ok) return verdict;
+			const created = createBatchRequest(
+				account.org,
+				{
+					id: requestId,
+					requesterId: actorId,
+					token: input.token,
+					lines,
+					recipientIsNew: lines.some((line) => isNewRecipient(account, line.recipientId)),
+					note: input.note.trim(),
+					category,
+					overBudget: verdict.value,
+				},
+				now,
+			);
+			if (!created.ok) return created;
+			const org = created.value.evaluation.withinLimit
+				? bookLimit(account.org, actorId, amount, now)
+				: account.org;
+			const budgetUse =
+				category && !foreign ? bookBudget(account, category, amount, now) : account.budgetUse;
 			return ok({
 				...account,
 				org,

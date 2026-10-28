@@ -90,6 +90,10 @@ export function requestTitle(
 	nameOf: NameOf,
 ): string {
 	if (request.kind === "governance") return describeChange(account.org, request.change, nameOf);
+	if (request.kind === "batch") {
+		const count = request.lines.length;
+		return `${formatMoney(request.amount, request.currency)} to ${count} ${count === 1 ? "recipient" : "recipients"}${request.note ? ` · ${request.note}` : ""}`;
+	}
 	const payee = account.payees.find((p) => p.id === request.recipientId);
 	return `${formatMoney(request.amount, request.currency)} to ${payee?.name ?? "a recipient"}`;
 }

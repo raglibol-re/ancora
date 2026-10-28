@@ -21,6 +21,18 @@ export type PaymentInput = {
 	escrow?: boolean;
 };
 
+/** Several payments in one asset, requested together and decided once on their total. */
+export type BatchInput = {
+	token: string;
+	lines: readonly {
+		payee: { id: string } | { name: string; account: string };
+		amount: Cents;
+		note: string;
+	}[];
+	note: string;
+	category?: string | null;
+};
+
 /** A standing order to set up: the payment, how often it repeats and when it starts. */
 export type StandingOrderInput = {
 	/** The recipient's account (Stellar address, or IBAN in sample data). */
@@ -253,6 +265,12 @@ export interface DataSource {
 		orgId: string,
 		actorId: PersonId,
 		input: PaymentInput,
+	): Promise<Result<string, RuleError>>;
+	/** Payroll and reimbursements: one request, approved once, every line paid together. */
+	requestBatch(
+		orgId: string,
+		actorId: PersonId,
+		input: BatchInput,
 	): Promise<Result<string, RuleError>>;
 	approve(orgId: string, requestId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
 	/** One side of a secure handover confirms; with both confirmations the money goes out. */

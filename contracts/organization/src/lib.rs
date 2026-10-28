@@ -32,9 +32,10 @@ const MAX_LOGO_LEN: u32 = 256;
 const MAX_PAGE: u32 = 50;
 const MAX_ROLES: u32 = 8;
 const MAX_PAYEES: u32 = 200;
+const MAX_BATCH_LINES: u32 = 50;
 /// Raised whenever the interface gains something the app needs to know about: 2 = standing
-/// orders, 3 = custom roles (`SetRoles`), 4 = address book. Organizations before this view report nothing.
-const CONTRACT_VERSION: u32 = 4;
+/// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments. Organizations before this view report nothing.
+const CONTRACT_VERSION: u32 = 5;
 const SECONDS_PER_HOUR: u64 = 3_600;
 
 #[contractclient(name = "RegistryClient")]
@@ -513,6 +514,84 @@ impl Organization {
         propose_payment_from(e, by, token, to, amount, memo, category, escrow)
     }
 
+    /// Proposes a batch: several payments in one asset, decided once on their total (tier,
+    /// budget, spending limit; a new recipient on any line counts as new) and paid out together.
+    ///
+    /// Auth: `by`, a member.
+    pub fn propose_batch(
+        e: &Env,
+        by: Address,
+        token: Address,
+        lines: Vec<BatchLine>,
+        memo: String,
+        category: Option<Symbol>,
+    ) -> Result<u64, Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        let members = ranked(e, &info.roles);
+        rules::rank_of_member(&members, &by).ok_or(Error::NotMember)?;
+        let asset = find_asset(&load_assets(e), &token)?;
+        if lines.is_empty() || lines.len() > MAX_BATCH_LINES {
+            return Err(Error::InvalidBatch);
+        }
+        if memo.len() > MAX_MEMO_LEN {
+            return Err(Error::TextTooLong);
+        }
+        let mut total: i128 = 0;
+        let mut any_new = false;
+        for line in lines.iter() {
+            if line.amount <= 0 {
+                return Err(Error::InvalidAmount);
+            }
+            if line.memo.len() > MAX_MEMO_LEN {
+                return Err(Error::TextTooLong);
+            }
+            total = total.checked_add(line.amount).ok_or(Error::InvalidAmount)?;
+            any_new = any_new || !has_paid(e, &line.to);
+        }
+        if total > available(e, &token) {
+            return Err(Error::InsufficientFunds);
+        }
+        let policy = load_policy(e);
+        let total_in_base = (asset.currency == info.base_currency).then_some(total);
+        let budget = match &category {
+            Some(name) => Some(find_budget(&policy, name)?),
+            None => None,
+        };
+        let over_budget = match (&budget, total_in_base) {
+            (None, _) => false,
+            (Some(b), Some(a)) if a <= budget_room(e, b) => false,
+            (Some(b), _) if b.hard => return Err(Error::BudgetExceeded),
+            (Some(_), _) => true,
+        };
+        let within_limit =
+            !over_budget && total_in_base.and_then(|a| use_limit(e, &by, a)).is_some();
+        let evaluation = if within_limit {
+            rules::limit_evaluation(e)
+        } else {
+            rules::evaluate_payment(&policy, total_in_base, any_new, over_budget)?
+        };
+        if let (Some(b), Some(a)) = (&budget, total_in_base) {
+            book_budget(e, b, a);
+        }
+        let request = new_request(
+            e,
+            RequestKind::Batch(Batch {
+                token: token.clone(),
+                lines,
+                memo,
+                category,
+            }),
+            by,
+            evaluation,
+        );
+        add_committed(e, &token, total);
+        let settled = settle(e, request, &info);
+        save_request(e, &settled);
+        Ok(settled.id)
+    }
+
     /// Sets up a standing order: `amount` of `token` to `to` every `interval_seconds` (at least
     /// an hour), first due at `first_at` (now if earlier). Each run proposes the payment from
     /// `by` under the rules of that moment, so it pays out at once inside their spending limit
@@ -847,9 +926,16 @@ impl Organization {
         }
         request.status = Status::Declined;
         request.decided_by = Some(by);
-        if let RequestKind::Payment(payment) = &request.kind {
-            add_committed(e, &payment.token, -payment.amount);
-            release_budget(e, &info, payment);
+        match &request.kind {
+            RequestKind::Payment(payment) => {
+                add_committed(e, &payment.token, -payment.amount);
+                release_budget(e, &info, &payment.token, payment.amount, &payment.category);
+            }
+            RequestKind::Batch(batch) => {
+                add_committed(e, &batch.token, -batch.total());
+                release_budget(e, &info, &batch.token, batch.total(), &batch.category);
+            }
+            RequestKind::Change(_) => {}
         }
         save_request(e, &request);
         Ok(())
@@ -934,7 +1020,7 @@ impl Organization {
         }
         if let RequestKind::Payment(payment) = &request.kind {
             add_committed(e, &payment.token, -payment.amount);
-            release_budget(e, &info, payment);
+            release_budget(e, &info, &payment.token, payment.amount, &payment.category);
         }
         request.status = Status::Declined;
         request.decided_by = Some(by);
@@ -1302,6 +1388,22 @@ fn execute_now(e: &Env, mut request: Request, info: &OrgInfo) -> Request {
                 request.status = Status::Executed;
             }
         }
+        RequestKind::Batch(batch) => {
+            for line in batch.lines.iter() {
+                pay_out(
+                    e,
+                    &Payment {
+                        token: batch.token.clone(),
+                        to: line.to,
+                        amount: line.amount,
+                        memo: line.memo,
+                        category: None,
+                        escrow: false,
+                    },
+                );
+            }
+            request.status = Status::Executed;
+        }
         RequestKind::Change(change) => match apply_change(e, info, change) {
             Ok(()) => request.status = Status::Executed,
             Err(error) => {
@@ -1587,11 +1689,17 @@ fn book_budget(e: &Env, budget: &Budget, amount: i128) {
 }
 
 /// Gives a declined payment's amount back to its budget, when it was booked in this window.
-fn release_budget(e: &Env, info: &OrgInfo, payment: &Payment) {
-    let Some(category) = &payment.category else {
+fn release_budget(
+    e: &Env,
+    info: &OrgInfo,
+    token: &Address,
+    amount: i128,
+    category: &Option<Symbol>,
+) {
+    let Some(category) = category else {
         return;
     };
-    let Ok(asset) = find_asset(&load_assets(e), &payment.token) else {
+    let Ok(asset) = find_asset(&load_assets(e), token) else {
         return;
     };
     if asset.currency != info.base_currency {
@@ -1605,7 +1713,7 @@ fn release_budget(e: &Env, info: &OrgInfo, payment: &Payment) {
         e,
         category,
         &BudgetUse {
-            spent: (used.spent - payment.amount).max(0),
+            spent: (used.spent - amount).max(0),
             ..used
         },
     );

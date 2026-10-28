@@ -67,12 +67,39 @@ export type PaymentRequest = RequestBase & {
 	escrowConfirmed: EscrowConfirmations | null;
 };
 
+/** One payment inside a batch. */
+export type BatchLine = { recipientId: string; amount: Cents; note: string };
+
+/**
+ * Several payments in one asset, decided once on their total and paid out together (payroll,
+ * reimbursements). `amount` is the total; a new recipient on any line makes the batch new.
+ */
+export type BatchRequest = RequestBase & {
+	kind: "batch";
+	token: string;
+	currency: Currency;
+	amount: Cents;
+	lines: readonly BatchLine[];
+	recipientIsNew: boolean;
+	note: string;
+	category: string | null;
+};
+
+export const MAX_BATCH_LINES = 50;
+
 export type GovernanceRequest = RequestBase & {
 	kind: "governance";
 	change: GovernanceChange;
 };
 
-export type ApprovalRequest = PaymentRequest | GovernanceRequest;
+export type ApprovalRequest = PaymentRequest | GovernanceRequest | BatchRequest;
+
+/** Requests that move money out: a single payment or a batch. */
+export type MoneyRequest = PaymentRequest | BatchRequest;
+
+export function isMoneyRequest(request: ApprovalRequest): request is MoneyRequest {
+	return request.kind === "payment" || request.kind === "batch";
+}
 
 const HOUR_MS = 3_600_000;
 
@@ -142,6 +169,62 @@ export function createPaymentRequest(
 				category: fields.category ?? null,
 				escrow: fields.escrow ?? false,
 				escrowConfirmed: null,
+				currency: asset.currency,
+			},
+			now,
+		),
+	);
+}
+
+export type NewBatch = {
+	id: string;
+	requesterId: PersonId;
+	token: string;
+	lines: readonly BatchLine[];
+	recipientIsNew: boolean;
+	note: string;
+	category: string | null;
+	overBudget?: boolean;
+};
+
+/** Like a payment, judged on the batch's total: tier, spending limit and the new-recipient rule. */
+export function createBatchRequest(
+	org: Org,
+	input: NewBatch,
+	now: Timestamp,
+): Result<BatchRequest, RuleError> {
+	if (memberRank(org, input.requesterId) === undefined) return notMember();
+	if (input.lines.length === 0 || input.lines.length > MAX_BATCH_LINES) {
+		return err(ruleError("invalid-amount", `A batch has one to ${MAX_BATCH_LINES} payments.`));
+	}
+	if (input.lines.some((line) => !isValidAmount(line.amount))) {
+		return err(ruleError("invalid-amount", "Every line needs an amount above zero."));
+	}
+	const asset = org.assets.find((a) => a.token === input.token);
+	if (!asset) {
+		return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
+	}
+	const amount = input.lines.reduce((sum, line) => sum + line.amount, 0);
+	const foreignCurrency = asset.currency !== org.baseCurrency;
+	const requester = org.members.find((m) => m.personId === input.requesterId);
+	const { overBudget = false, ...fields } = input;
+	const evaluation =
+		!foreignCurrency && !overBudget && fitsLimit(requester, amount, now)
+			? limitEvaluation()
+			: evaluatePayment(org.policy, {
+					amount,
+					recipientIsNew: input.recipientIsNew,
+					foreignCurrency,
+					overBudget,
+				});
+	return ok(
+		settle(
+			org,
+			{
+				...blank(input.id, input.requesterId, now, evaluation),
+				kind: "batch",
+				...fields,
+				amount,
 				currency: asset.currency,
 			},
 			now,

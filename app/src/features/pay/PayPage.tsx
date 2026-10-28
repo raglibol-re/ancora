@@ -13,9 +13,11 @@ import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
+import { Segmented } from "../../ui/Segmented.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { BatchForm } from "./BatchForm.tsx";
 import styles from "./PayPage.module.css";
 import { RulePreview } from "./RulePreview.tsx";
 import { REPEAT_OPTIONS, type RepeatValue, StandingOrdersCard } from "./StandingOrdersCard.tsx";
@@ -25,7 +27,31 @@ const NEW_RECIPIENT = "new";
 const ORG_PREFIX = "org:";
 
 export function PayPage() {
-	return <OrgRequired>{(account) => <PayForm account={account} />}</OrgRequired>;
+	return (
+		<OrgRequired>{(account) => <SendMoney key={account.org.id} account={account} />}</OrgRequired>
+	);
+}
+
+/** One payment, or several as one batch when the organization's contract takes batches. */
+function SendMoney({ account }: { account: OrgAccount }) {
+	const [mode, setMode] = useState<"one" | "several">("one");
+	const batches = !account.onchain || account.onchain.batches;
+	return (
+		<Page title="Send money" lead={`From the account of ${account.org.name}.`}>
+			{batches && (
+				<Segmented<"one" | "several">
+					label="Recipients"
+					value={mode}
+					onChange={setMode}
+					options={[
+						{ value: "one", label: "One recipient" },
+						{ value: "several", label: "Several (batch)" },
+					]}
+				/>
+			)}
+			{mode === "several" ? <BatchForm account={account} /> : <PayForm account={account} />}
+		</Page>
+	);
 }
 
 function PayForm({ account }: { account: OrgAccount }) {
@@ -202,7 +228,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Page title="Send money" lead={`From the account of ${account.org.name}.`}>
+		<>
 			<Card>
 				<form className={styles.form} onSubmit={submit} noValidate>
 					{account.org.assets.length > 1 && (
@@ -396,6 +422,6 @@ function PayForm({ account }: { account: OrgAccount }) {
 				</form>
 			</Card>
 			<StandingOrdersCard account={account} />
-		</Page>
+		</>
 	);
 }

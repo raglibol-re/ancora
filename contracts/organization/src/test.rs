@@ -3,7 +3,7 @@ use soroban_sdk::{symbol_short, token, Address, BytesN, Env, IntoVal, String, Sy
 
 use ancora_registry::{Registry, RegistryClient as RealRegistryClient};
 
-use crate::types::{AssetSpec, Budget, Change, Error, Status, CENT};
+use crate::types::{AssetSpec, BatchLine, Budget, Change, Error, Status, CENT};
 use crate::{Organization, OrganizationClient};
 use mock_vault::MockVault;
 
@@ -1472,7 +1472,7 @@ fn changing_roles_requires_the_founders_authorization() {
 #[test]
 fn the_contract_reports_its_interface_version() {
     let w = club(1_000);
-    assert_eq!(w.org.version(), 4);
+    assert_eq!(w.org.version(), 5);
 }
 
 #[test]
@@ -1543,4 +1543,157 @@ fn saving_a_recipient_requires_the_members_authorization() {
         .try_set_payee(&w.founder, &shop, &name, &note)
         .is_err());
     assert_eq!(w.org.payees().len(), 0);
+}
+
+fn line(e: &Env, to: &Address, amount: i128, memo: &str) -> BatchLine {
+    BatchLine {
+        to: to.clone(),
+        amount,
+        memo: String::from_str(e, memo),
+    }
+}
+
+#[test]
+fn a_batch_is_decided_on_its_total_and_pays_every_line() {
+    let w = club(50_000);
+    let bo = board_member(&w);
+    let ana = Address::generate(&w.e);
+    let rui = Address::generate(&w.e);
+    // 150 + 150 = 300: beyond the club's no-approval tier, so one board approval is needed.
+    let lines = Vec::from_array(
+        &w.e,
+        [
+            line(&w.e, &ana, euros(150), "Coach, October"),
+            line(&w.e, &rui, euros(150), "Coach, October"),
+        ],
+    );
+    let id = w.org.propose_batch(
+        &w.founder,
+        &w.token,
+        &lines,
+        &String::from_str(&w.e, "Coaches, October"),
+        &None,
+    );
+    assert_eq!(w.org.request(&id).status, Status::Pending);
+    assert_eq!(w.org.available(&w.token), euros(49_700));
+    w.org.approve(&bo, &id);
+    assert_eq!(w.org.request(&id).status, Status::Executed);
+    assert_eq!(w.token_client.balance(&ana), euros(150));
+    assert_eq!(w.token_client.balance(&rui), euros(150));
+    assert!(w.org.has_paid(&ana) && w.org.has_paid(&rui));
+    assert_eq!(w.org.available(&w.token), euros(49_700));
+}
+
+#[test]
+fn a_declined_batch_frees_its_money_and_budget() {
+    let w = club(50_000);
+    let bo = board_member(&w);
+    w.org.change_directly(
+        &w.founder,
+        &Change::UpdatePolicy(
+            {
+                let mut policy = w.org.policy();
+                policy.budgets.push_back(Budget {
+                    category: symbol_short!("staff"),
+                    amount: euros(1_000),
+                    period_seconds: 30 * 86_400,
+                    hard: true,
+                });
+                policy
+            },
+            BytesN::from_array(&w.e, &[2u8; 32]),
+        ),
+    );
+    let ana = Address::generate(&w.e);
+    let lines = Vec::from_array(&w.e, [line(&w.e, &ana, euros(600), "October")]);
+    let id = w.org.propose_batch(
+        &w.founder,
+        &w.token,
+        &lines,
+        &String::from_str(&w.e, "Staff"),
+        &Some(symbol_short!("staff")),
+    );
+    // The hard budget has 400 left: a second batch of 600 is refused.
+    assert_eq!(
+        w.org.try_propose_batch(
+            &w.founder,
+            &w.token,
+            &lines,
+            &String::from_str(&w.e, "Staff"),
+            &Some(symbol_short!("staff"))
+        ),
+        Err(Ok(Error::BudgetExceeded))
+    );
+    w.org.decline(&bo, &id);
+    assert_eq!(w.org.available(&w.token), euros(50_000));
+    // Declining gave the 600 back to the budget.
+    w.org.propose_batch(
+        &w.founder,
+        &w.token,
+        &lines,
+        &String::from_str(&w.e, "Staff"),
+        &Some(symbol_short!("staff")),
+    );
+}
+
+#[test]
+fn batches_are_validated() {
+    let w = club(1_000);
+    let ana = Address::generate(&w.e);
+    let memo = String::from_str(&w.e, "");
+    let empty: Vec<BatchLine> = Vec::new(&w.e);
+    assert_eq!(
+        w.org
+            .try_propose_batch(&w.founder, &w.token, &empty, &memo, &None),
+        Err(Ok(Error::InvalidBatch))
+    );
+    let mut many = Vec::new(&w.e);
+    for _ in 0..51 {
+        many.push_back(line(&w.e, &ana, 1, ""));
+    }
+    assert_eq!(
+        w.org
+            .try_propose_batch(&w.founder, &w.token, &many, &memo, &None),
+        Err(Ok(Error::InvalidBatch))
+    );
+    let zero = Vec::from_array(&w.e, [line(&w.e, &ana, 0, "")]);
+    assert_eq!(
+        w.org
+            .try_propose_batch(&w.founder, &w.token, &zero, &memo, &None),
+        Err(Ok(Error::InvalidAmount))
+    );
+    let too_much = Vec::from_array(&w.e, [line(&w.e, &ana, euros(1_001), "")]);
+    assert_eq!(
+        w.org
+            .try_propose_batch(&w.founder, &w.token, &too_much, &memo, &None),
+        Err(Ok(Error::InsufficientFunds))
+    );
+    assert_eq!(
+        w.org
+            .try_propose_batch(&Address::generate(&w.e), &w.token, &zero, &memo, &None),
+        Err(Ok(Error::NotMember))
+    );
+}
+
+#[test]
+fn proposing_a_batch_requires_the_members_authorization() {
+    let w = club(1_000);
+    let ana = Address::generate(&w.e);
+    let lines = Vec::from_array(&w.e, [line(&w.e, &ana, euros(10), "")]);
+    let memo = String::from_str(&w.e, "");
+    let stranger = Address::generate(&w.e);
+    w.e.mock_auths(&[MockAuth {
+        address: &stranger,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "propose_batch",
+            args: (&w.founder, &w.token, lines.clone(), &memo, None::<Symbol>).into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(w
+        .org
+        .try_propose_batch(&w.founder, &w.token, &lines, &memo, &None)
+        .is_err());
+    assert_eq!(w.token_client.balance(&ana), 0);
 }

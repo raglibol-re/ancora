@@ -131,7 +131,7 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 6. **Notifications.** Web push done 28 Oct: approval needed, request done/approved/declined, Lifeline claim started. Next: money received (needs ledger events, not the relayer), standing order refused, email through a partner.
 7. **Address book.** Done 28 Oct: saved recipients on the organization contract with name, note, who saved them and last payment; save while paying. Next: recipient allowlists built on it (C14).
 8. **Statements and search.** Done 28 Oct: Activity page with search and filters, monthly statement (print/PDF) and CSV. Next: receipts and attachments per payment (Blob, hash on the request), opening balances once full history is indexed.
-9. **Batch payments.** Payroll and reimbursements as one request with many lines, approved once.
+9. **Batch payments.** Done 28 Oct: up to 50 lines in one asset, approved once on the total, paid atomically. Next: CSV import of lines, reimbursement claims by members.
 10. **Payment requests and links.** An organization asks for money (membership fees, invoices) with a link or QR and sees who paid; reminders for fees.
 11. **Sub-accounts.** Pots per project or team with their own budgets and views.
 12. **Exchange inside the app.** EURC ↔ USDC through path payments with a quote (Reflector or SDEX) and a rule-aware preview; today another currency takes the strictest tier.

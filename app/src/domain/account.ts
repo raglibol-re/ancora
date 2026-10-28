@@ -9,6 +9,7 @@ import { strictestTier } from "./rules/policy.ts";
 import {
 	type ApprovalRequest,
 	advanceRequest,
+	isMoneyRequest,
 	markExecuted,
 	markFailed,
 	type PaymentRequest,
@@ -71,6 +72,8 @@ export type OnchainAccount = {
 	customRoles: boolean;
 	/** The contract keeps an address book (interface version 4 or later). */
 	addressBook: boolean;
+	/** The contract takes batch payments (interface version 5 or later). */
+	batches: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */
@@ -216,7 +219,7 @@ const OPEN_STATUSES: readonly ApprovalRequest["status"][] = [
 export function availableBalance(account: OrgAccount, token: string): Cents {
 	const committed = account.requests.reduce(
 		(sum, r) =>
-			r.kind === "payment" && r.token === token && OPEN_STATUSES.includes(r.status)
+			isMoneyRequest(r) && r.token === token && OPEN_STATUSES.includes(r.status)
 				? sum + r.amount
 				: sum,
 		0,
@@ -231,7 +234,7 @@ export function assetInUse(account: OrgAccount, token: string): boolean {
 		balance !== 0 ||
 		reserve !== 0 ||
 		account.requests.some(
-			(r) => r.kind === "payment" && r.token === token && OPEN_STATUSES.includes(r.status),
+			(r) => isMoneyRequest(r) && r.token === token && OPEN_STATUSES.includes(r.status),
 		)
 	);
 }
@@ -335,6 +338,24 @@ function execute(
 	// A secure handover is funded but held: nothing leaves yet (see `payOutEscrow`).
 	if (done.status === "escrowed") return { ...account, requests };
 	const base = { id: `act-${request.id}`, at: now, actorId: request.requesterId };
+
+	if (request.kind === "batch") {
+		const entries: ActivityEntry[] = request.lines.map((line, index) => ({
+			...base,
+			id: `act-${request.id}-${index}`,
+			kind: "payment-out",
+			token: request.token,
+			amount: line.amount,
+			payeeId: line.recipientId,
+			txHash,
+		}));
+		const { balance } = balanceOf(account, request.token);
+		return {
+			...withBalance(account, request.token, { balance: balance - request.amount }),
+			requests,
+			activity: [...entries, ...account.activity],
+		};
+	}
 
 	if (request.kind === "payment") {
 		const entry: ActivityEntry = {

@@ -1,11 +1,11 @@
 import { Link } from "react-router";
-import { discussionOf, type OrgAccount } from "../../domain/account.ts";
+import { discussionOf, type OrgAccount, shortAddress } from "../../domain/account.ts";
 import { describeSummary, summarize } from "../../domain/discussion.ts";
 import type { ApprovalRequest } from "../../domain/rules/requests.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
-import { formatRelative } from "../../ui/format.ts";
+import { formatMoney, formatRelative } from "../../ui/format.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { requestTitle } from "./describe.ts";
@@ -59,17 +59,33 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 					</Link>
 					<span className={styles.meta}>
 						Requested by {requester} · {formatRelative(request.createdAt, Date.now())}
-						{request.kind === "payment" && request.recipientIsNew && " · new recipient"}
+						{request.kind !== "governance" && request.recipientIsNew && " · new recipient"}
 					</span>
 				</div>
 				<StatusPill status={request.status} />
 			</header>
-			{request.kind === "payment" && (request.note || request.category) && (
+			{request.kind !== "governance" && (request.note || request.category) && (
 				<p className={styles.note}>
 					{request.note}
 					{request.category && `${request.note ? " · " : ""}#${request.category}`}
 					{request.evaluation.overBudget && " · over budget"}
 				</p>
+			)}
+			{request.kind === "batch" && (
+				<ul className={styles.lines}>
+					{request.lines.map((line, index) => (
+						// A stored request's lines never change order, and one recipient may appear twice.
+						// biome-ignore lint/suspicious/noArrayIndexKey: see above
+						<li key={`${line.recipientId}-${index}`}>
+							<span>
+								{account.payees.find((p) => p.id === line.recipientId)?.name ??
+									shortAddress(line.recipientId)}
+								{line.note && <span className={styles.meta}> · {line.note}</span>}
+							</span>
+							<span>{formatMoney(line.amount, request.currency)}</span>
+						</li>
+					))}
+				</ul>
 			)}
 			{discussion && (
 				<Link to={`/app/approvals/${request.id}`} className={styles.meta}>
@@ -121,7 +137,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 				<div className={styles.actions}>
 					{allowed.send && (
 						<button type="button" className={buttonClass()} onClick={send} disabled={busy}>
-							{request.kind === "payment" ? "Send now" : "Apply now"}
+							{request.kind === "governance" ? "Apply now" : "Send now"}
 						</button>
 					)}
 					{allowed.approve && (

@@ -58,6 +58,26 @@ export function statementRows(account: OrgAccount, names: Names): StatementRow[]
 /** The same movements as `statementRows`, with their signed amount and asset kept as numbers. */
 export function statementItems(account: OrgAccount, names: Names): StatementItem[] {
 	const symbols = new Map(account.org.assets.map((a) => [a.token, a.symbol]));
+	const batches = account.requests.flatMap((request) => {
+		if (request.kind !== "batch" || request.status !== "executed") return [];
+		return request.lines.map((line) => ({
+			at: request.createdAt,
+			cents: -line.amount,
+			token: request.token,
+			row: {
+				date: new Date(request.createdAt).toISOString(),
+				type: "payment",
+				amount: decimal(-line.amount),
+				currency: request.currency,
+				asset: symbols.get(request.token) ?? request.token,
+				counterparty: names.payee(line.recipientId),
+				reference: line.note ? `${line.note} (${request.note})` : request.note,
+				category: request.category ?? "",
+				by: names.person(request.requesterId),
+				transaction: request.executionRef ?? "",
+			},
+		}));
+	});
 	const payments = account.requests.flatMap((request) => {
 		if (request.kind !== "payment" || request.status !== "executed") return [];
 		return [
@@ -103,7 +123,7 @@ export function statementItems(account: OrgAccount, names: Names): StatementItem
 			},
 		];
 	});
-	return [...payments, ...movements].sort((a, b) => a.at - b.at);
+	return [...payments, ...batches, ...movements].sort((a, b) => a.at - b.at);
 }
 
 function csvCell(value: string): string {
