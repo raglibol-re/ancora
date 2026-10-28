@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: Landing headline renders the same in every browser: solid starlight and brass with a night halo instead of a text-clipped gradient under a drop-shadow filter, which Safari drew wrongly.
 - 2026-10-28: Batch payments. Send money → Several: up to 50 payments in one asset as one request, judged on the total, approved once and paid out together (all or none). New organization Wasm `b51f089a…` (interface 5).
 - 2026-10-28: Activity and statements. A new Activity page with search (name, reference, category, amount), filters (direction, asset, month), totals and a CSV of what is shown; a monthly statement per asset that prints or saves as PDF. The overview links to it.
 - 2026-10-28: A signed action right after opening or reloading the app no longer fails with "Wallet not connected": it waits for the passkey to reconnect ("Reconnecting your passkey…"). Found by the end-to-end test.

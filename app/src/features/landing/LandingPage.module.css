@@ -196,18 +196,22 @@
 	line-height: 1.08;
 	letter-spacing: -0.02em;
 	text-wrap: balance;
-	/* The lines clip their gradient to the glyphs, so a text-shadow can't be used; a drop-shadow
-	   on the block gives the same night halo around the letters. */
-	filter: drop-shadow(0 0 3px var(--palette-night)) drop-shadow(0 0 8px var(--palette-night))
-		drop-shadow(0 0 18px var(--palette-night));
+	/* Solid colours with a night halo keep the globe's particles off the letters. A gradient
+	   clipped to the text plus a drop-shadow filter rendered unreliably in Safari (boxy halos,
+	   blurred or clipped letters), so neither is used here. */
+	text-shadow:
+		0 0 3px var(--palette-night),
+		0 0 10px var(--palette-night),
+		0 0 22px var(--palette-night);
 }
 
 .line {
-	/* Starlight with a warm brass lower edge: the same on every word and every line. */
-	background: linear-gradient(180deg, var(--palette-starlight) 35%, var(--palette-brass) 130%);
-	-webkit-background-clip: text;
-	background-clip: text;
-	color: transparent;
+	color: var(--palette-starlight);
+}
+
+/* The promise in ancora's brass. */
+.line:nth-child(2) {
+	color: var(--palette-brass);
 }
 
 .lead {
