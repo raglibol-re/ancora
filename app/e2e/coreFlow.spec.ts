@@ -44,11 +44,14 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 
 	await test.step("take test money", async () => {
 		await page.goto("/app");
+		await expect(page.getByText(name).first()).toBeVisible();
 		await page
 			.getByRole("button", { name: /BlendUSDC/ })
 			.first()
 			.click();
+		await expect(page.getByRole("dialog", { name: "BlendUSDC" })).toBeVisible();
 		await page.getByRole("button", { name: "Add BlendUSDC" }).click();
+		await expect(page.getByRole("dialog", { name: "Add BlendUSDC" })).toBeVisible();
 		await page.getByRole("button", { name: "Add test BlendUSDC" }).click();
 		await expect(page.getByText("Test BlendUSDC arrived on the account.")).toBeVisible();
 	});
