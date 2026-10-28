@@ -132,7 +132,7 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 7. **Address book.** Done 28 Oct: saved recipients on the organization contract with name, note, who saved them and last payment; save while paying. Next: recipient allowlists built on it (C14).
 8. **Statements and search.** Done 28 Oct: Activity page with search and filters, monthly statement (print/PDF) and CSV. Next: receipts and attachments per payment (Blob, hash on the request), opening balances once full history is indexed.
 9. **Batch payments.** Done 28 Oct: up to 50 lines in one asset, approved once on the total, paid atomically. Next: CSV import of lines, reimbursement claims by members.
-10. **Payment requests and links.** An organization asks for money (membership fees, invoices) with a link or QR and sees who paid; reminders for fees.
+10. **Payment requests and links.** Done 28 Oct: invoices and fees as links or QR codes, paid from any Stellar wallet, payers recorded on-chain. Next: reminders, card and bank payment through a ramp partner, a notification when a link is paid.
 11. **Sub-accounts.** Pots per project or team with their own budgets and views.
 12. **Exchange inside the app.** EURC ↔ USDC through path payments with a quote (Reflector or SDEX) and a rule-aware preview; today another currency takes the strictest tier.
 13. **Languages and access.** German and Portuguese, a WCAG AA audit, onboarding tour, help pages, skeleton states while the chain is read.

@@ -94,6 +94,7 @@ Everything above runs on the Stellar testnet with real contracts. If the testnet
 | Approval rules | Tiered approvals, four-eyes, objection window, seal threshold, membership and rule requests, setup phase, lock-out guard | **Real on testnet**: enforced by the organization contract (Rust, tested against the same vectors as the TypeScript engine); the rules document hash is verified on the Rules page |
 | Organizations on Stellar | Each organization is an `ancora_organization` contract with OpenZeppelin AccessControl roles; people are invited by ancora ID; payments leave the contract once its rules are satisfied; fees sponsored by ancora's relayer | **Real on testnet** |
 | Notifications | Web push on any device that allows it (on iPhone once ancora is on the home screen): a payment or change waits for your approval, your request was done, approved or declined, a guardian started recovering your pass. Turned on per device on your pass page. Messages only repeat what is public on the ledger | **Real on testnet** (the relayer notifies after a successful transaction; subscriptions per device in Vercel Blob) |
+| Payment links | Ask for money: an invoice (one payer) or a fee (up to 500 payers, each once) as a link or QR code. The payer opens a public page, connects any Stellar wallet and pays; the organization's contract records who paid and when, and members see it on Organization → Payment links | **Real on testnet** (`create_link`, `pay_link`, `close_link`, views `links`, `link`, `link_payments`; interface `version()` 6; the payer signs with their own wallet and pays their own fee) |
 | Batch payments | Payroll and reimbursements: up to 50 payments in one asset as one request (Send money → Several). The rules judge the total (tier, budget, spending limit; any new recipient counts), it is approved once, and every line is paid out in the same transaction, or none | **Real on testnet** (`propose_batch` in the organization contract, interface `version()` 5; organizations created before 28 Oct 2026 send one payment at a time) |
 | Activity and statements | The full history on its own page: search by name, reference, category or amount; filter by direction, asset and month; totals in and out; CSV of exactly what is shown. A monthly statement per asset (money in, money out, net, balance today, every movement) that prints or saves as PDF through the browser | **Real** (on testnet built from the contract's payments and the ledger's events) |
 | Address book | Saved recipients shared by every member: name, address, note, who saved it, when the organization last paid them, a Pay button. Tick "Save to the address book" when paying someone new; recipients paid before but not saved are listed separately | **Real on testnet** (`set_payee`, `remove_payee`, `payees` in the organization contract, interface `version()` 4; up to 200 recipients; organizations created before 28 Oct 2026 list paid recipients read-only) |
@@ -149,7 +150,7 @@ Verified and written to `app/.env.testnet` by `scripts/setup-testnet.sh`, which 
 | ancora registry (profiles, organizations per person) | [`CDPQV7…4QCM`](https://stellar.expert/explorer/testnet/contract/CDPQV7C2XRWVDGWBIEHNE6IOMC56KSAITMESJBI7BULJSIGSVAQD4QCM) | `contracts/registry` |
 | ancora seal verifier (ML-DSA-44, OpenZeppelin external-verifier interface) | [`CDUFVN…V4NS`](https://stellar.expert/explorer/testnet/contract/CDUFVNCHZE64O37RQZQQ6ZKYDLS3RZ6YKYJDD66XNEPYHVWW6OO6V4NS) | `contracts/seal_verifier` |
 | ancora Lifeline recovery (guardians, claims, handover) | [`CDO3YV…X2PE`](https://stellar.expert/explorer/testnet/contract/CDO3YV5KMKPZTJLTLODIKNBYSTPJYLDKFKXOAGE52NJXF7FZMLACX2PE) | `contracts/recovery` |
-| ancora organization (one instance per organization) | Wasm `b51f089a…e05d`, deployed by the operator on "Create organization" | `contracts/organization` |
+| ancora organization (one instance per organization) | Wasm (interface 6), see `VITE_ORG_WASM_HASH` in `app/.env.testnet`, deployed by the operator on "Create organization" | `contracts/organization` |
 | Stellar Registry, open channel for treasury names | [`CDBL7M…HY4S`](https://stellar.expert/explorer/testnet/contract/CDBL7MNO7UI5OAAIC67UIWKQ4P3S6RVQSFCQXUHUW6TOFCXSYRPNHY4S) | stellar-registry/contracts |
 | USDC (BlendUSDC, SAC of `USDC:GATALT…`) | [`CAQCFV…RCJU`](https://stellar.expert/explorer/testnet/contract/CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU) | Blend testnet |
 | EURC (Circle testnet, SAC of `EURC:GB3Q6Q…`) | [`CCUUDM…MCGZ`](https://stellar.expert/explorer/testnet/contract/CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ) | Circle |
@@ -180,7 +181,7 @@ pnpm e2e         # the core path on the real testnet with a virtual passkey (Pla
 
 ```bash
 cd contracts
-cargo test                                             # organization (48 tests) and recovery (6), strict-auth tests included
+cargo test                                             # organization (51 tests) and recovery (6), strict-auth tests included
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 ```
 

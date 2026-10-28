@@ -7,6 +7,8 @@ import { RequestDetailPage } from "./features/approvals/RequestDetailPage.tsx";
 import { EscrowPage } from "./features/escrow/EscrowPage.tsx";
 import { InboxPage } from "./features/inbox/InboxPage.tsx";
 import { LandingPage } from "./features/landing/LandingPage.tsx";
+import { LinksPage } from "./features/links/LinksPage.tsx";
+import { PayLinkPage } from "./features/links/PayLinkPage.tsx";
 import { NoticeProvider } from "./features/notices/NoticeProvider.tsx";
 import { NewOrgPage } from "./features/orgs/NewOrgPage.tsx";
 import { OverviewPage } from "./features/overview/OverviewPage.tsx";
@@ -46,6 +48,7 @@ export const router = createBrowserRouter([
 			{ path: "pay", element: <PayPage /> },
 			{ path: "payees", element: <PayeesPage /> },
 			{ path: "activity", element: <ActivityPage /> },
+			{ path: "links", element: <LinksPage /> },
 			{ path: "statement", element: <StatementPage /> },
 			{ path: "escrow/:orgId/:requestId", element: <EscrowPage /> },
 			{ path: "rules", element: <RulesPage /> },
@@ -55,5 +58,6 @@ export const router = createBrowserRouter([
 		],
 	},
 	{ path: "/admin", element: <AdminPage /> },
+	{ path: "/pay/:orgId/:linkId", element: <PayLinkPage /> },
 	{ path: "*", element: <NotFoundPage /> },
 ]);

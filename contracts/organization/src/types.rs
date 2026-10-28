@@ -68,6 +68,12 @@ pub enum Error {
     EmptyName = 42,
     /// A batch has one to fifty lines.
     InvalidBatch = 43,
+    /// No payment link with this id.
+    UnknownLink = 44,
+    /// The payment link was closed, or has been paid as often as it allows.
+    LinkClosed = 45,
+    /// This payer has already paid this link.
+    AlreadyPaid = 46,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -231,6 +237,31 @@ pub struct Payment {
     pub category: Option<Symbol>,
     /// Held after approval until the recipient and the sender's side both confirm.
     pub escrow: bool,
+}
+
+/// A request for money to the organization (an invoice, a membership fee): anyone with the
+/// link pays it from their own wallet; the contract records who paid and when.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PaymentLink {
+    pub id: u64,
+    pub token: Address,
+    pub amount: i128,
+    pub memo: String,
+    /// How many payments it accepts (1 for an invoice); each payer pays at most once.
+    pub max_payments: u32,
+    pub created_by: Address,
+    pub created_at: u64,
+    pub open: bool,
+    pub paid_count: u32,
+}
+
+/// One payment of a payment link.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct LinkPayment {
+    pub payer: Address,
+    pub at: u64,
 }
 
 /// One payment inside a batch.

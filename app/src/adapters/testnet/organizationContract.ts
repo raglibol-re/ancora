@@ -40,6 +40,30 @@ async function readStandingOrders(network: Network, contractId: string): Promise
 	}
 }
 
+/** Payment links with who paid them (interface version 6); null for older organizations. */
+async function readLinks(network: Network, contractId: string): Promise<Native[] | null> {
+	let rows: Native[];
+	try {
+		rows = (await readContract(network, contractId, "links")) as Native[];
+	} catch (error) {
+		if (error instanceof ContractReadError) return null;
+		throw error;
+	}
+	// Payers of the newest links only: older ones are settled and cost a read each.
+	return Promise.all(
+		rows.map(async (row, index) =>
+			index < 20
+				? {
+						...row,
+						payments: (await readContract(network, contractId, "link_payments", [
+							u64(Number(row.id)),
+						])) as Native[],
+					}
+				: { ...row, payments: [] },
+		),
+	);
+}
+
 /** The address book (interface version 4); null for organizations whose code has none. */
 async function readPayees(network: Network, contractId: string): Promise<Native[] | null> {
 	try {
@@ -92,6 +116,7 @@ export async function readOrganization(
 		standingOrderRows,
 		version,
 		payeeRows,
+		linkRows,
 	] = await Promise.all([
 		readContract(network, contractId, "info") as Promise<Native>,
 		readContract(network, contractId, "policy") as Promise<Native>,
@@ -105,6 +130,7 @@ export async function readOrganization(
 		readStandingOrders(network, contractId),
 		readVersion(network, contractId),
 		readPayees(network, contractId),
+		readLinks(network, contractId),
 	]);
 	const limits = new Map(
 		limitRows.map((row) => [String(row.member), mapLimit(row.limit as Native)] as const),
@@ -135,6 +161,7 @@ export async function readOrganization(
 		transfers: (page ?? known)?.transfers ?? [],
 		standingOrders: standingOrderRows,
 		addressBook: payeeRows,
+		paymentLinks: linkRows,
 		setupPhase,
 		policyHash: hex(policyHash),
 		version,

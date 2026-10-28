@@ -63,6 +63,7 @@ import {
 	optionalSymbol,
 	text,
 	toStroops,
+	u32,
 	u64,
 } from "./scv.ts";
 import { clearCachedSession, loadCachedSession, saveCachedSession } from "./sessionCache.ts";
@@ -789,6 +790,26 @@ export class TestnetDataSource implements DataSource {
 
 	removePayee(orgId: string, actorId: PersonId, account: string) {
 		return this.invoke(orgId, "remove_payee", [address(actorId), address(account)]);
+	}
+
+	async createLink(
+		orgId: string,
+		actorId: PersonId,
+		input: { token: string; amount: Cents; note: string; maxPayments: number },
+	) {
+		const result = await this.invoke(orgId, "create_link", [
+			address(actorId),
+			address(input.token),
+			i128(toStroops(input.amount)),
+			text(input.note.trim()),
+			u32(input.maxPayments),
+		]);
+		if (!result.ok) return result;
+		return ok(this.account(orgId)?.paymentLinks?.[0]?.id ?? "");
+	}
+
+	closeLink(orgId: string, actorId: PersonId, linkId: string) {
+		return this.invoke(orgId, "close_link", [address(actorId), u64(Number(linkId))]);
 	}
 
 	cancelStandingOrder(orgId: string, actorId: PersonId, orderId: string) {

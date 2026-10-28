@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-28: Payment links. Organization → Payment links asks for money as an invoice or a fee, shared as a link or QR code; payers open a public page, pay from any Stellar wallet, and the contract records who paid. New organization Wasm (interface 6).
 - 2026-10-28: Landing headline renders the same in every browser: solid starlight and brass with a night halo instead of a text-clipped gradient under a drop-shadow filter, which Safari drew wrongly.
 - 2026-10-28: Batch payments. Send money → Several: up to 50 payments in one asset as one request, judged on the total, approved once and paid out together (all or none). New organization Wasm `b51f089a…` (interface 5).
 - 2026-10-28: Activity and statements. A new Activity page with search (name, reference, category, amount), filters (direction, asset, month), totals and a CSV of what is shown; a monthly statement per asset that prints or saves as PDF. The overview links to it.

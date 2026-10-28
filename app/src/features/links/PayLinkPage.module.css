@@ -1,0 +1,113 @@
+.page {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-5);
+	min-height: 100dvh;
+	padding: var(--space-6) var(--space-4);
+	background: var(--color-bg);
+	color: var(--color-text);
+}
+
+.brand {
+	display: inline-flex;
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	width: 100%;
+	max-width: 28rem;
+	padding: var(--space-6);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	background: var(--color-surface);
+	box-shadow: var(--shadow-sm);
+}
+
+.kicker {
+	margin: 0;
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+.amount {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: 2.5rem;
+	line-height: 1.1;
+}
+
+.amount span {
+	font-family: var(--font-ui);
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+.memo {
+	margin: 0;
+	font-weight: var(--weight-medium);
+}
+
+.muted,
+.small {
+	margin: 0;
+	color: var(--color-text-muted);
+}
+
+.small {
+	max-width: 28rem;
+	font-size: var(--text-xs);
+	text-align: center;
+}
+
+.card .small {
+	text-align: left;
+}
+
+.done {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-md);
+	background: color-mix(in oklab, var(--color-positive) 12%, var(--color-surface));
+}
+
+.working {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin: 0;
+	font-size: var(--text-sm);
+}
+
+.ring {
+	flex: none;
+	width: 18px;
+	height: 18px;
+	border: 2px solid color-mix(in oklab, var(--color-accent) 30%, transparent);
+	border-top-color: var(--color-accent);
+	border-radius: var(--radius-pill);
+	animation: turn 0.9s linear infinite;
+}
+
+@keyframes turn {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ring {
+		animation: none;
+		background: var(--color-accent);
+	}
+}
+
+.error {
+	margin: 0;
+	font-size: var(--text-sm);
+	color: var(--color-negative);
+}

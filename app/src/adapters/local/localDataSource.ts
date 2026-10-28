@@ -254,8 +254,51 @@ export class LocalDataSource implements DataSource {
 			discussions: {},
 			budgetUse: {},
 			standingOrders: [],
+			paymentLinks: [],
 		});
 		return ok(id);
+	}
+
+	async createLink(
+		orgId: string,
+		actorId: PersonId,
+		input: { token: string; amount: Cents; note: string; maxPayments: number },
+	) {
+		const id = this.newId();
+		const result = this.store.mutate(orgId, (account) => {
+			if (!account.org.members.some((m) => m.personId === actorId)) {
+				return notAllowed("Only members can ask for money.");
+			}
+			if (input.amount <= 0) return notAllowed("Enter an amount above zero.");
+			if (input.maxPayments < 1 || input.maxPayments > 500) {
+				return notAllowed("A link takes one to 500 payments.");
+			}
+			const link = {
+				id,
+				token: input.token,
+				amount: input.amount,
+				memo: input.note.trim(),
+				maxPayments: input.maxPayments,
+				createdBy: actorId,
+				createdAt: this.clock(),
+				open: true,
+				payments: [],
+			};
+			return ok({ ...account, paymentLinks: [link, ...(account.paymentLinks ?? [])] });
+		});
+		return result.ok ? ok(id) : result;
+	}
+
+	async closeLink(orgId: string, _actorId: PersonId, linkId: string) {
+		return this.store.mutate(orgId, (account) => {
+			if (!(account.paymentLinks ?? []).some((l) => l.id === linkId)) return notFound();
+			return ok({
+				...account,
+				paymentLinks: (account.paymentLinks ?? []).map((l) =>
+					l.id === linkId ? { ...l, open: false } : l,
+				),
+			});
+		});
 	}
 
 	async setStandingOrder(orgId: string, actorId: PersonId, input: StandingOrderInput) {

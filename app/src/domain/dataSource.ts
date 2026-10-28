@@ -320,6 +320,15 @@ export interface DataSource {
 	/** Removes a recipient from the address book; earlier payments stay as they are. */
 	removePayee(orgId: string, actorId: PersonId, account: string): Promise<Result<void, RuleError>>;
 
+	/** Asks for money: a link anyone can pay `maxPayments` times (once each) from their wallet. */
+	createLink(
+		orgId: string,
+		actorId: PersonId,
+		input: { token: string; amount: Cents; note: string; maxPayments: number },
+	): Promise<Result<string, RuleError>>;
+	/** Stops a payment link from taking more payments. */
+	closeLink(orgId: string, actorId: PersonId, linkId: string): Promise<Result<void, RuleError>>;
+
 	/** A payment repeated on a schedule; every run follows the rules like a one-off payment. */
 	setStandingOrder(
 		orgId: string,

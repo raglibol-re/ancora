@@ -1,4 +1,4 @@
-import { Contract, rpc, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Contract, rpc, TransactionBuilder, type xdr } from "@stellar/stellar-sdk";
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
 import { shortAddress } from "../../domain/account.ts";
 import type { ConnectedWallet } from "../../domain/dataSource.ts";
@@ -8,7 +8,7 @@ import { err, ok, type Result } from "../../domain/result.ts";
 import { type RuleError, ruleError } from "../../domain/rules/model.ts";
 import type { Network } from "./readContract.ts";
 import { readContract } from "./readContract.ts";
-import { address, i128, toCents, toStroops } from "./scv.ts";
+import { address, i128, toCents, toStroops, u64 } from "./scv.ts";
 
 // Money from the person's own Stellar wallet (Freighter, Hana, xBull, Albedo) into the
 // organization. Wallets' plain "send" builds a classic payment, which can't target a contract
@@ -97,12 +97,48 @@ export async function depositFromWallet(
 	organization: string,
 	amount: Cents,
 ): Promise<Result<string, RuleError>> {
-	const server = new rpc.Server(network.rpcUrl);
-	const account = await server.getAccount(from).catch(() => null);
+	const stroops = toStroops(amount);
+	const ready = await checkWallet(network, token, from, stroops);
+	if (!ready.ok) return ready;
+	return submitWithWallet(
+		network,
+		from,
+		new Contract(token).call("transfer", address(from), address(organization), i128(stroops)),
+	);
+}
+
+/**
+ * Pays an organization's payment link from the connected wallet: the organization's contract
+ * moves `amount` of `token` from the wallet and records the payer. Returns the hash.
+ */
+export async function payLinkFromWallet(
+	network: Network,
+	organization: string,
+	linkId: string,
+	token: string,
+	amount: Cents,
+	from: string,
+): Promise<Result<string, RuleError>> {
+	const ready = await checkWallet(network, token, from, toStroops(amount));
+	if (!ready.ok) return ready;
+	return submitWithWallet(
+		network,
+		from,
+		new Contract(organization).call("pay_link", address(from), u64(Number(linkId))),
+	);
+}
+
+/** The wallet exists on testnet and holds enough of `token`. */
+async function checkWallet(
+	network: Network,
+	token: string,
+	from: string,
+	stroops: bigint,
+): Promise<Result<void, RuleError>> {
+	const account = await new rpc.Server(network.rpcUrl).getAccount(from).catch(() => null);
 	if (!account) {
 		return failed("Your wallet account isn't active on testnet yet. Fund it with Friendbot first.");
 	}
-	const stroops = toStroops(amount);
 	const held = await tokenBalance(network, token, from);
 	if (held < stroops) {
 		const name = await assetName(network, token).catch(() => "this asset");
@@ -112,20 +148,29 @@ export async function depositFromWallet(
 				: `Your wallet holds only ${(Number(held) / 10_000_000).toFixed(2)} of ${name}.`,
 		);
 	}
+	return ok(undefined);
+}
+
+/** Builds one contract call from `from`, has the wallet sign it, submits it and waits for it. */
+async function submitWithWallet(
+	network: Network,
+	from: string,
+	operation: xdr.Operation,
+): Promise<Result<string, RuleError>> {
+	const server = new rpc.Server(network.rpcUrl);
+	const account = await server.getAccount(from);
 	const tx = new TransactionBuilder(account, {
 		fee: BASE_FEE,
 		networkPassphrase: network.networkPassphrase,
 	})
-		.addOperation(
-			new Contract(token).call("transfer", address(from), address(organization), i128(stroops)),
-		)
+		.addOperation(operation)
 		.setTimeout(180)
 		.build();
 	let prepared: ReturnType<typeof TransactionBuilder.fromXDR>;
 	try {
 		prepared = await server.prepareTransaction(tx);
 	} catch (error) {
-		return failed(describe(error, "The transfer couldn't be prepared."));
+		return failed(describe(error, "The payment couldn't be prepared."));
 	}
 	let signedXdr: string;
 	try {
@@ -133,14 +178,14 @@ export async function depositFromWallet(
 			signWithWallet(prepared.toXDR(), network.networkPassphrase, from),
 		);
 	} catch (error) {
-		return failed(describe(error, "The wallet didn't sign the transfer."));
+		return failed(describe(error, "The wallet didn't sign the payment."));
 	}
 	const sent = await withWork("Sending to Stellar…", () =>
 		server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, network.networkPassphrase)),
 	);
 	if (sent.status === "ERROR") {
 		return failed(
-			"The network rejected the transfer. Check the wallet's XLM balance and try again.",
+			"The network rejected the payment. Check the wallet's XLM balance and try again.",
 		);
 	}
 	for (let attempt = 0; attempt < CONFIRMATION_POLLS; attempt++) {
@@ -148,11 +193,11 @@ export async function depositFromWallet(
 		const status = await server.getTransaction(sent.hash);
 		if (status.status === rpc.Api.GetTransactionStatus.SUCCESS) return ok(sent.hash);
 		if (status.status === rpc.Api.GetTransactionStatus.FAILED) {
-			return failed("The transfer failed on the network. Nothing left your wallet.");
+			return failed("The payment failed on the network. Nothing left your wallet.");
 		}
 	}
 	return failed(
-		"The transfer is taking longer than usual. Check your wallet's history in a minute.",
+		"The payment is taking longer than usual. Check your wallet's history in a minute.",
 	);
 }
 

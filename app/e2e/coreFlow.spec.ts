@@ -7,6 +7,12 @@ import { addVirtualPasskey } from "./virtualPasskey.ts";
 
 // The demo operator's account holds a BlendUSDC trustline, so it can receive a test payment.
 const RECIPIENT = "GC2BKJOG56UXZQKMV475BNHMEHUA54GPGY6W2FILRB4DHCOJFJXOYJE3";
+// The testnet stablecoins an organization accepts (BlendUSDC, Circle USDC, Circle EURC).
+const TOKENS = [
+	"CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU",
+	"CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+	"CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ",
+];
 const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
 const name = `E2E ${stamp}`;
 
@@ -95,6 +101,27 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await page.getByRole("button", { name: "Request the batch" }).click();
 		await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
 		await expect(page.getByText("Line 2").first()).toBeVisible();
+	});
+
+	await test.step("ask for money with a link that anyone can open", async () => {
+		await page.goto("/app/links");
+		await page.locator("#link-amount").fill("12");
+		await page.locator("#link-note").fill("E2E membership");
+		await page.getByRole("button", { name: "Create link" }).click();
+		await expect(page.getByText("Paid 0 of 1")).toBeVisible();
+		// The public page needs no ancora pass: it reads the link straight from the contract.
+		await page.goto("/app/settings");
+		// The first C-address on Settings that isn't one of the accepted tokens.
+		const addresses = await page.locator("code").allInnerTexts();
+		const organization =
+			addresses
+				.map((text) => text.trim())
+				.find((text) => /^C[A-Z2-7]{55}$/.test(text) && !TOKENS.includes(text)) ?? "";
+		const payer = await page.context().newPage();
+		await payer.goto(`/pay/${organization}/1`);
+		await expect(payer.getByText("E2E membership")).toBeVisible();
+		await expect(payer.getByRole("button", { name: "Pay with a Stellar wallet" })).toBeVisible();
+		await payer.close();
 	});
 
 	await test.step("the payments are found in the activity", async () => {

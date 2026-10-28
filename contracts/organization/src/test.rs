@@ -1472,7 +1472,7 @@ fn changing_roles_requires_the_founders_authorization() {
 #[test]
 fn the_contract_reports_its_interface_version() {
     let w = club(1_000);
-    assert_eq!(w.org.version(), 5);
+    assert_eq!(w.org.version(), 6);
 }
 
 #[test]
@@ -1696,4 +1696,96 @@ fn proposing_a_batch_requires_the_members_authorization() {
         .try_propose_batch(&w.founder, &w.token, &lines, &memo, &None)
         .is_err());
     assert_eq!(w.token_client.balance(&ana), 0);
+}
+
+fn fund(w: &World, who: &Address, amount: i128) {
+    let admin = token::StellarAssetClient::new(&w.e, &w.token);
+    admin.mint(who, &amount);
+}
+
+#[test]
+fn members_ask_for_money_and_the_contract_records_who_paid() {
+    let w = club(1_000);
+    let ana = Address::generate(&w.e);
+    let rui = Address::generate(&w.e);
+    fund(&w, &ana, euros(100));
+    fund(&w, &rui, euros(100));
+    w.e.ledger().set_timestamp(7_000);
+    // A membership fee every member pays once, at most two payments.
+    let id = w.org.create_link(
+        &w.founder,
+        &w.token,
+        &euros(30),
+        &String::from_str(&w.e, "Membership 2027"),
+        &2,
+    );
+    w.org.pay_link(&ana, &id);
+    assert_eq!(w.org.try_pay_link(&ana, &id), Err(Ok(Error::AlreadyPaid)));
+    w.org.pay_link(&rui, &id);
+    assert_eq!(w.token_client.balance(&w.org.address), euros(1_060));
+    let link = w.org.link(&id);
+    assert_eq!(link.paid_count, 2);
+    assert!(!link.open);
+    let payers: Vec<Address> =
+        Vec::from_iter(&w.e, w.org.link_payments(&id).iter().map(|p| p.payer));
+    assert_eq!(payers, Vec::from_array(&w.e, [ana.clone(), rui.clone()]));
+    let late = Address::generate(&w.e);
+    fund(&w, &late, euros(100));
+    assert_eq!(w.org.try_pay_link(&late, &id), Err(Ok(Error::LinkClosed)));
+    assert_eq!(w.org.links().get(0).unwrap().id, id);
+}
+
+#[test]
+fn payment_links_are_validated_and_can_be_closed() {
+    let w = club(1_000);
+    let memo = String::from_str(&w.e, "Invoice 12");
+    assert_eq!(
+        w.org
+            .try_create_link(&Address::generate(&w.e), &w.token, &euros(10), &memo, &1),
+        Err(Ok(Error::NotMember))
+    );
+    assert_eq!(
+        w.org.try_create_link(&w.founder, &w.token, &0, &memo, &1),
+        Err(Ok(Error::InvalidAmount))
+    );
+    assert_eq!(
+        w.org
+            .try_create_link(&w.founder, &w.token, &euros(10), &memo, &0),
+        Err(Ok(Error::InvalidAmount))
+    );
+    let id = w
+        .org
+        .create_link(&w.founder, &w.token, &euros(10), &memo, &1);
+    w.org.close_link(&w.founder, &id);
+    let payer = Address::generate(&w.e);
+    fund(&w, &payer, euros(100));
+    assert_eq!(w.org.try_pay_link(&payer, &id), Err(Ok(Error::LinkClosed)));
+    assert_eq!(w.org.try_pay_link(&payer, &99), Err(Ok(Error::UnknownLink)));
+}
+
+#[test]
+fn paying_a_link_requires_the_payers_authorization() {
+    let w = club(1_000);
+    let id = w.org.create_link(
+        &w.founder,
+        &w.token,
+        &euros(10),
+        &String::from_str(&w.e, "Invoice"),
+        &1,
+    );
+    let payer = Address::generate(&w.e);
+    fund(&w, &payer, euros(100));
+    // Only a stranger signs: the payer's authorization is missing.
+    let stranger = Address::generate(&w.e);
+    w.e.mock_auths(&[MockAuth {
+        address: &stranger,
+        invoke: &MockAuthInvoke {
+            contract: &w.org.address,
+            fn_name: "pay_link",
+            args: (&payer, id).into_val(&w.e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(w.org.try_pay_link(&payer, &id).is_err());
+    assert_eq!(w.token_client.balance(&payer), euros(100));
 }

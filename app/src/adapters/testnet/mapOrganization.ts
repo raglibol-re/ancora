@@ -58,6 +58,8 @@ export type OnchainSnapshot = {
 	standingOrders: readonly Native[] | null;
 	/** `payees` rows (the address book); null when this organization's code has none. */
 	addressBook: readonly Native[] | null;
+	/** `links` rows with their `payments`; null when this organization's code has none. */
+	paymentLinks: readonly Native[] | null;
 	setupPhase: boolean;
 	policyHash: string;
 	/** `version()` of the organization's code; 0 for organizations from before that view. */
@@ -153,6 +155,9 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	41: "The address book is full (200 recipients). Remove someone you no longer pay.",
 	42: "Give the recipient a name.",
 	43: "A batch has one to fifty payments.",
+	44: "This payment link doesn't exist.",
+	45: "This payment link is closed or fully paid.",
+	46: "This wallet has already paid this link.",
 	37: "Only the person who set this standing order, or the top role, can stop it.",
 	38: "This standing order was stopped.",
 };
@@ -554,5 +559,22 @@ export function mapOrganization(
 		discussions: {},
 		budgetUse: snapshot.budgetUse,
 		standingOrders: mapStandingOrders(snapshot.standingOrders),
+		paymentLinks:
+			snapshot.paymentLinks === null
+				? null
+				: snapshot.paymentLinks.map((row) => ({
+						id: String(row.id),
+						token: str(row.token),
+						amount: toCents(big(row.amount)),
+						memo: str(row.memo),
+						maxPayments: num(row.max_payments),
+						createdBy: str(row.created_by),
+						createdAt: seconds(row.created_at),
+						open: Boolean(row.open),
+						payments: ((row.payments as Native[] | undefined) ?? []).map((p) => ({
+							payer: str(p.payer),
+							at: seconds(p.at),
+						})),
+					})),
 	};
 }

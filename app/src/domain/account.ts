@@ -112,6 +112,23 @@ export type StandingOrder = {
 	lastRequestId: string | null;
 };
 
+/**
+ * A request for money to the organization (an invoice, a membership fee). Anyone with the link
+ * pays from their own wallet; `payments` says who paid and when.
+ */
+export type PaymentLink = {
+	id: string;
+	token: string;
+	amount: Cents;
+	memo: string;
+	/** How many payments it accepts (1 for an invoice); each payer pays once. */
+	maxPayments: number;
+	createdBy: PersonId;
+	createdAt: number;
+	open: boolean;
+	payments: readonly { payer: string; at: number }[];
+};
+
 export type OrgAccount = {
 	org: Org;
 	/** Null for sample data. */
@@ -131,6 +148,8 @@ export type OrgAccount = {
 	budgetUse: Readonly<Record<string, BudgetUse>>;
 	/** Repeating payments; null when the organization's code predates them (before 26 Oct 2026). */
 	standingOrders: readonly StandingOrder[] | null;
+	/** Payment links; null when the organization's code predates them (before 28 Oct 2026). */
+	paymentLinks: readonly PaymentLink[] | null;
 };
 
 /** The person's name for a standing order's recipient, or the account shortened. */

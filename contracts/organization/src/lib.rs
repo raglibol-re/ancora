@@ -33,9 +33,10 @@ const MAX_PAGE: u32 = 50;
 const MAX_ROLES: u32 = 8;
 const MAX_PAYEES: u32 = 200;
 const MAX_BATCH_LINES: u32 = 50;
+const MAX_LINK_PAYMENTS: u32 = 500;
 /// Raised whenever the interface gains something the app needs to know about: 2 = standing
-/// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments. Organizations before this view report nothing.
-const CONTRACT_VERSION: u32 = 5;
+/// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments, 6 = payment links. Organizations before this view report nothing.
+const CONTRACT_VERSION: u32 = 6;
 const SECONDS_PER_HOUR: u64 = 3_600;
 
 #[contractclient(name = "RegistryClient")]
@@ -93,6 +94,10 @@ enum DataKey {
     /// A saved recipient, and the list of saved addresses in the order they were added.
     Payee(Address),
     PayeeIndex,
+    /// Payment links by id, how many exist, and who paid each.
+    Link(u64),
+    LinkCount,
+    LinkPayments(u64),
 }
 
 /// Emitted whenever a request is created or changes status.
@@ -512,6 +517,131 @@ impl Organization {
         by.require_auth();
         extend_instance(e);
         propose_payment_from(e, by, token, to, amount, memo, category, escrow)
+    }
+
+    /// Creates a payment link: `amount` of `token` to the organization, payable `max_payments`
+    /// times (1 for an invoice, up to 500), each payer once. No approval: money only comes in.
+    ///
+    /// Auth: `by`, a member.
+    pub fn create_link(
+        e: &Env,
+        by: Address,
+        token: Address,
+        amount: i128,
+        memo: String,
+        max_payments: u32,
+    ) -> Result<u64, Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        rules::rank_of_member(&ranked(e, &info.roles), &by).ok_or(Error::NotMember)?;
+        find_asset(&load_assets(e), &token)?;
+        if amount <= 0 || max_payments == 0 || max_payments > MAX_LINK_PAYMENTS {
+            return Err(Error::InvalidAmount);
+        }
+        if memo.len() > MAX_MEMO_LEN {
+            return Err(Error::TextTooLong);
+        }
+        let id: u64 = e
+            .storage()
+            .instance()
+            .get(&DataKey::LinkCount)
+            .unwrap_or(0u64)
+            + 1;
+        e.storage().instance().set(&DataKey::LinkCount, &id);
+        let link = PaymentLink {
+            id,
+            token,
+            amount,
+            memo,
+            max_payments,
+            created_by: by,
+            created_at: e.ledger().timestamp(),
+            open: true,
+            paid_count: 0,
+        };
+        save_link(e, &link);
+        Ok(id)
+    }
+
+    /// Closes a payment link; payments already made stay recorded.
+    ///
+    /// Auth: `by`, a member.
+    pub fn close_link(e: &Env, by: Address, id: u64) -> Result<(), Error> {
+        by.require_auth();
+        extend_instance(e);
+        let info = load_info(e);
+        rules::rank_of_member(&ranked(e, &info.roles), &by).ok_or(Error::NotMember)?;
+        let mut link = load_link(e, id)?;
+        link.open = false;
+        save_link(e, &link);
+        Ok(())
+    }
+
+    /// Pays a payment link from `payer`'s own balance; the contract records the payment.
+    ///
+    /// Auth: `payer` (their wallet signs the token transfer to the organization).
+    pub fn pay_link(e: &Env, payer: Address, id: u64) -> Result<(), Error> {
+        payer.require_auth();
+        extend_instance(e);
+        let mut link = load_link(e, id)?;
+        if !link.open || link.paid_count >= link.max_payments {
+            return Err(Error::LinkClosed);
+        }
+        let mut payments = link_payments(e, id);
+        if payments.iter().any(|p| p.payer == payer) {
+            return Err(Error::AlreadyPaid);
+        }
+        token::Client::new(e, &link.token).transfer(
+            &payer,
+            e.current_contract_address(),
+            &link.amount,
+        );
+        payments.push_back(LinkPayment {
+            payer,
+            at: e.ledger().timestamp(),
+        });
+        let key = DataKey::LinkPayments(id);
+        e.storage().persistent().set(&key, &payments);
+        e.storage()
+            .persistent()
+            .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+        link.paid_count += 1;
+        if link.paid_count >= link.max_payments {
+            link.open = false;
+        }
+        save_link(e, &link);
+        Ok(())
+    }
+
+    /// One payment link.
+    ///
+    /// Auth: none (read).
+    pub fn link(e: &Env, id: u64) -> Result<PaymentLink, Error> {
+        load_link(e, id)
+    }
+
+    /// Who paid a payment link, in order.
+    ///
+    /// Auth: none (read).
+    pub fn link_payments(e: &Env, id: u64) -> Vec<LinkPayment> {
+        link_payments(e, id)
+    }
+
+    /// The payment links, newest first (at most `MAX_PAGE`), closed ones included.
+    ///
+    /// Auth: none (read).
+    pub fn links(e: &Env) -> Vec<PaymentLink> {
+        let count: u64 = e.storage().instance().get(&DataKey::LinkCount).unwrap_or(0);
+        let mut found = Vec::new(e);
+        let mut id = count;
+        while id > 0 && found.len() < MAX_PAGE {
+            if let Ok(link) = load_link(e, id) {
+                found.push_back(link);
+            }
+            id -= 1;
+        }
+        found
     }
 
     /// Proposes a batch: several payments in one asset, decided once on their total (tier,
@@ -1151,6 +1281,28 @@ fn propose_payment_from(
     let settled = settle(e, request, &info);
     save_request(e, &settled);
     Ok(settled.id)
+}
+
+fn load_link(e: &Env, id: u64) -> Result<PaymentLink, Error> {
+    e.storage()
+        .persistent()
+        .get(&DataKey::Link(id))
+        .ok_or(Error::UnknownLink)
+}
+
+fn save_link(e: &Env, link: &PaymentLink) {
+    let key = DataKey::Link(link.id);
+    e.storage().persistent().set(&key, link);
+    e.storage()
+        .persistent()
+        .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
+}
+
+fn link_payments(e: &Env, id: u64) -> Vec<LinkPayment> {
+    e.storage()
+        .persistent()
+        .get(&DataKey::LinkPayments(id))
+        .unwrap_or_else(|| Vec::new(e))
 }
 
 fn payee_index(e: &Env) -> Vec<Address> {

@@ -41,8 +41,11 @@ function account(
 	name: string,
 	templateId: TemplateId,
 	members: [string, RoleId][],
-	rest: Omit<OrgAccount, "org" | "onchain" | "discussions" | "budgetUse" | "standingOrders"> &
-		Partial<Pick<OrgAccount, "discussions" | "budgetUse" | "standingOrders">>,
+	rest: Omit<
+		OrgAccount,
+		"org" | "onchain" | "discussions" | "budgetUse" | "standingOrders" | "paymentLinks"
+	> &
+		Partial<Pick<OrgAccount, "discussions" | "budgetUse" | "standingOrders" | "paymentLinks">>,
 ): OrgAccount {
 	const template = templates[templateId];
 	const memberList: Member[] = members.map(([personId, roleId]) => ({ personId, roleId }));
@@ -67,6 +70,7 @@ function account(
 		discussions: {},
 		budgetUse: {},
 		standingOrders: [],
+		paymentLinks: [],
 		...rest,
 	};
 }
