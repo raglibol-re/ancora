@@ -17,16 +17,30 @@ type SheetProps = {
 export function Sheet({ open, title, onClose, children }: SheetProps) {
 	const ref = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
+	// Set while the sheet closes because its parent said so (`open` became false): that close
+	// must not be reported back as the person closing it. Otherwise a sheet stepping aside for
+	// another one (an account's "Add money") made its parent forget it and unmount both.
+	const closingFromProp = useRef(false);
 
 	useEffect(() => {
 		const dialog = ref.current;
 		if (!dialog) return;
 		if (open && !dialog.open) dialog.showModal();
-		if (!open && dialog.open) dialog.close();
+		if (!open && dialog.open) {
+			closingFromProp.current = true;
+			dialog.close();
+		}
 	}, [open]);
 
-	// Closing through the dialog itself fires its `close` event once, which calls onClose.
+	// Closing through the dialog itself (button, Escape, backdrop) fires `close`, which calls onClose.
 	const close = () => ref.current?.close();
+	const onDialogClose = () => {
+		if (closingFromProp.current) {
+			closingFromProp.current = false;
+			return;
+		}
+		onClose();
+	};
 
 	const onBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
 		// Only the dialog element itself receives backdrop clicks; children (including a wallet
@@ -46,7 +60,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
 		<dialog
 			ref={ref}
 			className={styles.sheet}
-			onClose={onClose}
+			onClose={onDialogClose}
 			onClick={onBackdropClick}
 			aria-labelledby={titleId}
 		>
