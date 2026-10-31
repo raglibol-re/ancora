@@ -23,7 +23,7 @@ const TEMPLATES = new Set(["club", "company", "team"]);
 const CURRENCIES = new Set(["EUR", "USD"]);
 const MAX_NAME_BYTES = 64;
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 120 };
 
 const symbol = (value: string) => nativeToScVal(value, { type: "symbol" });
 

@@ -30,14 +30,19 @@ export async function simulatedResourceFee(
 	return BigInt(simulation.minResourceFee);
 }
 
-/** How often a transaction is rebuilt and resent after a sequence clash or a "try again later". */
-const SUBMIT_ATTEMPTS = 4;
+/** How often a transaction is rebuilt and resent after it couldn't land. */
+const SUBMIT_ATTEMPTS = 3;
+/** A server transaction is valid this long; after that it can never apply, so resending is safe. */
+const VALID_SECONDS = 20;
+const POLL_MS = 1_500;
 
 /**
  * Signs and submits a contract call from a server-held key, waiting for the result. Every
  * server transaction comes from the one operator account (sponsored fees, organization
- * creation, test money, scheduled runs), so two at once can clash on the sequence number, and
- * the RPC sometimes asks to try again later: both are rebuilt with a fresh sequence and resent.
+ * creation, test money, scheduled runs), so two at once can clash on the sequence number: the
+ * RPC refuses one, asks to try again later, or accepts both and the network drops one. Each
+ * case is rebuilt with a fresh sequence and resent. A dropped transaction is only resent once
+ * its short validity window has passed, so the same action can never apply twice.
  */
 export async function invokeAsServer(
 	config: ServerConfig,
@@ -52,17 +57,19 @@ export async function invokeAsServer(
 			networkPassphrase: config.networkPassphrase,
 		})
 			.addOperation(operation)
-			.setTimeout(60)
+			.setTimeout(VALID_SECONDS)
 			.build();
 		const prepared = await server.prepareTransaction(tx).catch((error: unknown) => {
 			const detail = error instanceof Error ? error.message : String(error);
 			throw new RequestError(`The network refused the transaction: ${detail.slice(0, 300)}`, 502);
 		});
 		prepared.sign(signer);
+		const validUntil = Number(prepared.timeBounds?.maxTime ?? 0) * 1000;
 		const sent = await server.sendTransaction(prepared);
-		if (isRetryable(sent) && attempt < SUBMIT_ATTEMPTS) {
+		const last = attempt >= SUBMIT_ATTEMPTS;
+		if (isRetryable(sent) && !last) {
 			// A short random pause so racing submissions don't clash again.
-			await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 700 * attempt));
+			await sleep(300 + Math.random() * 700 * attempt);
 			continue;
 		}
 		if (sent.status !== "PENDING" && sent.status !== "DUPLICATE") {
@@ -71,16 +78,41 @@ export async function invokeAsServer(
 				502,
 			);
 		}
-		const final = await server.pollTransaction(sent.hash, { attempts: 20 });
-		if (final.status !== "SUCCESS") {
+		const outcome = await awaitOutcome(server, sent.hash, validUntil);
+		if (outcome === "SUCCESS") return sent.hash;
+		if (outcome === "FAILED") {
+			throw new RequestError("The transaction failed on the network.", 502);
+		}
+		// Dropped, and past its validity window: it can no longer apply, so resend it.
+		if (last) {
 			throw new RequestError(
-				`The transaction ended with status ${final.status} on the network.`,
+				"The network didn't take the transaction. Try again in a moment.",
 				502,
 			);
 		}
-		return sent.hash;
 	}
 }
+
+/** SUCCESS or FAILED as soon as known; DROPPED once the transaction's validity has expired. */
+async function awaitOutcome(
+	server: rpc.Server,
+	hash: string,
+	validUntil: number,
+): Promise<"SUCCESS" | "FAILED" | "DROPPED"> {
+	// A few seconds past the window covers the ledger that might still include it.
+	while (Date.now() < validUntil + 6_000) {
+		const status = await server.getTransaction(hash);
+		if (status.status === rpc.Api.GetTransactionStatus.SUCCESS) return "SUCCESS";
+		if (status.status === rpc.Api.GetTransactionStatus.FAILED) return "FAILED";
+		await sleep(POLL_MS);
+	}
+	const final = await server.getTransaction(hash);
+	if (final.status === rpc.Api.GetTransactionStatus.SUCCESS) return "SUCCESS";
+	if (final.status === rpc.Api.GetTransactionStatus.FAILED) return "FAILED";
+	return "DROPPED";
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** A sequence clash with another server transaction, or the RPC asking to try again later. */
 function isRetryable(sent: rpc.Api.SendTransactionResponse): boolean {

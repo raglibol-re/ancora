@@ -19,7 +19,7 @@ import { required, serverConfig } from "./_lib/serverConfig.js";
 // bounds what one request can spend; the operator float is refilled by scripts/setup-testnet.sh.
 const MAX_RESOURCE_FEE_STROOPS = 3_000_000_000n;
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 120 };
 
 export default apiHandler("POST", async (request) => {
 	const settings = serverConfig();

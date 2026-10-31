@@ -12,7 +12,7 @@ import { grantFor, STROOPS_PER_UNIT } from "./_lib/testMoney.js";
 
 const MAX_BALANCE_FOR_GRANT = 5_000n * STROOPS_PER_UNIT;
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 120 };
 
 export default apiHandler("POST", async (request) => {
 	const settings = serverConfig();

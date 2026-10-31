@@ -9,7 +9,7 @@ import { required, serverConfig } from "./_lib/serverConfig.js";
 // gets its positions back without owning any XLM. Only organizations built with the recovery
 // contract take part; older ones are reported so the person knows.
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 120 };
 
 type Native = Record<string, unknown>;
 
