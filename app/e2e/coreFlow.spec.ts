@@ -117,6 +117,8 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 			addresses
 				.map((text) => text.trim())
 				.find((text) => /^C[A-Z2-7]{55}$/.test(text) && !TOKENS.includes(text)) ?? "";
+		// Printed so a run can be followed on stellar.expert, or its link paid from a wallet.
+		console.log(`organization ${organization}, payment link 1`);
 		const payer = await page.context().newPage();
 		await payer.goto(`/pay/${organization}/1`);
 		await expect(payer.getByText("E2E membership")).toBeVisible();
