@@ -30,8 +30,14 @@ export async function simulatedResourceFee(
 	return BigInt(simulation.minResourceFee);
 }
 
-/** How often a transaction is rebuilt and resent after it couldn't land. */
+/** How often a dropped transaction is rebuilt and resent. */
 const SUBMIT_ATTEMPTS = 3;
+/**
+ * How often a refused one is resent. Stellar Core queues one pending transaction per source
+ * account and frees the slot when the next ledger closes (about every five seconds), so a busy
+ * operator account is retried over several ledgers.
+ */
+const QUEUE_RETRIES = 8;
 /** A server transaction is valid this long; after that it can never apply, so resending is safe. */
 const VALID_SECONDS = 20;
 const POLL_MS = 1_500;
@@ -50,6 +56,7 @@ export async function invokeAsServer(
 	operation: xdr.Operation,
 ): Promise<string> {
 	const server = new rpc.Server(config.rpcUrl);
+	let refused = 0;
 	for (let attempt = 1; ; attempt++) {
 		const source = await server.getAccount(signer.publicKey());
 		const tx = new TransactionBuilder(source, {
@@ -67,9 +74,11 @@ export async function invokeAsServer(
 		const validUntil = Number(prepared.timeBounds?.maxTime ?? 0) * 1000;
 		const sent = await server.sendTransaction(prepared);
 		const last = attempt >= SUBMIT_ATTEMPTS;
-		if (isRetryable(sent) && !last) {
-			// A short random pause so racing submissions don't clash again.
-			await sleep(300 + Math.random() * 700 * attempt);
+		if (isRetryable(sent) && refused < QUEUE_RETRIES) {
+			// About a ledger, with jitter so racing submissions spread out.
+			refused += 1;
+			attempt -= 1;
+			await sleep(2_500 + Math.random() * 3_500);
 			continue;
 		}
 		if (sent.status !== "PENDING" && sent.status !== "DUPLICATE") {
