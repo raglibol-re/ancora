@@ -11,6 +11,8 @@
 
 .brand {
 	display: inline-flex;
+	color: var(--color-text);
+	text-decoration: none;
 }
 
 .card {
