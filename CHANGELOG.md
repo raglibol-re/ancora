@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-01: Batch payments from a spreadsheet: Send money → Several → "Import from a spreadsheet (CSV)" fills the lines (recipient or a saved payee's name, amount, reference), reading comma, semicolon or tab files with or without a header, so European exports with decimal commas work; every line stays editable before the request.
 - 2026-11-01: Server transactions run side by side: they travel on eight channel accounts derived from the operator key, and the operator pays each fee through a fee bump. Three at once land in the same ledger (about 6 seconds; four used to take about 35). The demo admin's health panel shows how many channels are ready.
 - 2026-11-01: Hourly live check (GitHub Actions, `scripts/check-live.mjs`): the app and `/api/health` answer, the testnet RPC is reachable, BlendUSDC test money can be handed out and the operator holds at least 3,000 XLM for sponsored fees; a failure emails the team. Empty Circle USDC and EURC floats are reported as warnings.
 - 2026-11-01: A second nightly end-to-end run on the testnet: two passes on two devices, the founder asks to pay, the payment waits for the board member, who approves from their inbox, and the contract pays it out.

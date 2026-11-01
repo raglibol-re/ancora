@@ -71,6 +71,25 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await expect(page.getByText("Line 2").first()).toBeVisible();
 	});
 
+	await test.step("fill a batch from a spreadsheet export", async () => {
+		await page.goto("/app/pay");
+		await page.getByText("Several (batch)", { exact: true }).click();
+		// A European export: semicolons, decimal commas, a header, a saved payee by name.
+		const csv = `Recipient;Amount;Reference
+Operator;2,50;Kit
+${RECIPIENT};1;Fees
+`;
+		await page.getByLabel("Import from a spreadsheet (CSV)").setInputFiles({
+			name: "payroll.csv",
+			mimeType: "text/csv",
+			buffer: Buffer.from(csv),
+		});
+		await expect(page.locator("#batch-to-0")).toHaveValue(RECIPIENT);
+		await expect(page.locator("#batch-amount-0")).toHaveValue("2,50");
+		await expect(page.locator("#batch-note-1")).toHaveValue("Fees");
+		await expect(page.getByText(/to 2 recipients/)).toContainText("3.50");
+	});
+
 	await test.step("ask for money with a link that anyone can open", async () => {
 		await page.goto("/app/links");
 		await page.locator("#link-amount").fill("12");

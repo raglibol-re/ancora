@@ -6,6 +6,7 @@ import {
 	type OrgAccount,
 	primaryToken,
 } from "../../domain/account.ts";
+import type { BatchLineInput } from "../../domain/batchImport.ts";
 import { parseAmountInput } from "../../domain/money.ts";
 import { MAX_BATCH_LINES } from "../../domain/rules/requests.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
@@ -15,9 +16,10 @@ import { formatMoney } from "../../ui/format.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./BatchForm.module.css";
+import { BatchImport } from "./BatchImport.tsx";
 import { RulePreview } from "./RulePreview.tsx";
 
-type Line = { to: string; amount: string; note: string };
+type Line = BatchLineInput;
 const emptyLine = (): Line => ({ to: "", amount: "", note: "" });
 
 /**
@@ -107,6 +109,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 						</select>
 					</Field>
 				)}
+				<BatchImport payees={account.payees} disabled={busy} onImport={setLines} />
 				<datalist id="batch-payees">
 					{account.payees.map((payee) => (
 						<option key={payee.id} value={payee.account}>
