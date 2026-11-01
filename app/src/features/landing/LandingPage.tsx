@@ -26,9 +26,9 @@ const features = [
 		status: "Real on testnet (BlendUSDC)",
 	},
 	{
-		title: "Quantum-safe security seal",
-		body: "Large payments need an extra seal. ancora's ML-DSA verifier already runs on Stellar, ready for the day today's signatures can be forged.",
-		status: "Verifier on testnet",
+		title: "A security seal for large payments",
+		body: "Above a threshold the organization sets, a payment needs an extra seal from an approver, signed with their passkey. ancora's quantum-safe ML-DSA verifier already runs on Stellar; sealing with an ML-DSA key held on the approving device is next on the roadmap.",
+		status: "Seal real on testnet · ML-DSA key: roadmap",
 	},
 	{
 		title: "Decide together",
@@ -55,7 +55,7 @@ const steps = [
 const chips = [
 	{ label: "€ EURC", className: styles.chipOne },
 	{ label: "$ USDC", className: styles.chipTwo },
-	{ label: "Quantum-safe", className: styles.chipThree },
+	{ label: "Rules on-chain", className: styles.chipThree },
 	{ label: "⚓ Stellar", className: styles.chipFour },
 ];
 

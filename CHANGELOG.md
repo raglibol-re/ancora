@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-01: The landing page, README and seal prompt say what the security seal is today (an approver's passkey signature on the organization contract) and that sealing with a device-held ML-DSA key is on the roadmap; the hero chip reads "Rules on-chain" instead of "Quantum-safe".
 - 2026-11-01: Roadmap: the SCF #46 plan as three milestones (proven on testnet, rules and keys, ready for mainnet), each deliverable with a check for when it counts as done.
 - 2026-11-01: ancora is open source under the Apache License 2.0 (LICENSE, and the license field of the app and every contract crate).
 - 2026-10-31: Server transactions no longer fail when two run at once. Sponsored fees, organization creation, test money and scheduled runs all come from the operator account; a sequence clash or the RPC asking to try again later is now rebuilt and resent instead of ending in "status NOT_FOUND". Reproduced with three simultaneous requests (two of three failed before).

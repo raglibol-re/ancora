@@ -55,7 +55,7 @@ Everything above runs on the Stellar testnet with real contracts. If the testnet
 - **Each organization is its own contract.** It holds the money and enforces the approval rules: tiers per amount, four-eyes, objection windows, extra approval for new recipients, budgets per category, spending limits per person. The rules are one readable document whose fingerprint the contract stores, so anyone can verify them.
 - **Several stablecoins, one home currency.** BlendUSDC, Circle USDC and Circle EURC are preset; any Stellar asset can be accepted by reference. Payments in another currency take the strictest tier until a live rate is connected.
 - **A Reserve, not a savings account.** Idle money goes into a DeFindex vault (Blend lending on testnet) with one tap and comes back whenever needed; earnings are variable and shown as they come in.
-- **Quantum-safe seal.** Large payments need an extra seal; ancora's own ML-DSA-44 (FIPS 204) verifier runs on Stellar, ready for the day today's signatures can be forged.
+- **Security seal, quantum-safe next.** Large payments need an extra seal from an approver, signed with their passkey today; ancora's own ML-DSA-44 (FIPS 204) verifier already runs on Stellar, and sealing with an ML-DSA key held on the approving device is milestone M2.
 - **Continuity.** A second passkey, and Lifeline guardians who hand your positions to a new pass after a waiting period. Control is restored; money never moves.
 - **Euro and dollar in and out** through Stellar anchors (SEP-24): the anchor's form, your wallet's signature, no bank details in ancora.
 

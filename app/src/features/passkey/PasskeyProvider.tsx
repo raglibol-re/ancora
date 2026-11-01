@@ -44,7 +44,7 @@ export function PasskeyProvider({ children }: { children: ReactNode }) {
 					<p className={styles.what}>{prompt?.title}</p>
 					<p className={styles.how}>
 						{isSeal
-							? "Signs with the quantum-safe key on your approving device."
+							? "Your passkey signs the seal. A quantum-safe key on your approving device takes over later (roadmap)."
 							: "Use Face ID, your fingerprint or your device PIN."}
 					</p>
 					<SimulatedTag label="Simulated signature" />
