@@ -84,6 +84,11 @@ pub enum Error {
     InvalidRecipients = 50,
     /// The exchange-rate oracle didn't answer like a SEP-40 oracle.
     OracleUnavailable = 51,
+    /// The deal contract didn't answer for this deal. (When a deal action fails at execution,
+    /// the request records 1000 + the deal contract's own error code.)
+    DealUnavailable = 52,
+    /// The deal contract refused this step (for example because the deal's status changed).
+    DealRefused = 53,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -354,12 +359,67 @@ impl Batch {
     }
 }
 
+// Contract types can't box their variants (no allocator); values only live during a call.
+#[allow(clippy::large_enum_variant)]
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub enum RequestKind {
     Payment(Payment),
     Change(Change),
     Batch(Batch),
+    /// An action in a deal with another party (contracts/deal), taken once the rules allow it.
+    Deal(DealCall),
+}
+
+/// A milestone as proposed in a deal's terms (same shape as `ancora_deal::MilestoneTerms`).
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct MilestoneTerms {
+    pub label: String,
+    pub amount: i128,
+}
+
+/// A deal's terms (same shape as `ancora_deal::DealTerms`).
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct DealTerms {
+    pub asset: Address,
+    pub milestones: Vec<MilestoneTerms>,
+    pub objection_seconds: u64,
+    pub arbiter: Option<Address>,
+    pub document_hash: BytesN<32>,
+}
+
+/// What the organization does in a deal, as party A (pays) or B (delivers).
+// Contract types can't box their variants (no allocator); values only live during a call.
+#[allow(clippy::large_enum_variant)]
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum DealAction {
+    /// Propose a deal to `party_b` on these terms, the organization paying.
+    Create(Address, DealTerms),
+    Accept(u64),
+    /// Deposit the deal's total.
+    Fund(u64),
+    RequestRelease(u64, u32),
+    ApproveRelease(u64, u32),
+    Object(u64, u32),
+    /// Cancel, or agree to cancel a funded deal.
+    Cancel(u64),
+    Dispute(u64),
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct DealCall {
+    /// The deal contract (ancora's, from the app's configuration).
+    pub deals: Address,
+    pub action: DealAction,
+    /// Set by the organization when the request is made: the token and amount it holds back
+    /// for a deposit (none and 0 otherwise), released when the request executes, fails or is
+    /// declined.
+    pub reserved_token: Option<Address>,
+    pub reserved_amount: i128,
 }
 
 #[contracttype]

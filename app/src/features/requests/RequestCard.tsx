@@ -59,18 +59,21 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 					</Link>
 					<span className={styles.meta}>
 						Requested by {requester} · {formatRelative(request.createdAt, Date.now())}
-						{request.kind !== "governance" && request.recipientIsNew && " · new recipient"}
+						{(request.kind === "payment" || request.kind === "batch") &&
+							request.recipientIsNew &&
+							" · new recipient"}
 					</span>
 				</div>
 				<StatusPill status={request.status} />
 			</header>
-			{request.kind !== "governance" && (request.note || request.category) && (
-				<p className={styles.note}>
-					{request.note}
-					{request.category && `${request.note ? " · " : ""}#${request.category}`}
-					{request.evaluation.overBudget && " · over budget"}
-				</p>
-			)}
+			{(request.kind === "payment" || request.kind === "batch") &&
+				(request.note || request.category) && (
+					<p className={styles.note}>
+						{request.note}
+						{request.category && `${request.note ? " · " : ""}#${request.category}`}
+						{request.evaluation.overBudget && " · over budget"}
+					</p>
+				)}
 			{request.kind === "batch" && (
 				<ul className={styles.lines}>
 					{request.lines.map((line, index) => (

@@ -31,6 +31,7 @@ export default apiHandler("POST", async (request) => {
 			isTrustedTarget: async (contractId) =>
 				(settings.registryContract !== "" && contractId === settings.registryContract) ||
 				(settings.recoveryContract !== "" && contractId === settings.recoveryContract) ||
+				(settings.dealContract !== "" && contractId === settings.dealContract) ||
 				(settings.stellarRegistryContract !== "" &&
 					contractId === settings.stellarRegistryContract) ||
 				(settings.orgWasmHash !== "" && (await isOrganization(settings, contractId))),

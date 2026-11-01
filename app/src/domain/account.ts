@@ -76,6 +76,11 @@ export type OnchainAccount = {
 	batches: boolean;
 	/** The organization can move to new releases through its rules (interface version 7 or later). */
 	upgrades: boolean;
+	/**
+	 * Allowances per asset and category, recipient allowlists, exchange rates and deals
+	 * (interface version 8 or later).
+	 */
+	controls: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */
@@ -395,6 +400,8 @@ function execute(
 		};
 	}
 
+	// Deal steps run in the deal contract on the testnet; sample data has no deals.
+	if (request.kind === "deal") return { ...account, requests };
 	// The change was validated when requested; if the org changed since, it may no longer apply.
 	const applied = applyChange(account.org, request.change);
 	if (!applied.ok) {

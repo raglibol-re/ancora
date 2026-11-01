@@ -6,6 +6,7 @@ import {
 	shortAddress,
 } from "../../domain/account.ts";
 import type { BudgetUse } from "../../domain/budgets.ts";
+import { DEAL_ERROR_MESSAGES } from "../../domain/deals.ts";
 import type { Currency } from "../../domain/money.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import {
@@ -15,6 +16,7 @@ import {
 	type Policy,
 	type Requirement,
 	type Role,
+	type RuleError,
 	type RuleErrorCode,
 	ruleError,
 	type SpendingLimit,
@@ -27,6 +29,7 @@ import type {
 } from "../../domain/rules/requests.ts";
 import { customRole } from "../../domain/rules/roles.ts";
 import { templates } from "../../domain/rules/templates.ts";
+import { mapDealAction } from "./dealCodec.ts";
 import type { ChainTransfer } from "./orgHistory.ts";
 import { toCents } from "./scv.ts";
 
@@ -160,6 +163,11 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	46: "This wallet has already paid this link.",
 	47: "A newer ancora release was published after this upgrade was proposed. Propose the upgrade to the newest release.",
 	48: "The Stellar Registry didn't confirm an ancora release. Try again in a moment.",
+	49: "The organization only pays recipients on its allowlist. Ask for this recipient to be added on the Rules page.",
+	50: "An allowlist holds up to 100 different addresses.",
+	51: "That exchange-rate service didn't answer. Try again later.",
+	52: "The deal couldn't be read. Check the deal number and try again.",
+	53: "The deal didn't accept this step; it may have moved on. Reload to see where it stands.",
 	37: "Only the person who set this standing order, or the top role, can stop it.",
 	38: "This standing order was stopped.",
 };
@@ -349,10 +357,7 @@ export function mapRequest(
 		failure:
 			native.failure === null || native.failure === undefined
 				? null
-				: ruleError(
-						ERROR_CODES[num(native.failure) - 1] ?? "not-allowed",
-						CONTRACT_ERROR_MESSAGES[num(native.failure)] ?? "The change could not be applied.",
-					),
+				: failureOf(num(native.failure)),
 		executionRef: null,
 	};
 	const [kind, fields] = variant(native.kind);
@@ -397,7 +402,32 @@ export function mapRequest(
 				batch.category === null || batch.category === undefined ? null : str(batch.category),
 		};
 	}
+	if (kind === "Deal") {
+		const call = fields[0] as Native;
+		return {
+			...base,
+			kind: "deal",
+			contract: str(call.deals),
+			action: mapDealAction(call.action),
+			reservedToken: call.reserved_token ? str(call.reserved_token) : null,
+			reserved: toCents(big(call.reserved_amount)),
+		};
+	}
 	return { ...base, kind: "governance", change: mapChange(fields[0]) };
+}
+
+/** A failed request's reason: the organization's own error, or the deal contract's (1000 + code). */
+function failureOf(code: number): RuleError {
+	if (code >= 1000) {
+		return ruleError(
+			"not-allowed",
+			DEAL_ERROR_MESSAGES[code - 1000] ?? "The deal didn't accept this step.",
+		);
+	}
+	return ruleError(
+		ERROR_CODES[code - 1] ?? "not-allowed",
+		CONTRACT_ERROR_MESSAGES[code] ?? "The change could not be applied.",
+	);
 }
 
 /** Names for recipient addresses: other organizations by name, everyone else shortened. */
@@ -461,40 +491,43 @@ export function mapOrganization(
 		}
 	}
 	const requestActivity: ActivityEntry[] = requests
-		.filter((r) => r.status === "executed")
+		// A deal step's money shows up as the token transfer it caused, read from the ledger.
+		.filter((r) => r.status === "executed" && r.kind !== "deal")
 		.flatMap((r): ActivityEntry[] =>
-			r.kind === "batch"
-				? r.lines.map((line, index) => ({
-						id: `req-${r.id}-${index}`,
-						at: r.createdAt,
-						actorId: r.requesterId,
-						kind: "payment-out",
-						token: r.token,
-						amount: line.amount,
-						payeeId: line.recipientId,
-						txHash: null,
-					}))
-				: [
-						r.kind === "payment"
-							? {
-									id: `req-${r.id}`,
-									at: r.createdAt,
-									actorId: r.requesterId,
-									kind: "payment-out",
-									token: r.token,
-									amount: r.amount,
-									payeeId: r.recipientId,
-									txHash: null,
-								}
-							: {
-									id: `req-${r.id}`,
-									at: r.createdAt,
-									actorId: r.requesterId,
-									kind: "governance",
-									change: r.change,
-									viaRequest: true,
-								},
-					],
+			r.kind === "deal"
+				? []
+				: r.kind === "batch"
+					? r.lines.map((line, index) => ({
+							id: `req-${r.id}-${index}`,
+							at: r.createdAt,
+							actorId: r.requesterId,
+							kind: "payment-out",
+							token: r.token,
+							amount: line.amount,
+							payeeId: line.recipientId,
+							txHash: null,
+						}))
+					: [
+							r.kind === "payment"
+								? {
+										id: `req-${r.id}`,
+										at: r.createdAt,
+										actorId: r.requesterId,
+										kind: "payment-out",
+										token: r.token,
+										amount: r.amount,
+										payeeId: r.recipientId,
+										txHash: null,
+									}
+								: {
+										id: `req-${r.id}`,
+										at: r.createdAt,
+										actorId: r.requesterId,
+										kind: "governance",
+										change: r.change,
+										viaRequest: true,
+									},
+						],
 		);
 	// What the ledger says happened: deposits, payments, Reserve moves, each with its transaction.
 	const vaults = new Set(assets.flatMap((a) => (a.vault ? [a.vault] : [])));
@@ -549,6 +582,7 @@ export function mapOrganization(
 			addressBook: snapshot.version >= 4,
 			batches: snapshot.version >= 5,
 			upgrades: snapshot.version >= 7,
+			controls: snapshot.version >= 8,
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

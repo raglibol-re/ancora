@@ -4,6 +4,8 @@ import { StatementPage } from "./features/activity/StatementPage.tsx";
 import { AdminPage } from "./features/admin/AdminPage.tsx";
 import { ApprovalsPage } from "./features/approvals/ApprovalsPage.tsx";
 import { RequestDetailPage } from "./features/approvals/RequestDetailPage.tsx";
+import { DealDetailPage } from "./features/deals/DealDetailPage.tsx";
+import { DealsPage } from "./features/deals/DealsPage.tsx";
 import { EscrowPage } from "./features/escrow/EscrowPage.tsx";
 import { InboxPage } from "./features/inbox/InboxPage.tsx";
 import { LandingPage } from "./features/landing/LandingPage.tsx";
@@ -49,6 +51,8 @@ export const router = createBrowserRouter([
 			{ path: "payees", element: <PayeesPage /> },
 			{ path: "activity", element: <ActivityPage /> },
 			{ path: "links", element: <LinksPage /> },
+			{ path: "deals", element: <DealsPage /> },
+			{ path: "deals/:dealId", element: <DealDetailPage /> },
 			{ path: "statement", element: <StatementPage /> },
 			{ path: "escrow/:orgId/:requestId", element: <EscrowPage /> },
 			{ path: "rules", element: <RulesPage /> },

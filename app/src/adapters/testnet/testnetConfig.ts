@@ -34,10 +34,18 @@ export type TestnetConfig = {
 	anchorHomeDomain: string;
 	/** The Stellar Registry's open channel on this network; empty when not configured. */
 	stellarRegistryContract: string;
+	/** ancora's deal contract (milestone escrow between parties); empty keeps deals off. */
+	dealContract: string;
+	/** SEP-40 oracle (Reflector) an organization may adopt for exchange rates; empty keeps it off. */
+	fxOracle: string;
 };
 
 /** Keys that may be empty without disabling the testnet. */
-const OPTIONAL: ReadonlySet<keyof TestnetConfig> = new Set(["stellarRegistryContract"]);
+const OPTIONAL: ReadonlySet<keyof TestnetConfig> = new Set([
+	"stellarRegistryContract",
+	"dealContract",
+	"fxOracle",
+]);
 
 type EnvSource = Record<string, string | boolean | undefined>;
 
@@ -63,6 +71,8 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	orgAssets: "VITE_ORG_ASSETS",
 	anchorHomeDomain: "VITE_ANCHOR_HOME_DOMAIN",
 	stellarRegistryContract: "VITE_STELLAR_REGISTRY_CONTRACT",
+	dealContract: "VITE_DEAL_CONTRACT",
+	fxOracle: "VITE_FX_ORACLE",
 };
 
 export type AssetOption = Asset & { label: string };

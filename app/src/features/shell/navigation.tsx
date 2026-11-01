@@ -3,6 +3,7 @@ import {
 	ActivityIcon,
 	ApprovalsIcon,
 	CompassIcon,
+	DealsIcon,
 	FingerprintIcon,
 	HomeIcon,
 	InboxIcon,
@@ -36,6 +37,7 @@ export const primaryItems: readonly NavItem[] = [
 	{ to: "/app/pay", label: "Send", icon: <SendIcon />, inTabBar: true },
 	{ to: "/app/approvals", label: "Approvals", icon: <ApprovalsIcon />, inTabBar: true },
 	{ to: "/app/activity", label: "Activity", icon: <ActivityIcon />, inTabBar: false },
+	{ to: "/app/deals", label: "Deals", icon: <DealsIcon />, inTabBar: false },
 ];
 
 /** How the organization is set up: rules, budgets, people, settings. */

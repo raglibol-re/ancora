@@ -92,6 +92,8 @@ export class LocalDataSource implements DataSource {
 	private readonly registryNameOf = new Map<string, string>();
 	/** Sample organizations have no code on a ledger, so there are no releases to move to. */
 	readonly releases = null;
+	/** Deals run in the deal contract on the testnet; sample data has none. */
+	readonly deals = null;
 	readonly registryNames: RegistryNameSupport = {
 		channel: () => "simulated",
 		current: async (orgId) => {

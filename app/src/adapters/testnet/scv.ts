@@ -23,7 +23,7 @@ export const u64 = (value: number): xdr.ScVal => nativeToScVal(value, { type: "u
 export const i128 = (value: bigint): xdr.ScVal => nativeToScVal(value, { type: "i128" });
 
 /** A `#[contracttype]` struct: a map with its field names as sorted symbol keys. */
-function struct(fields: Record<string, xdr.ScVal>): xdr.ScVal {
+export function struct(fields: Record<string, xdr.ScVal>): xdr.ScVal {
 	const entries = Object.keys(fields)
 		.sort()
 		.flatMap((key) => {

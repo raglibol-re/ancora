@@ -17,5 +17,6 @@ stellar-access = { workspace = true }
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
 ancora-registry = { path = "../registry" }
+ancora-deal = { path = "../deal" }
 serde = { workspace = true }
 serde_json = { workspace = true }

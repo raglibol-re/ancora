@@ -1,3 +1,4 @@
+import type { DealAction } from "../deals.ts";
 import { type Cents, type Currency, isValidAmount } from "../money.ts";
 import { err, ok, type Result } from "../result.ts";
 import {
@@ -92,7 +93,18 @@ export type GovernanceRequest = RequestBase & {
 	change: GovernanceChange;
 };
 
-export type ApprovalRequest = PaymentRequest | GovernanceRequest | BatchRequest;
+/** A step in a deal with another party, taken by the organization once the rules allow it. */
+export type DealRequest = RequestBase & {
+	kind: "deal";
+	/** The deal contract it goes to. */
+	contract: string;
+	action: DealAction;
+	/** What a deposit holds back on the account until the request is done (0 otherwise). */
+	reservedToken: string | null;
+	reserved: Cents;
+};
+
+export type ApprovalRequest = PaymentRequest | GovernanceRequest | BatchRequest | DealRequest;
 
 /** Requests that move money out: a single payment or a batch. */
 export type MoneyRequest = PaymentRequest | BatchRequest;

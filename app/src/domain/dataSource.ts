@@ -1,4 +1,5 @@
 import type { Workspace } from "./account.ts";
+import type { Deal, DealAction } from "./deals.ts";
 import type { EntryKind, Reaction } from "./discussion.ts";
 import type { ClaimStatus, LifelineOverview, RecoveryPlan } from "./lifeline.ts";
 import type { Cents, Currency } from "./money.ts";
@@ -85,6 +86,22 @@ export interface ReleaseSupport {
 	/** Where releases are published, for the UI. */
 	registry(): string;
 	status(orgId: string): Promise<Result<CodeStatus, RuleError>>;
+}
+
+/** Deals with other parties (contracts/deal), taken by the organization under its rules. */
+export interface DealSupport {
+	/** The deal contract, for expert details. */
+	contract(): string;
+	/** The deals this organization takes part in, newest first. */
+	list(orgId: string): Promise<Result<Deal[], RuleError>>;
+	/** A step as the organization: directly during setup, otherwise a request under its rules. */
+	act(
+		orgId: string,
+		actorId: PersonId,
+		action: DealAction,
+	): Promise<Result<"applied" | "requested", RuleError>>;
+	/** Pays out a milestone whose objection period has passed (anyone may). */
+	releaseNow(dealId: number, milestone: number): Promise<Result<void, RuleError>>;
 }
 
 /** What a token contract says about itself, before an organization accepts it. */
@@ -258,6 +275,8 @@ export interface DataSource {
 	readonly registryNames: RegistryNameSupport | null;
 	/** The organization's code releases; null when this source has no registry configured. */
 	readonly releases: ReleaseSupport | null;
+	/** Deals with other parties; null where there is no deal contract (sample data). */
+	readonly deals: DealSupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

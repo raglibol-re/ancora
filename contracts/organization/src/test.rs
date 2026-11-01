@@ -13,9 +13,9 @@ pub(crate) struct World {
     pub(crate) org: OrganizationClient<'static>,
     pub(crate) token: Address,
     pub(crate) token_client: token::Client<'static>,
-    registry: RealRegistryClient<'static>,
+    pub(crate) registry: RealRegistryClient<'static>,
     pub(crate) founder: Address,
-    recovery: Address,
+    pub(crate) recovery: Address,
     /// The Stellar Registry stand-in the organization takes its releases from.
     pub(crate) releases: MockReleasesClient<'static>,
 }

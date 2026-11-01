@@ -24,6 +24,9 @@ FX_RATES_URL="${FX_RATES_URL:-https://api.frankfurter.dev/v1}"
 # channel is resolved from it, and that is where organizations register their names.
 STELLAR_REGISTRY_ROOT="${STELLAR_REGISTRY_ROOT:-CAAXJETKPYAATU4HVVQUTE2FFBULNFGZNEOC3MS635U5K3GZLAY2HI4M}"
 STELLAR_REGISTRY_CONTRACT=""
+# Reflector's free ("Pulse") forex oracle on testnet: SEP-40, base USD, 14 decimals, EUR among its
+# assets (from https://orchestrator-testnet.reflector.network/config, checked 1 Nov 2026).
+FX_ORACLE="${FX_ORACLE:-CCSSOHTBL3LEWUCBBEB5NJFC2OKFRC74OWEIJIZLRJBGAAU4VMU5NV4W}"
 PASSPHRASE="Test SDF Network ; September 2015"
 DEPLOYER="ancora-deployer"
 
@@ -223,6 +226,7 @@ ensure_ancora_contracts() {
 	local wasm_dir="$ROOT/contracts/target/wasm32v1-none/release"
 	REGISTRY_CONTRACT="$(sed -n 's/^VITE_REGISTRY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	SEAL_VERIFIER="$(sed -n 's/^VITE_SEAL_VERIFIER=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	DEAL_CONTRACT="$(sed -n 's/^VITE_DEAL_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	RECOVERY_CONTRACT="$(sed -n 's/^VITE_RECOVERY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	ORG_WASM_HASH="$(sed -n 's/^VITE_ORG_WASM_HASH=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	if $CHECK_ONLY; then
@@ -231,6 +235,11 @@ ensure_ancora_contracts() {
 			ok "registry $REGISTRY_CONTRACT"
 		else
 			problem "registry contract missing (testnet reset?)"
+		fi
+		if [[ -n "$DEAL_CONTRACT" ]] && contract_exists "$DEAL_CONTRACT"; then
+			ok "deals $DEAL_CONTRACT"
+		else
+			problem "deal contract missing (testnet reset?)"
 		fi
 		if [[ -n "$SEAL_VERIFIER" ]] && contract_exists "$SEAL_VERIFIER"; then
 			ok "seal verifier $SEAL_VERIFIER"
@@ -261,6 +270,12 @@ ensure_ancora_contracts() {
 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the seal verifier."
 	fi
 	ok "seal verifier $SEAL_VERIFIER"
+	# Deals: one instance holds every deal; no admin, no upgrade, so nobody but the parties (and
+	# an arbiter they name) can move what it holds. A new version is a new deployment.
+	if [[ -z "$DEAL_CONTRACT" ]] || ! contract_exists "$DEAL_CONTRACT"; then
+		DEAL_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_deal.wasm" 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the deal contract."
+	fi
+	ok "deals $DEAL_CONTRACT"
 	# Lifeline: one recovery contract per registry; organizations name it at deployment.
 	if [[ -z "$RECOVERY_CONTRACT" ]] || ! contract_exists "$RECOVERY_CONTRACT"; then
 		RECOVERY_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_recovery.wasm" \
@@ -314,6 +329,10 @@ VITE_RELAYER_URL=$RELAYER_URL
 VITE_REGISTRY_CONTRACT=$REGISTRY_CONTRACT
 VITE_ORG_WASM_HASH=$ORG_WASM_HASH
 VITE_SEAL_VERIFIER=$SEAL_VERIFIER
+VITE_DEAL_CONTRACT=$DEAL_CONTRACT
+
+# SEP-40 oracle whose rates an organization may adopt for the tiers of other-currency payments.
+VITE_FX_ORACLE=$FX_ORACLE
 VITE_RECOVERY_CONTRACT=$RECOVERY_CONTRACT
 
 # Bank deposits and withdrawals (SEP-24): the anchor whose stellar.toml the app reads.
@@ -405,6 +424,7 @@ sync_vercel() {
 		vercel_env ORG_WASM_HASH "$ORG_WASM_HASH"
 		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"
 		vercel_env SEAL_VERIFIER "$SEAL_VERIFIER"
+		vercel_env DEAL_CONTRACT "$DEAL_CONTRACT"
 		vercel_env RECOVERY_CONTRACT "$RECOVERY_CONTRACT"
 		vercel_env STELLAR_REGISTRY_CONTRACT "$STELLAR_REGISTRY_CONTRACT"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret

@@ -31,6 +31,15 @@ export const InboxIcon = () => (
 	</Icon>
 );
 
+/** Two hands meeting: an agreement between two parties. */
+export const DealsIcon = () => (
+	<Icon>
+		<path d="M3 12l4-4 4 3 3-2 7 5" />
+		<path d="M7 8l-4 4 5 5 3-1" />
+		<path d="M21 14l-6 4-4-3" />
+	</Icon>
+);
+
 export const SendIcon = () => (
 	<Icon>
 		<path d="M12 19V5" />

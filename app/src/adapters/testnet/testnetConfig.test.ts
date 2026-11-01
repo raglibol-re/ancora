@@ -23,6 +23,8 @@ const complete = {
 	VITE_RECOVERY_CONTRACT: "CRECOVERY",
 	VITE_FX_RATES_URL: "https://rates.example",
 	VITE_STELLAR_REGISTRY_CONTRACT: "",
+	VITE_DEAL_CONTRACT: "",
+	VITE_FX_ORACLE: "",
 };
 
 describe("readTestnetConfig", () => {

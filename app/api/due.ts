@@ -1,6 +1,7 @@
 import { Contract, Keypair, nativeToScVal, StrKey } from "@stellar/stellar-sdk";
 import { requireAdmin } from "./_lib/adminAuth.js";
 import { isOrganization } from "./_lib/contracts.js";
+import { runDueDeals } from "./_lib/dueDeals.js";
 import { runDueOrders, runDueRequests } from "./_lib/dueOrders.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer } from "./_lib/ledger.js";
@@ -10,8 +11,8 @@ import { required, serverConfig } from "./_lib/serverConfig.js";
 // Work that was decided already and only needs someone to send it, in one function (Vercel's
 // Hobby plan allows twelve per deployment). The contracts let anyone do these; the operator
 // only pays the fee.
-// - GET: every due standing order and every request past its objection window, for every known
-//   organization. Vercel's cron calls it daily with CRON_SECRET; the demo admin with the passphrase.
+// - GET: every due standing order, every request past its objection window and every deal
+//   milestone past its objection period, for every known organization. Vercel's cron calls it daily with CRON_SECRET; the demo admin with the passphrase.
 // - POST { organization, requestId }: execute one request whose objection window has passed.
 // - POST { organization, orderId }: run one due standing order.
 // - POST { organization }: add an organization to the scheduler's index.
@@ -27,7 +28,8 @@ const runAllDue = apiHandler("GET", async (request) => {
 	const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
 	const orders = await runDueOrders(settings, operator);
 	const requests = await runDueRequests(settings, operator);
-	return { ...orders, requests };
+	const releases = await runDueDeals(settings, operator);
+	return { ...orders, requests, releases };
 });
 
 const positive = (value: unknown): value is number =>

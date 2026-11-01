@@ -9,6 +9,7 @@
 #![no_std]
 
 mod controls;
+mod deals;
 mod rules;
 mod templates;
 mod types;
@@ -38,8 +39,8 @@ const MAX_LINK_PAYMENTS: u32 = 500;
 /// Raised whenever the interface gains something the app needs to know about: 2 = standing
 /// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments, 6 = payment links,
 /// 7 = upgrades to published releases (`Upgrade`), 8 = allowances per asset and category,
-/// recipient allowlists, exchange rates for the tiers (`controls.rs`). Organizations before this
-/// view report nothing.
+/// recipient allowlists, exchange rates for the tiers (`controls.rs`), deals with other parties
+/// (`deals.rs`). Organizations before this view report nothing.
 const CONTRACT_VERSION: u32 = 8;
 /// The organization's code on the Stellar Registry (`scripts/publish-registry.sh`).
 const RELEASE_NAME: &str = "ancora-organization";
@@ -1109,6 +1110,7 @@ impl Organization {
                 release_budget(e, &info, &batch.token, batch.total(), &batch.category);
             }
             RequestKind::Change(_) => {}
+            RequestKind::Deal(call) => deals::release_reserved(e, call),
         }
         save_request(e, &request);
         Ok(())
@@ -1617,6 +1619,13 @@ fn execute_now(e: &Env, mut request: Request, info: &OrgInfo) -> Request {
                 request.failure = Some(error as u32);
             }
         },
+        RequestKind::Deal(call) => match deals::perform(e, call) {
+            Ok(()) => request.status = Status::Executed,
+            Err(code) => {
+                request.status = Status::Failed;
+                request.failure = Some(code);
+            }
+        },
     }
     request
 }
@@ -1993,6 +2002,8 @@ extern crate std;
 mod test;
 #[cfg(test)]
 mod test_controls;
+#[cfg(test)]
+mod test_deals;
 #[cfg(test)]
 mod test_upgrade;
 

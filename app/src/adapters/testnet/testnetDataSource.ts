@@ -10,6 +10,7 @@ import type {
 	BatchInput,
 	ChangeOutcome,
 	DataSource,
+	DealSupport,
 	DiscussionSupport,
 	EscrowView,
 	FundingSupport,
@@ -34,6 +35,7 @@ import { rulesHash } from "../../domain/rules/policyDocument.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
+import { createDealSupport } from "./dealSupport.ts";
 import { type HistoryCache, historyCache } from "./historyCache.ts";
 import { readClaimStatus, readOverview, recoveryMessage, setPlanArgs } from "./lifelineContract.ts";
 import {
@@ -96,6 +98,7 @@ export class TestnetDataSource implements DataSource {
 	readonly ramps: RampSupport;
 	readonly registryNames: RegistryNameSupport | null;
 	readonly releases: ReleaseSupport | null;
+	readonly deals: DealSupport | null;
 	readonly lifeline: LifelineSupport = {
 		overview: (person) =>
 			this.remember(`lifeline:${person}`, 20_000, () =>
@@ -229,6 +232,19 @@ export class TestnetDataSource implements DataSource {
 						}
 					},
 				}
+			: null;
+		this.deals = config.dealContract
+			? createDealSupport({
+					network: config,
+					contract: config.dealContract,
+					invoke: (target, fn, args) => this.invoke(target, fn, args),
+					direct: (orgId, actorId) => {
+						const account = this.account(orgId);
+						return account?.onchain?.setupPhase === true && account.org.founderId === actorId;
+					},
+					failed,
+					refresh: () => this.refresh(),
+				})
 			: null;
 		// The anchor client loads with the same laziness; it also needs the wallet kit to sign in.
 		const ramp = () => import("./anchorRamp.ts");

@@ -1,4 +1,5 @@
 import type { OrgAccount } from "../../domain/account.ts";
+import { describeDealAction } from "../../domain/deals.ts";
 import type { Currency } from "../../domain/money.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { periodLabel } from "../../domain/rules/limits.ts";
@@ -92,6 +93,16 @@ export function requestTitle(
 	nameOf: NameOf,
 ): string {
 	if (request.kind === "governance") return describeChange(account.org, request.change, nameOf);
+	if (request.kind === "deal") {
+		const title = describeDealAction(
+			request.action,
+			(_, milestone) => `milestone ${milestone + 1}`,
+		);
+		const currency = account.org.assets.find((a) => a.token === request.reservedToken)?.currency;
+		return request.reserved > 0 && currency
+			? `${title} · ${formatMoney(request.reserved, currency)}`
+			: title;
+	}
 	if (request.kind === "batch") {
 		const count = request.lines.length;
 		return `${formatMoney(request.amount, request.currency)} to ${count} ${count === 1 ? "recipient" : "recipients"}${request.note ? ` · ${request.note}` : ""}`;
