@@ -98,6 +98,8 @@ ${RECIPIENT};1;Fees
 		await expect(page.getByText("Paid 0 of 1")).toBeVisible();
 		// The public page needs no ancora pass: it reads the link straight from the contract.
 		await page.goto("/app/settings");
+		// A new organization runs the latest ancora-organization release on the Stellar Registry.
+		await expect(page.getByText(/ancora release [\d.]+, the latest/)).toBeVisible();
 		// The first C-address on Settings that isn't one of the accepted tokens.
 		const addresses = await page.locator("code").allInnerTexts();
 		const organization =
