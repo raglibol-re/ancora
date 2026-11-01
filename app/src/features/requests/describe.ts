@@ -77,6 +77,8 @@ export function describeChange(org: HasRoles, change: GovernanceChange, nameOf: 
 			return `Set the roles to ${change.roles
 				.map((role) => org.roles.find((r) => r.id === role.id)?.name ?? role.name)
 				.join(", ")}`;
+		case "upgrade":
+			return `Move to ancora release ${change.version ?? change.wasmHash.slice(0, 12)}`;
 		case "setSpendingLimit":
 			return change.amount === 0
 				? `Remove the spending limit of ${nameOf(change.personId)}`

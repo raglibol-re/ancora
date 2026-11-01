@@ -28,7 +28,12 @@ export type GovernanceChange =
 	/** Amount 0 removes the limit. */
 	| { type: "setSpendingLimit"; personId: PersonId; amount: Cents; periodSeconds: number }
 	/** The organization's own roles, highest first (add, reorder, drop roles nobody holds). */
-	| { type: "setRoles"; roles: readonly Role[] };
+	| { type: "setRoles"; roles: readonly Role[] }
+	/**
+	 * Run the latest published release of the organization's code (hex Wasm hash). The version
+	 * is for people; the contract only checks the hash against the Stellar Registry.
+	 */
+	| { type: "upgrade"; wasmHash: string; version: string | null };
 
 export type NewOrgInput = {
 	id: string;
@@ -148,6 +153,9 @@ function nextOrg(org: Org, change: GovernanceChange): Result<Org, RuleError> {
 			const valid = validateRoles(org, change.roles);
 			return valid.ok ? ok({ ...org, roles: [...change.roles] }) : valid;
 		}
+		case "upgrade":
+			// New code, same people and rules; the contract checks the release itself.
+			return ok(org);
 		case "addAsset":
 			if (org.assets.some((a) => a.token === change.asset.token)) {
 				return err(ruleError("asset-exists", "The organization already accepts this asset."));

@@ -15,7 +15,7 @@ mod types;
 use soroban_sdk::auth::{ContractContext, InvokerContractAuthEntry, SubContractInvocation};
 use soroban_sdk::{
     contract, contractclient, contractevent, contractimpl, contracttype, panic_with_error, token,
-    vec, Address, BytesN, Env, IntoVal, String, Symbol, Val, Vec,
+    vec, Address, BytesN, ContractExecutable, Env, IntoVal, String, Symbol, Val, Vec,
 };
 use stellar_access::access_control::{self as access_control, AccessControl};
 
@@ -35,13 +35,23 @@ const MAX_PAYEES: u32 = 200;
 const MAX_BATCH_LINES: u32 = 50;
 const MAX_LINK_PAYMENTS: u32 = 500;
 /// Raised whenever the interface gains something the app needs to know about: 2 = standing
-/// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments, 6 = payment links. Organizations before this view report nothing.
-const CONTRACT_VERSION: u32 = 6;
+/// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments, 6 = payment links,
+/// 7 = upgrades to published releases (`Upgrade`). Organizations before this view report nothing.
+const CONTRACT_VERSION: u32 = 7;
+/// The organization's code on the Stellar Registry (`scripts/publish-registry.sh`).
+const RELEASE_NAME: &str = "ancora-organization";
 const SECONDS_PER_HOUR: u64 = 3_600;
 
 #[contractclient(name = "RegistryClient")]
 pub trait RegistryInterface {
     fn set_membership(e: Env, org: Address, member: Address, is_member: bool);
+}
+
+/// The read the organization needs from the Stellar Registry (stellar-registry/contracts,
+/// `Publishable::fetch_hash`): a published Wasm's hash by name, the latest version when `None`.
+#[contractclient(name = "ReleasesClient")]
+pub trait ReleasesInterface {
+    fn fetch_hash(e: Env, wasm_name: String, version: Option<String>) -> BytesN<32>;
 }
 
 /// The part of a DeFindex vault the Reserve uses (paltalabs/defindex `vault`). The vault is also
@@ -98,6 +108,15 @@ enum DataKey {
     Link(u64),
     LinkCount,
     LinkPayments(u64),
+    /// The Stellar Registry whose `ancora-organization` releases this organization may upgrade to.
+    Releases,
+}
+
+/// Emitted when the organization starts running a new release.
+#[contractevent]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Upgraded {
+    pub wasm_hash: BytesN<32>,
 }
 
 /// Emitted whenever a request is created or changes status.
@@ -139,6 +158,8 @@ impl Organization {
     /// (at least one). The contract is its own AccessControl admin, so positions change only
     /// through its governance; the deployer (operator) holds no role. `recovery` is ancora's
     /// Lifeline contract, the only caller allowed to hand a position to a person's new pass.
+    /// `releases` is the Stellar Registry whose `ancora-organization` releases the organization
+    /// may later upgrade to through its own governance.
     ///
     /// Auth: none (deployment).
     #[allow(clippy::too_many_arguments)]
@@ -146,6 +167,7 @@ impl Organization {
         e: &Env,
         registry: Address,
         recovery: Address,
+        releases: Address,
         base_currency: Symbol,
         assets: Vec<AssetSpec>,
         founder: Address,
@@ -195,6 +217,7 @@ impl Organization {
             .instance()
             .set(&DataKey::PolicyHash, &policy_hash);
         e.storage().instance().set(&DataKey::RequestCount, &0u64);
+        e.storage().instance().set(&DataKey::Releases, &releases);
         extend_instance(e);
     }
 
@@ -1642,6 +1665,11 @@ fn plan_change(
                 return Err(Error::InvalidLimit);
             }
         }
+        Change::Upgrade(wasm_hash) => {
+            if latest_release(e)? != *wasm_hash {
+                return Err(Error::NotLatestRelease);
+            }
+        }
     }
     let strictest = |p: &Policy| {
         p.tiers
@@ -1748,8 +1776,32 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
                     .extend_ttl(&key, REQUEST_THRESHOLD, REQUEST_EXTEND);
             }
         }
+        Change::Upgrade(wasm_hash) => {
+            // Takes effect when this invocation ends; plan_change checked it is the latest release.
+            e.deployer()
+                .update_current_contract(ContractExecutable::Wasm(wasm_hash.clone()));
+            Upgraded {
+                wasm_hash: wasm_hash.clone(),
+            }
+            .publish(e);
+        }
     }
     Ok(())
+}
+
+/// The hash of the latest `ancora-organization` release on the organization's Stellar Registry.
+fn latest_release(e: &Env) -> Result<BytesN<32>, Error> {
+    let releases: Address = e
+        .storage()
+        .instance()
+        .get(&DataKey::Releases)
+        .ok_or(Error::ReleaseUnavailable)?;
+    match ReleasesClient::new(e, &releases)
+        .try_fetch_hash(&String::from_str(e, RELEASE_NAME), &None)
+    {
+        Ok(Ok(hash)) => Ok(hash),
+        _ => Err(Error::ReleaseUnavailable),
+    }
 }
 
 /// The limit with its window rolled forward to now (spent resets when a period has passed).
@@ -1891,6 +1943,8 @@ extern crate std;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_upgrade;
 
 #[cfg(test)]
 mod test_vectors;

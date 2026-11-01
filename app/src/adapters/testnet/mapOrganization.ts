@@ -158,6 +158,8 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	44: "This payment link doesn't exist.",
 	45: "This payment link is closed or fully paid.",
 	46: "This wallet has already paid this link.",
+	47: "A newer ancora release was published after this upgrade was proposed. Propose the upgrade to the newest release.",
+	48: "The Stellar Registry didn't confirm an ancora release. Try again in a moment.",
 	37: "Only the person who set this standing order, or the top role, can stop it.",
 	38: "This standing order was stopped.",
 };
@@ -301,6 +303,12 @@ function mapChange(value: unknown): GovernanceChange {
 			return {
 				type: "setRoles",
 				roles: (fields[0] as unknown[]).map((id) => customRole(str(id))),
+			};
+		case "Upgrade":
+			return {
+				type: "upgrade",
+				wasmHash: Buffer.from(fields[0] as Uint8Array).toString("hex"),
+				version: null,
 			};
 		default:
 			throw new Error(`Unknown change ${kind}`);
@@ -540,6 +548,7 @@ export function mapOrganization(
 			customRoles: snapshot.version >= 3,
 			addressBook: snapshot.version >= 4,
 			batches: snapshot.version >= 5,
+			upgrades: snapshot.version >= 7,
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

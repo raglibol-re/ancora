@@ -74,6 +74,8 @@ export type OnchainAccount = {
 	addressBook: boolean;
 	/** The contract takes batch payments (interface version 5 or later). */
 	batches: boolean;
+	/** The organization can move to new releases through its rules (interface version 7 or later). */
+	upgrades: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */

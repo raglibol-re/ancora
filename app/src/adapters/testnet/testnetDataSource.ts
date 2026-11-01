@@ -20,6 +20,7 @@ import type {
 	ProfileInput,
 	RampSupport,
 	RegistryNameSupport,
+	ReleaseSupport,
 	StandingOrderInput,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
@@ -54,6 +55,7 @@ import { passkeyUserName } from "./passkeyUserName.ts";
 import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
 import { registerContractArgs, resolveRegistryName } from "./registryNames.ts";
+import { contractCodeHash, latestRelease } from "./releases.ts";
 import {
 	address,
 	batchLinesToScVal,
@@ -93,6 +95,7 @@ export class TestnetDataSource implements DataSource {
 	readonly funding: FundingSupport;
 	readonly ramps: RampSupport;
 	readonly registryNames: RegistryNameSupport | null;
+	readonly releases: ReleaseSupport | null;
 	readonly lifeline: LifelineSupport = {
 		overview: (person) =>
 			this.remember(`lifeline:${person}`, 20_000, () =>
@@ -206,6 +209,24 @@ export class TestnetDataSource implements DataSource {
 							name,
 						});
 						return saved.ok ? ok(undefined) : saved;
+					},
+				}
+			: null;
+		this.releases = registry
+			? {
+					registry: () => registry,
+					status: async (orgId) => {
+						try {
+							const [running, latest] = await Promise.all([
+								contractCodeHash(config, orgId),
+								latestRelease(config, registry),
+							]);
+							return ok({ running, latest });
+						} catch (error) {
+							return failed(
+								`Couldn't read the organization's code from Stellar: ${error instanceof Error ? error.message : String(error)}`,
+							);
+						}
 					},
 				}
 			: null;

@@ -79,12 +79,17 @@ export default apiHandler("POST", async (request) => {
 	if (!settings.recoveryContract) {
 		throw new RequestError("Server is missing the RECOVERY_CONTRACT setting.", 500);
 	}
+	if (!settings.stellarRegistryContract) {
+		throw new RequestError("Server is missing the STELLAR_REGISTRY_CONTRACT setting.", 500);
+	}
 	const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
 	const salt = randomBytes(32);
 	const contractId = deployedContractId(settings.networkPassphrase, operator.publicKey(), salt);
 	const constructorArgs = [
 		new Address(settings.registryContract).toScVal(),
 		new Address(settings.recoveryContract).toScVal(),
+		// The Stellar Registry whose ancora-organization releases it may later move to.
+		new Address(settings.stellarRegistryContract).toScVal(),
 		symbol(baseCurrency),
 		xdr.ScVal.scvVec(accepted.map(assetSpec)),
 		new Address(founder).toScVal(),

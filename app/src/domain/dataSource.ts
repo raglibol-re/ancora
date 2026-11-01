@@ -75,6 +75,18 @@ export interface RegistryNameSupport {
 	register(orgId: string, actorId: PersonId, name: string): Promise<Result<void, RuleError>>;
 }
 
+/** A published release of the organization's code on the Stellar Registry. */
+export type Release = { version: string; wasmHash: string };
+
+/** The code an organization runs (hex Wasm hash) next to the latest published release. */
+export type CodeStatus = { running: string; latest: Release | null };
+
+export interface ReleaseSupport {
+	/** Where releases are published, for the UI. */
+	registry(): string;
+	status(orgId: string): Promise<Result<CodeStatus, RuleError>>;
+}
+
 /** What a token contract says about itself, before an organization accepts it. */
 export type TokenInfo = { token: string; symbol: string; name: string; decimals: number };
 
@@ -244,6 +256,8 @@ export interface DataSource {
 	readonly lifeline: LifelineSupport;
 	/** Names on the Stellar Registry; null when this source has no registry configured. */
 	readonly registryNames: RegistryNameSupport | null;
+	/** The organization's code releases; null when this source has no registry configured. */
+	readonly releases: ReleaseSupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

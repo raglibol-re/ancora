@@ -3,18 +3,21 @@ use soroban_sdk::{symbol_short, token, Address, BytesN, Env, IntoVal, String, Sy
 
 use ancora_registry::{Registry, RegistryClient as RealRegistryClient};
 
+use crate::test_upgrade::mock_releases::{MockReleases, MockReleasesClient};
 use crate::types::{AssetSpec, BatchLine, Budget, Change, Error, Status, CENT};
 use crate::{Organization, OrganizationClient};
 use mock_vault::MockVault;
 
-struct World {
-    e: Env,
-    org: OrganizationClient<'static>,
+pub(crate) struct World {
+    pub(crate) e: Env,
+    pub(crate) org: OrganizationClient<'static>,
     token: Address,
     token_client: token::Client<'static>,
     registry: RealRegistryClient<'static>,
-    founder: Address,
+    pub(crate) founder: Address,
     recovery: Address,
+    /// The Stellar Registry stand-in the organization takes its releases from.
+    pub(crate) releases: MockReleasesClient<'static>,
 }
 
 fn euros(whole: i128) -> i128 {
@@ -22,7 +25,7 @@ fn euros(whole: i128) -> i128 {
 }
 
 /// A club founded by `founder` as treasurer, funded with `balance_euros`, registered.
-fn club(balance_euros: i128) -> World {
+pub(crate) fn club(balance_euros: i128) -> World {
     let e = Env::default();
     e.mock_all_auths();
     let operator = Address::generate(&e);
@@ -30,6 +33,7 @@ fn club(balance_euros: i128) -> World {
     let registry_id = e.register(Registry, (&operator,));
     let registry = RealRegistryClient::new(&e, &registry_id);
     let recovery = Address::generate(&e);
+    let releases_id = e.register(MockReleases, ());
     let asset = e.register_stellar_asset_contract_v2(operator.clone());
     let accepted = Vec::from_array(
         &e,
@@ -44,6 +48,7 @@ fn club(balance_euros: i128) -> World {
         (
             &registry_id,
             &recovery,
+            &releases_id,
             symbol_short!("EUR"),
             accepted,
             &founder,
@@ -62,6 +67,7 @@ fn club(balance_euros: i128) -> World {
         registry,
         founder,
         recovery,
+        releases: MockReleasesClient::new(&e, &releases_id),
         e,
     }
 }
@@ -154,7 +160,7 @@ fn add_asset(w: &World, currency: &str, whole: i128) -> Address {
     asset.address()
 }
 
-fn board_member(w: &World) -> Address {
+pub(crate) fn board_member(w: &World) -> Address {
     let who = Address::generate(&w.e);
     w.org.change_directly(
         &w.founder,
@@ -1472,7 +1478,7 @@ fn changing_roles_requires_the_founders_authorization() {
 #[test]
 fn the_contract_reports_its_interface_version() {
     let w = club(1_000);
-    assert_eq!(w.org.version(), 6);
+    assert_eq!(w.org.version(), 7);
 }
 
 #[test]

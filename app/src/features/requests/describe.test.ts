@@ -55,4 +55,15 @@ describe("describeChange", () => {
 			"Switch to the company template",
 		);
 	});
+
+	it("names a release by its version, or by its hash when read back from the chain", () => {
+		const org = club();
+		const hash = "ab12cd34ef56".repeat(5).slice(0, 64);
+		expect(describeChange(org, { type: "upgrade", wasmHash: hash, version: "0.7.0" }, names)).toBe(
+			"Move to ancora release 0.7.0",
+		);
+		expect(describeChange(org, { type: "upgrade", wasmHash: hash, version: null }, names)).toBe(
+			"Move to ancora release ab12cd34ef56",
+		);
+	});
 });

@@ -115,8 +115,8 @@ Starting point (1 Nov 2026): everything in the HackMeridian table above plus cus
 | Deliverable | Done when |
 |---|---|
 | End-to-end coverage with two passes: approvals (running nightly since 1 Nov), standing orders, Reserve, secure handover, payment links, a Lifeline claim | Each flow runs nightly against production in `app/e2e`, green for 14 days in a row |
-| Contract releases on the Stellar Registry: the four Wasm files as named, versioned releases (`scripts/publish-registry.sh`), organizations deployed by release name, attested builds through the registry's GitHub action | Expert mode shows release name and version next to every contract hash; a new organization's code resolves to a public release |
-| Governed upgrade of an organization's Wasm, so existing organizations get new features without being recreated | An organization on interface 6 upgrades through a rule-change request and keeps its money, members and history |
+| Contract releases on the Stellar Registry: the four Wasm files as named, versioned releases (`scripts/publish-registry.sh`; done 1 Nov, 0.7.0 on the open channel), organizations deployed by release name, attested builds through the registry's GitHub action | Settings shows the release next to the code an organization runs (done 1 Nov); a new organization's code resolves to a public release |
+| Governed upgrade of an organization's Wasm, so existing organizations get new features without being recreated (done 1 Nov: `Change::Upgrade`, interface 7; organizations from before cannot upgrade) | An organization on interface 7 moves to release 0.8.0 through a rule-change request and keeps its money, members and history |
 | Channel accounts for server transactions (done 1 Nov), rate limits on every function, monitoring (error tracking; uptime and float alerts run hourly since 1 Nov) | Ten simultaneous server transactions settle within two ledgers; an alert fires in a drill |
 | History beyond RPC's week through an indexer (Mercury or SubQuery) behind `orgHistory.ts` | A device away for a month sees the full activity |
 
@@ -147,7 +147,7 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 1. **End-to-end tests with a virtual passkey.** Started 28 Oct: `app/e2e` drives production nightly (create a pass, sign out and in, found an organization, take test money, pay); its first runs found two bugs and a broken deploy. Since 1 Nov a second run has two passes on two devices: a payment waits for the board member's approval and goes out on it. Next: standing orders, Reserve, secure handover, Lifeline. Playwright with Chromium's WebAuthn virtual authenticator can create a pass, an organization, a payment, an approval, a standing order and a Lifeline claim against the testnet, nightly in CI. This is the single biggest quality lever.
 2. **External security review** of the organization, registry and recovery contracts, plus a threat model for the relayer (fee sponsorship), the wallet index and the Blob stores.
-3. **Mainnet profile.** Channel accounts for server transactions: done 1 Nov (eight channels derived from the operator key, the operator pays through fee bumps; three at once land in the same ledger, about 6 seconds, where four took about 35). Also network settings per environment, the operator key in a KMS rather than a Vercel secret, a fee budget with alerts, rate limits on every function, backups of the Blob data (discussions, registry names, organization index), an upgrade path for organizations (a governed `upgrade` of an organization's Wasm; today a new organization is needed).
+3. **Mainnet profile.** Channel accounts for server transactions: done 1 Nov (eight channels derived from the operator key, the operator pays through fee bumps; three at once land in the same ledger, about 6 seconds, where four took about 35). Also network settings per environment, the operator key in a KMS rather than a Vercel secret, a fee budget with alerts, rate limits on every function, backups of the Blob data (discussions, registry names, organization index), an upgrade path for organizations (done 1 Nov for organizations created from then on: a governed move to the latest `ancora-organization` release; still open: storage migrations between releases).
 4. **Monitoring.** Error tracking for app and functions, an uptime check on `/api/health`, alerts when the operator's XLM or stablecoin floats run low. Today: recent errors per browser, the admin health panel, and since 1 Nov an hourly live check in GitHub Actions (`scripts/check-live.mjs`: app and `/api/health` up, testnet RPC answering, BlendUSDC test money available, operator XLM above 3,000) that emails the team when it fails. Still open: error tracking for app and functions.
 5. **Legal and partners.** KYB and fiat through a licensed partner (euro SEPA anchor, MoneyGram Access for cash), terms and privacy, the "not a bank" wording reviewed per jurisdiction.
 
@@ -173,7 +173,7 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 ### D. Platform
 
-20. **Releases through the Stellar Registry**: every contract version published and named, organizations deployed by name, attested builds.
+20. **Releases through the Stellar Registry**: every contract version published and named (done 1 Nov), organizations move to new releases through their rules (done 1 Nov), organizations deployed by name, attested builds.
 21. **Preferences across devices** through the profile store, and a settings page that explains every switch.
 
 Suggested order: A1, then C14, B7, B6, B8, B9, A3 and A4 in parallel with the rest, and A2 before mainnet.

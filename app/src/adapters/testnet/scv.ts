@@ -122,6 +122,11 @@ export function changeToScVal(change: GovernanceChange, policyHashHex?: string):
 				xdr.ScVal.scvVec(change.roles.map((role) => symbol(role.id))),
 				xdr.ScVal.scvBytes(Buffer.from(policyHashHex, "hex")),
 			]);
+		case "upgrade":
+			return xdr.ScVal.scvVec([
+				symbol("Upgrade"),
+				xdr.ScVal.scvBytes(Buffer.from(change.wasmHash, "hex")),
+			]);
 		case "switchTemplate":
 			return null;
 	}

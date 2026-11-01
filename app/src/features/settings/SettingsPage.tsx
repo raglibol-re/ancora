@@ -6,6 +6,7 @@ import { Page } from "../../ui/Page.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { LogoCard } from "./LogoCard.tsx";
+import { OrgCodeCard } from "./OrgCodeCard.tsx";
 import { RegistryNameCard } from "./RegistryNameCard.tsx";
 import styles from "./SettingsPage.module.css";
 import { TestnetDeployments } from "./TestnetDeployments.tsx";
@@ -30,6 +31,7 @@ export function SettingsPage() {
 						<LogoCard key={account.org.id} account={account} />
 						<RegistryNameCard key={`registry-${account.org.id}`} account={account} />
 						<OnStellarCard account={account} />
+						<OrgCodeCard key={`code-${account.org.id}`} account={account} />
 					</>
 				)}
 			</OrgRequired>

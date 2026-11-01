@@ -90,6 +90,8 @@ export class LocalDataSource implements DataSource {
 	readonly lifeline: LocalLifeline;
 	/** Sample data: names live in memory and every free name is "on the registry" at once. */
 	private readonly registryNameOf = new Map<string, string>();
+	/** Sample organizations have no code on a ledger, so there are no releases to move to. */
+	readonly releases = null;
 	readonly registryNames: RegistryNameSupport = {
 		channel: () => "simulated",
 		current: async (orgId) => {

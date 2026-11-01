@@ -74,6 +74,10 @@ pub enum Error {
     LinkClosed = 45,
     /// This payer has already paid this link.
     AlreadyPaid = 46,
+    /// An upgrade must name the latest `ancora-organization` release on the Stellar Registry.
+    NotLatestRelease = 47,
+    /// The Stellar Registry didn't answer with a published `ancora-organization` release.
+    ReleaseUnavailable = 48,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -224,6 +228,10 @@ pub enum Change {
     /// The organization's own roles, highest first, plus the SHA-256 of the rules document that
     /// names them: add roles, reorder them, drop roles nobody holds.
     SetRoles(Vec<Symbol>, BytesN<32>),
+    /// Run new code: the Wasm hash of the latest `ancora-organization` release published on the
+    /// Stellar Registry this organization was deployed with. Approvers approve this exact hash;
+    /// if a newer release appears before the change applies, it fails instead of moving on.
+    Upgrade(BytesN<32>),
 }
 
 #[contracttype]
