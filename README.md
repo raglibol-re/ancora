@@ -236,7 +236,7 @@ The operator cannot create, approve or alter requests, and cannot move organizat
 
 ## Roadmap
 
-Built for HackMeridian 2026; continuing through the Stellar Community Fund #46. Next up: per-category spending limits, the inactivity path for Lifeline, Reflector rates for the rules, a device-held ML-DSA key for the seal, and a licensed euro ramp. The ordered list with what was built as planned and what changed is in [docs/ROADMAP.md](docs/ROADMAP.md).
+Built for HackMeridian 2026; continuing through the Stellar Community Fund #46 in three milestones: proven on testnet (two-pass end-to-end tests, contract releases on the Stellar Registry, governed upgrades, monitoring), rules and keys (device-held ML-DSA seal, Reflector rates for the rules, per-category limits and recipient allowlists, Lifeline in full), and ready for mainnet (external security review, licensed euro ramp, pilot organizations). Deliverables and acceptance checks are in [docs/ROADMAP.md](docs/ROADMAP.md#scf-46-milestones).
 
 ## Built with
 

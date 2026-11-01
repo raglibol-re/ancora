@@ -2,7 +2,11 @@
 
 Status legend: **Real on testnet** · **Simulated** (labeled sample data in the UI) · **Roadmap**.
 
-## Now: HackMeridian 2026 (deadline 26 Oct 2026, 12:00 Lisbon)
+## Now: Stellar Community Fund #46 (submission 8 Nov 2026)
+
+The milestone plan is under "SCF #46 milestones" below; the HackMeridian tasks that led here follow first.
+
+## Done: HackMeridian 2026 (submitted 26 Oct 2026, 12:00 Lisbon)
 
 | # | Task | Status |
 |---|------|--------|
@@ -102,17 +106,38 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 - **Personal level:** adding one's own recovery device needs only the person's existing passkey (a signer on their personal smart account); it is logged in the activity and the organizations are notified. Done once per person, it covers every organization.
 - **If skipped:** persistent reminder banner and the recovery status on the profile and overview until a recovery device exists.
 
-## Next: SCF #46 milestones
+## SCF #46 milestones
 
-- Stellar Registry: publish the four contract Wasm files as named, versioned releases (`scripts/publish-registry.sh`, dry run by default), show the release name and version next to the contract hash in expert mode, then deploy organizations through `stellar registry deploy` so an organization's code is a public release rather than an operator-held hash; attested builds through the registry's GitHub action once the repo is public.
-- Perch adoption in three steps: publish ancora's document in perch's IR where it fits, lower per-member allowances onto perch `cap` rules once organizations can be perch accounts, and propose `i128` range predicates and asynchronous approvals upstream so the tiers can move too.
-- Custom roles (editable list and ranks through governance; templates become presets), per-member limits per category and asset, recipient allowlists.
-- History beyond RPC's week for devices that were away: an indexer (Mercury or SubQuery) or the explorer's API behind the same `orgHistory.ts` interface.
+Starting point (1 Nov 2026): everything in the HackMeridian table above plus custom roles, address book, push notifications, statements, batch payments and payment links is real on testnet (organization interface 6), open source under Apache-2.0, with a nightly end-to-end run against production. Weeks count from the award; the budget per milestone is set by the team in the application.
 
-- Switch the security seal from the in-contract ML-DSA verifier to the native ML-DSA host function after Protocol 30 "Bell" (mainnet vote 23 Nov 2026).
-- Lifeline in full (inactivity path, succession plans, professional guardians).
-- Licensed ramp partner integration (EUR IBAN/SEPA, USD/ACH) in production mode, and cash in and out through MoneyGram Access (SEP-24 like the test anchor, so `anchorRamp.ts` takes a second home domain) for organizations that handle cash.
-- Security review of the organization, registry and recovery contracts; mainnet readiness.
+### M1: proven on testnet (weeks 1–6)
+
+| Deliverable | Done when |
+|---|---|
+| End-to-end coverage with two passes: approvals, standing orders, Reserve, secure handover, payment links, a Lifeline claim | Each flow runs nightly against production in `app/e2e`, green for 14 days in a row |
+| Contract releases on the Stellar Registry: the four Wasm files as named, versioned releases (`scripts/publish-registry.sh`), organizations deployed by release name, attested builds through the registry's GitHub action | Expert mode shows release name and version next to every contract hash; a new organization's code resolves to a public release |
+| Governed upgrade of an organization's Wasm, so existing organizations get new features without being recreated | An organization on interface 6 upgrades through a rule-change request and keeps its money, members and history |
+| Channel accounts for server transactions, rate limits on every function, monitoring (error tracking, uptime on `/api/health`, alerts for low operator floats) | Ten simultaneous server transactions settle within two ledgers; an alert fires in a drill |
+| History beyond RPC's week through an indexer (Mercury or SubQuery) behind `orgHistory.ts` | A device away for a month sees the full activity |
+
+### M2: rules and keys (weeks 7–14)
+
+| Deliverable | Done when |
+|---|---|
+| Security seal with a device-held ML-DSA key: generated on the approving device, an external signer on a context rule that only covers `seal`; the native host function replaces the in-contract verifier once Protocol 30 is on testnet and mainnet (vote 23 Nov 2026) | A strictest-tier payment needs the device's ML-DSA signature, verified on-chain |
+| Reflector (SEP-40) rates for the rules, so a payment in another currency meets the right tier instead of the strictest | A EURC payment in a USD organization is judged at the oracle rate, shown in the preview |
+| Spending limits per category and asset, recipient allowlists built on the address book | Contract tests and UI; a payment outside the allowlist is refused or escalated as the rules say |
+| Lifeline in full: inactivity path (heartbeat, check-in reminders, successors) and succession plans per role | A 2-of-2 rule no longer deadlocks when a holder is gone; drill on testnet |
+| Perch step 1: publish ancora's rules document in perch's IR where it fits | Document and mapping published; upstream proposal for `i128` range predicates and asynchronous approvals |
+
+### M3: ready for mainnet (weeks 15–24)
+
+| Deliverable | Done when |
+|---|---|
+| External security review of the organization, registry and recovery contracts, plus a threat model for the relayer, the wallet index and the Blob stores | Report published in `docs/`, every finding fixed or answered |
+| Mainnet profile: network settings per environment, operator key in a KMS, fee budget with alerts, backups of the Blob data | Mainnet deployment of the contracts from attested releases |
+| Licensed ramp partner (EUR IBAN/SEPA) in production mode, MoneyGram Access for cash as a second SEP-24 home domain in `anchorRamp.ts`; terms, privacy and the "not a bank" wording reviewed | A pilot organization moves euros in and out through the partner |
+| Pilot organizations (clubs, NGOs, small companies) on mainnet | Pilots run their real payments under their own rules; feedback folded into the roadmap |
 
 ## Production: what a real user app still needs (assessed 26 Oct 2026)
 
