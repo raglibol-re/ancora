@@ -101,6 +101,12 @@ export function HealthPanel({ health, busy, passphrase, onRefresh }: HealthPanel
 							</dd>
 							<dt>XLM for fees</dt>
 							<dd>{formatStroops(operator.xlmStroops, "XLM")}</dd>
+							<dt>Channel accounts</dt>
+							<dd>
+								{operator.channels.ready} of {operator.channels.total} ready
+								{operator.channels.ready < operator.channels.total &&
+									" (the rest are created with the next server transaction)"}
+							</dd>
 							{operator.floats.map((float) => (
 								<Fragment key={float.token}>
 									<dt>Test money: {float.symbol}</dt>
@@ -113,6 +119,8 @@ export function HealthPanel({ health, busy, passphrase, onRefresh }: HealthPanel
 					)}
 					<p className={styles.muted}>
 						Pays sponsored fees and sends test money. Not a signer on any organization account.
+						Server transactions travel on channel accounts derived from its key, so several run at
+						once; the operator still pays every fee.
 					</p>
 					<button
 						type="button"

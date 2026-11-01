@@ -4,9 +4,10 @@ import {
 	Operation,
 	rpc,
 	TransactionBuilder,
-	type xdr,
+	xdr,
 } from "@stellar/stellar-sdk";
 import { SIMULATION_SOURCE } from "../../shared/tokenBalance.js";
+import { pickChannel } from "./channels.js";
 import { RequestError } from "./http.js";
 import type { ServerConfig } from "./serverConfig.js";
 
@@ -34,21 +35,24 @@ export async function simulatedResourceFee(
 const SUBMIT_ATTEMPTS = 3;
 /**
  * How often a refused one is resent. Stellar Core queues one pending transaction per source
- * account and frees the slot when the next ledger closes (about every five seconds), so a busy
- * operator account is retried over several ledgers.
+ * account and frees the slot when the next ledger closes (about every five seconds); a busy
+ * channel is retried on another random channel after about a ledger.
  */
 const QUEUE_RETRIES = 8;
+/** The inclusion-fee bid per operation, for the inner transaction and the operator's fee bump. */
+const INCLUSION_FEE = "1000000";
 /** A server transaction is valid this long; after that it can never apply, so resending is safe. */
 const VALID_SECONDS = 20;
 const POLL_MS = 1_500;
 
 /**
- * Signs and submits a contract call from a server-held key, waiting for the result. Every
- * server transaction comes from the one operator account (sponsored fees, organization
- * creation, test money, scheduled runs), so two at once can clash on the sequence number: the
- * RPC refuses one, asks to try again later, or accepts both and the network drops one. Each
- * case is rebuilt with a fresh sequence and resent. A dropped transaction is only resent once
- * its short validity window has passed, so the same action can never apply twice.
+ * Signs and submits a contract call from a server-held key, waiting for the result. The call
+ * keeps the operator as its source (its authorization) and travels on a channel account with the
+ * operator paying through a fee bump (see channels.ts), so server transactions run side by side.
+ * Two picking the same channel can still clash on its sequence number: the RPC refuses one, asks
+ * to try again later, or accepts both and the network drops one. Each case is rebuilt with a
+ * fresh sequence and resent. A dropped transaction is only resent once its short validity window
+ * has passed, so the same action can never apply twice.
  */
 export async function invokeAsServer(
 	config: ServerConfig,
@@ -56,23 +60,31 @@ export async function invokeAsServer(
 	operation: xdr.Operation,
 ): Promise<string> {
 	const server = new rpc.Server(config.rpcUrl);
+	const operatorOperation = withSource(operation, signer);
 	let refused = 0;
 	for (let attempt = 1; ; attempt++) {
-		const source = await server.getAccount(signer.publicKey());
-		const tx = new TransactionBuilder(source, {
-			fee: "1000000",
+		const channel = await pickChannel(config, signer);
+		const tx = new TransactionBuilder(channel.account, {
+			fee: INCLUSION_FEE,
 			networkPassphrase: config.networkPassphrase,
 		})
-			.addOperation(operation)
+			.addOperation(operatorOperation)
 			.setTimeout(VALID_SECONDS)
 			.build();
 		const prepared = await server.prepareTransaction(tx).catch((error: unknown) => {
 			const detail = error instanceof Error ? error.message : String(error);
 			throw new RequestError(`The network refused the transaction: ${detail.slice(0, 300)}`, 502);
 		});
-		prepared.sign(signer);
+		prepared.sign(channel.keypair, signer);
+		const bumped = TransactionBuilder.buildFeeBumpTransaction(
+			signer,
+			INCLUSION_FEE,
+			prepared,
+			config.networkPassphrase,
+		);
+		bumped.sign(signer);
 		const validUntil = Number(prepared.timeBounds?.maxTime ?? 0) * 1000;
-		const sent = await server.sendTransaction(prepared);
+		const sent = await server.sendTransaction(bumped);
 		const last = attempt >= SUBMIT_ATTEMPTS;
 		if (isRetryable(sent) && refused < QUEUE_RETRIES) {
 			// About a ledger, with jitter so racing submissions spread out.
@@ -123,13 +135,22 @@ async function awaitOutcome(
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** A sequence clash with another server transaction, or the RPC asking to try again later. */
+/** A copy of the operation with the operator as its source, so its own authorization holds. */
+function withSource(operation: xdr.Operation, signer: Keypair): xdr.Operation {
+	const copy = xdr.Operation.fromXDR(operation.toXDR());
+	copy.sourceAccount(signer.xdrMuxedAccount());
+	return copy;
+}
+
+/** A sequence clash on the channel, or the RPC asking to try again later. */
 function isRetryable(sent: rpc.Api.SendTransactionResponse): boolean {
 	if (sent.status === "TRY_AGAIN_LATER") return true;
-	if (sent.status !== "ERROR") return false;
-	try {
-		return sent.errorResult?.result().switch().name === "txBadSeq";
-	} catch {
-		return false;
-	}
+	if (sent.status !== "ERROR" || !sent.errorResult) return false;
+	const result = sent.errorResult.result();
+	// A fee bump reports the channel's sequence clash as its inner transaction's result.
+	const code =
+		result.switch().name === "txFeeBumpInnerFailed"
+			? result.innerResultPair().result().result().switch().name
+			: result.switch().name;
+	return code === "txBadSeq";
 }

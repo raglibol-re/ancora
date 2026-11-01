@@ -1,5 +1,6 @@
 import { Contract, Keypair, rpc, xdr } from "@stellar/stellar-sdk";
 import { tokenBalance } from "../../shared/tokenBalance.js";
+import { CHANNEL_COUNT, readyChannels } from "./channels.js";
 import { required, type ServerConfig } from "./serverConfig.js";
 
 // Read-only checks for the demo admin's health panel. Nothing here signs anything.
@@ -101,6 +102,8 @@ export type OperatorHealth = {
 	xlmStroops: string;
 	/** Test-money float per accepted stablecoin. */
 	floats: { symbol: string; token: string; stroops: string }[];
+	/** Channel accounts server transactions travel on (see channels.ts). */
+	channels: { ready: number; total: number };
 };
 
 /** The demo operator's floats. It pays sponsored fees and sends test money; it signs for no org. */
@@ -108,15 +111,18 @@ export async function operatorHealth(
 	config: ServerConfig,
 	nativeToken: string,
 ): Promise<OperatorHealth> {
-	const address = Keypair.fromSecret(required("DEPLOYER_SECRET")).publicKey();
+	const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
+	const address = operator.publicKey();
 	const assets = [...config.orgAssets.values()];
-	const [xlm, ...floats] = await Promise.all([
+	const [ready, xlm, ...floats] = await Promise.all([
+		readyChannels(config, operator),
 		tokenBalance(config, nativeToken, address).catch(() => 0n),
 		...assets.map((asset) => tokenBalance(config, asset.token, address).catch(() => 0n)),
 	]);
 	return {
 		address,
 		xlmStroops: xlm.toString(),
+		channels: { ready, total: CHANNEL_COUNT },
 		floats: assets.map((asset, index) => ({
 			symbol: asset.symbol,
 			token: asset.token,

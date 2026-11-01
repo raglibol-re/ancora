@@ -10,6 +10,7 @@ export type AdminHealth = {
 		address: string;
 		xlmStroops: string;
 		floats: { symbol: string; token: string; stroops: string }[];
+		channels: { ready: number; total: number };
 	} | null;
 	relayer: { allowedOrigins: string[]; rpcUrl: string };
 };
