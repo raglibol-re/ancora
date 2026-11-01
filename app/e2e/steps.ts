@@ -25,7 +25,8 @@ export async function createPass(page: Page, name: string): Promise<void> {
 /** The pass's ancora ID as shown on the pass page, without the grouping spaces. */
 export async function readAncoraId(page: Page): Promise<string> {
 	await page.goto("/app/me");
-	const shown = await page.getByLabel("Your ancora pass").locator("code").first().innerText();
+	const shown =
+		(await page.getByLabel("Your ancora pass").locator("code").first().textContent()) ?? "";
 	const id = shown.replace(/\s/g, "");
 	expect(id).toMatch(/^C[A-Z2-7]{55}$/);
 	return id;
