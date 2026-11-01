@@ -277,6 +277,8 @@ export interface DataSource {
 	readonly releases: ReleaseSupport | null;
 	/** Deals with other parties; null where there is no deal contract (sample data). */
 	readonly deals: DealSupport | null;
+	/** The SEP-40 oracle organizations may adopt for exchange rates; null where there is none. */
+	readonly fxOracle: string | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

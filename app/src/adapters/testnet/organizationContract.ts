@@ -1,4 +1,6 @@
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
+import type { Currency } from "../../domain/money.ts";
+import { readControls } from "./controlsRead.ts";
 import type { HistoryCache } from "./historyCache.ts";
 import { mapBudgetUse, mapLimit, type OnchainSnapshot } from "./mapOrganization.ts";
 import { type HistoryPage, readTransfers } from "./orgHistory.ts";
@@ -137,13 +139,17 @@ export async function readOrganization(
 	);
 	const tokens = assets.map((asset) => String(asset.token));
 	const known = history?.load(contractId) ?? null;
-	const [escrows, balances, reserves, page] = await Promise.all([
+	const currencies = [
+		...new Set([String(info.base_currency), ...assets.map((a) => String(a.currency))]),
+	] as Currency[];
+	const [escrows, balances, reserves, page, controls] = await Promise.all([
 		readEscrows(network, contractId, requests),
 		readBalances(network, contractId, tokens),
 		readReserves(network, contractId, assets),
 		// The ledger's own record of money in and out. A failed read keeps what this device has
 		// rather than hiding the organization; the next read tries again.
 		readTransfers(network, contractId, tokens, known).catch((): HistoryPage | null => null),
+		version >= 8 ? readControls(network, contractId, currencies) : Promise.resolve(null),
 	]);
 	if (page && page !== known) history?.save(contractId, page);
 	return {
@@ -165,6 +171,7 @@ export async function readOrganization(
 		setupPhase,
 		policyHash: hex(policyHash),
 		version,
+		controls,
 	};
 }
 

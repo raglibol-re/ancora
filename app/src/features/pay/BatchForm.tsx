@@ -191,6 +191,9 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 					token={token}
 					amount={total > 0 ? total : null}
 					recipientIsNew={anyNew}
+					recipients={lines
+						.filter((line) => line.to.trim())
+						.map((line) => payeeOf(line.to)?.account ?? line.to.trim())}
 					category={category || null}
 				/>
 				{account.org.policy.budgets.length > 0 && (

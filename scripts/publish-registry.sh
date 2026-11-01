@@ -46,6 +46,7 @@ releases=(
 	"ancora-registry ancora_registry"
 	"ancora-recovery ancora_recovery"
 	"ancora-seal-verifier ancora_seal_verifier"
+	"ancora-deal ancora_deal"
 )
 
 echo "Registry channel $REGISTRY, author $AUTHOR, version $VERSION"

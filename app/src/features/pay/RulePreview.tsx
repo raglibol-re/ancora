@@ -1,8 +1,8 @@
 import { availableBalance, currencyOf, isForeign, type OrgAccount } from "../../domain/account.ts";
 import { checkBudget, describePeriod } from "../../domain/budgets.ts";
 import type { Cents } from "../../domain/money.ts";
-import { fitsLimit, periodLabel, remainingAllowance } from "../../domain/rules/limits.ts";
-import { evaluatePayment, limitEvaluation } from "../../domain/rules/policy.ts";
+import { evaluateProposal } from "../../domain/rules/controls.ts";
+import { periodLabel, remainingAllowance } from "../../domain/rules/limits.ts";
 import { formatMoney } from "../../ui/format.ts";
 import { describeEvaluation } from "../requests/describe.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -13,6 +13,8 @@ type RulePreviewProps = {
 	token: string;
 	amount: Cents | null;
 	recipientIsNew: boolean;
+	/** Every recipient's address as typed or chosen (one, or each line of a batch). */
+	recipients: readonly string[];
 	category: string | null;
 };
 
@@ -22,6 +24,7 @@ export function RulePreview({
 	token,
 	amount,
 	recipientIsNew,
+	recipients,
 	category,
 }: RulePreviewProps) {
 	const { me } = useWorkspace();
@@ -37,17 +40,26 @@ export function RulePreview({
 	const member = account.org.members.find((m) => m.personId === me.id);
 	const budget = checkBudget(account, category, amount, foreignCurrency, now);
 	const overBudget = budget.kind === "over";
-	const withinLimit = !foreignCurrency && !overBudget && fitsLimit(member, amount, now);
-	const evaluation = withinLimit
-		? limitEvaluation()
-		: evaluatePayment(account.org.policy, {
-				amount,
-				recipientIsNew,
-				foreignCurrency,
-				overBudget,
-			});
+	const proposal = evaluateProposal(
+		account.org,
+		{ requesterId: me.id, token, amount, category, recipients, recipientIsNew, overBudget },
+		now,
+	);
 	const available = availableBalance(account, token);
 	const currency = currencyOf(account, token);
+	if (proposal.kind === "refused") {
+		return (
+			<div className={styles.preview} aria-live="polite">
+				<p className={styles.warning}>
+					Your organization only pays recipients on its allowlist, and this one isn't on it. Ask for
+					them to be added on the Rules page.
+				</p>
+			</div>
+		);
+	}
+	const { evaluation, use, amountInTiers, outsideAllowlist } = proposal;
+	const withinLimit = use.kind !== "none";
+	const allowance = use.kind === "allowance" ? member?.allowances?.[use.index] : undefined;
 
 	return (
 		<div className={styles.preview} aria-live="polite">
@@ -69,7 +81,21 @@ export function RulePreview({
 					{budget.kind === "over" ? "; this payment goes beyond it." : "."}
 				</p>
 			)}
-			{member?.limit && !foreignCurrency && (
+			{allowance && (
+				<p className={styles.detail}>
+					Inside your allowance
+					{allowance.category ? ` for #${allowance.category}` : ""}:{" "}
+					{formatMoney(remainingAllowance(allowance, now), currency)} of{" "}
+					{formatMoney(allowance.amount, currency)} left this {periodLabel(allowance.periodSeconds)}
+					.
+				</p>
+			)}
+			{outsideAllowlist && (
+				<p className={styles.detail}>
+					This recipient isn't on your allowlist, so the strictest approvals apply.
+				</p>
+			)}
+			{member?.limit && !foreignCurrency && !allowance && (
 				<p className={styles.detail}>
 					Your spending limit: {formatMoney(remainingAllowance(member.limit, now), currency)} of{" "}
 					{formatMoney(member.limit.amount, currency)} left this{" "}
@@ -77,10 +103,11 @@ export function RulePreview({
 					{withinLimit ? "." : "; this payment goes through the normal rules."}
 				</p>
 			)}
-			{foreignCurrency && (
+			{foreignCurrency && !withinLimit && (
 				<p className={styles.detail}>
-					The rules are in {account.org.baseCurrency}; a payment in {currency} takes the strictest
-					tier and the seal until a live exchange rate is connected.
+					{amountInTiers !== null
+						? `The rules are in ${account.org.baseCurrency}: at today's rate this is about ${formatMoney(amountInTiers, account.org.baseCurrency)}.`
+						: `The rules are in ${account.org.baseCurrency}; without a current exchange rate a payment in ${currency} takes the strictest approvals and the seal.`}
 				</p>
 			)}
 			{!withinLimit && recipientIsNew && account.org.policy.newRecipientApprovals.length > 0 && (

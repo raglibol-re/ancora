@@ -80,6 +80,30 @@ export function describeChange(org: HasRoles, change: GovernanceChange, nameOf: 
 				.join(", ")}`;
 		case "upgrade":
 			return `Move to ancora release ${change.version ?? change.wasmHash.slice(0, 12)}`;
+		case "setAllowance": {
+			const asset = org.assets?.find((a) => a.token === change.token);
+			const scope = [
+				asset ? `in ${asset.symbol}` : null,
+				change.category ? `for #${change.category}` : null,
+			]
+				.filter(Boolean)
+				.join(" ");
+			return change.amount === 0
+				? `Remove the allowance of ${nameOf(change.personId)} ${scope}`
+				: `Let ${nameOf(change.personId)} pay ${formatMoney(change.amount, asset?.currency ?? org.baseCurrency ?? "EUR")} per ${periodLabel(change.periodSeconds)} ${scope} without approvals`;
+		}
+		case "setRecipients": {
+			const count = change.rule.allowed.length;
+			const list = `${count} allowed recipient${count === 1 ? "" : "s"}`;
+			if (change.rule.mode === "open") return "Pay any recipient under the normal rules";
+			return change.rule.mode === "only"
+				? `Pay only the ${list}`
+				: `Send payments outside the ${list} to the strictest approvals`;
+		}
+		case "setFxOracle":
+			return change.oracle
+				? "Use live exchange rates for payments in other currencies"
+				: "Stop using exchange rates; other currencies take the strictest approvals";
 		case "setSpendingLimit":
 			return change.amount === 0
 				? `Remove the spending limit of ${nameOf(change.personId)}`

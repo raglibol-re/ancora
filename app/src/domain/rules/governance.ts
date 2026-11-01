@@ -1,12 +1,14 @@
 import type { Cents, Currency } from "../money.ts";
 import { err, ok, type Result } from "../result.ts";
 import { canBeSatisfied, rankOf } from "./approvals.ts";
+import { withAllowance } from "./controls.ts";
 import {
 	type Asset,
 	type Member,
 	type Org,
 	type PersonId,
 	type Policy,
+	type RecipientRule,
 	type Role,
 	type RoleId,
 	type RuleError,
@@ -33,7 +35,23 @@ export type GovernanceChange =
 	 * Run the latest published release of the organization's code (hex Wasm hash). The version
 	 * is for people; the contract only checks the hash against the Stellar Registry.
 	 */
-	| { type: "upgrade"; wasmHash: string; version: string | null };
+	| { type: "upgrade"; wasmHash: string; version: string | null }
+	/**
+	 * An allowance for one asset (amount in its currency) and/or one budget category (amount in
+	 * the rules' currency); amount 0 removes it.
+	 */
+	| {
+			type: "setAllowance";
+			personId: PersonId;
+			token: string | null;
+			category: string | null;
+			amount: Cents;
+			periodSeconds: number;
+	  }
+	/** Who the organization pays: anyone, anyone with the rest at the strictest tier, or only these. */
+	| { type: "setRecipients"; rule: RecipientRule }
+	/** The exchange-rate oracle for the tiers of other-currency payments; null turns rates off. */
+	| { type: "setFxOracle"; oracle: string | null };
 
 export type NewOrgInput = {
 	id: string;
@@ -181,7 +199,10 @@ function nextOrg(org: Org, change: GovernanceChange): Result<Org, RuleError> {
 					org,
 					org.members.map((m) => {
 						if (m.personId !== change.personId) return m;
-						if (change.amount === 0) return { personId: m.personId, roleId: m.roleId };
+						if (change.amount === 0) {
+							const { limit: _removed, ...rest } = m;
+							return rest;
+						}
 						return {
 							...m,
 							limit: {
@@ -194,6 +215,47 @@ function nextOrg(org: Org, change: GovernanceChange): Result<Org, RuleError> {
 					}),
 				),
 			);
+		case "setAllowance": {
+			if (!isMember(change.personId)) return notMember;
+			const asset = change.token ? org.assets.find((a) => a.token === change.token) : null;
+			const valid =
+				(change.token !== null || change.category !== null) &&
+				asset !== undefined &&
+				(change.category === null ||
+					org.policy.budgets.some((b) => b.category === change.category)) &&
+				!(asset && change.category !== null && asset.currency !== org.baseCurrency) &&
+				change.amount >= 0 &&
+				(change.amount === 0 || change.periodSeconds > 0);
+			if (!valid) {
+				return err(
+					ruleError(
+						"invalid-limit",
+						"An allowance needs an accepted asset or a budget category (a category only in the rules' currency), an amount above zero and a period.",
+					),
+				);
+			}
+			return ok(
+				withMembers(
+					org,
+					org.members.map((m) =>
+						m.personId === change.personId
+							? withAllowance(m, change, change.amount, change.periodSeconds, 0)
+							: m,
+					),
+				),
+			);
+		}
+		case "setRecipients": {
+			const unique = new Set(change.rule.allowed);
+			if (change.rule.allowed.length > 100 || unique.size !== change.rule.allowed.length) {
+				return err(
+					ruleError("invalid-policy", "An allowlist holds up to 100 different addresses."),
+				);
+			}
+			return ok({ ...org, recipients: change.rule });
+		}
+		case "setFxOracle":
+			return ok({ ...org, fx: change.oracle ? { oracle: change.oracle, prices: {} } : null });
 	}
 }
 

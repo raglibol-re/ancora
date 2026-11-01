@@ -22,14 +22,14 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "ancora-deal"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "ancora-organization"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "ancora-deal",
  "ancora-registry",
@@ -41,21 +41,21 @@ dependencies = [
 
 [[package]]
 name = "ancora-recovery"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "ancora-registry"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "ancora-seal-verifier"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "fips204",
  "serde_json",

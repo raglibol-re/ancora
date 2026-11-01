@@ -29,6 +29,7 @@ import type {
 } from "../../domain/rules/requests.ts";
 import { customRole } from "../../domain/rules/roles.ts";
 import { templates } from "../../domain/rules/templates.ts";
+import type { Controls } from "./controlsRead.ts";
 import { mapDealAction } from "./dealCodec.ts";
 import type { ChainTransfer } from "./orgHistory.ts";
 import { toCents } from "./scv.ts";
@@ -67,6 +68,8 @@ export type OnchainSnapshot = {
 	policyHash: string;
 	/** `version()` of the organization's code; 0 for organizations from before that view. */
 	version: number;
+	/** Allowances, allowlist and exchange rates (interface 8); null for earlier code. */
+	controls: Controls | null;
 };
 
 const STATUS: Record<string, RequestStatus> = {
@@ -312,6 +315,27 @@ function mapChange(value: unknown): GovernanceChange {
 				type: "setRoles",
 				roles: (fields[0] as unknown[]).map((id) => customRole(str(id))),
 			};
+		case "SetAllowance":
+			return {
+				type: "setAllowance",
+				personId: str(fields[0]),
+				token: fields[1] ? str(fields[1]) : null,
+				category: fields[2] ? str(fields[2]) : null,
+				amount: toCents(big(fields[3])),
+				periodSeconds: num(fields[4]),
+			};
+		case "SetRecipients":
+			return {
+				type: "setRecipients",
+				rule: {
+					mode: ({ Open: "open", Approve: "approve", Only: "only" } as const)[
+						variant(fields[0])[0] as "Open" | "Approve" | "Only"
+					],
+					allowed: (fields[1] as unknown[]).map(str),
+				},
+			};
+		case "SetFxOracle":
+			return { type: "setFxOracle", oracle: fields[0] ? str(fields[0]) : null };
 		case "Upgrade":
 			return {
 				type: "upgrade",
@@ -451,12 +475,21 @@ export function mapOrganization(
 		roles,
 		members: snapshot.members.map((m) => {
 			const limit = snapshot.limits.get(str(m.address));
-			return { personId: str(m.address), roleId: str(m.role), ...(limit ? { limit } : {}) };
+			const allowances = snapshot.controls?.allowances.get(str(m.address));
+			return {
+				personId: str(m.address),
+				roleId: str(m.role),
+				...(limit ? { limit } : {}),
+				...(allowances ? { allowances } : {}),
+			};
 		}),
 		policy: mapPolicy(snapshot.policy),
 		founderId: str(info.founder),
 		baseCurrency: currency(info.base_currency),
 		assets,
+		...(snapshot.controls
+			? { recipients: snapshot.controls.recipients, fx: snapshot.controls.fx }
+			: {}),
 	};
 	const requests = snapshot.requests.map((r) =>
 		mapRequest(r, now, assets, snapshot.escrows.get(String(r.id)) ?? null),

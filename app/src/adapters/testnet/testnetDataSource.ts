@@ -99,6 +99,7 @@ export class TestnetDataSource implements DataSource {
 	readonly registryNames: RegistryNameSupport | null;
 	readonly releases: ReleaseSupport | null;
 	readonly deals: DealSupport | null;
+	readonly fxOracle: string | null;
 	readonly lifeline: LifelineSupport = {
 		overview: (person) =>
 			this.remember(`lifeline:${person}`, 20_000, () =>
@@ -233,6 +234,7 @@ export class TestnetDataSource implements DataSource {
 					},
 				}
 			: null;
+		this.fxOracle = config.fxOracle || null;
 		this.deals = config.dealContract
 			? createDealSupport({
 					network: config,

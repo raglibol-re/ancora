@@ -74,6 +74,9 @@ export const assetSpec = (token: string, currency: string, vault: string | null)
 		vault: vault ? address(vault) : xdr.ScVal.scvVoid(),
 	});
 
+/** The contract's `RecipientMode` variants. */
+export const RECIPIENT_MODES = { open: "Open", approve: "Approve", only: "Only" } as const;
+
 /**
  * The contract's `Change` enum. Rule updates carry the SHA-256 of their policy document (hex);
  * template switching has no on-chain counterpart yet.
@@ -126,6 +129,26 @@ export function changeToScVal(change: GovernanceChange, policyHashHex?: string):
 			return xdr.ScVal.scvVec([
 				symbol("Upgrade"),
 				xdr.ScVal.scvBytes(Buffer.from(change.wasmHash, "hex")),
+			]);
+		case "setAllowance":
+			return xdr.ScVal.scvVec([
+				symbol("SetAllowance"),
+				address(change.personId),
+				change.token ? address(change.token) : xdr.ScVal.scvVoid(),
+				optionalSymbol(change.category),
+				i128(toStroops(change.amount)),
+				u64(change.periodSeconds),
+			]);
+		case "setRecipients":
+			return xdr.ScVal.scvVec([
+				symbol("SetRecipients"),
+				xdr.ScVal.scvVec([symbol(RECIPIENT_MODES[change.rule.mode])]),
+				xdr.ScVal.scvVec(change.rule.allowed.map(address)),
+			]);
+		case "setFxOracle":
+			return xdr.ScVal.scvVec([
+				symbol("SetFxOracle"),
+				change.oracle ? address(change.oracle) : xdr.ScVal.scvVoid(),
 			]);
 		case "switchTemplate":
 			return null;

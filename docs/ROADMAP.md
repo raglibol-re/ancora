@@ -125,8 +125,8 @@ Starting point (1 Nov 2026): everything in the HackMeridian table above plus cus
 | Deliverable | Done when |
 |---|---|
 | Security seal with a device-held ML-DSA key: generated on the approving device, an external signer on a context rule that only covers `seal`; the native host function replaces the in-contract verifier once Protocol 30 is on testnet and mainnet (vote 23 Nov 2026) | A strictest-tier payment needs the device's ML-DSA signature, verified on-chain |
-| Reflector (SEP-40) rates for the rules, so a payment in another currency meets the right tier instead of the strictest | A EURC payment in a USD organization is judged at the oracle rate, shown in the preview |
-| Spending limits per category and asset, recipient allowlists built on the address book | Contract tests and UI; a payment outside the allowlist is refused or escalated as the rules say |
+| Reflector (SEP-40) rates for the rules, so a payment in another currency meets the right tier instead of the strictest (done 1 Nov: `SetFxOracle`, Reflector's free forex oracle, Rules → Exchange rates) | A EURC payment in a USD organization is judged at the oracle rate, shown in the preview |
+| Spending limits per category and asset, recipient allowlists built on the address book (done 1 Nov: `SetAllowance`, `SetRecipients`) | Contract tests and UI; a payment outside the allowlist is refused or escalated as the rules say |
 | Lifeline in full: inactivity path (heartbeat, check-in reminders, successors) and succession plans per role | A 2-of-2 rule no longer deadlocks when a holder is gone; drill on testnet |
 | Perch step 1: publish ancora's rules document in perch's IR where it fits | Document and mapping published; upstream proposal for `i128` range predicates and asynchronous approvals |
 
@@ -164,12 +164,16 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 ### C. Treasury governance parity (Squads, Safe)
 
-14. **Custom roles**: done 28 Oct (add, reorder, drop through governance; templates are presets). Still open: per-category and per-asset spending limits, recipient allowlists. Contract change.
+14. **Custom roles**: done 28 Oct (add, reorder, drop through governance; templates are presets). Per-category and per-asset allowances and recipient allowlists done 1 Nov (release 0.8.0).
 15. **Any action under the rules.** Approve arbitrary calls to allowlisted contracts the way Safe's transaction builder does, with a simulation preview; today only payments and governance changes.
 16. **More policy.** Velocity limits per period for the whole organization, emergency freeze by a quorum, time locks per tier (the objection window exists).
 17. **Keys.** Hardware security keys through the passkey flow (exists, untested), the ML-DSA device key for the seal, passkey re-authentication for sensitive actions.
 18. **Integrations.** Signed audit-log export, webhooks, an SDK, accounting exports (DATEV, QuickBooks).
 19. **Lifeline in full.** Inactivity path and succession plans (recovery contract change).
+
+### Deals between organizations (release 0.8.0, 1 Nov)
+
+Milestone escrow (`contracts/deal`, no admin): create, accept, fund, request a payout, approve or object, automatic payout after the objection period, cancel (both sides once funded), dispute and arbiter ruling. Each organization takes every step through its own rules (`DealCall` requests). Next: counterparties by ancora name, netting, delivery versus payment, shared pots (see contracts/deal/README.md).
 
 ### D. Platform
 

@@ -94,6 +94,8 @@ export class LocalDataSource implements DataSource {
 	readonly releases = null;
 	/** Deals run in the deal contract on the testnet; sample data has none. */
 	readonly deals = null;
+	/** No live exchange rates in sample data; other currencies take the strictest approvals. */
+	readonly fxOracle = null;
 	readonly registryNames: RegistryNameSupport = {
 		channel: () => "simulated",
 		current: async (orgId) => {

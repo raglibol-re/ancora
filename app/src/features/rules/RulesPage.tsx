@@ -6,9 +6,12 @@ import { Page } from "../../ui/Page.tsx";
 import { describeEvaluation } from "../requests/describe.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { AllowancesCard } from "./AllowancesCard.tsx";
 import { AssetsCard } from "./AssetsCard.tsx";
 import { BudgetsRulesCard } from "./BudgetsRulesCard.tsx";
+import { ExchangeRatesCard } from "./ExchangeRatesCard.tsx";
 import { PeopleCard } from "./PeopleCard.tsx";
+import { RecipientsCard } from "./RecipientsCard.tsx";
 import { RolesCard } from "./RolesCard.tsx";
 import { RulesHashCard } from "./RulesHashCard.tsx";
 import { TemplateCard } from "./TemplateCard.tsx";
@@ -50,6 +53,16 @@ function Rules({ account }: { account: OrgAccount }) {
 				<PeopleCard key={`people-${account.org.id}`} account={account} />
 			</div>
 			<RolesCard key={`roles-${account.org.id}`} account={account} />
+			{(!account.onchain || account.onchain.controls) && (
+				<>
+					<AllowancesCard key={`allowances-${account.org.id}`} account={account} />
+					<RecipientsCard
+						key={`recipients-${account.org.id}-${JSON.stringify(account.org.recipients ?? null)}`}
+						account={account}
+					/>
+					<ExchangeRatesCard account={account} />
+				</>
+			)}
 			<AssetsCard key={`assets-${account.org.id}`} account={account} />
 			<TemplateCard key={`template-${account.org.id}`} account={account} />
 		</Page>

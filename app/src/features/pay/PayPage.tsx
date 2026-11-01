@@ -350,6 +350,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 						token={token}
 						amount={amount}
 						recipientIsNew={recipientIsNew}
+						recipients={[
+							payeeId === NEW_RECIPIENT
+								? newAccount.trim()
+								: (account.payees.find((p) => p.id === payeeId)?.account ?? ""),
+						]}
 						category={category || null}
 					/>
 					{account.org.policy.budgets.length > 0 && (
