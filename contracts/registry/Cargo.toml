@@ -4,6 +4,7 @@ description = "ancora registry: profiles of people (smart-account addresses) and
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+license.workspace = true
 
 [lib]
 # "lib" lets the organization crate test against the real registry without a WASM import.

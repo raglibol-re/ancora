@@ -244,4 +244,4 @@ Built for HackMeridian 2026; continuing through the Stellar Community Fund #46. 
 
 ## License
 
-To be decided before the Stellar Community Fund submission.
+[Apache License 2.0](LICENSE): use, change and build on ancora, including commercially, with the patent grant the license includes.

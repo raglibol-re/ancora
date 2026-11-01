@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-01: ancora is open source under the Apache License 2.0 (LICENSE, and the license field of the app and every contract crate).
 - 2026-10-31: Server transactions no longer fail when two run at once. Sponsored fees, organization creation, test money and scheduled runs all come from the operator account; a sequence clash or the RPC asking to try again later is now rebuilt and resent instead of ending in "status NOT_FOUND". Reproduced with three simultaneous requests (two of three failed before).
 - 2026-10-28: Payment links. Organization → Payment links asks for money as an invoice or a fee, shared as a link or QR code; payers open a public page, pay from any Stellar wallet, and the contract records who paid. New organization Wasm (interface 6).
 - 2026-10-28: Landing headline renders the same in every browser: solid starlight and brass with a night halo instead of a text-clipped gradient under a drop-shadow filter, which Safari drew wrongly.

@@ -7,6 +7,7 @@ members = ["registry", "organization", "seal_verifier", "recovery"]
 version = "0.1.0"
 edition = "2021"
 publish = false
+license = "Apache-2.0"
 
 [workspace.dependencies]
 # soroban-sdk 28 matches OpenZeppelin stellar-contracts 0.8.0; the testnet runs protocol 29.
