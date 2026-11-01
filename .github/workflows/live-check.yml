@@ -1,0 +1,25 @@
+name: Live check
+
+# Hourly: is the live app up, does the testnet answer, can the operator still sponsor fees and
+# hand out BlendUSDC test money? A failed run makes GitHub email the team (scheduled-run failures
+# go to whoever last changed this schedule). The checks live in scripts/check-live.mjs.
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: live-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node scripts/check-live.mjs
