@@ -85,10 +85,15 @@ export type PaymentFacts = {
 	foreignCurrency?: boolean;
 	/** Beyond its soft budget: the strictest tier applies and approvers see the flag. */
 	overBudget?: boolean;
+	/** To a recipient outside an "approve" allowlist: the strictest tier applies. */
+	outsideAllowlist?: boolean;
 };
 
 export function evaluatePayment(policy: Policy, payment: PaymentFacts): Evaluation {
-	const strictest = payment.foreignCurrency === true || payment.overBudget === true;
+	const strictest =
+		payment.foreignCurrency === true ||
+		payment.overBudget === true ||
+		payment.outsideAllowlist === true;
 	const tierIndex = strictest
 		? policy.tiers.length - 1
 		: policy.tiers.findIndex((tier) => tier.upTo === null || payment.amount <= tier.upTo);

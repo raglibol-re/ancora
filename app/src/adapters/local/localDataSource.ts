@@ -39,13 +39,13 @@ import {
 } from "../../domain/discussion.ts";
 import type { Cents } from "../../domain/money.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
+import { bookUse } from "../../domain/rules/controls.ts";
 import {
 	applyChangeDirectly,
 	createOrg,
 	type GovernanceChange,
 	isSetupPhase,
 } from "../../domain/rules/governance.ts";
-import { bookLimit } from "../../domain/rules/limits.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
 import {
 	type ApprovalRequest,
@@ -477,6 +477,7 @@ export class LocalDataSource implements DataSource {
 					token: input.token,
 					amount: input.amount,
 					recipientId: payee.id,
+					recipientAccount: payee.account,
 					recipientIsNew: isNewRecipient(account, payee.id),
 					note: input.note.trim(),
 					category,
@@ -489,9 +490,21 @@ export class LocalDataSource implements DataSource {
 			const payees = account.payees.some((p) => p.id === payee.id)
 				? account.payees
 				: [...account.payees, payee];
-			// A payment inside the requester's allowance is booked against it (the contract does the same).
+			// A payment inside one of the requester's allowances is booked against it, like the contract.
 			const org = created.value.evaluation.withinLimit
-				? bookLimit(account.org, actorId, input.amount, now)
+				? bookUse(
+						account.org,
+						{
+							requesterId: actorId,
+							token: input.token,
+							amount: input.amount,
+							category,
+							recipients: [payee.account],
+							recipientIsNew: false,
+							overBudget: false,
+						},
+						now,
+					)
 				: account.org;
 			const budgetUse =
 				category && !foreign ? bookBudget(account, category, input.amount, now) : account.budgetUse;
@@ -514,6 +527,7 @@ export class LocalDataSource implements DataSource {
 			if (!funds.ok) return funds;
 			let payees = [...account.payees];
 			const lines = [];
+			const accounts: string[] = [];
 			for (const line of input.lines) {
 				const target = line.payee;
 				const payee =
@@ -527,6 +541,7 @@ export class LocalDataSource implements DataSource {
 				if (!payee) return notFound();
 				if (!payees.some((p) => p.id === payee.id)) payees = [...payees, payee];
 				lines.push({ recipientId: payee.id, amount: line.amount, note: line.note.trim() });
+				accounts.push(payee.account);
 			}
 			const now = this.clock();
 			const asset = account.org.assets.find((a) => a.token === input.token);
@@ -541,6 +556,7 @@ export class LocalDataSource implements DataSource {
 					requesterId: actorId,
 					token: input.token,
 					lines,
+					recipientAccounts: accounts,
 					recipientIsNew: lines.some((line) => isNewRecipient(account, line.recipientId)),
 					note: input.note.trim(),
 					category,
@@ -550,7 +566,19 @@ export class LocalDataSource implements DataSource {
 			);
 			if (!created.ok) return created;
 			const org = created.value.evaluation.withinLimit
-				? bookLimit(account.org, actorId, amount, now)
+				? bookUse(
+						account.org,
+						{
+							requesterId: actorId,
+							token: input.token,
+							amount,
+							category,
+							recipients: accounts,
+							recipientIsNew: false,
+							overBudget: false,
+						},
+						now,
+					)
 				: account.org;
 			const budgetUse =
 				category && !foreign ? bookBudget(account, category, amount, now) : account.budgetUse;

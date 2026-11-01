@@ -27,6 +27,7 @@ const payment = (requesterId: string, amount: number, recipientIsNew = false, to
 	token,
 	amount,
 	recipientId: "acme",
+	recipientAccount: "PT50 0002 0123 1234 5678 9015 4",
 	recipientIsNew,
 	note: "",
 });

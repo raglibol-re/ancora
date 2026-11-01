@@ -8,6 +8,7 @@
 //! `require_auth`; once the rules are satisfied the contract executes it.
 #![no_std]
 
+mod controls;
 mod rules;
 mod templates;
 mod types;
@@ -36,8 +37,10 @@ const MAX_BATCH_LINES: u32 = 50;
 const MAX_LINK_PAYMENTS: u32 = 500;
 /// Raised whenever the interface gains something the app needs to know about: 2 = standing
 /// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments, 6 = payment links,
-/// 7 = upgrades to published releases (`Upgrade`). Organizations before this view report nothing.
-const CONTRACT_VERSION: u32 = 7;
+/// 7 = upgrades to published releases (`Upgrade`), 8 = allowances per asset and category,
+/// recipient allowlists, exchange rates for the tiers (`controls.rs`). Organizations before this
+/// view report nothing.
+const CONTRACT_VERSION: u32 = 8;
 /// The organization's code on the Stellar Registry (`scripts/publish-registry.sh`).
 const RELEASE_NAME: &str = "ancora-organization";
 const SECONDS_PER_HOUR: u64 = 3_600;
@@ -110,6 +113,12 @@ enum DataKey {
     LinkPayments(u64),
     /// The Stellar Registry whose `ancora-organization` releases this organization may upgrade to.
     Releases,
+    /// A member's allowances per asset or budget category (controls.rs).
+    Allowances(Address),
+    /// The recipient allowlist and how it applies.
+    Recipients,
+    /// The SEP-40 oracle for exchange rates.
+    FxOracle,
 }
 
 /// Emitted when the organization starts running a new release.
@@ -369,6 +378,7 @@ impl Organization {
                 .set(&DataKey::Limit(new.clone()), &limit);
             e.storage().persistent().remove(&old_limit);
         }
+        controls::move_allowances(e, &old, Some(&new));
         if info.founder == old {
             info.founder = new.clone();
             e.storage().instance().set(&DataKey::Info, &info);
@@ -693,7 +703,9 @@ impl Organization {
         }
         let mut total: i128 = 0;
         let mut any_new = false;
+        let mut escalate = false;
         for line in lines.iter() {
+            escalate = controls::recipient_escalates(e, &line.to)? || escalate;
             if line.amount <= 0 {
                 return Err(Error::InvalidAmount);
             }
@@ -718,12 +730,20 @@ impl Organization {
             (Some(b), _) if b.hard => return Err(Error::BudgetExceeded),
             (Some(_), _) => true,
         };
-        let within_limit =
-            !over_budget && total_in_base.and_then(|a| use_limit(e, &by, a)).is_some();
+        let within_limit = !over_budget
+            && !escalate
+            && (controls::use_allowance(e, &by, &token, &category, total, total_in_base).is_some()
+                || total_in_base.and_then(|a| use_limit(e, &by, a)).is_some());
         let evaluation = if within_limit {
             rules::limit_evaluation(e)
         } else {
-            rules::evaluate_payment(&policy, total_in_base, any_new, over_budget)?
+            rules::evaluate_payment(
+                &policy,
+                controls::tier_amount(e, &info, &asset, total),
+                any_new,
+                over_budget,
+                escalate,
+            )?
         };
         if let (Some(b), Some(a)) = (&budget, total_in_base) {
             book_budget(e, b, a);
@@ -1262,6 +1282,7 @@ fn propose_payment_from(
     if amount > available(e, &token) {
         return Err(Error::InsufficientFunds);
     }
+    let escalate = controls::recipient_escalates(e, &to)?;
     let policy = load_policy(e);
     let amount_in_base = (asset.currency == info.base_currency).then_some(amount);
     // Budgets are measured in the rules' currency: a payment in another currency can't be
@@ -1276,13 +1297,23 @@ fn propose_payment_from(
         (Some(b), _) if b.hard => return Err(Error::BudgetExceeded),
         (Some(_), _) => true,
     };
-    // Inside the requester's spending limit (rules' currency only) nothing needs approval,
-    // unless the payment is over its budget: then approvers must see it.
-    let within_limit = !over_budget && amount_in_base.and_then(|a| use_limit(e, &by, a)).is_some();
+    // Inside one of the requester's allowances (asset or category first, then the general
+    // limit in the rules' currency) nothing needs approval, unless the payment is over its
+    // budget or goes to a recipient outside the allowlist: then approvers must see it.
+    let within_limit = !over_budget
+        && !escalate
+        && (controls::use_allowance(e, &by, &token, &category, amount, amount_in_base).is_some()
+            || amount_in_base.and_then(|a| use_limit(e, &by, a)).is_some());
     let evaluation = if within_limit {
         rules::limit_evaluation(e)
     } else {
-        rules::evaluate_payment(&policy, amount_in_base, !has_paid(e, &to), over_budget)?
+        rules::evaluate_payment(
+            &policy,
+            controls::tier_amount(e, &info, &asset, amount),
+            !has_paid(e, &to),
+            over_budget,
+            escalate,
+        )?
     };
     if let (Some(b), Some(a)) = (&budget, amount_in_base) {
         book_budget(e, b, a);
@@ -1670,6 +1701,17 @@ fn plan_change(
                 return Err(Error::NotLatestRelease);
             }
         }
+        Change::SetAllowance(who, token, category, amount, period) => {
+            controls::plan_allowance(
+                e,
+                info,
+                members,
+                policy,
+                (who, token, category, *amount, *period),
+            )?;
+        }
+        Change::SetRecipients(_, allowed) => controls::plan_recipients(allowed)?,
+        Change::SetFxOracle(oracle) => controls::plan_fx_oracle(e, oracle)?,
     }
     let strictest = |p: &Policy| {
         p.tiers
@@ -1724,6 +1766,7 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
             e.storage()
                 .persistent()
                 .remove(&DataKey::Limit(who.clone()));
+            controls::move_allowances(e, who, None);
             registry.set_membership(&me, who, &false);
         }
         Change::ChangeRole(who, role) => {
@@ -1785,6 +1828,11 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
             }
             .publish(e);
         }
+        Change::SetAllowance(who, token, category, amount, period) => {
+            controls::apply_allowance(e, who, token, category, *amount, *period);
+        }
+        Change::SetRecipients(mode, allowed) => controls::apply_recipients(e, *mode, allowed),
+        Change::SetFxOracle(oracle) => controls::apply_fx_oracle(e, oracle),
     }
     Ok(())
 }
@@ -1943,6 +1991,8 @@ extern crate std;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_controls;
 #[cfg(test)]
 mod test_upgrade;
 

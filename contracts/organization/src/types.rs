@@ -78,6 +78,12 @@ pub enum Error {
     NotLatestRelease = 47,
     /// The Stellar Registry didn't answer with a published `ancora-organization` release.
     ReleaseUnavailable = 48,
+    /// The organization only pays recipients on its allowlist.
+    RecipientNotAllowed = 49,
+    /// An allowlist holds up to 100 distinct addresses.
+    InvalidRecipients = 50,
+    /// The exchange-rate oracle didn't answer like a SEP-40 oracle.
+    OracleUnavailable = 51,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -179,6 +185,45 @@ pub struct MemberLimit {
     pub limit: SpendingLimit,
 }
 
+/// An allowance scoped to one asset (amount in that token's units, any currency) and/or one
+/// budget category (amount in the rules' currency). Payments inside it need no approvals.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Allowance {
+    pub token: Option<Address>,
+    pub category: Option<Symbol>,
+    pub amount: i128,
+    pub period_seconds: u64,
+    /// Spent in the current window, which started at `window_start`.
+    pub spent: i128,
+    pub window_start: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct MemberAllowance {
+    pub member: Address,
+    pub allowance: Allowance,
+}
+
+#[contracttype]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RecipientMode {
+    /// Any recipient, under the normal rules.
+    Open,
+    /// Recipients outside the list take the strictest tier and never fit an allowance.
+    Approve,
+    /// Recipients outside the list are refused.
+    Only,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct RecipientRule {
+    pub mode: RecipientMode,
+    pub allowed: Vec<Address>,
+}
+
 /// A token the organization should accept, the fiat currency it stands for ("EUR", "USD") and,
 /// optionally, the DeFindex vault its Reserve earns in.
 #[contracttype]
@@ -232,6 +277,16 @@ pub enum Change {
     /// Stellar Registry this organization was deployed with. Approvers approve this exact hash;
     /// if a newer release appears before the change applies, it fails instead of moving on.
     Upgrade(BytesN<32>),
+    /// Give a member an allowance for one asset (in its units) and/or one budget category (in
+    /// the rules' currency): member, token, category, amount per period, period. Amount 0
+    /// removes it. The general limit stays `SetSpendingLimit`.
+    SetAllowance(Address, Option<Address>, Option<Symbol>, i128, u64),
+    /// Who the organization pays: everyone, everyone but approvers see the rest at the strictest
+    /// tier, or only the listed addresses.
+    SetRecipients(RecipientMode, Vec<Address>),
+    /// The SEP-40 oracle (Reflector) whose exchange rates set the tier of payments in another
+    /// currency; `None` sends them to the strictest tier again.
+    SetFxOracle(Option<Address>),
 }
 
 #[contracttype]

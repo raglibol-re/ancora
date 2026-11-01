@@ -253,6 +253,7 @@ fn payment_vectors() {
             Some(i128::from(vector.amount)),
             vector.recipient_is_new,
             false,
+            false,
         )
         .expect("evaluation");
         let approvers = addresses(&mut people, &vector.approvals);

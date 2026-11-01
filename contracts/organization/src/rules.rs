@@ -107,14 +107,16 @@ fn strictest_tier(policy: &Policy) -> Option<Tier> {
 /// `amount_in_base` is the amount in the currency the rules are written in. `None` means the
 /// payment is in another currency and no rate is available: it then takes the strictest tier
 /// and the seal, so a payment is never under-approved.
+/// `escalate` (a recipient outside an `Approve` allowlist) also takes the strictest tier.
 pub fn evaluate_payment(
     policy: &Policy,
     amount_in_base: Option<i128>,
     recipient_is_new: bool,
     over_budget: bool,
+    escalate: bool,
 ) -> Result<Evaluation, Error> {
     let index = match amount_in_base {
-        Some(amount) if !over_budget => policy
+        Some(amount) if !over_budget && !escalate => policy
             .tiers
             .iter()
             .position(|tier| tier.up_to.is_none_or(|limit| amount <= limit))

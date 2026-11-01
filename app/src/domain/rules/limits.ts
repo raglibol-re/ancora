@@ -15,7 +15,7 @@ export function periodLabel(seconds: number): string {
 }
 
 /** The limit with its window rolled forward to `now`: spent resets once a period has passed. */
-export function currentWindow(limit: SpendingLimit, now: number): SpendingLimit {
+export function currentWindow<T extends SpendingLimit>(limit: T, now: number): T {
 	return now >= limit.windowStart + limit.periodSeconds * 1000
 		? { ...limit, spent: 0, windowStart: now }
 		: limit;

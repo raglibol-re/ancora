@@ -11,8 +11,8 @@ use mock_vault::MockVault;
 pub(crate) struct World {
     pub(crate) e: Env,
     pub(crate) org: OrganizationClient<'static>,
-    token: Address,
-    token_client: token::Client<'static>,
+    pub(crate) token: Address,
+    pub(crate) token_client: token::Client<'static>,
     registry: RealRegistryClient<'static>,
     pub(crate) founder: Address,
     recovery: Address,
@@ -20,7 +20,7 @@ pub(crate) struct World {
     pub(crate) releases: MockReleasesClient<'static>,
 }
 
-fn euros(whole: i128) -> i128 {
+pub(crate) fn euros(whole: i128) -> i128 {
     whole * 100 * CENT
 }
 
@@ -145,7 +145,7 @@ fn recovering_requires_the_recovery_contracts_authorization() {
 }
 
 /// Accepts another token tagged with `currency` (setup phase) and funds it.
-fn add_asset(w: &World, currency: &str, whole: i128) -> Address {
+pub(crate) fn add_asset(w: &World, currency: &str, whole: i128) -> Address {
     let asset =
         w.e.register_stellar_asset_contract_v2(Address::generate(&w.e));
     w.org.change_directly(
@@ -1478,7 +1478,7 @@ fn changing_roles_requires_the_founders_authorization() {
 #[test]
 fn the_contract_reports_its_interface_version() {
     let w = club(1_000);
-    assert_eq!(w.org.version(), 7);
+    assert_eq!(w.org.version(), crate::CONTRACT_VERSION);
 }
 
 #[test]

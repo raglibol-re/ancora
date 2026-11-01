@@ -54,7 +54,7 @@ fn upgrades_to_the_latest_release_and_runs_its_code() {
     let w = club(100);
     let release = empty_contract(&w.e);
     w.releases.publish(&release);
-    assert_eq!(w.org.version(), 7);
+    assert_eq!(w.org.version(), crate::CONTRACT_VERSION);
     w.org
         .change_directly(&w.founder, &Change::Upgrade(release.clone()));
     assert!(w.org.try_version().is_err());
@@ -70,7 +70,7 @@ fn refuses_code_that_is_not_the_latest_release() {
             .try_change_directly(&w.founder, &Change::Upgrade(other)),
         Err(Ok(Error::NotLatestRelease))
     );
-    assert_eq!(w.org.version(), 7);
+    assert_eq!(w.org.version(), crate::CONTRACT_VERSION);
 }
 
 #[test]
@@ -104,7 +104,7 @@ fn after_setup_an_upgrade_waits_for_approvals_and_fails_if_a_newer_release_appea
     let failed = w.org.request(&id);
     assert_eq!(failed.status, Status::Failed);
     assert_eq!(failed.failure, Some(Error::NotLatestRelease as u32));
-    assert_eq!(w.org.version(), 7);
+    assert_eq!(w.org.version(), crate::CONTRACT_VERSION);
 }
 
 #[test]
@@ -128,5 +128,5 @@ fn an_upgrade_needs_the_founders_own_authorization_in_the_setup_phase() {
         }])
         .try_change_directly(&w.founder, &change)
         .is_err());
-    assert_eq!(w.org.version(), 7);
+    assert_eq!(w.org.version(), crate::CONTRACT_VERSION);
 }

@@ -6,10 +6,10 @@ import {
 	isEligibleApprover,
 	memberRank,
 } from "./approvals.ts";
+import { evaluateProposal } from "./controls.ts";
 import { applyChange, type GovernanceChange } from "./governance.ts";
-import { fitsLimit } from "./limits.ts";
 import { type Evaluation, type Org, type PersonId, type RuleError, ruleError } from "./model.ts";
-import { evaluateGovernance, evaluatePayment, limitEvaluation } from "./policy.ts";
+import { evaluateGovernance } from "./policy.ts";
 
 /**
  * pending   → waiting for approvals (and the seal, if required)
@@ -130,9 +130,19 @@ export type NewPayment = {
 	token: string;
 	amount: Cents;
 	recipientId: string;
+	/** The recipient's address, for the allowlist. */
+	recipientAccount: string;
 	recipientIsNew: boolean;
 	note: string;
 };
+
+const notAllowed = () =>
+	err(
+		ruleError(
+			"not-allowed",
+			"The organization only pays recipients on its allowlist. Ask for this recipient to be added on the Rules page.",
+		),
+	);
 
 export function createPaymentRequest(
 	org: Org,
@@ -147,23 +157,26 @@ export function createPaymentRequest(
 	if (!asset) {
 		return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
 	}
-	const foreignCurrency = asset.currency !== org.baseCurrency;
-	const requester = org.members.find((m) => m.personId === input.requesterId);
-	const { overBudget = false, ...fields } = input;
-	const evaluation =
-		!foreignCurrency && !overBudget && fitsLimit(requester, input.amount, now)
-			? limitEvaluation()
-			: evaluatePayment(org.policy, {
-					amount: input.amount,
-					recipientIsNew: input.recipientIsNew,
-					foreignCurrency,
-					overBudget,
-				});
+	const { overBudget = false, recipientAccount, ...fields } = input;
+	const proposal = evaluateProposal(
+		org,
+		{
+			requesterId: input.requesterId,
+			token: input.token,
+			amount: input.amount,
+			category: input.category ?? null,
+			recipients: [recipientAccount],
+			recipientIsNew: input.recipientIsNew,
+			overBudget,
+		},
+		now,
+	);
+	if (proposal.kind === "refused") return notAllowed();
 	return ok(
 		settle(
 			org,
 			{
-				...blank(input.id, input.requesterId, now, evaluation),
+				...blank(input.id, input.requesterId, now, proposal.evaluation),
 				kind: "payment",
 				...fields,
 				category: fields.category ?? null,
@@ -181,6 +194,8 @@ export type NewBatch = {
 	requesterId: PersonId;
 	token: string;
 	lines: readonly BatchLine[];
+	/** Every line's recipient address, for the allowlist. */
+	recipientAccounts: readonly string[];
 	recipientIsNew: boolean;
 	note: string;
 	category: string | null;
@@ -205,23 +220,26 @@ export function createBatchRequest(
 		return err(ruleError("unknown-asset", "This organization doesn't hold that asset."));
 	}
 	const amount = input.lines.reduce((sum, line) => sum + line.amount, 0);
-	const foreignCurrency = asset.currency !== org.baseCurrency;
-	const requester = org.members.find((m) => m.personId === input.requesterId);
-	const { overBudget = false, ...fields } = input;
-	const evaluation =
-		!foreignCurrency && !overBudget && fitsLimit(requester, amount, now)
-			? limitEvaluation()
-			: evaluatePayment(org.policy, {
-					amount,
-					recipientIsNew: input.recipientIsNew,
-					foreignCurrency,
-					overBudget,
-				});
+	const { overBudget = false, recipientAccounts, ...fields } = input;
+	const proposal = evaluateProposal(
+		org,
+		{
+			requesterId: input.requesterId,
+			token: input.token,
+			amount,
+			category: input.category,
+			recipients: recipientAccounts,
+			recipientIsNew: input.recipientIsNew,
+			overBudget,
+		},
+		now,
+	);
+	if (proposal.kind === "refused") return notAllowed();
 	return ok(
 		settle(
 			org,
 			{
-				...blank(input.id, input.requesterId, now, evaluation),
+				...blank(input.id, input.requesterId, now, proposal.evaluation),
 				kind: "batch",
 				...fields,
 				amount,

@@ -56,10 +56,32 @@ export type SpendingLimit = {
 	windowStart: number;
 };
 
+/**
+ * An allowance scoped to one asset (amount in that asset's currency) and/or one budget category
+ * (amount in the rules' currency). Payments inside it need no approvals.
+ */
+export type Allowance = SpendingLimit & { token: string | null; category: string | null };
+
 export type Member = {
 	personId: PersonId;
 	roleId: RoleId;
 	limit?: SpendingLimit;
+	allowances?: readonly Allowance[];
+};
+
+/**
+ * Who the organization pays: anyone; anyone, but recipients outside the list take the
+ * strictest tier; or only the listed addresses.
+ */
+export type RecipientRule = { mode: "open" | "approve" | "only"; allowed: readonly string[] };
+
+/**
+ * Exchange rates from the organization's SEP-40 oracle: each currency's price in the oracle's
+ * base, as integers with the oracle's decimals, and when each was published (ms).
+ */
+export type FxRates = {
+	oracle: string;
+	prices: Partial<Record<Currency, { price: bigint; at: number }>>;
 };
 
 /** A stablecoin the organization accepts and the fiat currency it stands for. */
@@ -84,6 +106,10 @@ export type Org = {
 	/** The currency the rules are written in; payments in other currencies take the strictest tier. */
 	baseCurrency: Currency;
 	assets: readonly Asset[];
+	/** Open to every recipient when absent. */
+	recipients?: RecipientRule;
+	/** Rates for the tiers of payments in another currency; absent: strictest tier. */
+	fx?: FxRates | null;
 };
 
 /** What a specific request needs before it can execute. */
