@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-01: A second nightly end-to-end run on the testnet: two passes on two devices, the founder asks to pay, the payment waits for the board member, who approves from their inbox, and the contract pays it out.
 - 2026-11-01: The landing page, README and seal prompt say what the security seal is today (an approver's passkey signature on the organization contract) and that sealing with a device-held ML-DSA key is on the roadmap; the hero chip reads "Rules on-chain" instead of "Quantum-safe".
 - 2026-11-01: Roadmap: the SCF #46 plan as three milestones (proven on testnet, rules and keys, ready for mainnet), each deliverable with a check for when it counts as done.
 - 2026-11-01: ancora is open source under the Apache License 2.0 (LICENSE, and the license field of the app and every contract crate).

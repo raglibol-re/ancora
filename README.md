@@ -176,7 +176,7 @@ pnpm verify       # format/lint, typecheck, tests, build: same as CI
 
 ```bash
 cd app
-pnpm e2e         # the core path on the real testnet with a virtual passkey (Playwright; nightly in CI)
+pnpm e2e         # the core path and a two-pass approval on the real testnet with virtual passkeys (Playwright; nightly in CI)
 ```
 
 ```bash
