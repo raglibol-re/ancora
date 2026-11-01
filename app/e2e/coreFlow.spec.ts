@@ -1,19 +1,25 @@
 import { expect, test } from "@playwright/test";
+import {
+	BLEND_USDC,
+	createPass,
+	foundOrganization,
+	RECIPIENT,
+	requestPayment,
+	stamp,
+	takeTestMoney,
+} from "./steps.ts";
 import { addVirtualPasskey } from "./virtualPasskey.ts";
 
 // The core path a new organization takes, on the real Stellar testnet: create a pass, sign out
 // and back in on the same device (the wallet index), found an organization, take test money,
 // pay someone. Every step is a real transaction; the operator sponsors the fees.
 
-// The demo operator's account holds a BlendUSDC trustline, so it can receive a test payment.
-const RECIPIENT = "GC2BKJOG56UXZQKMV475BNHMEHUA54GPGY6W2FILRB4DHCOJFJXOYJE3";
 // The testnet stablecoins an organization accepts (BlendUSDC, Circle USDC, Circle EURC).
 const TOKENS = [
-	"CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU",
+	BLEND_USDC,
 	"CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
 	"CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ",
 ];
-const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
 const name = `E2E ${stamp}`;
 
 test("a new organization goes from passkey to first payment", async ({ page }) => {
@@ -22,14 +28,7 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 	const failures: string[] = [];
 	page.on("pageerror", (error) => failures.push(error.message));
 
-	await test.step("create a pass", async () => {
-		await page.goto("/app");
-		await expect(page.getByRole("heading", { name: "Welcome to ancora" })).toBeVisible();
-		await page.getByLabel("Your name").fill(name);
-		await page.getByRole("button", { name: "Create my passkey" }).click();
-		// The account exists first, the name follows in a second transaction: wait for both.
-		await expect(page.getByText(name).first()).toBeVisible();
-	});
+	await test.step("create a pass", () => createPass(page, name));
 
 	await test.step("sign out and back in with the same passkey", async () => {
 		await page.goto("/app/me");
@@ -41,12 +40,7 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await expect(page.getByRole("alert")).toHaveCount(0);
 	});
 
-	await test.step("found an organization", async () => {
-		await page.goto("/app/new");
-		await page.getByLabel("Name").fill(`E2E club ${stamp}`);
-		await page.getByRole("button", { name: "Create organization" }).click();
-		await expect(page).toHaveURL(/\/app\/rules$/);
-	});
+	await test.step("found an organization", () => foundOrganization(page, `E2E club ${stamp}`));
 
 	await test.step("add a role of the organization's own", async () => {
 		// Still the setup phase: the founder's change applies directly, on-chain.
@@ -58,40 +52,14 @@ test("a new organization goes from passkey to first payment", async ({ page }) =
 		await expect(page.getByRole("button", { name: "Remove Coach" })).toBeVisible();
 	});
 
-	await test.step("take test money", async () => {
-		await page.goto("/app");
-		await expect(page.getByText(name).first()).toBeVisible();
-		await page
-			.getByRole("button", { name: /BlendUSDC/ })
-			.first()
-			.click();
-		await expect(page.getByRole("dialog", { name: "BlendUSDC" })).toBeVisible();
-		await page.getByRole("button", { name: "Add BlendUSDC" }).click();
-		await expect(page.getByRole("dialog", { name: "Add BlendUSDC" })).toBeVisible();
-		await page.getByRole("button", { name: "Add test BlendUSDC" }).click();
-		await expect(page.getByText("Test BlendUSDC arrived on the account.")).toBeVisible();
-	});
+	await test.step("take test money", () => takeTestMoney(page, name));
 
-	await test.step("pay someone", async () => {
-		await page.goto("/app/pay");
-		// Option values are the token contracts; this is BlendUSDC.
-		await page
-			.locator("#asset")
-			.selectOption("CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU");
-		await page.locator("#payee").selectOption("new");
-		await page.locator("#payee-name").fill("Operator");
-		await page.locator("#payee-account").fill(RECIPIENT);
-		await page.locator("#amount").fill("5");
-		await page.getByRole("button", { name: "Continue" }).click();
-		await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
-	});
+	await test.step("pay someone", () => requestPayment(page, "Operator", "5"));
 
 	await test.step("pay two recipients as one batch", async () => {
 		await page.goto("/app/pay");
 		await page.getByText("Several (batch)", { exact: true }).click();
-		await page
-			.locator("#batch-asset")
-			.selectOption("CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU");
+		await page.locator("#batch-asset").selectOption(BLEND_USDC);
 		for (const index of [0, 1]) {
 			await page.locator(`#batch-to-${index}`).fill(RECIPIENT);
 			await page.locator(`#batch-amount-${index}`).fill("1");
