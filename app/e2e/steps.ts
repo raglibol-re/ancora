@@ -62,14 +62,20 @@ export async function takeTestMoney(page: Page, passName: string): Promise<void>
 	await expect(page.getByText("Test BlendUSDC arrived on the account.")).toBeVisible();
 }
 
-/** Requests a BlendUSDC payment to a new, saved recipient and lands on the request's page. */
-export async function requestPayment(page: Page, payee: string, amount: string): Promise<void> {
+/** Requests a BlendUSDC payment to a new, saved recipient (optionally with a reference). */
+export async function requestPayment(
+	page: Page,
+	payee: string,
+	amount: string,
+	reference = "",
+): Promise<void> {
 	await page.goto("/app/pay");
 	await page.locator("#asset").selectOption(BLEND_USDC);
 	await page.locator("#payee").selectOption("new");
 	await page.locator("#payee-name").fill(payee);
 	await page.locator("#payee-account").fill(RECIPIENT);
 	await page.locator("#amount").fill(amount);
+	if (reference) await page.locator("#note").fill(reference);
 	await page.getByRole("button", { name: "Continue" }).click();
 	await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
 }

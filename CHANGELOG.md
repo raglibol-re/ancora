@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-02: A fifth nightly end-to-end run: two members set up private details, a payment reference is read by both in the app while the organization contract stores only ciphertext.
 - 2026-11-02: Private details: an organization can keep payment references, batch lines, standing orders and discussions private. They are stored on Stellar encrypted with the organization's key; each member's key stays on their device; Settings → Private details sets up a device, turns it on, shares access and renews the key after someone leaves. Amounts and who is paid stay public. New keyring contract.
 - 2026-11-02: A fourth nightly end-to-end run: a board member creates a quantum-safe seal key on their device, approves and seals a payment, and the organization's contract checks the ML-DSA signature before paying out.
 - 2026-11-02: Lifeline in full and quantum-safe seals (release 0.9.0). Succession: each member can be given a successor who claims their position after a quiet period; the member's next action or "I'm still here" cancels it, and after the wait the successor takes over (Rules → Succession). Seals: an organization can require large payments to be sealed with an ML-DSA key created on the approving device and checked by its contract (Settings → Security seal).

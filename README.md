@@ -181,7 +181,7 @@ pnpm verify       # format/lint, typecheck, tests, build: same as CI
 
 ```bash
 cd app
-pnpm e2e         # the core path, a two-pass approval, a quantum-safe seal and a deal between two organizations on the real testnet with virtual passkeys (Playwright; nightly in CI)
+pnpm e2e         # the core path, a two-pass approval, a quantum-safe seal, private details and a deal between two organizations on the real testnet with virtual passkeys (Playwright; nightly in CI)
 node ../scripts/check-live.mjs   # is production up and able to sponsor fees and hand out test money? (hourly in CI)
 ```
 
