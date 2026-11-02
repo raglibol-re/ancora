@@ -18,6 +18,8 @@ export async function addVirtualPasskey(page: Page): Promise<void> {
 			hasUserVerification: true,
 			isUserVerified: true,
 			automaticPresenceSimulation: true,
+			// PRF, so device keys are made from the passkey as on phones that sync passkeys.
+			hasPrf: true,
 		},
 	});
 }

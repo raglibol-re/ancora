@@ -125,6 +125,18 @@ test("members read a private reference that is stored encrypted", async ({ brows
 		await expect(member.getByText(SECRET).first()).toBeVisible();
 	});
 
+	await test.step("the member's passkey brings the key back too", async () => {
+		await member.evaluate(
+			"new Promise((done) => { const r = indexedDB.deleteDatabase('ancora-private'); r.onsuccess = r.onerror = () => done(); })",
+		);
+		await member.goto("/app/me");
+		await member.getByRole("button", { name: "Bring back with my passkey" }).click();
+		await expect(member.getByText("Private details read again on this device.")).toBeVisible();
+		await member.goto(requestUrl);
+		await member.reload();
+		await expect(member.getByText(SECRET).first()).toBeVisible();
+	});
+
 	await test.step("an auditor reads the private details on their own page", async () => {
 		await createPass(auditor, auditorName);
 		const auditorId = await readAncoraId(auditor);
