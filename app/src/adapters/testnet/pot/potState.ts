@@ -7,6 +7,7 @@ import { type PotAccount, readPotAccount, readPotEvents } from "./potChain.ts";
 import { type Hasher, loadHasher } from "./potHash.ts";
 import { type PotKeys, potKeys } from "./potKeys.ts";
 import { readPotRoot } from "./potRoot.ts";
+import { loadSnapshot, saveSnapshot } from "./potSnapshot.ts";
 import { type PotBalance, replay } from "./potWallet.ts";
 
 // Everything the pot needs before showing a balance or proving: the organization may use it,
@@ -78,8 +79,7 @@ export async function loadPot(deps: PotDeps, orgId: string, person: string): Pro
 			reason: "The pot key in the keyring doesn't match the pot account.",
 		};
 	}
-	const events = await readPotEvents(deps.network, pot, orgId);
-	const balance = replay(hasher, potKeysOf, orgId, events, onChain);
+	const balance = await readBalance(deps, hasher, potKeysOf, orgId, onChain);
 	if (!balance) return { state: "unreadable" };
 	return { state: "open", hasher, keys: potKeysOf, onChain, balance };
 }
@@ -94,4 +94,27 @@ export function statusOf(load: PotLoad): PotStatus {
 		incoming: toCents(balance.receiving.value),
 		entries: balance.entries.map((entry) => ({ ...entry, amount: toCents(entry.amount) })),
 	};
+}
+
+/**
+ * The balance from this device's snapshot and the events since, or from the whole history the
+ * RPC keeps when there is no snapshot or it no longer explains the chain; saved for next time.
+ */
+async function readBalance(
+	deps: PotDeps,
+	hasher: Hasher,
+	keys: PotKeys,
+	orgId: string,
+	onChain: PotAccount,
+): Promise<PotBalance | null> {
+	const { pot } = deps.config;
+	const snapshot = await loadSnapshot(keys, pot, orgId);
+	let read = await readPotEvents(deps.network, pot, orgId, snapshot?.toLedger ?? null);
+	let balance = replay(hasher, keys, orgId, read.events, onChain, snapshot?.balance ?? null);
+	if (!balance && snapshot) {
+		read = await readPotEvents(deps.network, pot, orgId);
+		balance = replay(hasher, keys, orgId, read.events, onChain);
+	}
+	if (balance) await saveSnapshot(keys, pot, orgId, { toLedger: read.toLedger, balance });
+	return balance;
 }

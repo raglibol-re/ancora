@@ -90,6 +90,29 @@ describe("the pot balance from its events", () => {
 		expect(replay(hasher, me, ME, events, onChain)?.spendable.value).toBe(800n);
 	});
 
+	it("continues from where an earlier read left off, without the older history", () => {
+		const first: PotEvent[] = [
+			{ ...at(), kind: "register", account: ME },
+			{ ...at(), kind: "deposit", from: ME, to: ME, amount: 1_000n },
+			{ ...at(), kind: "merge", account: ME },
+		];
+		const earlier = replay(hasher, me, ME, first, {
+			spendable: commit(1_000n, 0n),
+			receiving: IDENTITY,
+		});
+		const out = payment(me, ME, them, THEM, { value: 1_000n, blinding: 0n }, 250n);
+		const later = replay(
+			hasher,
+			me,
+			ME,
+			[out.event],
+			{ spendable: point(out.built, "c_spend_new"), receiving: IDENTITY },
+			earlier,
+		);
+		expect(later?.spendable.value).toBe(750n);
+		expect(later?.entries.map((e) => e.kind)).toEqual(["sent", "deposit"]);
+	});
+
 	it("reads nothing when the history can't explain the chain", () => {
 		const events: PotEvent[] = [{ ...at(), kind: "deposit", from: ME, to: ME, amount: 5n }];
 		const onChain: { spendable: Point; receiving: Point } = {

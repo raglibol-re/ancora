@@ -40,6 +40,9 @@ export type PotBalance = { spendable: Opening; receiving: Opening; entries: PotE
 
 type Side = Opening | null;
 
+/** History lines kept: the newest first. */
+const MAX_ENTRIES = 100;
+
 const add = (a: Opening, b: Opening): Opening => ({
 	value: a.value + b.value,
 	blinding: a.blinding + b.blinding,
@@ -59,9 +62,11 @@ export function replay(
 	me: string,
 	events: readonly PotEvent[],
 	onChain: { spendable: Point; receiving: Point },
+	/** Where an earlier read left off (both openings and its history), if this device has one. */
+	start: PotBalance | null = null,
 ): PotBalance | null {
-	let spendable: Side = null;
-	let receiving: Side = null;
+	let spendable: Side = start?.spendable ?? null;
+	let receiving: Side = start?.receiving ?? null;
 	const entries: PotEntry[] = [];
 	const checkpoint = (sigma: bigint, bTilde: bigint): Opening => ({
 		value: modR(bTilde - hasher.hash(DOMAIN.encryptedBalance, [keys.view, sigma])),
@@ -132,5 +137,9 @@ export function replay(
 	}
 	if (!spendable || !receiving) return null;
 	if (!opens(spendable, onChain.spendable) || !opens(receiving, onChain.receiving)) return null;
-	return { spendable, receiving, entries: entries.reverse() };
+	return {
+		spendable,
+		receiving,
+		entries: [...entries.reverse(), ...(start?.entries ?? [])].slice(0, MAX_ENTRIES),
+	};
 }

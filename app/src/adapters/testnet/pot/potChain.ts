@@ -78,12 +78,16 @@ export function potData(payload: Record<string, Uint8Array>, proof: Uint8Array):
 /** About ten minutes of ledgers. */
 const PRUNE_MARGIN_LEDGERS = 120;
 
-/** Every pot event naming `account` that the RPC still holds, oldest first. */
+/**
+ * Every pot event naming `account` that the RPC still holds after ledger `after` (all it holds
+ * when null), oldest first, and the last ledger read.
+ */
 export async function readPotEvents(
 	network: Network,
 	pot: string,
 	account: string,
-): Promise<PotEvent[]> {
+	after: number | null = null,
+): Promise<{ events: PotEvent[]; toLedger: number }> {
 	const server = new rpc.Server(network.rpcUrl);
 	const health = await server.getHealth();
 	const me = new Address(account).toScVal().toXDR("base64");
@@ -99,15 +103,14 @@ export async function readPotEvents(
 	];
 	// The oldest ledger moves on while the chunks are read; starting a little above it keeps the
 	// first chunk from asking for a ledger the RPC just dropped.
-	const events = await scanEvents(
-		server,
-		filters,
-		health.oldestLedger + PRUNE_MARGIN_LEDGERS,
-		health.latestLedger + 1,
-		toPotEvent,
-	);
+	const oldest = health.oldestLedger + PRUNE_MARGIN_LEDGERS;
+	const from = after === null ? oldest : Math.max(oldest, after + 1);
+	const events = await scanEvents(server, filters, from, health.latestLedger + 1, toPotEvent);
 	const unique = new Map(events.map((event) => [event.id, event]));
-	return [...unique.values()].sort((a, b) => a.ledger - b.ledger || a.id.localeCompare(b.id));
+	const sorted = [...unique.values()].sort(
+		(a, b) => a.ledger - b.ledger || a.id.localeCompare(b.id),
+	);
+	return { events: sorted, toLedger: health.latestLedger };
 }
 
 function toPotEvent(event: rpc.Api.EventResponse): PotEvent | null {
