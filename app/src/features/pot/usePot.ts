@@ -8,14 +8,18 @@ export function usePot(orgId: string) {
 	const support = dataSource.pot;
 	const [status, setStatus] = useState<PotStatus | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	// True while a read is under way, so forms don't check amounts against the last balance.
+	const [loading, setLoading] = useState(false);
 	// Only the latest load may publish its result.
 	const latest = useRef(0);
 
 	const load = useCallback(() => {
 		if (!support) return;
 		const request = ++latest.current;
+		setLoading(true);
 		void support.status(orgId, me.id).then((result) => {
 			if (request !== latest.current) return;
+			setLoading(false);
 			if (result.ok) {
 				setStatus(result.value);
 				setError(null);
@@ -30,5 +34,5 @@ export function usePot(orgId: string) {
 		};
 	}, [load]);
 
-	return { support, status, error, load };
+	return { support, status, error, loading, load };
 }

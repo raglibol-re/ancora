@@ -38,7 +38,7 @@ export function PotPage() {
 }
 
 function Pot({ account }: { account: OrgAccount }) {
-	const { support, status, error, load } = usePot(account.org.id);
+	const { support, status, error, loading, load } = usePot(account.org.id);
 	if (!support) {
 		return (
 			<Card title="Confidential pot">
@@ -65,7 +65,13 @@ function Pot({ account }: { account: OrgAccount }) {
 				</p>
 			)}
 			{status ? (
-				<PotBody account={account} support={support} status={status} onChanged={load} />
+				<PotBody
+					account={account}
+					support={support}
+					status={status}
+					reading={loading}
+					onChanged={load}
+				/>
 			) : (
 				<p className={styles.muted}>Reading the pot…</p>
 			)}
@@ -80,12 +86,15 @@ type BodyProps = {
 	account: OrgAccount;
 	support: PotSupport;
 	status: PotStatus;
+	/** The pot is being read again; amounts aren't checked until it's done. */
+	reading: boolean;
 	onChanged: () => void;
 };
 
-function PotBody({ account, support, status, onChanged }: BodyProps) {
+function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 	const { me, personName } = useWorkspace();
-	const { run, busy } = useCommand();
+	const { run, busy: running } = useCommand();
+	const busy = running || reading;
 	const orgId = account.org.id;
 	const asset = account.org.assets.find((a) => a.token === support.asset());
 
