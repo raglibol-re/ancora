@@ -17,6 +17,7 @@ import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { AccessReminder } from "./AccessReminder.tsx";
 import { AccountNumberCard } from "./AccountNumberCard.tsx";
 import { ActivityList } from "./ActivityList.tsx";
 import { AssetSheet } from "./AssetSheet.tsx";
@@ -112,6 +113,8 @@ function Overview({ account }: { account: OrgAccount }) {
 					))}
 				</section>
 			)}
+
+			<AccessReminder account={account} />
 
 			<BudgetsCard account={account} />
 

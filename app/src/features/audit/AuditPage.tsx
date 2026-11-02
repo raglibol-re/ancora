@@ -6,6 +6,7 @@ import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatDateTime } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
+import { downloadStatement } from "../overview/downloadStatement.ts";
 import { requestTitle, statusLabels } from "../requests/describe.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -16,7 +17,7 @@ import styles from "./AuditPage.module.css";
  * private details its members shared with this person opened. Nothing here can change anything.
  */
 export function AuditPage() {
-	const { dataSource, me } = useWorkspace();
+	const { dataSource, me, personName } = useWorkspace();
 	const { run, busy } = useCommand();
 	const support = dataSource.privacy;
 	const [orgId, setOrgId] = useState("");
@@ -92,7 +93,18 @@ export function AuditPage() {
 				</form>
 			</Card>
 			{account && (
-				<Card title={account.org.name}>
+				<Card
+					title={account.org.name}
+					action={
+						<button
+							type="button"
+							className={buttonClass("secondary")}
+							onClick={() => downloadStatement(account, personName)}
+						>
+							Download statement (CSV)
+						</button>
+					}
+				>
 					<h3 className={styles.heading}>Requests</h3>
 					<ul className={styles.list}>
 						{account.requests.map((request) => (
