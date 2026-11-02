@@ -49,6 +49,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "ancora-pot"
+version = "0.10.0"
+dependencies = [
+ "ancora-pot-auditors",
+ "ancora-pot-verifier",
+ "soroban-sdk",
+ "stellar-confidential",
+]
+
+[[package]]
+name = "ancora-pot-auditors"
+version = "0.10.0"
+dependencies = [
+ "soroban-sdk",
+ "stellar-confidential",
+]
+
+[[package]]
+name = "ancora-pot-verifier"
+version = "0.10.0"
+dependencies = [
+ "soroban-sdk",
+ "stellar-confidential",
+]
+
+[[package]]
 name = "ancora-recovery"
 version = "0.10.0"
 dependencies = [
@@ -1689,6 +1715,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "soroban-poseidon"
+version = "28.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d3c971964bbff3b7f716b251e3cd8caa71ab4fbe33aa8fc845570dcdbe97582"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "soroban-sdk"
 version = "28.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1807,6 +1842,27 @@ name = "stellar-access"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e5dc69bd3a6d260a5fba6541f0260d0bed3fbfcbb615d2fb00dc95bda94ceaf"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
+name = "stellar-confidential"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5732cf57357ca1f0d86203621f59cb74d36d0384963eadbef3df894a8096ab4c"
+dependencies = [
+ "soroban-poseidon",
+ "soroban-sdk",
+ "stellar-contract-utils",
+ "ultrahonk_soroban_verifier",
+]
+
+[[package]]
+name = "stellar-contract-utils"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "642ca8d4cd845beebd617d51d0631dc3326914e33a4805d433d284d70e67015b"
 dependencies = [
  "soroban-sdk",
 ]
@@ -1966,6 +2022,15 @@ name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
+
+[[package]]
+name = "ultrahonk_soroban_verifier"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63ad166fd0d4fcecdddd094a92e496eb2d815bc1694d5f22a7aac63fc5de95d8"
+dependencies = [
+ "soroban-sdk",
+]
 
 [[package]]
 name = "unicode-ident"

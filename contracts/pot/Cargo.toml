@@ -1,0 +1,19 @@
+[package]
+name = "ancora-pot"
+version.workspace = true
+edition = "2021"
+publish = false
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+stellar-confidential = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+ancora-pot-verifier = { path = "../pot_verifier" }
+ancora-pot-auditors = { path = "../pot_auditors" }
