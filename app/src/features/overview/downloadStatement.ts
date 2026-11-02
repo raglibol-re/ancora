@@ -1,5 +1,5 @@
 import type { OrgAccount } from "../../domain/account.ts";
-import { statementCsv, statementRows } from "../../domain/statement.ts";
+import { type StatementItem, statementCsv, statementItems } from "../../domain/statement.ts";
 
 /** Hands a CSV to the browser as a download named after the organization and `suffix`. */
 export function saveCsv(account: OrgAccount, csv: string, suffix: string): void {
@@ -12,11 +12,19 @@ export function saveCsv(account: OrgAccount, csv: string, suffix: string): void 
 	URL.revokeObjectURL(url);
 }
 
-/** Builds the organization's whole statement and hands it to the browser as a CSV download. */
-export function downloadStatement(account: OrgAccount, personName: (id: string) => string): void {
-	const rows = statementRows(account, {
+/**
+ * Builds the organization's whole statement, with `extra` movements (the confidential pot's
+ * private payments) in date order, and hands it to the browser as a CSV download.
+ */
+export function downloadStatement(
+	account: OrgAccount,
+	personName: (id: string) => string,
+	extra: readonly StatementItem[] = [],
+): void {
+	const items = statementItems(account, {
 		person: personName,
 		payee: (id) => account.payees.find((p) => p.id === id)?.name ?? id,
 	});
+	const rows = [...items, ...extra].sort((a, b) => a.at - b.at).map((item) => item.row);
 	saveCsv(account, statementCsv(rows), "all");
 }

@@ -236,6 +236,11 @@ export interface PotSupport {
 		to: string,
 		amount: Cents,
 	): Promise<Result<PotOutcome, RuleError>>;
+	/**
+	 * The pot's movements as `personId` reads them (a member or an auditor with access); null when
+	 * the organization has no pot this device can read.
+	 */
+	history(account: OrgAccount, personId: PersonId): Promise<Result<PotEntry[] | null, RuleError>>;
 	/** The amount of a confidential payment request, read with the pot key on this device. */
 	amountOf(orgId: string, actorId: PersonId, sealed: string): Promise<Result<Cents, RuleError>>;
 }

@@ -222,6 +222,11 @@ export function createPotSupport(deps: Deps): PotSupport {
 				const { proof } = await prove("transfer", built.inputs);
 				return propose(orgId, actorId, { type: "pay", to, data: potData(built.payload, proof) });
 			}),
+		history: (account, personId) =>
+			guarded("Couldn't read the pot", async () => {
+				const status = statusOf(await loadPot(deps, account.org.id, personId, account));
+				return ok(status.state === "open" ? status.entries : null);
+			}),
 		amountOf: (orgId, actorId, sealed) =>
 			guarded("Couldn't read the amount", async () => {
 				const stored = await readPotRoot(deps.reads, orgId, actorId, pot);

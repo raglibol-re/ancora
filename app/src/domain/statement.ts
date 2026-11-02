@@ -1,5 +1,6 @@
 import { type ActivityEntry, balanceEffect, currencyOf, type OrgAccount } from "./account.ts";
-import type { Cents } from "./money.ts";
+import type { PotEntry } from "./dataSource.ts";
+import type { Cents, Currency } from "./money.ts";
 
 // The bookkeeping statement: every movement of money as a row, built from what the organization
 // already has: executed payment requests (with their reference) and the rest of the activity.
@@ -124,6 +125,44 @@ export function statementItems(account: OrgAccount, names: Names): StatementItem
 		];
 	});
 	return [...payments, ...batches, ...movements].sort((a, b) => a.at - b.at);
+}
+
+/** The confidential pot as a statement sees it: its own "asset", in the pot asset's currency. */
+export type PotLedger = { contract: string; currency: Currency; label: string };
+
+/**
+ * Payments in and out of the confidential pot, which the public ledger doesn't show (moving money
+ * in or out of the pot is already a public movement of the account). Their amounts count against
+ * the pot, not the account, so they carry the pot's contract as their asset.
+ */
+export function potItems(
+	entries: readonly PotEntry[],
+	pot: PotLedger,
+	names: Pick<Names, "payee">,
+): StatementItem[] {
+	return entries.flatMap((entry) => {
+		if (entry.kind !== "sent" && entry.kind !== "received") return [];
+		const cents = entry.kind === "sent" ? -entry.amount : entry.amount;
+		return [
+			{
+				at: entry.at,
+				cents,
+				token: pot.contract,
+				row: {
+					date: new Date(entry.at).toISOString(),
+					type: entry.kind === "sent" ? "private payment" : "private receipt",
+					amount: decimal(cents),
+					currency: pot.currency,
+					asset: pot.label,
+					counterparty: names.payee(entry.counterparty),
+					reference: "",
+					category: "",
+					by: "",
+					transaction: "",
+				},
+			},
+		];
+	});
 }
 
 function csvCell(value: string): string {

@@ -18,6 +18,7 @@ import { formatDateTime, formatMoney, formatSignedMoney } from "../../ui/format.
 import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
 import { saveCsv } from "../overview/downloadStatement.ts";
+import { POT_LABEL, usePotItems } from "../pot/usePotItems.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ActivityPage.module.css";
@@ -40,9 +41,12 @@ const DIRECTIONS: { value: Direction; label: string }[] = [
 
 function Activity({ account }: { account: OrgAccount }) {
 	const { personName } = useWorkspace();
+	const names = useMemo(() => statementNames(account, personName), [account, personName]);
+	const pot = usePotItems(account, names.payee);
+	// Newest first: the account's movements and the pot's private payments together.
 	const items = useMemo(
-		() => statementItems(account, statementNames(account, personName)).reverse(),
-		[account, personName],
+		() => [...statementItems(account, names), ...pot].sort((a, b) => b.at - a.at),
+		[account, names, pot],
 	);
 	const months = useMemo(() => statementMonths(items), [items]);
 	const [query, setQuery] = useState("");
@@ -56,7 +60,8 @@ function Activity({ account }: { account: OrgAccount }) {
 		month: month || null,
 	});
 	const totals = totalsByAsset(filtered);
-	const symbolOf = (t: string) => account.org.assets.find((a) => a.token === t)?.symbol ?? t;
+	const symbolOf = (t: string) =>
+		account.org.assets.find((a) => a.token === t)?.symbol ?? (t === pot[0]?.token ? POT_LABEL : t);
 	const statementMonth = month || monthOf(Date.now());
 
 	return (

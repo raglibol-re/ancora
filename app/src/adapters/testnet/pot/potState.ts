@@ -35,8 +35,13 @@ export type PotLoad =
 	| { state: "closed" | "opening" | "unreadable" }
 	| ({ state: "open" } & OpenPot);
 
-export async function loadPot(deps: PotDeps, orgId: string, person: string): Promise<PotLoad> {
-	const account = deps.account(orgId);
+/** `account` is the organization as read, for someone outside it (an auditor). */
+export async function loadPot(
+	deps: PotDeps,
+	orgId: string,
+	person: string,
+	account: OrgAccount | undefined = deps.account(orgId),
+): Promise<PotLoad> {
 	if (!account?.onchain?.pot) {
 		return {
 			state: "unavailable",

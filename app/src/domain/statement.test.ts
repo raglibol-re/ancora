@@ -4,6 +4,7 @@ import {
 	decimal,
 	filterItems,
 	monthOf,
+	potItems,
 	type StatementFilter,
 	statementCsv,
 	statementItems,
@@ -100,5 +101,24 @@ describe("search and monthly totals", () => {
 		for (const t of totalsByAsset(reserveOnly)) {
 			expect(t).toMatchObject({ moneyIn: 0, moneyOut: 0, net: 0 });
 		}
+	});
+});
+
+describe("the confidential pot on the statement", () => {
+	it("lists private payments and receipts against the pot, not deposits or withdrawals", () => {
+		const pot = { contract: "CPOT", currency: "USD" as const, label: "Confidential pot" };
+		const items = potItems(
+			[
+				{ id: "1", at: 1_000, kind: "deposit", amount: 1_000, counterparty: "CORG" },
+				{ id: "2", at: 2_000, kind: "sent", amount: 400, counterparty: "CPAYEE" },
+				{ id: "3", at: 3_000, kind: "received", amount: 150, counterparty: "CPAYER" },
+			],
+			pot,
+			{ payee: (id) => (id === "CPAYEE" ? "Atlantic Boats" : id) },
+		);
+		expect(items.map((i) => [i.row.type, i.row.amount, i.row.counterparty, i.token])).toEqual([
+			["private payment", "-4.00", "Atlantic Boats", "CPOT"],
+			["private receipt", "1.50", "CPAYER", "CPOT"],
+		]);
 	});
 });

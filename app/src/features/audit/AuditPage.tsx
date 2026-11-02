@@ -1,15 +1,13 @@
 import { StrKey } from "@stellar/stellar-sdk";
 import { type FormEvent, useState } from "react";
-import { type OrgAccount, shortAddress } from "../../domain/account.ts";
+import type { OrgAccount } from "../../domain/account.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
-import { formatDateTime } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
-import { downloadStatement } from "../overview/downloadStatement.ts";
-import { requestTitle, statusLabels } from "../requests/describe.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { AuditedOrganization } from "./AuditedOrganization.tsx";
 import styles from "./AuditPage.module.css";
 
 /**
@@ -17,7 +15,7 @@ import styles from "./AuditPage.module.css";
  * private details its members shared with this person opened. Nothing here can change anything.
  */
 export function AuditPage() {
-	const { dataSource, me, personName } = useWorkspace();
+	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const support = dataSource.privacy;
 	const [orgId, setOrgId] = useState("");
@@ -47,9 +45,6 @@ export function AuditPage() {
 		const result = await run(() => support.audit(id, me.id));
 		if (result?.ok) setAccount(result.value);
 	};
-
-	const nameOf = (id: string) =>
-		account?.payees.find((p) => p.account === id)?.name ?? shortAddress(id);
 
 	return (
 		<Page
@@ -92,47 +87,7 @@ export function AuditPage() {
 					</button>
 				</form>
 			</Card>
-			{account && (
-				<Card
-					title={account.org.name}
-					action={
-						<button
-							type="button"
-							className={buttonClass("secondary")}
-							onClick={() => downloadStatement(account, personName)}
-						>
-							Download statement (CSV)
-						</button>
-					}
-				>
-					<h3 className={styles.heading}>Requests</h3>
-					<ul className={styles.list}>
-						{account.requests.map((request) => (
-							<li key={request.id} className={styles.row}>
-								<span className={styles.title}>{requestTitle(account, request, nameOf)}</span>
-								<span className={styles.meta}>
-									{formatDateTime(request.createdAt)} · {statusLabels[request.status]}
-									{(request.kind === "payment" || request.kind === "batch") && request.note
-										? ` · ${request.note}`
-										: ""}
-								</span>
-							</li>
-						))}
-					</ul>
-					<h3 className={styles.heading}>Recipients</h3>
-					<ul className={styles.list}>
-						{account.payees.map((payee) => (
-							<li key={payee.id} className={styles.row}>
-								<span className={styles.title}>{payee.name}</span>
-								<span className={styles.meta}>
-									{shortAddress(payee.account)}
-									{payee.note ? ` · ${payee.note}` : ""}
-								</span>
-							</li>
-						))}
-					</ul>
-				</Card>
-			)}
+			{account && <AuditedOrganization account={account} />}
 		</Page>
 	);
 }
