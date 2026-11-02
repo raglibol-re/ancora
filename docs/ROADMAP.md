@@ -126,7 +126,7 @@ Weeks count from the award; the budget per milestone is set by the team in the a
 
 | Deliverable | Done when |
 |---|---|
-| Nightly end-to-end coverage of every flow: the six above plus standing orders, Reserve, secure handover, payment links, a Lifeline claim and a governed upgrade | Each flow green for 14 nights in a row against production |
+| Nightly end-to-end coverage of every flow: the six above, standing orders and the Reserve (added 2 Nov), plus secure handover, payment links paid by a payer, a Lifeline claim and a governed upgrade | Each flow green for 14 nights in a row against production |
 | Reproducible, attested builds: pinned toolchain, a build container, the Stellar Registry's GitHub attestation action; releases then carry the exact deployed bytes (today rebuilds give new hashes, so organizations see "upgrade available" for unchanged code) | Two independent builds of a release give the same hash; Settings shows the attestation |
 | Rate limits on every function, error tracking, an alert drill (uptime and float checks run hourly since 1 Nov) | Ten simultaneous server transactions settle within two ledgers; an alert fires in a drill |
 | History beyond RPC's week through a durable event archive (Mercury or SubQuery) behind `orgHistory.ts` and the pot's event reader (devices already keep encrypted snapshots) | A device away for a month, or a new one, sees the full activity and reads the pot |
