@@ -157,6 +157,23 @@ function PayForm({ account }: { account: OrgAccount }) {
 		setErrors(found);
 		if (amount === null || Object.keys(found).length > 0) return;
 
+		/** A second, small transaction: the new recipient's name stays with the address for every member. */
+		const saveNewPayee = async () => {
+			if (!isNew || !canSave || !saveNew) return;
+			await run(
+				() =>
+					dataSource.savePayee(account.org.id, me.id, {
+						account: newAccount,
+						name: newName,
+						note: "",
+					}),
+				{
+					signature: { kind: "passkey", title: `Save ${newName.trim()} in the address book` },
+					success: `${newName.trim()} is in the address book.`,
+				},
+			);
+		};
+
 		const repeatOption = REPEAT_OPTIONS.find((option) => option.value === repeat);
 		if (repeatOption) {
 			const to = isNew
@@ -184,6 +201,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 				},
 			);
 			if (set?.ok) {
+				await saveNewPayee();
 				setRepeat("once");
 				setAmountInput("");
 				setNote("");
@@ -212,21 +230,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 				},
 			},
 		);
-		if (result?.ok && isNew && canSave && saveNew) {
-			// A second, small transaction: the name stays with the address for every member.
-			await run(
-				() =>
-					dataSource.savePayee(account.org.id, me.id, {
-						account: newAccount,
-						name: newName,
-						note: "",
-					}),
-				{
-					signature: { kind: "passkey", title: `Save ${newName.trim()} in the address book` },
-					success: `${newName.trim()} is in the address book.`,
-				},
-			);
-		}
+		if (result?.ok) await saveNewPayee();
 		if (result?.ok) navigate(`/app/approvals/${result.value}`);
 	};
 
