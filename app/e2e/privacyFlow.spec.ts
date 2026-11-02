@@ -24,6 +24,7 @@ import { addVirtualPasskey } from "./virtualPasskey.ts";
 
 const founderName = `E2E private founder ${stamp}`;
 const memberName = `E2E private member ${stamp}`;
+const auditorName = `E2E auditor ${stamp}`;
 const APPLIED = "Done. Applied directly during the setup phase.";
 const SECRET = `Coach fee ${stamp}`;
 const RPC_URL = "https://soroban-testnet.stellar.org";
@@ -51,10 +52,12 @@ async function storedMemo(organization: string, id: number): Promise<string> {
 test("members read a private reference that is stored encrypted", async ({ browser }) => {
 	const founder = await (await browser.newContext()).newPage();
 	const member = await (await browser.newContext()).newPage();
+	const auditor = await (await browser.newContext()).newPage();
 	await addVirtualPasskey(founder);
 	await addVirtualPasskey(member);
+	await addVirtualPasskey(auditor);
 	const failures: string[] = [];
-	for (const page of [founder, member]) {
+	for (const page of [founder, member, auditor]) {
 		page.on("pageerror", (error) => failures.push(error.message));
 	}
 
@@ -120,6 +123,28 @@ test("members read a private reference that is stored encrypted", async ({ brows
 		await member.goto(requestUrl);
 		await member.reload();
 		await expect(member.getByText(SECRET).first()).toBeVisible();
+	});
+
+	await test.step("an auditor reads the private details on their own page", async () => {
+		await createPass(auditor, auditorName);
+		const auditorId = await readAncoraId(auditor);
+		await auditor.goto("/app/audit");
+		await auditor.getByRole("button", { name: "Set up this device" }).click();
+		await expect(auditor.getByText("This device is set up.")).toBeVisible();
+		await founder.goto("/app/settings");
+		await founder.locator("#auditor").fill(auditorId);
+		await founder.getByRole("button", { name: "Add auditor" }).click();
+		await expect(founder.getByText("Auditor added.")).toBeVisible();
+		await founder.reload();
+		await founder.getByRole("button", { name: /^Share access with/ }).click();
+		await expect(founder.getByText("Access shared.")).toBeVisible();
+		const organization = await readOrganizationId(founder);
+		await auditor.goto("/app/audit");
+		await auditor.locator("#audit-org").fill(organization);
+		await auditor.getByRole("button", { name: "Open read-only" }).click();
+		await expect(auditor.getByText(SECRET).first()).toBeVisible();
+		// The recipient was saved privately: on-chain it is "Private", here it has its name.
+		await expect(auditor.getByText("Operator").first()).toBeVisible();
 	});
 
 	await test.step("on Stellar the reference is ciphertext", async () => {
