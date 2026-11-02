@@ -139,6 +139,13 @@ export interface DeviceKeySupport {
 		personId: PersonId,
 		code: string,
 	): Promise<Result<{ privateKey: boolean; sealKey: boolean }, RuleError>>;
+	/**
+	 * Restores the keys that were made from the person's passkey (on a device it synced to);
+	 * null when the passkey or the browser can't make keys.
+	 */
+	restoreWithPasskey(
+		personId: PersonId,
+	): Promise<Result<{ privateKey: boolean; sealKey: boolean } | null, RuleError>>;
 }
 
 /** Lifeline succession inside organizations and quantum-safe seal keys. */

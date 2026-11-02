@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-02: The passkey as a second way back. Where the passkey supports it (PRF), the key for private details and the seal key are made from the passkey, so a phone the passkey syncs to gets them back: your pass → Keys on this device → Bring back with my passkey. Keys made before keep using the backup code. Setting up a device now asks for the passkey once more.
 - 2026-11-02: The Overview tells a member whose device can share the key when someone has set up and is waiting for access to private details, with a Share access button. Auditors download an organization's statement as CSV from their Audit page, private references included.
 - 2026-11-02: Auditors and private recipients. Members can add an auditor (an accountant, a funder's reviewer) under Settings → Private details; once access is shared, the auditor reads requests and recipients on their own Audit page, read-only. With private details on, saved recipients' names and notes are stored encrypted too. The end-to-end tests now pick the testnet themselves instead of following the site-wide default. New keyring contract (release 0.10.0).
 - 2026-11-02: The server now logs why it falls back to sample data when the demo setting can't be read from Vercel Blob, and the hourly live check fails (emailing the team) instead of only warning.

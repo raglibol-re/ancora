@@ -1,7 +1,11 @@
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { IndexedDBStorage, SmartAccountErrorCode, SmartAccountKit } from "smart-account-kit";
 import type { TestnetConfig } from "./testnetConfig.ts";
 
 let kit: SmartAccountKit | null = null;
+
+// The WebAuthn PRF extension; @simplewebauthn's extension type predates it, the browser reads it.
+const ASK_PRF = { prf: {} };
 
 /**
  * One smart-account-kit instance per page. Passkeys are bound to this site's domain (the WebAuthn
@@ -20,6 +24,16 @@ export function passkeyKit(config: TestnetConfig): SmartAccountKit {
 		storage: new IndexedDBStorage(),
 		rpId: window.location.hostname,
 		rpName: "ancora",
+		// New passkeys are asked to support PRF, which some authenticators only enable at
+		// creation; the device keys are derived from it (passkeyKeys.ts).
+		webAuthn: {
+			startRegistration: ({ optionsJSON, useAutoRegister }) =>
+				startRegistration({
+					optionsJSON: { ...optionsJSON, extensions: { ...optionsJSON.extensions, ...ASK_PRF } },
+					useAutoRegister,
+				}),
+			startAuthentication,
+		},
 	});
 	return kit;
 }

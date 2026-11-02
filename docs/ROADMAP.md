@@ -188,7 +188,7 @@ Researched 1 Nov 2026 (see DECISIONS). What is public on Stellar stays public: a
 
 | Phase | Scope | Status |
 |---|---|---|
-| A | Encrypted references, batch lines, standing orders and discussions with an organization key per epoch, wrapped per member in `contracts/keyring`; device-held X25519 keys | Done 2 Nov (real on testnet). Backup codes for the device keys done 2 Nov (your pass → Keys on this device; the app's cache keeps notes encrypted). Auditors (read-only page, added and removed by members) and private recipient names and notes (keyring labels) done 2 Nov. Reminders to share access (Overview) and the auditor's CSV statement done 2 Nov. Next: passkey PRF as a second way back; an auditor's view key |
+| A | Encrypted references, batch lines, standing orders and discussions with an organization key per epoch, wrapped per member in `contracts/keyring`; device-held X25519 keys | Done 2 Nov (real on testnet). Backup codes for the device keys done 2 Nov (your pass → Keys on this device; the app's cache keeps notes encrypted). Auditors (read-only page, added and removed by members) and private recipient names and notes (keyring labels) done 2 Nov. Reminders to share access (Overview) and the auditor's CSV statement done 2 Nov. Passkey PRF as a second way back done 2 Nov (new keys are made from the passkey where it supports PRF; keys made before stay with the backup code). Next: an auditor's view key |
 | B | A confidential pot with OpenZeppelin's confidential token (amounts hidden, auditor role), labelled preview | Not started; OZ marks the proving recipe provisional |
 | C | Approval rules over hidden amounts (custom circuits for tiers and budgets) | Research; months plus an audit |
 

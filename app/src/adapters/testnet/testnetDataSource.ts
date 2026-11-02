@@ -64,7 +64,9 @@ import {
 	readProfiles,
 } from "./organizationContract.ts";
 import { backfillTransfers, merge } from "./orgHistory.ts";
+import { passkeyKeys } from "./passkeyKeys.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
+import { restoreWithPasskey } from "./passkeyRestore.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
 import { createPrivateKeys, type PrivateKeys } from "./privacySupport.ts";
 import { decryptNote } from "./privateCrypto.ts";
@@ -133,6 +135,27 @@ export class TestnetDataSource implements DataSource {
 				return ok(restored);
 			} catch (error) {
 				return failed(describeError(error));
+			}
+		},
+		restoreWithPasskey: async (personId) => {
+			try {
+				const restored = await restoreWithPasskey(
+					{
+						network: this.config,
+						publishedKey: (person) =>
+							this.privateKeys?.reads.publicKey(person) ?? Promise.resolve(null),
+						organizations: (person) =>
+							this.snapshot.accounts
+								.filter((a) => a.org.members.some((m) => m.personId === person))
+								.map((a) => a.org.id),
+						passkeyKeys: this.passkeyKeys,
+					},
+					personId,
+				);
+				await this.refresh();
+				return ok(restored);
+			} catch (error) {
+				return failed(describeKitError(error, "restored"));
 			}
 		},
 	};
@@ -303,6 +326,7 @@ export class TestnetDataSource implements DataSource {
 					refresh: () => this.refresh(),
 					members: (orgId) => this.account(orgId)?.org.members.map((m) => m.personId) ?? [],
 					readAccount: (orgId) => this.readAccount(orgId),
+					passkeyKeys: this.passkeyKeys,
 				})
 			: null;
 		this.privacy = this.privateKeys?.support ?? null;
@@ -312,6 +336,7 @@ export class TestnetDataSource implements DataSource {
 			invoke: (target, fn, args) => this.invoke(target, fn, args),
 			failed,
 			refresh: () => this.refresh(),
+			passkeyKeys: this.passkeyKeys,
 		});
 		this.deals = config.dealContract
 			? createDealSupport({
@@ -356,6 +381,9 @@ export class TestnetDataSource implements DataSource {
 	};
 
 	getSnapshot = () => this.snapshot;
+
+	/** This pass's device keys derived from its passkey (PRF), or null when it can't. */
+	private readonly passkeyKeys = () => passkeyKeys(this.kit.credentialId);
 
 	private get kit() {
 		return passkeyKit(this.config);

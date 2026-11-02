@@ -20,6 +20,9 @@ importers:
       '@noble/post-quantum':
         specifier: 0.7.1
         version: 0.7.1
+      '@simplewebauthn/browser':
+        specifier: 13.3.0
+        version: 13.3.0
       '@stellar/stellar-sdk':
         specifier: 16.3.1
         version: 16.3.1

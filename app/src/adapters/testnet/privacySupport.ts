@@ -6,6 +6,7 @@ import { ok, type Result } from "../../domain/result.ts";
 import type { PersonId, RuleError } from "../../domain/rules/model.ts";
 import { writeDeviceBytes } from "./deviceStore.ts";
 import { hex, type KeyringReads, keyringReads, PRIVATE_KEY_DATABASE } from "./keyringReads.ts";
+import type { PasskeyKeys } from "./passkeyKeys.ts";
 import {
 	encryptNote,
 	newKeyPair,
@@ -36,6 +37,8 @@ type Deps = {
 	members: (orgId: string) => readonly PersonId[];
 	/** Any organization read from its contract (for auditors, who aren't members). */
 	readAccount: (orgId: string) => Promise<OrgAccount>;
+	/** The person's keys derived from their passkey, or null when it can't make them. */
+	passkeyKeys: () => Promise<PasskeyKeys | null>;
 };
 
 const describe = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -143,7 +146,8 @@ export function createPrivateKeys(deps: Deps): PrivateKeys {
 			guarded("Couldn't set up private details on this device", async () => {
 				let secret = await reads.deviceSecret(actor);
 				if (!secret) {
-					secret = newKeyPair().secretKey;
+					// From the passkey when it can, so the key comes back wherever the passkey does.
+					secret = (await deps.passkeyKeys())?.privateKey ?? newKeyPair().secretKey;
 					await writeDeviceBytes(PRIVATE_KEY_DATABASE, actor, secret);
 				}
 				return deps.invoke(deps.keyring, "set_key", [

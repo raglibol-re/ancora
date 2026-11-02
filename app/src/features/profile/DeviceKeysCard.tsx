@@ -43,24 +43,49 @@ export function DeviceKeysCard() {
 	const restore = async (event: FormEvent) => {
 		event.preventDefault();
 		const result = await run(() => support.restore(me.id, input), {
-			success: (restored) =>
-				[
-					restored.privateKey ? "Private details read again on this device." : null,
-					restored.sealKey ? "Quantum-safe seals sign again on this device." : null,
-				]
-					.filter(Boolean)
-					.join(" ") || "Restored.",
+			success: (restored) => describeRestored(restored) || "Restored.",
 		});
 		if (result?.ok) setInput("");
+	};
+
+	const restoreWithPasskey = async () => {
+		const result = await run(() => support.restoreWithPasskey(me.id), {
+			signature: { kind: "passkey", title: "Bring back your keys with your passkey" },
+		});
+		if (!result?.ok) return;
+		const restored = result.value;
+		notify(
+			restored === null
+				? {
+						tone: "info",
+						text: "This passkey or browser can't make keys. Use your backup code instead.",
+					}
+				: {
+						tone: describeRestored(restored) ? "success" : "info",
+						text:
+							describeRestored(restored) ||
+							"Your keys weren't made with this passkey (they were set up before, or with another one). Use your backup code instead.",
+					},
+		);
 	};
 
 	return (
 		<Card title="Keys on this device">
 			<p className={styles.muted}>
-				Your key for private details and your quantum-safe seal key live only in this browser. A
-				backup code brings them to a new device. It can't move money (that always needs your
-				passkey), but it reads your organizations' private details: keep it like a password.
+				Your key for private details and your quantum-safe seal key live only in this browser. Where
+				your passkey supports it, they are made from your passkey, so a device your passkey syncs to
+				gets them back with it. A backup code works everywhere. It can't move money (that always
+				needs your passkey), but it reads your organizations' private details: keep it like a
+				password.
 			</p>
+			<button
+				type="button"
+				className={buttonClass("secondary")}
+				disabled={busy}
+				onClick={restoreWithPasskey}
+			>
+				Bring back with my passkey
+			</button>
 			{code ? (
 				<div className={styles.form}>
 					<code className={styles.code}>{code}</code>
@@ -91,4 +116,14 @@ export function DeviceKeysCard() {
 			</form>
 		</Card>
 	);
+}
+
+/** What came back, in plain words; empty when nothing did. */
+function describeRestored(restored: { privateKey: boolean; sealKey: boolean }): string {
+	return [
+		restored.privateKey ? "Private details read again on this device." : null,
+		restored.sealKey ? "Quantum-safe seals sign again on this device." : null,
+	]
+		.filter(Boolean)
+		.join(" ");
 }

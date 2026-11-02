@@ -2,6 +2,7 @@ import { xdr } from "@stellar/stellar-sdk";
 import type { ContinuitySupport } from "../../domain/dataSource.ts";
 import { ok, type Result } from "../../domain/result.ts";
 import type { PersonId, RuleError } from "../../domain/rules/model.ts";
+import type { PasskeyKeys } from "./passkeyKeys.ts";
 import { type Network, readContract } from "./readContract.ts";
 import { address, u64 } from "./scv.ts";
 import { createSealKey, loadSealKey, toHex } from "./sealKey.ts";
@@ -15,6 +16,8 @@ type Deps = {
 	invoke: Invoke;
 	failed: (message: string) => Result<never, RuleError>;
 	refresh: () => Promise<void>;
+	/** The person's keys derived from their passkey, or null when it can't make them. */
+	passkeyKeys: () => Promise<PasskeyKeys | null>;
 };
 
 const describe = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -43,7 +46,10 @@ export function createContinuitySupport(deps: Deps): ContinuitySupport {
 		},
 		createSealKey: async (orgId, actorId) => {
 			try {
-				const key = await createSealKey(actorId);
+				const key = await createSealKey(
+					actorId,
+					async () => (await deps.passkeyKeys())?.sealSeed ?? null,
+				);
 				return await run(orgId, "set_seal_key", [
 					address(actorId),
 					xdr.ScVal.scvBytes(Buffer.from(key.publicKey)),

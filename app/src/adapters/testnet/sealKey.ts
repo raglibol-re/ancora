@@ -23,11 +23,20 @@ export async function loadSealKey(personId: string): Promise<DeviceSealKey | nul
 	return seed ? fromSeed(seed) : null;
 }
 
-/** Creates (or keeps) this device's seal key for the person. */
-export async function createSealKey(personId: string): Promise<DeviceSealKey> {
+/** The public key a seed makes, to compare with the one an organization registered. */
+export const sealPublicKey = (seed: Uint8Array) => fromSeed(seed).publicKey;
+
+/**
+ * Creates (or keeps) this device's seal key for the person, from `passkeySeed` (derived from
+ * their passkey, so it comes back with it) or at random when the passkey gives none.
+ */
+export async function createSealKey(
+	personId: string,
+	passkeySeed: () => Promise<Uint8Array | null>,
+): Promise<DeviceSealKey> {
 	const existing = await loadSealKey(personId);
 	if (existing) return existing;
-	const seed = crypto.getRandomValues(new Uint8Array(32));
+	const seed = (await passkeySeed()) ?? crypto.getRandomValues(new Uint8Array(32));
 	await writeDeviceBytes(SEAL_KEY_DATABASE, personId, seed);
 	return fromSeed(seed);
 }
