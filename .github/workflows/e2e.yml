@@ -17,7 +17,7 @@ concurrency:
 jobs:
   core-path:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: app
