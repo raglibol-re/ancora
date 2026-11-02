@@ -41,8 +41,24 @@ async function readJson(pathname: string): Promise<unknown> {
 	return JSON.parse(await new Response(result.stream).text());
 }
 
-/** Every entry of every request of an organization, oldest first. */
+/** How long a function instance answers an organization's threads without reading Blob. */
+const KEEP_MS = 30_000;
+const kept = new Map<string, { entries: StoredEntry[]; until: number }>();
+
+/**
+ * Every entry of every request of an organization, oldest first. Every app load asks for them
+ * and a listing is a costly Blob operation, so an instance keeps them for half a minute; its own
+ * writes clear them at once, other instances' show within the half minute.
+ */
 export async function listThreads(org: string): Promise<StoredEntry[]> {
+	const hit = kept.get(org);
+	if (hit && hit.until > Date.now()) return hit.entries;
+	const entries = await readThreads(org);
+	kept.set(org, { entries, until: Date.now() + KEEP_MS });
+	return entries;
+}
+
+async function readThreads(org: string): Promise<StoredEntry[]> {
 	const { blobs } = await list({ prefix: `${ROOT}/${org}/`, limit: 1000 });
 	const entries = new Map<string, StoredEntry>();
 	const answered = new Set<string>();
@@ -88,8 +104,9 @@ export async function listThreads(org: string): Promise<StoredEntry[]> {
 	return [...entries.values()].sort((a, b) => a.at - b.at);
 }
 
+/** An entry as stored now (not as kept): it decides whether a write may go ahead. */
 export async function findEntry(org: string, requestId: string, entryId: string) {
-	const entries = await listThreads(org);
+	const entries = await readThreads(org);
 	return entries.find((e) => e.id === entryId && e.requestId === requestId) ?? null;
 }
 
@@ -99,6 +116,7 @@ export function newEntryId(now: number): string {
 }
 
 export async function putEntry(org: string, entry: StoredEntry): Promise<void> {
+	kept.delete(org);
 	await put(
 		`${ROOT}/${org}/${entry.requestId}/${entry.id}.json`,
 		JSON.stringify({ authorId: entry.authorId, at: entry.at, kind: entry.kind, text: entry.text }),
@@ -107,6 +125,7 @@ export async function putEntry(org: string, entry: StoredEntry): Promise<void> {
 }
 
 export async function markAnswered(org: string, requestId: string, entryId: string) {
+	kept.delete(org);
 	await put(`${ROOT}/${org}/${requestId}/${entryId}.answered`, "1", {
 		...putOptions,
 		contentType: "text/plain",
@@ -121,6 +140,7 @@ export async function setReaction(
 	person: string,
 	reaction: Reaction | null,
 ) {
+	kept.delete(org);
 	const prefix = `${ROOT}/${org}/${requestId}/${entryId}.r.${person}.`;
 	const { blobs } = await list({ prefix, limit: 10 });
 	if (blobs.length > 0) await del(blobs.map((b) => b.url));

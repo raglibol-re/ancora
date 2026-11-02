@@ -229,7 +229,8 @@ export class TestnetDataSource implements DataSource {
 	 */
 	private connecting: Promise<unknown> = Promise.resolve();
 	/** Organizations already reported to the server's index this visit. */
-	private readonly indexed = new Set<string>();
+	/** Organizations this device already announced to the scheduler's index (kept across visits). */
+	private readonly indexed = new Set<string>(readIndexed());
 	/** Standing orders already tried this visit, so a refused run isn't retried on every refresh. */
 	private readonly attemptedOrders = new Set<string>();
 	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
@@ -507,8 +508,9 @@ export class TestnetDataSource implements DataSource {
 	}
 
 	/**
-	 * Tells the server about each organization once, so the scheduler visits organizations that
-	 * predate its index. Best effort and silent: the server also indexes what it deploys.
+	 * Tells the server about each organization once per device, so the scheduler visits
+	 * organizations that predate its index. Best effort and silent: the server also indexes what
+	 * it deploys.
 	 */
 	private async indexOrganizations(orgIds: readonly string[]): Promise<void> {
 		for (const organization of orgIds) {
@@ -520,6 +522,7 @@ export class TestnetDataSource implements DataSource {
 				body: JSON.stringify({ organization }),
 			}).catch(() => null);
 		}
+		saveIndexed(this.indexed);
 	}
 
 	/**
@@ -1286,4 +1289,24 @@ const OFF_CHAIN_ROUTES = new Set(["/api/discussions", "/api/registry-name"]);
 function contractMessage(message: string): string {
 	const code = /Error\(Contract, #(\d+)\)/.exec(message)?.[1];
 	return (code && CONTRACT_ERROR_MESSAGES[Number(code)]) || `Nothing was changed: ${message}`;
+}
+
+const INDEXED_KEY = "ancora.indexed.v1";
+
+function readIndexed(): string[] {
+	try {
+		const parsed = JSON.parse(localStorage.getItem(INDEXED_KEY) ?? "[]") as unknown;
+		return Array.isArray(parsed) ? parsed.map(String) : [];
+	} catch {
+		// No storage or a damaged entry: announce again, which is harmless.
+		return [];
+	}
+}
+
+function saveIndexed(ids: ReadonlySet<string>): void {
+	try {
+		localStorage.setItem(INDEXED_KEY, JSON.stringify([...ids]));
+	} catch {
+		// No storage (private window): the next visit announces again.
+	}
 }
