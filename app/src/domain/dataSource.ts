@@ -180,6 +180,66 @@ export interface DealSupport {
 	releaseNow(dealId: number, milestone: number): Promise<Result<void, RuleError>>;
 }
 
+/** One movement of the confidential pot as members read it. */
+export type PotEntry = {
+	id: string;
+	at: number;
+	kind: "deposit" | "withdraw" | "sent" | "received";
+	amount: Cents;
+	counterparty: string;
+};
+
+/** Whether a pot step ran at once (founder during setup) or waits for the rules. */
+export type PotOutcome = "applied" | "requested";
+
+/** The organization's confidential pot, seen from this person and device. */
+export type PotStatus =
+	/** The pot can't be used yet; `reason` says what to do. */
+	| { state: "unavailable"; reason: string }
+	/** Not opened: no pot account and no pot key. */
+	| { state: "closed" }
+	/** The pot key exists; opening the account waits for the organization's rules. */
+	| { state: "opening" }
+	| {
+			state: "open";
+			/** What can be paid or taken out, and what arrived since the last merge. */
+			spendable: Cents;
+			incoming: Cents;
+			entries: PotEntry[];
+	  }
+	/** Open, but the history the network keeps doesn't reach far enough to read the balance. */
+	| { state: "unreadable" };
+
+/**
+ * The organization's confidential pot (contracts/pot, preview): balances and the amounts paid
+ * between pots are hidden on the network; members read them with the organization's pot key.
+ * Steps that move money are requests under the organization's rules.
+ */
+export interface PotSupport {
+	/** The pot contract and the asset it holds. */
+	contract(): string;
+	asset(): string;
+	status(orgId: string, actorId: PersonId): Promise<Result<PotStatus, RuleError>>;
+	/**
+	 * Creates the pot key (kept in the keyring like private details) and opens the account. Steps
+	 * run directly for the founder during setup, otherwise as requests under the rules.
+	 */
+	open(orgId: string, actorId: PersonId): Promise<Result<PotOutcome, RuleError>>;
+	deposit(orgId: string, actorId: PersonId, amount: Cents): Promise<Result<PotOutcome, RuleError>>;
+	/** Makes what arrived spendable. */
+	merge(orgId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
+	withdraw(orgId: string, actorId: PersonId, amount: Cents): Promise<Result<PotOutcome, RuleError>>;
+	/** Pays another organization's pot an amount only the two sides read. */
+	pay(
+		orgId: string,
+		actorId: PersonId,
+		to: string,
+		amount: Cents,
+	): Promise<Result<PotOutcome, RuleError>>;
+	/** The amount of a confidential payment request, read with the pot key on this device. */
+	amountOf(orgId: string, actorId: PersonId, sealed: string): Promise<Result<Cents, RuleError>>;
+}
+
 /** What a token contract says about itself, before an organization accepts it. */
 export type TokenInfo = { token: string; symbol: string; name: string; decimals: number };
 
@@ -361,6 +421,8 @@ export interface DataSource {
 	readonly privacy: PrivacySupport | null;
 	/** Backup and restore of this device's keys; null for sample data. */
 	readonly deviceKeys: DeviceKeySupport | null;
+	/** The confidential pot (preview); null for sample data and where no pot is deployed. */
+	readonly pot: PotSupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

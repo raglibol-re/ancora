@@ -4,7 +4,7 @@ import type { Currency } from "../../domain/money.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { periodLabel } from "../../domain/rules/limits.ts";
 import type { Asset, Evaluation, Requirement, Role, RoleId } from "../../domain/rules/model.ts";
-import type { ApprovalRequest, RequestStatus } from "../../domain/rules/requests.ts";
+import type { ApprovalRequest, PotRequest, RequestStatus } from "../../domain/rules/requests.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { formatMoney } from "../../ui/format.ts";
 
@@ -135,12 +135,28 @@ export function requestTitle(
 			? `${title} · ${formatMoney(request.reserved, currency)}`
 			: title;
 	}
+	if (request.kind === "pot") return describePotRequest(request, nameOf);
 	if (request.kind === "batch") {
 		const count = request.lines.length;
 		return `${formatMoney(request.amount, request.currency)} to ${count} ${count === 1 ? "recipient" : "recipients"}${request.note ? ` · ${request.note}` : ""}`;
 	}
 	const payee = account.payees.find((p) => p.id === request.recipientId);
 	return `${formatMoney(request.amount, request.currency)} to ${payee?.name ?? "a recipient"}`;
+}
+
+/** A confidential pot step in a line; a payment's amount stays private on the network. */
+function describePotRequest(request: PotRequest, nameOf: NameOf): string {
+	const { action } = request;
+	switch (action.type) {
+		case "register":
+			return "Open the confidential pot";
+		case "deposit":
+			return `Move ${formatMoney(action.amount, request.currency)} into the confidential pot`;
+		case "withdraw":
+			return `Take ${formatMoney(action.amount, request.currency)} out of the confidential pot`;
+		case "pay":
+			return `Confidential payment to ${nameOf(action.to)}`;
+	}
 }
 
 export const statusLabels: Readonly<Record<RequestStatus, string>> = {

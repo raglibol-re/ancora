@@ -22,21 +22,21 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "ancora-deal"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "ancora-keyring"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "ancora-organization"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "ancora-deal",
  "ancora-pot",
@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "ancora-pot"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "ancora-pot-auditors",
  "ancora-pot-verifier",
@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "ancora-pot-auditors"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "soroban-sdk",
  "stellar-confidential",
@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "ancora-pot-verifier"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "soroban-sdk",
  "stellar-confidential",
@@ -80,21 +80,21 @@ dependencies = [
 
 [[package]]
 name = "ancora-recovery"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "ancora-registry"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "soroban-sdk",
 ]
 
 [[package]]
 name = "ancora-seal-verifier"
-version = "0.10.0"
+version = "0.11.1"
 dependencies = [
  "fips204",
  "serde_json",

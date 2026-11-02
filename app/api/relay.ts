@@ -33,6 +33,7 @@ export default apiHandler("POST", async (request) => {
 				(settings.recoveryContract !== "" && contractId === settings.recoveryContract) ||
 				(settings.dealContract !== "" && contractId === settings.dealContract) ||
 				(settings.keyringContract !== "" && contractId === settings.keyringContract) ||
+				(settings.potAuditors !== "" && contractId === settings.potAuditors) ||
 				(settings.stellarRegistryContract !== "" &&
 					contractId === settings.stellarRegistryContract) ||
 				(settings.orgWasmHash !== "" && (await isOrganization(settings, contractId))),

@@ -83,6 +83,8 @@ export type OnchainAccount = {
 	controls: boolean;
 	/** Succession per position and quantum-safe seals (interface version 9 or later). */
 	continuity: boolean;
+	/** Interface 10: the confidential pot (`propose_pot`, `pot_merge`). */
+	pot: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */
@@ -402,8 +404,8 @@ function execute(
 		};
 	}
 
-	// Deal steps run in the deal contract on the testnet; sample data has no deals.
-	if (request.kind === "deal") return { ...account, requests };
+	// Deal and pot steps run in their contracts on the testnet; sample data has neither.
+	if (request.kind === "deal" || request.kind === "pot") return { ...account, requests };
 	// The change was validated when requested; if the org changed since, it may no longer apply.
 	const applied = applyChange(account.org, request.change);
 	if (!applied.ok) {

@@ -228,6 +228,9 @@ ensure_ancora_contracts() {
 	SEAL_VERIFIER="$(sed -n 's/^VITE_SEAL_VERIFIER=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	DEAL_CONTRACT="$(sed -n 's/^VITE_DEAL_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	KEYRING_CONTRACT="$(sed -n 's/^VITE_KEYRING_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	POT_VERIFIER="$(sed -n 's/^VITE_POT_VERIFIER=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	POT_AUDITORS="$(sed -n 's/^VITE_POT_AUDITORS=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	POT_CONTRACT="$(sed -n 's/^VITE_POT_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	RECOVERY_CONTRACT="$(sed -n 's/^VITE_RECOVERY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	ORG_WASM_HASH="$(sed -n 's/^VITE_ORG_WASM_HASH=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	if $CHECK_ONLY; then
@@ -246,6 +249,11 @@ ensure_ancora_contracts() {
 			ok "keyring $KEYRING_CONTRACT"
 		else
 			problem "keyring missing (testnet reset?)"
+		fi
+		if [[ -n "$POT_CONTRACT" ]] && contract_exists "$POT_CONTRACT"; then
+			ok "confidential pot $POT_CONTRACT"
+		else
+			problem "confidential pot missing (testnet reset?)"
 		fi
 		if [[ -n "$SEAL_VERIFIER" ]] && contract_exists "$SEAL_VERIFIER"; then
 			ok "seal verifier $SEAL_VERIFIER"
@@ -287,6 +295,21 @@ ensure_ancora_contracts() {
 		KEYRING_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_keyring.wasm" 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the keyring."
 	fi
 	ok "keyring $KEYRING_CONTRACT"
+	# Confidential pot (preview): OpenZeppelin's confidential token over BlendUSDC with no admin,
+	# its verifier with the circuit keys fixed in its Wasm, and a self-service auditor registry.
+	if [[ -z "$POT_VERIFIER" ]] || ! contract_exists "$POT_VERIFIER"; then
+		POT_VERIFIER="$(stellar contract deploy --wasm "$wasm_dir/ancora_pot_verifier.wasm" 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the pot verifier."
+		POT_CONTRACT=""
+	fi
+	if [[ -z "$POT_AUDITORS" ]] || ! contract_exists "$POT_AUDITORS"; then
+		POT_AUDITORS="$(stellar contract deploy --wasm "$wasm_dir/ancora_pot_auditors.wasm" 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the pot auditors."
+		POT_CONTRACT=""
+	fi
+	if [[ -z "$POT_CONTRACT" ]] || ! contract_exists "$POT_CONTRACT"; then
+		POT_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_pot.wasm" 			--source "$DEPLOYER" --network "$NETWORK" -- --asset "$BLEND_USDC" 			--verifier "$POT_VERIFIER" --auditors "$POT_AUDITORS" 2>/dev/null)" ||
+			die "Could not deploy the confidential pot."
+	fi
+	ok "confidential pot $POT_CONTRACT (verifier $POT_VERIFIER, auditors $POT_AUDITORS)"
 	# Lifeline: one recovery contract per registry; organizations name it at deployment.
 	if [[ -z "$RECOVERY_CONTRACT" ]] || ! contract_exists "$RECOVERY_CONTRACT"; then
 		RECOVERY_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_recovery.wasm" \
@@ -342,6 +365,10 @@ VITE_ORG_WASM_HASH=$ORG_WASM_HASH
 VITE_SEAL_VERIFIER=$SEAL_VERIFIER
 VITE_DEAL_CONTRACT=$DEAL_CONTRACT
 VITE_KEYRING_CONTRACT=$KEYRING_CONTRACT
+# Confidential pot (preview) over BlendUSDC, its verifier and auditor registry.
+VITE_POT_CONTRACT=$POT_CONTRACT
+VITE_POT_VERIFIER=$POT_VERIFIER
+VITE_POT_AUDITORS=$POT_AUDITORS
 
 # SEP-40 oracle whose rates an organization may adopt for the tiers of other-currency payments.
 VITE_FX_ORACLE=$FX_ORACLE
@@ -438,6 +465,7 @@ sync_vercel() {
 		vercel_env SEAL_VERIFIER "$SEAL_VERIFIER"
 		vercel_env DEAL_CONTRACT "$DEAL_CONTRACT"
 		vercel_env KEYRING_CONTRACT "$KEYRING_CONTRACT"
+		vercel_env POT_AUDITORS "$POT_AUDITORS"
 		vercel_env RECOVERY_CONTRACT "$RECOVERY_CONTRACT"
 		vercel_env STELLAR_REGISTRY_CONTRACT "$STELLAR_REGISTRY_CONTRACT"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret

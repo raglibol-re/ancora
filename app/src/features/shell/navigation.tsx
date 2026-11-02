@@ -9,6 +9,7 @@ import {
 	InboxIcon,
 	OrganizationIcon,
 	RulesIcon,
+	SealIcon,
 	SendIcon,
 	SignalIcon,
 } from "../../ui/icons.tsx";
@@ -38,6 +39,7 @@ export const primaryItems: readonly NavItem[] = [
 	{ to: "/app/approvals", label: "Approvals", icon: <ApprovalsIcon />, inTabBar: true },
 	{ to: "/app/activity", label: "Activity", icon: <ActivityIcon />, inTabBar: false },
 	{ to: "/app/deals", label: "Deals", icon: <DealsIcon />, inTabBar: false },
+	{ to: "/app/pot", label: "Confidential pot", icon: <SealIcon />, inTabBar: false },
 ];
 
 /** How the organization is set up: rules, budgets, people, settings. */

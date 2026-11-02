@@ -48,6 +48,29 @@ impl Organization {
         Ok(settled.id)
     }
 
+    /// Takes a pot action without a request. Only the founder, only in the setup phase.
+    ///
+    /// Auth: `by`, the founder.
+    pub fn pot_directly(e: &Env, by: Address, call: PotCall) -> Result<(), Error> {
+        by.require_auth();
+        continuity::touch(e, &by);
+        extend_instance(e);
+        let info = load_info(e);
+        if by != info.founder {
+            return Err(Error::NotFounder);
+        }
+        let members = ranked(e, &info.roles);
+        if !rules::is_setup_phase(e, &info.roles, &members, &load_policy(e), &info.founder) {
+            return Err(Error::NotInSetupPhase);
+        }
+        let (_, call) = weigh(e, &info, call)?;
+        // `perform` releases what a deposit holds back, so it is held for the moment it runs.
+        if let Some(token) = &call.reserved_token {
+            add_committed(e, token, call.reserved_amount);
+        }
+        perform(e, &call).map_err(|_| Error::PotUnavailable)
+    }
+
     /// Makes what the pot received spendable. It moves nothing out, so any member may.
     ///
     /// Auth: `by`, a member.

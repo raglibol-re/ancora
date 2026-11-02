@@ -33,6 +33,8 @@ import type { Continuity } from "./continuityRead.ts";
 import type { Controls } from "./controlsRead.ts";
 import { mapDealAction } from "./dealCodec.ts";
 import type { ChainTransfer } from "./orgHistory.ts";
+import { mapPotAction } from "./pot/potCodec.ts";
+import { POT_ERROR_MESSAGES } from "./pot/potErrors.ts";
 import { toCents } from "./scv.ts";
 
 // Pure mapping from the organization contract's decoded values (scValToNative output) to the
@@ -372,6 +374,7 @@ export function mapRequest(
 	now: number,
 	assets: readonly Asset[] = [],
 	escrow: Native | null = null,
+	potAsset: string | null = null,
 ): ApprovalRequest {
 	const createdAt = seconds(native.created_at);
 	const executeAfter =
@@ -457,11 +460,31 @@ export function mapRequest(
 			reserved: toCents(big(call.reserved_amount)),
 		};
 	}
+	if (kind === "Pot") {
+		const call = fields[0] as Native;
+		const token = call.reserved_token ? str(call.reserved_token) : (potAsset ?? "");
+		return {
+			...base,
+			kind: "pot",
+			contract: str(call.pot),
+			action: mapPotAction(call.action),
+			token,
+			currency: assets.find((a) => a.token === token)?.currency ?? "USD",
+			reservedToken: call.reserved_token ? str(call.reserved_token) : null,
+			reserved: toCents(big(call.reserved_amount)),
+		};
+	}
 	return { ...base, kind: "governance", change: mapChange(fields[0]) };
 }
 
 /** A failed request's reason: the organization's own error, or the deal contract's (1000 + code). */
 function failureOf(code: number): RuleError {
+	if (code >= 2000) {
+		return ruleError(
+			"not-allowed",
+			POT_ERROR_MESSAGES[code - 2000] ?? "The confidential pot didn't accept this step.",
+		);
+	}
 	if (code >= 1000) {
 		return ruleError(
 			"not-allowed",
@@ -482,6 +505,8 @@ export function mapOrganization(
 	nameOf: NameLookup,
 	now: number = Date.now(),
 	symbolOf?: SymbolLookup,
+	/** The asset of ancora's confidential pot, which pot requests are counted in. */
+	potAsset: string | null = null,
 ): OrgAccount {
 	const info = snapshot.info;
 	const templateId =
@@ -519,7 +544,7 @@ export function mapOrganization(
 			: {}),
 	};
 	const requests = snapshot.requests.map((r) =>
-		mapRequest(r, now, assets, snapshot.escrows.get(String(r.id)) ?? null),
+		mapRequest(r, now, assets, snapshot.escrows.get(String(r.id)) ?? null, potAsset),
 	);
 	// Saved recipients first, with the names members gave them; then anyone paid before.
 	const payees = new Map<string, Payee>();
@@ -551,10 +576,10 @@ export function mapOrganization(
 		}
 	}
 	const requestActivity: ActivityEntry[] = requests
-		// A deal step's money shows up as the token transfer it caused, read from the ledger.
-		.filter((r) => r.status === "executed" && r.kind !== "deal")
+		// A deal or pot step's money shows up as the token transfer it caused, read from the ledger.
+		.filter((r) => r.status === "executed" && r.kind !== "deal" && r.kind !== "pot")
 		.flatMap((r): ActivityEntry[] =>
-			r.kind === "deal"
+			r.kind === "deal" || r.kind === "pot"
 				? []
 				: r.kind === "batch"
 					? r.lines.map((line, index) => ({
@@ -644,6 +669,7 @@ export function mapOrganization(
 			upgrades: snapshot.version >= 7,
 			controls: snapshot.version >= 8,
 			continuity: snapshot.version >= 9,
+			pot: snapshot.version >= 10,
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

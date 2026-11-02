@@ -7,6 +7,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatMoney, formatRelative } from "../../ui/format.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
+import { PotPaymentAmount } from "../pot/PotPaymentAmount.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { requestTitle } from "./describe.ts";
 import styles from "./RequestCard.module.css";
@@ -74,6 +75,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 						{request.evaluation.overBudget && " · over budget"}
 					</p>
 				)}
+			{request.kind === "pot" && <PotPaymentAmount account={account} request={request} />}
 			{request.kind === "batch" && (
 				<ul className={styles.lines}>
 					{request.lines.map((line, index) => (

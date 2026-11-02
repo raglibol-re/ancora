@@ -18,6 +18,8 @@ export type ServerConfig = {
 	dealContract: string;
 	/** ancora's keyring (encryption keys for private details); empty keeps it off. */
 	keyringContract: string;
+	/** The confidential pot's auditor registry, where organizations register their keys. */
+	potAuditors: string;
 	/** The Stellar Registry's open channel, where organizations register their names. */
 	stellarRegistryContract: string;
 	/** The stablecoins an organization may accept, keyed by token address. */
@@ -63,6 +65,7 @@ export function serverConfig(): ServerConfig {
 		recoveryContract: process.env.RECOVERY_CONTRACT ?? "",
 		dealContract: process.env.DEAL_CONTRACT ?? "",
 		keyringContract: process.env.KEYRING_CONTRACT ?? "",
+		potAuditors: process.env.POT_AUDITORS ?? "",
 		stellarRegistryContract: process.env.STELLAR_REGISTRY_CONTRACT ?? "",
 		orgAssets: parseOrgAssets(process.env.ORG_ASSETS ?? ""),
 		allowedOrigins: new Set(

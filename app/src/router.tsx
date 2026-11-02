@@ -18,6 +18,7 @@ import { OverviewPage } from "./features/overview/OverviewPage.tsx";
 import { PasskeyProvider } from "./features/passkey/PasskeyProvider.tsx";
 import { PayPage } from "./features/pay/PayPage.tsx";
 import { PayeesPage } from "./features/payees/PayeesPage.tsx";
+import { PotPage } from "./features/pot/PotPage.tsx";
 import { ProfilePage } from "./features/profile/ProfilePage.tsx";
 import { RulesPage } from "./features/rules/RulesPage.tsx";
 import { SettingsPage } from "./features/settings/SettingsPage.tsx";
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
 			{ path: "links", element: <LinksPage /> },
 			{ path: "deals", element: <DealsPage /> },
 			{ path: "audit", element: <AuditPage /> },
+			{ path: "pot", element: <PotPage /> },
 			{ path: "deals/:dealId", element: <DealDetailPage /> },
 			{ path: "statement", element: <StatementPage /> },
 			{ path: "escrow/:orgId/:requestId", element: <EscrowPage /> },

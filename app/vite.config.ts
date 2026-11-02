@@ -37,6 +37,8 @@ export default defineConfig({
 			},
 			workbox: {
 				globPatterns: ["**/*.{js,css,html,woff2}"],
+				// The pot's prover (bb.js, 3.4 MB with its Wasm inline) loads only when it is used.
+				globIgnores: ["**/barretenberg*.js"],
 				navigateFallback: "/index.html",
 				// API routes are server-side and must never be answered from the SPA shell.
 				navigateFallbackDenylist: [/^\/api\//],
@@ -46,8 +48,9 @@ export default defineConfig({
 		}),
 	],
 	build: {
-		// The lazily loaded testnet chunk carries the Stellar SDK (~1 MB); the main bundle stays small.
-		chunkSizeWarningLimit: 1500,
+		// The lazily loaded testnet chunk carries the Stellar SDK (~1 MB) and the confidential pot's
+		// prover (bb.js, 3.4 MB with its Wasm inline) loads on first use; the main bundle stays small.
+		chunkSizeWarningLimit: 3500,
 	},
 	test: {
 		include: ["src/**/*.test.ts", "api/**/*.test.ts"],

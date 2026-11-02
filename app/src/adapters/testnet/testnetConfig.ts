@@ -40,6 +40,10 @@ export type TestnetConfig = {
 	fxOracle: string;
 	/** ancora's keyring (members' encryption keys, wrapped organization keys); empty: off. */
 	keyringContract: string;
+	/** The confidential pot over the test USDC, its verifier and auditor registry; empty: off. */
+	potContract: string;
+	potVerifier: string;
+	potAuditors: string;
 };
 
 /** Keys that may be empty without disabling the testnet. */
@@ -48,6 +52,9 @@ const OPTIONAL: ReadonlySet<keyof TestnetConfig> = new Set([
 	"dealContract",
 	"fxOracle",
 	"keyringContract",
+	"potContract",
+	"potVerifier",
+	"potAuditors",
 ]);
 
 type EnvSource = Record<string, string | boolean | undefined>;
@@ -77,6 +84,9 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	dealContract: "VITE_DEAL_CONTRACT",
 	fxOracle: "VITE_FX_ORACLE",
 	keyringContract: "VITE_KEYRING_CONTRACT",
+	potContract: "VITE_POT_CONTRACT",
+	potVerifier: "VITE_POT_VERIFIER",
+	potAuditors: "VITE_POT_AUDITORS",
 };
 
 export type AssetOption = Asset & { label: string };

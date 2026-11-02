@@ -20,6 +20,7 @@ import type {
 	IdentitySupport,
 	LifelineSupport,
 	PaymentInput,
+	PotSupport,
 	PrivacySupport,
 	ProfileInput,
 	RampSupport,
@@ -68,6 +69,7 @@ import { passkeyKeys } from "./passkeyKeys.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { restoreWithPasskey } from "./passkeyRestore.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
+import { createPotSupport } from "./pot/potSupport.ts";
 import { createPrivateKeys, type PrivateKeys } from "./privacySupport.ts";
 import { decryptNote } from "./privateCrypto.ts";
 import { labelsFor } from "./privateLabels.ts";
@@ -120,6 +122,7 @@ export class TestnetDataSource implements DataSource {
 	readonly fxOracle: string | null;
 	readonly continuity: ContinuitySupport;
 	readonly privacy: PrivacySupport | null;
+	readonly pot: PotSupport | null;
 	readonly deviceKeys: DeviceKeySupport = {
 		backupCode: async (personId) => {
 			try {
@@ -330,6 +333,24 @@ export class TestnetDataSource implements DataSource {
 				})
 			: null;
 		this.privacy = this.privateKeys?.support ?? null;
+		this.pot =
+			this.privateKeys && config.potContract
+				? createPotSupport({
+						network: config,
+						config: {
+							pot: config.potContract,
+							verifier: config.potVerifier,
+							auditors: config.potAuditors,
+							asset: config.usdcToken,
+						},
+						reads: this.privateKeys.reads,
+						account: (orgId) => this.account(orgId),
+						keyring: config.keyringContract,
+						invoke: (target, fn, args) => this.invoke(target, fn, args),
+						failed,
+						refresh: () => this.refresh(),
+					})
+				: null;
 		this.continuity = createContinuitySupport({
 			network: config,
 			verifier: config.sealVerifier,
@@ -550,6 +571,7 @@ export class TestnetDataSource implements DataSource {
 				(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
 				Date.now(),
 				(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
+				this.pot?.asset() ?? null,
 			),
 			discussions: threads[index] ?? {},
 		}));
@@ -669,6 +691,7 @@ export class TestnetDataSource implements DataSource {
 				(who) => this.profiles.get(who)?.name ?? undefined,
 				Date.now(),
 				(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
+				this.pot?.asset() ?? null,
 			),
 			discussions: {},
 		};

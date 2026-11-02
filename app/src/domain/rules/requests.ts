@@ -104,7 +104,37 @@ export type DealRequest = RequestBase & {
 	reserved: Cents;
 };
 
-export type ApprovalRequest = PaymentRequest | GovernanceRequest | BatchRequest | DealRequest;
+/** What the organization does with its confidential pot (testnet preview). */
+export type PotAction =
+	| { type: "register" }
+	| { type: "deposit"; amount: Cents }
+	| { type: "withdraw"; amount: Cents }
+	/**
+	 * A payment whose amount only the two sides read: `sealed` is the proof's payload, from which
+	 * members' devices recover the amount.
+	 */
+	| { type: "pay"; to: string; sealed: string };
+
+/** A step on the organization's confidential pot, taken once the rules allow it. */
+export type PotRequest = RequestBase & {
+	kind: "pot";
+	/** The pot contract it goes to. */
+	contract: string;
+	action: PotAction;
+	/** The asset the pot holds, and its currency, for showing amounts. */
+	token: string;
+	currency: Currency;
+	/** What a deposit holds back on the account until the request is done (0 otherwise). */
+	reservedToken: string | null;
+	reserved: Cents;
+};
+
+export type ApprovalRequest =
+	| PaymentRequest
+	| GovernanceRequest
+	| BatchRequest
+	| DealRequest
+	| PotRequest;
 
 /** Requests that move money out: a single payment or a batch. */
 export type MoneyRequest = PaymentRequest | BatchRequest;

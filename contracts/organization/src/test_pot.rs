@@ -25,22 +25,24 @@ struct Setup {
     pot: PotClient<'static>,
 }
 
+/// The pot, its verifier and auditor registry (auditor number 0 registered).
+fn deploy_pot(w: &World) -> PotClient<'static> {
+    let auditors = w.e.register(PotAuditors, ());
+    PotAuditorsClient::new(&w.e, &auditors).register_key(&0, &key(w, 0), &w.founder);
+    let verifier = w.e.register(PotVerifier, ());
+    let pot = Address::from_str(&w.e, POT);
+    w.e.register_at(&pot, Pot, (w.token.clone(), verifier, auditors));
+    PotClient::new(&w.e, &pot)
+}
+
 fn setup() -> Setup {
     let w = club_at(5_000, Some(ORG));
     w.e.cost_estimate().budget().reset_unlimited();
     let board = [board_member(&w), board_member(&w)];
-    let auditors = w.e.register(PotAuditors, ());
-    PotAuditorsClient::new(&w.e, &auditors).register_key(&0, &key(&w, 0), &w.founder);
-    let verifier = w.e.register(PotVerifier, ());
-    let pot = Address::from_str(&w.e, POT);
-    w.e.register_at(&pot, Pot, (w.token.clone(), verifier, auditors));
+    let pot = deploy_pot(&w);
     // From here on every signature is explicit: nothing is authorized by default.
     w.e.set_auths(&[]);
-    Setup {
-        pot: PotClient::new(&w.e, &pot),
-        board,
-        w,
-    }
+    Setup { pot, board, w }
 }
 
 /// A 64-byte point from the proof's public inputs (0: spending key, 1: viewing key).
@@ -214,4 +216,36 @@ fn only_the_organization_can_act_on_its_pot_account() {
         .try_propose_pot(&outsider, &pot_call)
         .is_err());
     assert!(s.w.org.try_pot_merge(member, &s.pot.address).is_err());
+}
+
+#[test]
+fn the_founder_uses_the_pot_directly_while_setting_up() {
+    let w = club_at(5_000, Some(ORG));
+    w.e.cost_estimate().budget().reset_unlimited();
+    let pot = deploy_pot(&w);
+    w.e.set_auths(&[]);
+    let as_founder = |action: PotAction| {
+        let pot_call = PotCall {
+            pot: pot.address.clone(),
+            action,
+            reserved_token: None,
+            reserved_amount: 0,
+        };
+        let invoke = signed(
+            &w.org.address,
+            "pot_directly",
+            (w.founder.clone(), pot_call.clone()).into_val(&w.e),
+        );
+        w.org
+            .mock_auths(&[MockAuth {
+                address: &w.founder,
+                invoke: &invoke,
+            }])
+            .pot_directly(&w.founder, &pot_call);
+    };
+    as_founder(PotAction::Register(0, register_data(&w)));
+    as_founder(PotAction::Deposit(euros(300)));
+    assert_eq!(w.token_client.balance(&pot.address), euros(300));
+    // Nothing stays held back: what is available is exactly what the account holds.
+    assert_eq!(w.org.available(&w.token), euros(4_700));
 }
