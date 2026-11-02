@@ -1,4 +1,5 @@
 import { Address, rpc, scValToNative, type xdr } from "@stellar/stellar-sdk";
+import { CHUNK_LEDGERS, scanEvents } from "./eventScan.ts";
 import type { Network } from "./readContract.ts";
 
 // What actually happened to the organization's money, read from the ledger's events rather than
@@ -31,12 +32,8 @@ export type HistoryPage = {
 
 const DAY_IN_LEDGERS = 17_280;
 const LOOKBACK_LEDGERS = 7 * DAY_IN_LEDGERS;
-/** Below what RPC scans before cutting a request off, so one chunk is normally one request. */
-const CHUNK_LEDGERS = 8_000;
 /** Chunks read while the organization loads: about the last eleven hours. */
 const INLINE_CHUNKS = 1;
-const PARALLEL_CHUNKS = 4;
-const PAGE = 500;
 /** Entries kept per organization; older ones stay on the explorer. */
 const KEEP = 400;
 
@@ -98,7 +95,7 @@ function newestLast(transfers: ChainTransfer[]): ChainTransfer[] {
 	return transfers.sort((a, b) => a.at - b.at).slice(-KEEP);
 }
 
-/** Every transfer in `[from, end)`, read in chunks a few at a time. */
+/** Every transfer in `[from, end)`. */
 async function scan(
 	server: rpc.Server,
 	organization: string,
@@ -106,16 +103,8 @@ async function scan(
 	from: number,
 	end: number,
 ): Promise<ChainTransfer[]> {
-	if (tokens.length === 0 || from >= end) return [];
-	const filters = filtersFor(organization, tokens);
-	const chunks: [number, number][] = [];
-	for (let at = from; at < end; at += CHUNK_LEDGERS) {
-		chunks.push([at, Math.min(at + CHUNK_LEDGERS, end)]);
-	}
-	const found = await inBatches(chunks, PARALLEL_CHUNKS, ([chunkFrom, chunkEnd]) =>
-		readChunk(server, filters, chunkFrom, chunkEnd),
-	);
-	return found.flat();
+	if (tokens.length === 0) return [];
+	return scanEvents(server, filtersFor(organization, tokens), from, end, toTransfer);
 }
 
 /**
@@ -137,56 +126,6 @@ function filtersFor(organization: string, tokens: readonly string[]): rpc.Api.Ev
 		});
 	}
 	return filters.slice(0, 5);
-}
-
-/**
- * One ledger range `[from, end)`. A full page means more may follow, so the next page starts at
- * the cursor; a short page's cursor sits on the last ledger scanned, which is `end - 1` once the
- * range is done. One retry covers a dropped connection to the public RPC.
- */
-async function readChunk(
-	server: rpc.Server,
-	filters: rpc.Api.EventFilter[],
-	from: number,
-	end: number,
-): Promise<ChainTransfer[]> {
-	const transfers: ChainTransfer[] = [];
-	let request: rpc.Api.GetEventsRequest = {
-		startLedger: from,
-		endLedger: end,
-		filters,
-		limit: PAGE,
-	};
-	for (let page = 0; page < 10; page++) {
-		const response = await getEventsWithRetry(server, request);
-		for (const event of response.events) {
-			const transfer = toTransfer(event);
-			if (transfer) transfers.push(transfer);
-		}
-		if (response.events.length < PAGE && cursorLedger(response.cursor) >= end - 1) break;
-		// A cursor can't be paired with a ledger range; the page may run past `end`, and events
-		// another chunk also finds are merged by id.
-		request = { cursor: response.cursor, filters, limit: PAGE };
-	}
-	return transfers;
-}
-
-async function getEventsWithRetry(
-	server: rpc.Server,
-	request: rpc.Api.GetEventsRequest,
-): Promise<rpc.Api.GetEventsResponse> {
-	try {
-		return await server.getEvents(request);
-	} catch {
-		await new Promise((resolve) => setTimeout(resolve, 400));
-		return server.getEvents(request);
-	}
-}
-
-/** The ledger an RPC event cursor points at (its first part is a TOID: ledger in the high bits). */
-function cursorLedger(cursor: string): number {
-	const [toid] = cursor.split("-");
-	return toid && /^\d+$/.test(toid) ? Number(BigInt(toid) >> 32n) : 0;
 }
 
 function toTransfer(event: rpc.Api.EventResponse): ChainTransfer | null {
@@ -233,16 +172,4 @@ function amountOf(value: unknown): bigint | null {
 		return typeof amount === "bigint" ? amount : null;
 	}
 	return null;
-}
-
-async function inBatches<T, R>(
-	items: readonly T[],
-	size: number,
-	run: (item: T) => Promise<R>,
-): Promise<R[]> {
-	const results: R[] = [];
-	for (let i = 0; i < items.length; i += size) {
-		results.push(...(await Promise.all(items.slice(i, i + size).map(run))));
-	}
-	return results;
 }
