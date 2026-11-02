@@ -25,10 +25,19 @@ export function parseDemoState(value: unknown): DemoState {
 export async function readDemoState(): Promise<DemoState> {
 	try {
 		const result = await get(PATHNAME, { access: "public", useCache: false });
-		if (result?.statusCode !== 200) return DEFAULT_STATE;
+		if (result?.statusCode !== 200) {
+			// biome-ignore lint/suspicious/noConsole: server-side log line for the operator
+			console.warn(
+				`[demo state] ${PATHNAME} answered ${result?.statusCode ?? "nothing"}; sample data`,
+			);
+			return DEFAULT_STATE;
+		}
 		return parseDemoState(JSON.parse(await new Response(result.stream).text()));
-	} catch {
-		// Missing blob (never set) or a Blob outage: the defined fallback is sample data.
+	} catch (error) {
+		// A Blob outage (or a store that can't be reached): the defined fallback is sample data,
+		// logged so the operator sees why visitors got it.
+		// biome-ignore lint/suspicious/noConsole: server-side log line for the operator
+		console.error(`[demo state] ${error instanceof Error ? error.message : String(error)}`);
 		return DEFAULT_STATE;
 	}
 }

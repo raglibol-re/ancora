@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-02: The server now logs why it falls back to sample data when the demo setting can't be read from Vercel Blob, and the hourly live check fails (emailing the team) instead of only warning.
 - 2026-11-02: Backup codes for the keys that live on a device (private details and the quantum-safe seal): your pass → Keys on this device shows one and restores from one, so a new device reads private details and seals without anyone re-sharing. The app's local cache now keeps private notes encrypted.
 - 2026-11-02: The Send page and batch form say when references are private and flag one too long to keep private before it is sent.
 - 2026-11-02: A fifth nightly end-to-end run: two members set up private details, a payment reference is read by both in the app while the organization contract stores only ciphertext.

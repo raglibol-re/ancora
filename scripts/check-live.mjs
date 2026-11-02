@@ -39,7 +39,12 @@ async function checkHealth() {
 		return;
 	}
 	const { mode, rpc, testMoney } = health.data;
-	if (mode !== "testnet") warnings.push(`The site is in "${mode}" mode (set in /admin).`);
+	if (mode !== "testnet" && !health.data.updatedAt) {
+		// Sample mode without a time was never chosen: the setting couldn't be read (Vercel Blob).
+		problems.push("The site fell back to sample data: its demo setting couldn't be read from Vercel Blob.");
+	} else if (mode !== "testnet") {
+		warnings.push(`The site is in "${mode}" mode (set in /admin).`);
+	}
 	if (!rpc?.ok) problems.push(`The testnet RPC doesn't answer: ${rpc?.error ?? "no detail"}.`);
 	for (const asset of testMoney ?? []) {
 		if (asset.available) continue;
