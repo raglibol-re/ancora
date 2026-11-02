@@ -19,6 +19,7 @@ import type {
 	IdentitySupport,
 	LifelineSupport,
 	PaymentInput,
+	PrivacySupport,
 	ProfileInput,
 	RampSupport,
 	RegistryNameSupport,
@@ -29,6 +30,7 @@ import type { DiscussionEntry } from "../../domain/discussion.ts";
 import type { RecoveryPlan } from "../../domain/lifeline.ts";
 import type { Cents } from "../../domain/money.ts";
 import { withWork } from "../../domain/pendingWork.ts";
+import { privateNotesOf, revealNotes } from "../../domain/privateNote.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
@@ -56,6 +58,8 @@ import {
 import { backfillTransfers, merge } from "./orgHistory.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
+import { createPrivateKeys, type PrivateKeys } from "./privacySupport.ts";
+import { decryptNote } from "./privateCrypto.ts";
 import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
 import { registerContractArgs, resolveRegistryName } from "./registryNames.ts";
@@ -103,6 +107,13 @@ export class TestnetDataSource implements DataSource {
 	readonly deals: DealSupport | null;
 	readonly fxOracle: string | null;
 	readonly continuity: ContinuitySupport;
+	readonly privacy: PrivacySupport | null;
+	private readonly privateKeys: PrivateKeys | null;
+	/** Accounts as read, before private notes are replaced by what this device can read. */
+	private raw: OrgAccount[] = [];
+	/** Private notes this device decrypted, and those it tried, so each is opened once. */
+	private readonly plainNotes = new Map<string, string>();
+	private readonly triedNotes = new Set<string>();
 	readonly lifeline: LifelineSupport = {
 		overview: (person) =>
 			this.remember(`lifeline:${person}`, 20_000, () =>
@@ -129,8 +140,18 @@ export class TestnetDataSource implements DataSource {
 		},
 	};
 	readonly discussions: DiscussionSupport = {
-		post: (orgId, requestId, actorId, entry) =>
-			this.discuss({ action: "post", org: orgId, requestId, person: actorId, ...entry }),
+		post: async (orgId, requestId, actorId, entry) => {
+			const text = await this.protectNote(orgId, actorId, entry.text, false);
+			if (!text.ok) return text;
+			return this.discuss({
+				action: "post",
+				org: orgId,
+				requestId,
+				person: actorId,
+				...entry,
+				text: text.value,
+			});
+		},
 		react: (orgId, requestId, entryId, actorId, reaction) =>
 			this.discuss({ action: "react", org: orgId, requestId, entryId, person: actorId, reaction }),
 		markAnswered: (orgId, requestId, entryId, actorId) =>
@@ -238,6 +259,17 @@ export class TestnetDataSource implements DataSource {
 				}
 			: null;
 		this.fxOracle = config.fxOracle || null;
+		this.privateKeys = config.keyringContract
+			? createPrivateKeys({
+					network: config,
+					keyring: config.keyringContract,
+					invoke: (target, fn, args) => this.invoke(target, fn, args),
+					failed,
+					refresh: () => this.refresh(),
+					members: (orgId) => this.account(orgId)?.org.members.map((m) => m.personId) ?? [],
+				})
+			: null;
+		this.privacy = this.privateKeys?.support ?? null;
 		this.continuity = createContinuitySupport({
 			network: config,
 			verifier: config.sealVerifier,
@@ -373,6 +405,7 @@ export class TestnetDataSource implements DataSource {
 			}
 			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
 			this.publish(me, snapshots, threads, everyone);
+			void this.revealPrivateNotes(me);
 			void this.backfillHistory(me, snapshots, threads, everyone);
 			void this.runDueOrders(me);
 			void this.indexOrganizations(orgIds);
@@ -456,12 +489,16 @@ export class TestnetDataSource implements DataSource {
 			),
 			discussions: threads[index] ?? {},
 		}));
+		this.raw = accounts;
 		const people: Person[] = [...everyone].map((id) => ({
 			id,
 			name: this.profiles.get(id)?.name ?? shortAddress(id),
 			avatarUrl: this.profiles.get(id)?.avatarUrl ?? null,
 		}));
-		this.snapshot = { people, accounts };
+		this.snapshot = {
+			people,
+			accounts: accounts.map((account) => revealNotes(account, this.plainNotes)),
+		};
 		if (this.me?.id === me) {
 			saveCachedSession(this.storage, {
 				me: this.me,
@@ -502,6 +539,50 @@ export class TestnetDataSource implements DataSource {
 		}
 		this.publish(me, filled, threads, everyone);
 		this.notify();
+	}
+
+	/**
+	 * Decrypts the private notes this device can read and shows them; notes it can't read stay
+	 * "Private note". Each note is tried once per visit.
+	 */
+	private async revealPrivateNotes(me: string): Promise<void> {
+		const keys = this.privateKeys;
+		if (!keys) return;
+		let revealed = false;
+		for (const account of this.raw) {
+			const notes = privateNotesOf(account).filter((note) => !this.triedNotes.has(note));
+			if (notes.length === 0) continue;
+			try {
+				const orgKeys = await keys.keysFor(account.org.id, me);
+				for (const note of notes) {
+					this.triedNotes.add(note);
+					const plain = await decryptNote(note, orgKeys);
+					if (plain !== null) {
+						this.plainNotes.set(note, plain);
+						revealed = true;
+					}
+				}
+			} catch (error) {
+				recordError(this.storage, {
+					at: Date.now(),
+					where: "private notes",
+					message: error instanceof Error ? error.message : String(error),
+				});
+			}
+		}
+		if (!revealed || this.me?.id !== me) return;
+		this.snapshot = {
+			...this.snapshot,
+			accounts: this.raw.map((account) => revealNotes(account, this.plainNotes)),
+		};
+		this.notify();
+	}
+
+	/** A note as it is stored: encrypted when the organization keeps references private. */
+	private protectNote(orgId: string, actorId: PersonId, text: string, onChain: boolean) {
+		return this.privateKeys
+			? this.privateKeys.protect(orgId, actorId, text, onChain)
+			: Promise.resolve(ok(text));
 	}
 
 	private async createIdentity(name: string): Promise<Result<Identity, RuleError>> {
@@ -641,12 +722,14 @@ export class TestnetDataSource implements DataSource {
 			return null;
 		});
 		if (recipient && !recipient.ok) return recipient;
+		const note = await this.protectNote(orgId, actorId, input.note.trim(), true);
+		if (!note.ok) return note;
 		const result = await this.invoke(orgId, "propose_payment", [
 			address(actorId),
 			address(input.token),
 			address(to),
 			i128(toStroops(input.amount)),
-			text(input.note.trim()),
+			text(note.value),
 			optionalSymbol(input.category ?? null),
 			bool(input.escrow ?? false),
 		]);
@@ -673,11 +756,19 @@ export class TestnetDataSource implements DataSource {
 		);
 		const refused = checks.find((check) => check && !check.ok);
 		if (refused && !refused.ok) return refused;
+		const notes = await Promise.all(
+			[input.note.trim(), ...lines.map((line) => line.note)].map((note) =>
+				this.protectNote(orgId, actorId, note, true),
+			),
+		);
+		const failedNote = notes.find((note) => !note.ok);
+		if (failedNote && !failedNote.ok) return failedNote;
+		const stored = notes.map((note) => (note.ok ? note.value : ""));
 		const result = await this.invoke(orgId, "propose_batch", [
 			address(actorId),
 			address(input.token),
-			batchLinesToScVal(lines),
-			text(input.note.trim()),
+			batchLinesToScVal(lines.map((line, index) => ({ ...line, note: stored[index + 1] ?? "" }))),
+			text(stored[0] ?? ""),
 			optionalSymbol(input.category ?? null),
 		]);
 		if (!result.ok) return result;
@@ -818,12 +909,14 @@ export class TestnetDataSource implements DataSource {
 	}
 
 	async setStandingOrder(orgId: string, actorId: PersonId, input: StandingOrderInput) {
+		const note = await this.protectNote(orgId, actorId, input.note.trim(), true);
+		if (!note.ok) return note;
 		const result = await this.invoke(orgId, "set_standing_order", [
 			address(actorId),
 			address(input.token),
 			address(input.to.trim()),
 			i128(toStroops(input.amount)),
-			text(input.note.trim()),
+			text(note.value),
 			optionalSymbol(input.category ?? null),
 			u64(input.intervalSeconds),
 			u64(Math.floor(input.firstAt / 1000)),

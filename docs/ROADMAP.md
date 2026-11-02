@@ -182,6 +182,16 @@ Milestone escrow (`contracts/deal`, no admin): create, accept, fund, request a p
 
 Suggested order: A1, then C14, B7, B6, B8, B9, A3 and A4 in parallel with the rest, and A2 before mainnet.
 
+## Privacy
+
+Researched 1 Nov 2026 (see DECISIONS). What is public on Stellar stays public: amounts of ordinary stablecoin transfers, who pays whom, timing, the fee payer.
+
+| Phase | Scope | Status |
+|---|---|---|
+| A | Encrypted references, batch lines, standing orders and discussions with an organization key per epoch, wrapped per member in `contracts/keyring`; device-held X25519 keys | Done 2 Nov (real on testnet). Next: key backup or passkey PRF so a lost device doesn't need another member; encrypted address-book names and notes (they need more room than a reference); an auditor's view key; reminders to share access |
+| B | A confidential pot with OpenZeppelin's confidential token (amounts hidden, auditor role), labelled preview | Not started; OZ marks the proving recipe provisional |
+| C | Approval rules over hidden amounts (custom circuits for tiers and budgets) | Research; months plus an audit |
+
 ## Outlook
 
 - **Non-fungible holdings:** membership cards, certificates and tickets as OpenZeppelin NonFungible tokens held by the organization next to its stablecoins (the asset list already pairs a token address with what it stands for; NFTs need no amounts, so they bypass the tiers and use governance for transfers).

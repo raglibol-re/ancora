@@ -32,6 +32,7 @@ export default apiHandler("POST", async (request) => {
 				(settings.registryContract !== "" && contractId === settings.registryContract) ||
 				(settings.recoveryContract !== "" && contractId === settings.recoveryContract) ||
 				(settings.dealContract !== "" && contractId === settings.dealContract) ||
+				(settings.keyringContract !== "" && contractId === settings.keyringContract) ||
 				(settings.stellarRegistryContract !== "" &&
 					contractId === settings.stellarRegistryContract) ||
 				(settings.orgWasmHash !== "" && (await isOrganization(settings, contractId))),

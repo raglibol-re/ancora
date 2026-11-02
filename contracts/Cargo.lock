@@ -28,6 +28,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ancora-keyring"
+version = "0.9.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "ancora-organization"
 version = "0.9.0"
 dependencies = [

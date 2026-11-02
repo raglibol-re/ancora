@@ -98,6 +98,8 @@ export class LocalDataSource implements DataSource {
 	readonly fxOracle = null;
 	/** Succession claims and seal keys need the ledger's clock and a device key: testnet only. */
 	readonly continuity = null;
+	/** Sample data is stored in this browser; nothing to encrypt for other members. */
+	readonly privacy = null;
 	readonly registryNames: RegistryNameSupport = {
 		channel: () => "simulated",
 		current: async (orgId) => {

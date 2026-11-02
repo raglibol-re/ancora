@@ -227,6 +227,7 @@ ensure_ancora_contracts() {
 	REGISTRY_CONTRACT="$(sed -n 's/^VITE_REGISTRY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	SEAL_VERIFIER="$(sed -n 's/^VITE_SEAL_VERIFIER=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	DEAL_CONTRACT="$(sed -n 's/^VITE_DEAL_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
+	KEYRING_CONTRACT="$(sed -n 's/^VITE_KEYRING_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	RECOVERY_CONTRACT="$(sed -n 's/^VITE_RECOVERY_CONTRACT=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	ORG_WASM_HASH="$(sed -n 's/^VITE_ORG_WASM_HASH=//p' "$ENV_FILE" 2>/dev/null | head -1)"
 	if $CHECK_ONLY; then
@@ -240,6 +241,11 @@ ensure_ancora_contracts() {
 			ok "deals $DEAL_CONTRACT"
 		else
 			problem "deal contract missing (testnet reset?)"
+		fi
+		if [[ -n "$KEYRING_CONTRACT" ]] && contract_exists "$KEYRING_CONTRACT"; then
+			ok "keyring $KEYRING_CONTRACT"
+		else
+			problem "keyring missing (testnet reset?)"
 		fi
 		if [[ -n "$SEAL_VERIFIER" ]] && contract_exists "$SEAL_VERIFIER"; then
 			ok "seal verifier $SEAL_VERIFIER"
@@ -276,6 +282,11 @@ ensure_ancora_contracts() {
 		DEAL_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_deal.wasm" 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the deal contract."
 	fi
 	ok "deals $DEAL_CONTRACT"
+	# Private details: members' encryption keys and wrapped organization keys; holds no money.
+	if [[ -z "$KEYRING_CONTRACT" ]] || ! contract_exists "$KEYRING_CONTRACT"; then
+		KEYRING_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_keyring.wasm" 			--source "$DEPLOYER" --network "$NETWORK" 2>/dev/null)" || die "Could not deploy the keyring."
+	fi
+	ok "keyring $KEYRING_CONTRACT"
 	# Lifeline: one recovery contract per registry; organizations name it at deployment.
 	if [[ -z "$RECOVERY_CONTRACT" ]] || ! contract_exists "$RECOVERY_CONTRACT"; then
 		RECOVERY_CONTRACT="$(stellar contract deploy --wasm "$wasm_dir/ancora_recovery.wasm" \
@@ -330,6 +341,7 @@ VITE_REGISTRY_CONTRACT=$REGISTRY_CONTRACT
 VITE_ORG_WASM_HASH=$ORG_WASM_HASH
 VITE_SEAL_VERIFIER=$SEAL_VERIFIER
 VITE_DEAL_CONTRACT=$DEAL_CONTRACT
+VITE_KEYRING_CONTRACT=$KEYRING_CONTRACT
 
 # SEP-40 oracle whose rates an organization may adopt for the tiers of other-currency payments.
 VITE_FX_ORACLE=$FX_ORACLE
@@ -425,6 +437,7 @@ sync_vercel() {
 		vercel_env REGISTRY_CONTRACT "$REGISTRY_CONTRACT"
 		vercel_env SEAL_VERIFIER "$SEAL_VERIFIER"
 		vercel_env DEAL_CONTRACT "$DEAL_CONTRACT"
+		vercel_env KEYRING_CONTRACT "$KEYRING_CONTRACT"
 		vercel_env RECOVERY_CONTRACT "$RECOVERY_CONTRACT"
 		vercel_env STELLAR_REGISTRY_CONTRACT "$STELLAR_REGISTRY_CONTRACT"
 		vercel_env DEPLOYER_SECRET "$(stellar keys secret "$DEPLOYER")" secret

@@ -7,6 +7,7 @@ import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { LogoCard } from "./LogoCard.tsx";
 import { OrgCodeCard } from "./OrgCodeCard.tsx";
+import { PrivacyCard } from "./PrivacyCard.tsx";
 import { RegistryNameCard } from "./RegistryNameCard.tsx";
 import { SealCard } from "./SealCard.tsx";
 import styles from "./SettingsPage.module.css";
@@ -34,6 +35,7 @@ export function SettingsPage() {
 						<OnStellarCard account={account} />
 						<OrgCodeCard key={`code-${account.org.id}`} account={account} />
 						<SealCard key={`seal-${account.org.id}`} account={account} />
+						<PrivacyCard key={`privacy-${account.org.id}`} account={account} />
 					</>
 				)}
 			</OrgRequired>

@@ -16,6 +16,8 @@ export type ServerConfig = {
 	recoveryContract: string;
 	/** ancora's deal contract (milestone escrow between parties); empty keeps deals off. */
 	dealContract: string;
+	/** ancora's keyring (encryption keys for private details); empty keeps it off. */
+	keyringContract: string;
 	/** The Stellar Registry's open channel, where organizations register their names. */
 	stellarRegistryContract: string;
 	/** The stablecoins an organization may accept, keyed by token address. */
@@ -60,6 +62,7 @@ export function serverConfig(): ServerConfig {
 		registryContract: process.env.REGISTRY_CONTRACT ?? "",
 		recoveryContract: process.env.RECOVERY_CONTRACT ?? "",
 		dealContract: process.env.DEAL_CONTRACT ?? "",
+		keyringContract: process.env.KEYRING_CONTRACT ?? "",
 		stellarRegistryContract: process.env.STELLAR_REGISTRY_CONTRACT ?? "",
 		orgAssets: parseOrgAssets(process.env.ORG_ASSETS ?? ""),
 		allowedOrigins: new Set(

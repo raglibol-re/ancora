@@ -25,6 +25,7 @@ const complete = {
 	VITE_STELLAR_REGISTRY_CONTRACT: "",
 	VITE_DEAL_CONTRACT: "",
 	VITE_FX_ORACLE: "",
+	VITE_KEYRING_CONTRACT: "",
 };
 
 describe("readTestnetConfig", () => {

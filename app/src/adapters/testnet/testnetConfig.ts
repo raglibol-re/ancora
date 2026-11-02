@@ -38,6 +38,8 @@ export type TestnetConfig = {
 	dealContract: string;
 	/** SEP-40 oracle (Reflector) an organization may adopt for exchange rates; empty keeps it off. */
 	fxOracle: string;
+	/** ancora's keyring (members' encryption keys, wrapped organization keys); empty: off. */
+	keyringContract: string;
 };
 
 /** Keys that may be empty without disabling the testnet. */
@@ -45,6 +47,7 @@ const OPTIONAL: ReadonlySet<keyof TestnetConfig> = new Set([
 	"stellarRegistryContract",
 	"dealContract",
 	"fxOracle",
+	"keyringContract",
 ]);
 
 type EnvSource = Record<string, string | boolean | undefined>;
@@ -73,6 +76,7 @@ const KEYS: Record<keyof TestnetConfig, string> = {
 	stellarRegistryContract: "VITE_STELLAR_REGISTRY_CONTRACT",
 	dealContract: "VITE_DEAL_CONTRACT",
 	fxOracle: "VITE_FX_ORACLE",
+	keyringContract: "VITE_KEYRING_CONTRACT",
 };
 
 export type AssetOption = Asset & { label: string };

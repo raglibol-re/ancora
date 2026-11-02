@@ -88,6 +88,34 @@ export interface ReleaseSupport {
 	status(orgId: string): Promise<Result<CodeStatus, RuleError>>;
 }
 
+/** Where an organization stands with private details, seen from this person and device. */
+export type PrivacyStatus = {
+	/** The organization's current key epoch; 0 while nothing is private. */
+	epoch: number;
+	/** This device holds the person's encryption key, and it is the one published. */
+	deviceReady: boolean;
+	/** This device can read (and write) with the current epoch's key. */
+	canRead: boolean;
+	/** Members with a published key who don't have the current key (or have it for an old key). */
+	waiting: PersonId[];
+	/** Members who haven't set up private details on any device yet. */
+	withoutKey: PersonId[];
+};
+
+/**
+ * Private details: references and discussion entries stored on-chain encrypted with the
+ * organization's key, readable only by its members (and whoever they share it with).
+ */
+export interface PrivacySupport {
+	status(orgId: string, actorId: PersonId): Promise<Result<PrivacyStatus, RuleError>>;
+	/** Creates this device's encryption key for the person (or keeps it) and publishes it. */
+	setUpDevice(actorId: PersonId): Promise<Result<void, RuleError>>;
+	/** Opens a new key epoch (the first turns private details on) and shares it with everyone. */
+	newEpoch(orgId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
+	/** Shares every key this device can read with the members still waiting for one. */
+	shareWaiting(orgId: string, actorId: PersonId): Promise<Result<number, RuleError>>;
+}
+
 /** Lifeline succession inside organizations and quantum-safe seal keys. */
 export interface ContinuitySupport {
 	/** The ML-DSA verifier an organization names to require quantum-safe seals. */
@@ -297,6 +325,8 @@ export interface DataSource {
 	readonly fxOracle: string | null;
 	/** Succession claims and seal keys; null for sample data. */
 	readonly continuity: ContinuitySupport | null;
+	/** Private details; null for sample data and where no keyring is configured. */
+	readonly privacy: PrivacySupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

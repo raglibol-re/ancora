@@ -1,0 +1,17 @@
+[package]
+name = "ancora-keyring"
+description = "ancora keyring: members' encryption keys and each organization's shared key, wrapped per member, so private details can be stored on-chain readable only by the organization."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["lib", "cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
