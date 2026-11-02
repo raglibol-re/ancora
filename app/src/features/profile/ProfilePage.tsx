@@ -15,6 +15,7 @@ import { roleLabel } from "../requests/describe.ts";
 import { DataSourceCard } from "../settings/DataSourceCard.tsx";
 import type { ThemePreference } from "../workspace/preferences.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { DeviceKeysCard } from "./DeviceKeysCard.tsx";
 import { DevicesSection } from "./DevicesSection.tsx";
 import { EditProfileCard } from "./EditProfileCard.tsx";
 import { NotificationsCard } from "./NotificationsCard.tsx";
@@ -189,6 +190,7 @@ export function ProfilePage() {
 				<InstallHint />
 			</Card>
 
+			<DeviceKeysCard />
 			<NotificationsCard />
 			<DataSourceCard />
 		</Page>

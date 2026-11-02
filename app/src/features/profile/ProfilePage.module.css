@@ -133,3 +133,9 @@
 	gap: var(--space-3);
 	margin-top: var(--space-2);
 }
+
+.code {
+	font-size: var(--text-sm);
+	overflow-wrap: anywhere;
+	user-select: all;
+}

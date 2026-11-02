@@ -12,6 +12,7 @@ import type {
 	ContinuitySupport,
 	DataSource,
 	DealSupport,
+	DeviceKeySupport,
 	DiscussionSupport,
 	EscrowView,
 	FundingSupport,
@@ -40,6 +41,7 @@ import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
 import { createContinuitySupport, sealWithDeviceKey } from "./continuitySupport.ts";
 import { createDealSupport } from "./dealSupport.ts";
+import { exportDeviceKeys, importDeviceKeys } from "./deviceKeys.ts";
 import { type HistoryCache, historyCache } from "./historyCache.ts";
 import { readClaimStatus, readOverview, recoveryMessage, setPlanArgs } from "./lifelineContract.ts";
 import {
@@ -86,6 +88,7 @@ const MAX_AVATAR_BYTES = 256;
 /** A session restore that takes longer than this shows the sign-in page instead of blocking it. */
 const RESTORE_TIMEOUT_MS = 8_000;
 
+const describeError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const failed = (message: string) => err(ruleError("not-allowed", message));
 const byteLength = (value: string) => new TextEncoder().encode(value).length;
 
@@ -108,6 +111,24 @@ export class TestnetDataSource implements DataSource {
 	readonly fxOracle: string | null;
 	readonly continuity: ContinuitySupport;
 	readonly privacy: PrivacySupport | null;
+	readonly deviceKeys: DeviceKeySupport = {
+		backupCode: async (personId) => {
+			try {
+				return ok(await exportDeviceKeys(personId));
+			} catch (error) {
+				return failed(`Couldn't read the keys on this device: ${describeError(error)}`);
+			}
+		},
+		restore: async (personId, code) => {
+			try {
+				const restored = await importDeviceKeys(personId, code);
+				await this.refresh();
+				return ok(restored);
+			} catch (error) {
+				return failed(describeError(error));
+			}
+		},
+	};
 	private readonly privateKeys: PrivateKeys | null;
 	/** Accounts as read, before private notes are replaced by what this device can read. */
 	private raw: OrgAccount[] = [];
@@ -188,7 +209,12 @@ export class TestnetDataSource implements DataSource {
 		const cached = loadCachedSession(storage);
 		if (cached) {
 			this.me = cached.me;
-			this.snapshot = cached.workspace;
+			// The cache holds private notes encrypted; they show as private until decrypted again.
+			this.raw = [...cached.workspace.accounts];
+			this.snapshot = {
+				...cached.workspace,
+				accounts: this.raw.map((account) => revealNotes(account, this.plainNotes)),
+			};
 			this.profiles = new Map(cached.profiles);
 			this.restoringSession = false;
 		}
@@ -500,9 +526,10 @@ export class TestnetDataSource implements DataSource {
 			accounts: accounts.map((account) => revealNotes(account, this.plainNotes)),
 		};
 		if (this.me?.id === me) {
+			// Private notes are cached as stored (encrypted): plain text never reaches local storage.
 			saveCachedSession(this.storage, {
 				me: this.me,
-				workspace: this.snapshot,
+				workspace: { people, accounts },
 				profiles: [...this.profiles.entries()],
 			});
 		}

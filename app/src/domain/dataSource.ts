@@ -118,6 +118,17 @@ export interface PrivacySupport {
 	shareWaiting(orgId: string, actorId: PersonId): Promise<Result<number, RuleError>>;
 }
 
+/** The keys that live only on this device, backed up and restored with a code. */
+export interface DeviceKeySupport {
+	/** A backup code for this device's keys of the person; null when there are none. */
+	backupCode(personId: PersonId): Promise<Result<string | null, RuleError>>;
+	/** Restores the person's keys on this device; says which came back. */
+	restore(
+		personId: PersonId,
+		code: string,
+	): Promise<Result<{ privateKey: boolean; sealKey: boolean }, RuleError>>;
+}
+
 /** Lifeline succession inside organizations and quantum-safe seal keys. */
 export interface ContinuitySupport {
 	/** The ML-DSA verifier an organization names to require quantum-safe seals. */
@@ -329,6 +340,8 @@ export interface DataSource {
 	readonly continuity: ContinuitySupport | null;
 	/** Private details; null for sample data and where no keyring is configured. */
 	readonly privacy: PrivacySupport | null;
+	/** Backup and restore of this device's keys; null for sample data. */
+	readonly deviceKeys: DeviceKeySupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

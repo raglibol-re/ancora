@@ -98,6 +98,30 @@ test("members read a private reference that is stored encrypted", async ({ brows
 		await expect(member.getByText(SECRET).first()).toBeVisible();
 	});
 
+	await test.step("the member's backup code brings the key back after it was lost", async () => {
+		await member.goto("/app/me");
+		await member.getByRole("button", { name: "Show backup code" }).click();
+		const code =
+			(await member.locator("code").filter({ hasText: "ancora-keys-1." }).textContent()) ?? "";
+		expect(code.startsWith("ancora-keys-1.")).toBe(true);
+		// Losing the device's keys: the reference can no longer be read here.
+		await member.evaluate(
+			"new Promise((done) => { const r = indexedDB.deleteDatabase('ancora-private'); r.onsuccess = r.onerror = () => done(); })",
+		);
+		await member.goto(requestUrl);
+		await member.reload();
+		await expect(
+			member.getByText("Private note (not readable on this device)").first(),
+		).toBeVisible();
+		await member.goto("/app/me");
+		await member.locator("#backup-code").fill(code);
+		await member.getByRole("button", { name: "Restore keys" }).click();
+		await expect(member.getByText("Private details read again on this device.")).toBeVisible();
+		await member.goto(requestUrl);
+		await member.reload();
+		await expect(member.getByText(SECRET).first()).toBeVisible();
+	});
+
 	await test.step("on Stellar the reference is ciphertext", async () => {
 		const organization = await readOrganizationId(founder);
 		const id = Number(requestUrl.split("/").pop());

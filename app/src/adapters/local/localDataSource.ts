@@ -100,6 +100,8 @@ export class LocalDataSource implements DataSource {
 	readonly continuity = null;
 	/** Sample data is stored in this browser; nothing to encrypt for other members. */
 	readonly privacy = null;
+	/** Sample data keeps no keys on the device. */
+	readonly deviceKeys = null;
 	readonly registryNames: RegistryNameSupport = {
 		channel: () => "simulated",
 		current: async (orgId) => {

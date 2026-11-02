@@ -19,7 +19,7 @@ import { address, u32 } from "./scv.ts";
 // (deviceStore), the public key and the wrapped organization keys live in ancora's keyring
 // contract, and the keyring asks the organization contract who its members are.
 
-const DATABASE = "ancora-private";
+export const PRIVATE_KEY_DATABASE = "ancora-private";
 
 type Invoke = (target: string, fn: string, args: xdr.ScVal[]) => Promise<Result<void, RuleError>>;
 
@@ -70,7 +70,7 @@ export function createPrivateKeys(deps: Deps): PrivateKeys {
 		} | null;
 		return row ? ({ key: new Uint8Array(row.key), forKey: hex(row.for_key) } as Wrapped) : null;
 	};
-	const deviceSecret = (person: PersonId) => readDeviceBytes(DATABASE, person);
+	const deviceSecret = (person: PersonId) => readDeviceBytes(PRIVATE_KEY_DATABASE, person);
 
 	const keysFor = async (orgId: string, person: PersonId) => {
 		const keys = new Map<number, Uint8Array>();
@@ -141,7 +141,7 @@ export function createPrivateKeys(deps: Deps): PrivateKeys {
 				let secret = await deviceSecret(actor);
 				if (!secret) {
 					secret = newKeyPair().secretKey;
-					await writeDeviceBytes(DATABASE, actor, secret);
+					await writeDeviceBytes(PRIVATE_KEY_DATABASE, actor, secret);
 				}
 				const result = await deps.invoke(deps.keyring, "set_key", [
 					address(actor),
