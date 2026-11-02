@@ -1,6 +1,7 @@
 import { scValToNative, xdr } from "@stellar/stellar-sdk";
 import { Buffer } from "buffer";
 import type { PotOutcome, PotSupport } from "../../../domain/dataSource.ts";
+import { pendingPotSpend } from "../../../domain/pot.ts";
 import { ok, type Result } from "../../../domain/result.ts";
 import type { RuleError } from "../../../domain/rules/model.ts";
 import { address, toCents, toStroops, u32 } from "../scv.ts";
@@ -85,19 +86,8 @@ export function createPotSupport(deps: Deps): PotSupport {
 
 	/** The open pot, merged first when something arrived, so the proof spends everything. */
 	const spendable = async (orgId: string, actorId: string): Promise<Result<OpenPot, RuleError>> => {
-		const waiting = deps
-			.account(orgId)
-			?.requests.some(
-				(r) =>
-					r.kind === "pot" &&
-					(r.action.type === "pay" || r.action.type === "withdraw") &&
-					(r.status === "pending" || r.status === "scheduled" || r.status === "ready"),
-			);
-		if (waiting) {
-			return deps.failed(
-				"Another pot payment is waiting for approval; its proof would no longer fit. Wait until it's done.",
-			);
-		}
+		const waiting = waitingSpend(orgId);
+		if (waiting) return waiting;
 		let load = await loadPot(deps, orgId, actorId);
 		if (load.state === "open" && load.balance.receiving.value > 0n) {
 			const merged = await deps.invoke(orgId, "pot_merge", [address(actorId), address(pot)]);
@@ -107,6 +97,15 @@ export function createPotSupport(deps: Deps): PotSupport {
 		if (load.state !== "open")
 			return deps.failed("The pot isn't open and readable on this device.");
 		return ok(load);
+	};
+
+	/** A refusal while a pot spend waits: anything touching the balance would break its proof. */
+	const waitingSpend = (orgId: string) => {
+		const account = deps.account(orgId);
+		if (!account || !pendingPotSpend(account)) return null;
+		return deps.failed(
+			"A pot payment is waiting for approval; its proof would no longer fit. Wait until it's done.",
+		);
 	};
 
 	const done = async (result: Result<void, RuleError>) => {
@@ -170,9 +169,11 @@ export function createPotSupport(deps: Deps): PotSupport {
 				propose(orgId, actorId, { type: "deposit", amount: toStroops(amount) }),
 			),
 		merge: (orgId, actorId) =>
-			guarded("Couldn't make the pot's incoming money spendable", async () =>
-				done(await deps.invoke(orgId, "pot_merge", [address(actorId), address(pot)])),
-			),
+			guarded("Couldn't make the pot's incoming money spendable", async () => {
+				const waiting = waitingSpend(orgId);
+				if (waiting) return waiting;
+				return done(await deps.invoke(orgId, "pot_merge", [address(actorId), address(pot)]));
+			}),
 		withdraw: (orgId, actorId, amount) =>
 			guarded("Couldn't take money out of the pot", async () => {
 				const open = await spendable(orgId, actorId);

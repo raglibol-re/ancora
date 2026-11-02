@@ -1,6 +1,7 @@
 import { availableBalance, type OrgAccount, shortAddress } from "../../domain/account.ts";
 import type { PotOutcome, PotStatus, PotSupport } from "../../domain/dataSource.ts";
 import type { Cents } from "../../domain/money.ts";
+import { pendingPotSpend } from "../../domain/pot.ts";
 import type { Result } from "../../domain/result.ts";
 import type { RuleError } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
@@ -92,11 +93,23 @@ type BodyProps = {
 };
 
 function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
-	const { me, personName } = useWorkspace();
+	const { me, personName, workspace } = useWorkspace();
 	const { run, busy: running } = useCommand();
 	const busy = running || reading;
 	const orgId = account.org.id;
 	const asset = account.org.assets.find((a) => a.token === support.asset());
+	const waiting = pendingPotSpend(account);
+	// Other organizations a payment can go to: saved recipients that are contracts, and the
+	// person's other organizations.
+	const candidates = [
+		...account.payees
+			.filter((p) => p.account.startsWith("C") && p.account !== orgId)
+			.map((p) => ({ name: p.name, address: p.account })),
+		...workspace.accounts
+			.filter((a) => a.org.id !== orgId)
+			.map((a) => ({ name: a.org.name, address: a.org.id })),
+	];
+	const suggestions = [...new Map(candidates.map((c) => [c.address, c])).values()];
 
 	const step = async <T,>(
 		title: string,
@@ -164,12 +177,18 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 					{status.incoming > 0 ? ` · ${money(status.incoming)} arrived, not yet spendable` : ""}
 				</p>
 			</div>
+			{waiting && (
+				<p className={styles.muted} role="status">
+					A pot payment is waiting for approval. Until it runs, new payments and making incoming
+					money spendable are paused: they would change the balance its proof was made for.
+				</p>
+			)}
 			{status.incoming > 0 && (
 				<div className={styles.actions}>
 					<button
 						type="button"
 						className={buttonClass("secondary")}
-						disabled={busy}
+						disabled={busy || waiting !== null}
 						onClick={() =>
 							step(
 								"Make the pot's incoming money spendable",
@@ -205,7 +224,8 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 					currency={asset.currency}
 					max={status.spendable + status.incoming}
 					withRecipient
-					busy={busy}
+					suggestions={suggestions}
+					busy={busy || waiting !== null}
 					onSubmit={(amount, to) =>
 						step(
 							"Pay from the confidential pot",
@@ -220,7 +240,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 					action="Take out"
 					currency={asset.currency}
 					max={status.spendable + status.incoming}
-					busy={busy}
+					busy={busy || waiting !== null}
 					onSubmit={(amount) =>
 						step(
 							"Take money out of the pot",

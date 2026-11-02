@@ -15,6 +15,8 @@ type Props = {
 	max: Cents;
 	/** Asks for the other organization's address too (a confidential payment). */
 	withRecipient?: boolean;
+	/** Organizations to pick from: the address book's and the person's own. */
+	suggestions?: readonly { name: string; address: string }[];
 	busy: boolean;
 	onSubmit: (amount: Cents, to: string) => Promise<boolean>;
 };
@@ -27,6 +29,7 @@ export function PotAmountForm({
 	currency,
 	max,
 	withRecipient = false,
+	suggestions = [],
 	busy,
 	onSubmit,
 }: Props) {
@@ -34,6 +37,7 @@ export function PotAmountForm({
 	const [amount, setAmount] = useState("");
 	const [to, setTo] = useState("");
 	const [error, setError] = useState<string | null>(null);
+	const [working, setWorking] = useState(false);
 
 	const submit = async (event: FormEvent) => {
 		event.preventDefault();
@@ -51,7 +55,10 @@ export function PotAmountForm({
 			return;
 		}
 		setError(null);
-		if (await onSubmit(cents, to.trim())) {
+		setWorking(true);
+		const done = await onSubmit(cents, to.trim());
+		setWorking(false);
+		if (done) {
 			setAmount("");
 			setTo("");
 		}
@@ -68,9 +75,17 @@ export function PotAmountForm({
 						className={controlClass}
 						placeholder="C…"
 						spellCheck={false}
+						list={`${id}-orgs`}
 						value={to}
 						onChange={(e) => setTo(e.target.value)}
 					/>
+					<datalist id={`${id}-orgs`}>
+						{suggestions.map((s) => (
+							<option key={s.address} value={s.address}>
+								{s.name}
+							</option>
+						))}
+					</datalist>
 				</Field>
 			)}
 			<Field label={`Amount (${currency})`} htmlFor={`${id}-amount`} error={error}>
@@ -85,7 +100,7 @@ export function PotAmountForm({
 			</Field>
 			<div className={styles.actions}>
 				<button type="submit" className={buttonClass("secondary")} disabled={busy}>
-					{action}
+					{working ? "Working on it…" : action}
 				</button>
 			</div>
 		</form>
