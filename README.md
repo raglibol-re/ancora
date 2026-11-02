@@ -181,7 +181,7 @@ pnpm verify       # format/lint, typecheck, tests, build: same as CI
 
 ```bash
 cd app
-pnpm e2e         # the core path, a two-pass approval, a quantum-safe seal, private details and a deal between two organizations on the real testnet with virtual passkeys (Playwright; nightly in CI)
+pnpm e2e         # the core path, a two-pass approval, a quantum-safe seal, private details, a deal and confidential pots between two organizations on the real testnet with virtual passkeys (Playwright; nightly in CI)
 node ../scripts/check-live.mjs   # is production up and able to sponsor fees and hand out test money? (hourly in CI)
 ```
 
@@ -242,7 +242,7 @@ The operator cannot create, approve or alter requests, and cannot move organizat
 
 ## Roadmap
 
-Built for HackMeridian 2026; continuing through the Stellar Community Fund #46 in three milestones: proven on testnet (two-pass end-to-end tests, contract releases on the Stellar Registry, governed upgrades, monitoring), rules and keys (device-held ML-DSA seal, Reflector rates for the rules, per-category limits and recipient allowlists, Lifeline in full), and ready for mainnet (external security review, licensed euro ramp, pilot organizations). Deliverables and acceptance checks are in [docs/ROADMAP.md](docs/ROADMAP.md#scf-46-milestones).
+Built for HackMeridian 2026; continuing through the Stellar Community Fund #46 in three milestones: proven on testnet (every flow end-to-end every night, reproducible attested builds, monitoring, a durable event archive), privacy and keys beyond preview (the confidential pot out of preview, approval tiers proven over hidden amounts, Lifeline reminders, the native ML-DSA host function), and ready for mainnet (external security review, licensed euro ramp, pilot organizations). Deliverables and acceptance checks are in [docs/ROADMAP.md](docs/ROADMAP.md#scf-46-milestones); the demo walk-through is [docs/DEMO.md](docs/DEMO.md).
 
 ## Built with
 

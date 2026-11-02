@@ -108,33 +108,43 @@ Continuity for organizations when keys are lost or a person dies or is incapacit
 
 ## SCF #46 milestones
 
-Starting point (1 Nov 2026): everything in the HackMeridian table above plus custom roles, address book, push notifications, statements, batch payments and payment links is real on testnet (organization interface 6), open source under Apache-2.0, with a nightly end-to-end run against production. Weeks count from the award; the budget per milestone is set by the team in the application.
+Starting point (2 Nov 2026), all real on testnet and open source under Apache-2.0:
+- **From HackMeridian:** everything in the table above, plus custom roles, the address book, push notifications, statements, batch payments and payment links.
+- **Since then:**
+  - organizations move to new releases through their own rules (published on the Stellar Registry);
+  - channel accounts for server transactions;
+  - allowances, recipient allowlists and Reflector exchange rates;
+  - deals between organizations;
+  - Lifeline succession and quantum-safe ML-DSA seals checked by the contract;
+  - private details: encrypted references and recipients, auditors, backup codes and passkey-derived keys;
+  - a confidential pot preview on OpenZeppelin's confidential token, with ancora's own browser client.
+- **Coverage:** six end-to-end flows run against production every night (core, approvals, deals, seals, privacy, pot).
+
+Weeks count from the award; the budget per milestone is set by the team in the application.
 
 ### M1: proven on testnet (weeks 1–6)
 
 | Deliverable | Done when |
 |---|---|
-| End-to-end coverage with two passes: approvals (running nightly since 1 Nov), standing orders, Reserve, secure handover, payment links, a Lifeline claim | Each flow runs nightly against production in `app/e2e`, green for 14 days in a row |
-| Contract releases on the Stellar Registry: the four Wasm files as named, versioned releases (`scripts/publish-registry.sh`; done 1 Nov, 0.7.0 on the open channel), organizations deployed by release name, attested builds through the registry's GitHub action. Known gap (2 Nov): builds aren't reproducible yet, so the published registry, recovery and seal-verifier releases are rebuilds of the deployed source, not its exact bytes (the recovery contract on testnet runs 53b3256a…); organization and deal releases are the exact deployed code | Settings shows the release next to the code an organization runs (done 1 Nov); a new organization's code resolves to a public release |
-| Governed upgrade of an organization's Wasm, so existing organizations get new features without being recreated (done 1 Nov: `Change::Upgrade`, interface 7; organizations from before cannot upgrade) | An organization on interface 7 moves to release 0.8.0 through a rule-change request and keeps its money, members and history |
-| Channel accounts for server transactions (done 1 Nov), rate limits on every function, monitoring (error tracking; uptime and float alerts run hourly since 1 Nov) | Ten simultaneous server transactions settle within two ledgers; an alert fires in a drill |
-| History beyond RPC's week through an indexer (Mercury or SubQuery) behind `orgHistory.ts` | A device away for a month sees the full activity |
+| Nightly end-to-end coverage of every flow: the six above plus standing orders, Reserve, secure handover, payment links, a Lifeline claim and a governed upgrade | Each flow green for 14 nights in a row against production |
+| Reproducible, attested builds: pinned toolchain, a build container, the Stellar Registry's GitHub attestation action; releases then carry the exact deployed bytes (today rebuilds give new hashes, so organizations see "upgrade available" for unchanged code) | Two independent builds of a release give the same hash; Settings shows the attestation |
+| Rate limits on every function, error tracking, an alert drill (uptime and float checks run hourly since 1 Nov) | Ten simultaneous server transactions settle within two ledgers; an alert fires in a drill |
+| History beyond RPC's week through a durable event archive (Mercury or SubQuery) behind `orgHistory.ts` and the pot's event reader (devices already keep encrypted snapshots) | A device away for a month, or a new one, sees the full activity and reads the pot |
 
-### M2: rules and keys (weeks 7–14)
+### M2: privacy and keys, beyond preview (weeks 7–14)
 
 | Deliverable | Done when |
 |---|---|
-| Security seal with a device-held ML-DSA key (done 2 Nov in release 0.9.0, checked by the organization contract rather than as an account signer, see DECISIONS): generated on the approving device; the native host function replaces the in-contract verifier once Protocol 30 is on testnet and mainnet (vote 23 Nov 2026) | A strictest-tier payment needs the device's ML-DSA signature, verified on-chain |
-| Reflector (SEP-40) rates for the rules, so a payment in another currency meets the right tier instead of the strictest (done 1 Nov: `SetFxOracle`, Reflector's free forex oracle, Rules → Exchange rates) | A EURC payment in a USD organization is judged at the oracle rate, shown in the preview |
-| Spending limits per category and asset, recipient allowlists built on the address book (done 1 Nov: `SetAllowance`, `SetRecipients`) | Contract tests and UI; a payment outside the allowlist is refused or escalated as the rules say |
-| Lifeline in full: inactivity path (heartbeat, check-in reminders, successors) and succession plans per role (done 2 Nov in release 0.9.0 inside the organization: last-seen per member, successor per position, claim, wait, handover; check-in reminders still open) | A 2-of-2 rule no longer deadlocks when a holder is gone; drill on testnet |
+| Confidential pot out of preview: the event archive above, the organization's pot auditor key shared with its outside auditors, spender delegation (a standing order paid from the pot), tracking OpenZeppelin's final proving recipe (zero-knowledge mode once the verifier supports it) | An auditor reads a pot's payments on the Audit page; the pot E2E runs on the final recipe |
+| Approval tiers for hidden amounts (privacy phase C, first step): a range proof that a confidential payment is below a tier's limit, checked by the organization, so it no longer always takes the strictest tier | A confidential payment under the first tier runs without approvals, proven, not revealed |
+| Lifeline check-in reminders (push) on top of succession; the native ML-DSA host function replaces the in-contract verifier once Protocol 30 reaches testnet and mainnet | A quiet member is reminded before a successor can claim; seals verify through the host function |
 | Perch step 1: publish ancora's rules document in perch's IR where it fits | Document and mapping published; upstream proposal for `i128` range predicates and asynchronous approvals |
 
 ### M3: ready for mainnet (weeks 15–24)
 
 | Deliverable | Done when |
 |---|---|
-| External security review of the organization, registry and recovery contracts, plus a threat model for the relayer, the wallet index and the Blob stores | Report published in `docs/`, every finding fixed or answered |
+| External security review of the organization, registry, recovery, deal, keyring and pot contracts and of the pot's browser client, plus a threat model for the relayer, the wallet index and the Blob stores | Report published in `docs/`, every finding fixed or answered |
 | Mainnet profile: network settings per environment, operator key in a KMS, fee budget with alerts, backups of the Blob data | Mainnet deployment of the contracts from attested releases |
 | Licensed ramp partner (EUR IBAN/SEPA) in production mode, MoneyGram Access for cash as a second SEP-24 home domain in `anchorRamp.ts`; terms, privacy and the "not a bank" wording reviewed | A pilot organization moves euros in and out through the partner |
 | Pilot organizations (clubs, NGOs, small companies) on mainnet | Pilots run their real payments under their own rules; feedback folded into the roadmap |
