@@ -68,6 +68,10 @@ impl Organization {
             return Err(Error::NotInSetupPhase);
         }
         let (_, call) = weigh(e, &info, call)?;
+        // `perform` releases what a deposit holds back, so it is held for the moment it runs.
+        if let Some(token) = &call.reserved_token {
+            add_committed(e, token, call.reserved_amount);
+        }
         perform(e, &call).map_err(|_| Error::DealRefused)
     }
 }

@@ -309,3 +309,41 @@ fn a_refused_deal_step_marks_the_request_failed_with_the_deals_reason() {
     assert_eq!(request.status, Status::Failed);
     assert_eq!(request.failure, Some(1_001));
 }
+
+#[test]
+fn a_direct_deposit_during_setup_leaves_nothing_held_back() {
+    let w = club(5_000);
+    let deals = RealDealsClient::new(&w.e, &w.e.register(Deals, ()));
+    let party_b = Address::generate(&w.e);
+    let direct = |action: DealAction| {
+        w.org.deal_directly(
+            &w.founder,
+            &DealCall {
+                deals: deals.address.clone(),
+                action,
+                reserved_token: None,
+                reserved_amount: 0,
+            },
+        );
+    };
+    let terms = DealTerms {
+        asset: w.token.clone(),
+        milestones: Vec::from_array(
+            &w.e,
+            [MilestoneTerms {
+                label: String::from_str(&w.e, "Hull"),
+                amount: euros(600),
+            }],
+        ),
+        objection_seconds: 86_400,
+        arbiter: None,
+        document_hash: BytesN::from_array(&w.e, &[8u8; 32]),
+    };
+    direct(DealAction::Create(party_b, terms));
+    let id = deals.deals_of(&w.org.address).get_unchecked(0).id;
+    deals.accept(&id);
+    direct(DealAction::Fund(id));
+    assert_eq!(w.token_client.balance(&w.org.address), euros(4_400));
+    // What is available is exactly what the account holds: nothing stays held back.
+    assert_eq!(w.org.available(&w.token), euros(4_400));
+}
