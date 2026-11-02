@@ -96,6 +96,8 @@ export class LocalDataSource implements DataSource {
 	readonly deals = null;
 	/** No live exchange rates in sample data; other currencies take the strictest approvals. */
 	readonly fxOracle = null;
+	/** Succession claims and seal keys need the ledger's clock and a device key: testnet only. */
+	readonly continuity = null;
 	readonly registryNames: RegistryNameSupport = {
 		channel: () => "simulated",
 		current: async (orgId) => {

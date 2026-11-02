@@ -14,6 +14,7 @@ import { PeopleCard } from "./PeopleCard.tsx";
 import { RecipientsCard } from "./RecipientsCard.tsx";
 import { RolesCard } from "./RolesCard.tsx";
 import { RulesHashCard } from "./RulesHashCard.tsx";
+import { SuccessionCard } from "./SuccessionCard.tsx";
 import { TemplateCard } from "./TemplateCard.tsx";
 import { TiersCard } from "./TiersCard.tsx";
 
@@ -62,6 +63,9 @@ function Rules({ account }: { account: OrgAccount }) {
 					/>
 					<ExchangeRatesCard account={account} />
 				</>
+			)}
+			{(!account.onchain || account.onchain.continuity) && (
+				<SuccessionCard key={`succession-${account.org.id}`} account={account} />
 			)}
 			<AssetsCard key={`assets-${account.org.id}`} account={account} />
 			<TemplateCard key={`template-${account.org.id}`} account={account} />

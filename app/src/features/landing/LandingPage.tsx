@@ -27,8 +27,8 @@ const features = [
 	},
 	{
 		title: "A security seal for large payments",
-		body: "Above a threshold the organization sets, a payment needs an extra seal from an approver, signed with their passkey. ancora's quantum-safe ML-DSA verifier already runs on Stellar; sealing with an ML-DSA key held on the approving device is next on the roadmap.",
-		status: "Seal real on testnet · ML-DSA key: roadmap",
+		body: "Above a threshold the organization sets, a payment needs an extra seal from an approver. Organizations can require it to be signed with a quantum-safe ML-DSA key that never leaves the approving device; the organization checks it on Stellar before the money moves.",
+		status: "Real on testnet (opt-in per organization)",
 	},
 	{
 		title: "Decide together",

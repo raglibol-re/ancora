@@ -9,6 +9,7 @@ import {
 import type {
 	BatchInput,
 	ChangeOutcome,
+	ContinuitySupport,
 	DataSource,
 	DealSupport,
 	DiscussionSupport,
@@ -35,6 +36,7 @@ import { rulesHash } from "../../domain/rules/policyDocument.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
+import { createContinuitySupport, sealWithDeviceKey } from "./continuitySupport.ts";
 import { createDealSupport } from "./dealSupport.ts";
 import { type HistoryCache, historyCache } from "./historyCache.ts";
 import { readClaimStatus, readOverview, recoveryMessage, setPlanArgs } from "./lifelineContract.ts";
@@ -100,6 +102,7 @@ export class TestnetDataSource implements DataSource {
 	readonly releases: ReleaseSupport | null;
 	readonly deals: DealSupport | null;
 	readonly fxOracle: string | null;
+	readonly continuity: ContinuitySupport;
 	readonly lifeline: LifelineSupport = {
 		overview: (person) =>
 			this.remember(`lifeline:${person}`, 20_000, () =>
@@ -235,6 +238,13 @@ export class TestnetDataSource implements DataSource {
 				}
 			: null;
 		this.fxOracle = config.fxOracle || null;
+		this.continuity = createContinuitySupport({
+			network: config,
+			verifier: config.sealVerifier,
+			invoke: (target, fn, args) => this.invoke(target, fn, args),
+			failed,
+			refresh: () => this.refresh(),
+		});
 		this.deals = config.dealContract
 			? createDealSupport({
 					network: config,
@@ -679,6 +689,17 @@ export class TestnetDataSource implements DataSource {
 	}
 
 	seal(orgId: string, requestId: string, actorId: PersonId) {
+		// Organizations that named an ML-DSA verifier take seals signed by the device key only.
+		if (this.account(orgId)?.org.sealVerifier) {
+			const invoke = (target: string, fn: string, args: xdr.ScVal[]) =>
+				this.invoke(target, fn, args);
+			return sealWithDeviceKey(
+				{ network: this.config, invoke, failed },
+				orgId,
+				Number(requestId),
+				actorId,
+			);
+		}
 		return this.invoke(orgId, "seal", [address(actorId), u64(Number(requestId))]);
 	}
 

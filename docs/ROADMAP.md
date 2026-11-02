@@ -52,7 +52,7 @@ The milestone plan is under "SCF #46 milestones" below; the HackMeridian tasks t
 ### Task 8 as built: the quantum-safe seal verifier
 
 - `contracts/seal_verifier`: ML-DSA-44 (FIPS 204) verification in a 15 KB Soroban contract with OpenZeppelin's external-verifier interface; shared vector from `@noble/post-quantum`; deployed once by the setup script and checked on-chain (valid → true, tampered → false).
-- Still to do (SCF milestone): generate the ML-DSA key on the approving device, store it in the browser's IndexedDB (non-extractable where the platform allows), add it to the person's smart account as an external signer on a context rule that only covers `seal`, and sign the seal with it; swap the verifier body for the native host function after Protocol 30.
+- Done 2 Nov (release 0.9.0): the ML-DSA key is generated on the approving device (seed in IndexedDB), its public key registered with the organization (`set_seal_key`); once the organization names the verifier (`SetSealVerifier`), seals need `seal_with_key` with a signature over SHA-256(organization ‖ request id). Next: swap the verifier body for the native host function after Protocol 30; key backup and transfer to a new device.
 
 ### Task 9 as built: spending limits for crew and agent keys
 
@@ -124,10 +124,10 @@ Starting point (1 Nov 2026): everything in the HackMeridian table above plus cus
 
 | Deliverable | Done when |
 |---|---|
-| Security seal with a device-held ML-DSA key: generated on the approving device, an external signer on a context rule that only covers `seal`; the native host function replaces the in-contract verifier once Protocol 30 is on testnet and mainnet (vote 23 Nov 2026) | A strictest-tier payment needs the device's ML-DSA signature, verified on-chain |
+| Security seal with a device-held ML-DSA key (done 2 Nov in release 0.9.0, checked by the organization contract rather than as an account signer, see DECISIONS): generated on the approving device; the native host function replaces the in-contract verifier once Protocol 30 is on testnet and mainnet (vote 23 Nov 2026) | A strictest-tier payment needs the device's ML-DSA signature, verified on-chain |
 | Reflector (SEP-40) rates for the rules, so a payment in another currency meets the right tier instead of the strictest (done 1 Nov: `SetFxOracle`, Reflector's free forex oracle, Rules → Exchange rates) | A EURC payment in a USD organization is judged at the oracle rate, shown in the preview |
 | Spending limits per category and asset, recipient allowlists built on the address book (done 1 Nov: `SetAllowance`, `SetRecipients`) | Contract tests and UI; a payment outside the allowlist is refused or escalated as the rules say |
-| Lifeline in full: inactivity path (heartbeat, check-in reminders, successors) and succession plans per role | A 2-of-2 rule no longer deadlocks when a holder is gone; drill on testnet |
+| Lifeline in full: inactivity path (heartbeat, check-in reminders, successors) and succession plans per role (done 2 Nov in release 0.9.0 inside the organization: last-seen per member, successor per position, claim, wait, handover; check-in reminders still open) | A 2-of-2 rule no longer deadlocks when a holder is gone; drill on testnet |
 | Perch step 1: publish ancora's rules document in perch's IR where it fits | Document and mapping published; upstream proposal for `i128` range predicates and asynchronous approvals |
 
 ### M3: ready for mainnet (weeks 15–24)
@@ -167,9 +167,9 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 14. **Custom roles**: done 28 Oct (add, reorder, drop through governance; templates are presets). Per-category and per-asset allowances and recipient allowlists done 1 Nov (release 0.8.0).
 15. **Any action under the rules.** Approve arbitrary calls to allowlisted contracts the way Safe's transaction builder does, with a simulation preview; today only payments and governance changes.
 16. **More policy.** Velocity limits per period for the whole organization, emergency freeze by a quorum, time locks per tier (the objection window exists).
-17. **Keys.** Hardware security keys through the passkey flow (exists, untested), the ML-DSA device key for the seal, passkey re-authentication for sensitive actions.
+17. **Keys.** Hardware security keys through the passkey flow (exists, untested), the ML-DSA device key for the seal (done 2 Nov; still open: moving it to a new device, a backup), passkey re-authentication for sensitive actions.
 18. **Integrations.** Signed audit-log export, webhooks, an SDK, accounting exports (DATEV, QuickBooks).
-19. **Lifeline in full.** Inactivity path and succession plans (recovery contract change).
+19. **Lifeline in full.** Inactivity path and succession plans: done 2 Nov inside the organization contract (the recovery contract can't change without orphaning organizations). Still open: reminders before a claim, professional guardians.
 
 ### Deals between organizations (release 0.8.0, 1 Nov)
 

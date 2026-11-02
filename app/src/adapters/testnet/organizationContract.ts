@@ -1,5 +1,6 @@
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
 import type { Currency } from "../../domain/money.ts";
+import { readContinuity } from "./continuityRead.ts";
 import { readControls } from "./controlsRead.ts";
 import type { HistoryCache } from "./historyCache.ts";
 import { mapBudgetUse, mapLimit, type OnchainSnapshot } from "./mapOrganization.ts";
@@ -142,7 +143,8 @@ export async function readOrganization(
 	const currencies = [
 		...new Set([String(info.base_currency), ...assets.map((a) => String(a.currency))]),
 	] as Currency[];
-	const [escrows, balances, reserves, page, controls] = await Promise.all([
+	const memberIds = members.map((m) => String(m.address));
+	const [escrows, balances, reserves, page, controls, continuity] = await Promise.all([
 		readEscrows(network, contractId, requests),
 		readBalances(network, contractId, tokens),
 		readReserves(network, contractId, assets),
@@ -150,6 +152,7 @@ export async function readOrganization(
 		// rather than hiding the organization; the next read tries again.
 		readTransfers(network, contractId, tokens, known).catch((): HistoryPage | null => null),
 		version >= 8 ? readControls(network, contractId, currencies) : Promise.resolve(null),
+		version >= 9 ? readContinuity(network, contractId, memberIds) : Promise.resolve(null),
 	]);
 	if (page && page !== known) history?.save(contractId, page);
 	return {
@@ -172,6 +175,7 @@ export async function readOrganization(
 		policyHash: hex(policyHash),
 		version,
 		controls,
+		continuity,
 	};
 }
 

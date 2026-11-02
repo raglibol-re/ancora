@@ -100,6 +100,14 @@ export function describeChange(org: HasRoles, change: GovernanceChange, nameOf: 
 				? `Pay only the ${list}`
 				: `Send payments outside the ${list} to the strictest approvals`;
 		}
+		case "setSuccessor":
+			return change.successorId === null
+				? `Remove the successor of ${nameOf(change.personId)}`
+				: `Let ${nameOf(change.successorId)} take over from ${nameOf(change.personId)} after ${Math.round(change.inactiveSeconds / 86_400)} quiet days`;
+		case "setSealVerifier":
+			return change.verifier
+				? "Seal large payments with quantum-safe keys"
+				: "Seal large payments with passkeys only";
 		case "setFxOracle":
 			return change.oracle
 				? "Use live exchange rates for payments in other currencies"

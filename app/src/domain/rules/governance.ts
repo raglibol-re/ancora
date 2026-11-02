@@ -51,7 +51,17 @@ export type GovernanceChange =
 	/** Who the organization pays: anyone, anyone with the rest at the strictest tier, or only these. */
 	| { type: "setRecipients"; rule: RecipientRule }
 	/** The exchange-rate oracle for the tiers of other-currency payments; null turns rates off. */
-	| { type: "setFxOracle"; oracle: string | null };
+	| { type: "setFxOracle"; oracle: string | null }
+	/** Who takes over a member's position after they go quiet; null successor clears it. */
+	| {
+			type: "setSuccessor";
+			personId: PersonId;
+			successorId: PersonId | null;
+			inactiveSeconds: number;
+			waitSeconds: number;
+	  }
+	/** The ML-DSA verifier for seals; null goes back to passkey seals. */
+	| { type: "setSealVerifier"; verifier: string | null };
 
 export type NewOrgInput = {
 	id: string;
@@ -256,6 +266,41 @@ function nextOrg(org: Org, change: GovernanceChange): Result<Org, RuleError> {
 		}
 		case "setFxOracle":
 			return ok({ ...org, fx: change.oracle ? { oracle: change.oracle, prices: {} } : null });
+		case "setSuccessor": {
+			const others = (org.successions ?? []).filter((s) => s.personId !== change.personId);
+			if (!isMember(change.personId)) return notMember;
+			if (change.successorId === null) return ok({ ...org, successions: others });
+			const inBounds = (s: number) => s >= 60 && s <= 2 * 365 * 86_400;
+			if (
+				change.successorId === change.personId ||
+				!isMember(change.successorId) ||
+				!inBounds(change.inactiveSeconds) ||
+				!inBounds(change.waitSeconds)
+			) {
+				return err(
+					ruleError(
+						"invalid-policy",
+						"A successor is another member; the quiet period and the wait run from one minute to two years.",
+					),
+				);
+			}
+			return ok({
+				...org,
+				successions: [
+					...others,
+					{
+						personId: change.personId,
+						successorId: change.successorId,
+						inactiveSeconds: change.inactiveSeconds,
+						waitSeconds: change.waitSeconds,
+						lastSeen: 0,
+						claimReadyAt: null,
+					},
+				],
+			});
+		}
+		case "setSealVerifier":
+			return ok({ ...org, sealVerifier: change.verifier });
 	}
 }
 

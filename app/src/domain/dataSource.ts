@@ -88,6 +88,22 @@ export interface ReleaseSupport {
 	status(orgId: string): Promise<Result<CodeStatus, RuleError>>;
 }
 
+/** Lifeline succession inside organizations and quantum-safe seal keys. */
+export interface ContinuitySupport {
+	/** The ML-DSA verifier an organization names to require quantum-safe seals. */
+	verifier(): string;
+	/** Records that the person is still around; ends a claim on their position. */
+	stillHere(orgId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
+	/** The named successor claims a quiet member's position. */
+	claim(orgId: string, actorId: PersonId, memberId: PersonId): Promise<Result<void, RuleError>>;
+	/** Hands the position over once the wait is over (anyone may). */
+	finish(orgId: string, memberId: PersonId): Promise<Result<void, RuleError>>;
+	/** This device's seal key for the person (public key, hex), if one was created here. */
+	deviceSealKey(personId: PersonId): Promise<string | null>;
+	/** Creates the person's seal key on this device (or keeps it) and registers it. */
+	createSealKey(orgId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
+}
+
 /** Deals with other parties (contracts/deal), taken by the organization under its rules. */
 export interface DealSupport {
 	/** The deal contract, for expert details. */
@@ -279,6 +295,8 @@ export interface DataSource {
 	readonly deals: DealSupport | null;
 	/** The SEP-40 oracle organizations may adopt for exchange rates; null where there is none. */
 	readonly fxOracle: string | null;
+	/** Succession claims and seal keys; null for sample data. */
+	readonly continuity: ContinuitySupport | null;
 	readonly discussions: DiscussionSupport;
 	subscribe(listener: () => void): () => void;
 	getSnapshot(): Workspace;

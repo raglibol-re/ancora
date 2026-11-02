@@ -81,6 +81,8 @@ export type OnchainAccount = {
 	 * (interface version 8 or later).
 	 */
 	controls: boolean;
+	/** Succession per position and quantum-safe seals (interface version 9 or later). */
+	continuity: boolean;
 };
 
 /** What the organization holds of one accepted asset: on the main account and in the Reserve. */

@@ -8,9 +8,11 @@
 //! `require_auth`; once the rules are satisfied the contract executes it.
 #![no_std]
 
+mod continuity;
 mod controls;
 mod deals;
 mod rules;
+mod seal_key;
 mod templates;
 mod types;
 
@@ -40,8 +42,9 @@ const MAX_LINK_PAYMENTS: u32 = 500;
 /// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments, 6 = payment links,
 /// 7 = upgrades to published releases (`Upgrade`), 8 = allowances per asset and category,
 /// recipient allowlists, exchange rates for the tiers (`controls.rs`), deals with other parties
-/// (`deals.rs`). Organizations before this view report nothing.
-const CONTRACT_VERSION: u32 = 8;
+/// (`deals.rs`), 9 = succession per position (`continuity.rs`) and ML-DSA seals (`seal_key.rs`).
+/// Organizations before this view report nothing.
+const CONTRACT_VERSION: u32 = 9;
 /// The organization's code on the Stellar Registry (`scripts/publish-registry.sh`).
 const RELEASE_NAME: &str = "ancora-organization";
 const SECONDS_PER_HOUR: u64 = 3_600;
@@ -120,6 +123,14 @@ enum DataKey {
     Recipients,
     /// The SEP-40 oracle for exchange rates.
     FxOracle,
+    /// A member's last action (continuity.rs).
+    LastSeen(Address),
+    /// Who takes over a member's position, and an open claim on it.
+    Successor(Address),
+    SuccessionClaim(Address),
+    /// The ML-DSA verifier and each member's public key for seals (seal_key.rs).
+    SealVerifier,
+    SealKey(Address),
 }
 
 /// Emitted when the organization starts running a new release.
@@ -380,6 +391,7 @@ impl Organization {
             e.storage().persistent().remove(&old_limit);
         }
         controls::move_allowances(e, &old, Some(&new));
+        continuity::forget(e, &old);
         if info.founder == old {
             info.founder = new.clone();
             e.storage().instance().set(&DataKey::Info, &info);
@@ -549,6 +561,7 @@ impl Organization {
         escrow: bool,
     ) -> Result<u64, Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         propose_payment_from(e, by, token, to, amount, memo, category, escrow)
     }
@@ -691,6 +704,7 @@ impl Organization {
         category: Option<Symbol>,
     ) -> Result<u64, Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         let info = load_info(e);
         let members = ranked(e, &info.roles);
@@ -975,6 +989,7 @@ impl Organization {
     /// Auth: `by`, a member.
     pub fn propose_change(e: &Env, by: Address, change: Change) -> Result<u64, Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         let info = load_info(e);
         let members = ranked(e, &info.roles);
@@ -994,6 +1009,7 @@ impl Organization {
     /// Auth: `by`, the founder.
     pub fn change_directly(e: &Env, by: Address, change: Change) -> Result<(), Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         let info = load_info(e);
         if by != info.founder {
@@ -1013,6 +1029,7 @@ impl Organization {
     /// Auth: `by`, a member.
     pub fn approve(e: &Env, by: Address, id: u64) -> Result<(), Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         let info = load_info(e);
         let members = ranked(e, &info.roles);
@@ -1048,36 +1065,18 @@ impl Organization {
         Ok(())
     }
 
-    /// Adds the security seal to a pending request that needs one. Until the ML-DSA verifier
-    /// lands (see docs/ROADMAP.md), any eligible approver other than the requester may seal.
+    /// Adds the security seal to a pending request that needs one, with the member's passkey
+    /// alone. Once the organization names an ML-DSA verifier, seals need `seal_with_key`.
     ///
     /// Auth: `by`, a member.
     pub fn seal(e: &Env, by: Address, id: u64) -> Result<(), Error> {
         by.require_auth();
         extend_instance(e);
-        let info = load_info(e);
-        let members = ranked(e, &info.roles);
-        let mut request = load_request(e, id)?;
-        if request.status != Status::Pending {
-            return Err(Error::NotPending);
+        if !seal_key::passkey_seals_allowed(e) {
+            return Err(Error::SealKeyRequired);
         }
-        if !request.evaluation.seal_required {
-            return Err(Error::SealNotRequired);
-        }
-        if request.sealed_by.is_some() {
-            return Err(Error::AlreadySealed);
-        }
-        let rank = rules::rank_of_member(&members, &by).ok_or(Error::NotMember)?;
-        if by == request.requester {
-            return Err(Error::RequesterCannotApprove);
-        }
-        if !rules::is_eligible(&info.roles, &request.evaluation.approvals, Some(rank)) {
-            return Err(Error::RoleCannotApprove);
-        }
-        request.sealed_by = Some(by);
-        let settled = settle(e, request, &info);
-        save_request(e, &settled);
-        Ok(())
+        continuity::touch(e, &by);
+        seal_request(e, by, id)
     }
 
     /// Declines a pending request, objects during the objection window, or cancels one's own.
@@ -1085,6 +1084,7 @@ impl Organization {
     /// Auth: `by`, the requester or an eligible approver.
     pub fn decline(e: &Env, by: Address, id: u64) -> Result<(), Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         let info = load_info(e);
         let members = ranked(e, &info.roles);
@@ -1558,6 +1558,34 @@ fn ranked(e: &Env, roles: &Vec<Symbol>) -> Vec<rules::Ranked> {
 
 /// Moves a fully approved pending request on: into the objection window, or straight to
 /// execution when there is none.
+/// Adds the seal once the caller's authorization (and, with a verifier, the ML-DSA signature)
+/// was checked: the caller must be an eligible approver other than the requester.
+fn seal_request(e: &Env, by: Address, id: u64) -> Result<(), Error> {
+    let info = load_info(e);
+    let members = ranked(e, &info.roles);
+    let mut request = load_request(e, id)?;
+    if request.status != Status::Pending {
+        return Err(Error::NotPending);
+    }
+    if !request.evaluation.seal_required {
+        return Err(Error::SealNotRequired);
+    }
+    if request.sealed_by.is_some() {
+        return Err(Error::AlreadySealed);
+    }
+    let rank = rules::rank_of_member(&members, &by).ok_or(Error::NotMember)?;
+    if by == request.requester {
+        return Err(Error::RequesterCannotApprove);
+    }
+    if !rules::is_eligible(&info.roles, &request.evaluation.approvals, Some(rank)) {
+        return Err(Error::RoleCannotApprove);
+    }
+    request.sealed_by = Some(by);
+    let settled = settle(e, request, &info);
+    save_request(e, &settled);
+    Ok(())
+}
+
 fn settle(e: &Env, mut request: Request, info: &OrgInfo) -> Request {
     if request.status != Status::Pending {
         return request;
@@ -1721,6 +1749,10 @@ fn plan_change(
         }
         Change::SetRecipients(_, allowed) => controls::plan_recipients(allowed)?,
         Change::SetFxOracle(oracle) => controls::plan_fx_oracle(e, oracle)?,
+        Change::SetSuccessor(member, successor, inactive, wait) => {
+            continuity::plan_successor(members, member, successor, *inactive, *wait)?;
+        }
+        Change::SetSealVerifier(verifier) => seal_key::plan_verifier(e, verifier)?,
     }
     let strictest = |p: &Policy| {
         p.tiers
@@ -1776,6 +1808,7 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
                 .persistent()
                 .remove(&DataKey::Limit(who.clone()));
             controls::move_allowances(e, who, None);
+            continuity::forget(e, who);
             registry.set_membership(&me, who, &false);
         }
         Change::ChangeRole(who, role) => {
@@ -1842,6 +1875,10 @@ fn apply_change(e: &Env, info: &OrgInfo, change: &Change) -> Result<(), Error> {
         }
         Change::SetRecipients(mode, allowed) => controls::apply_recipients(e, *mode, allowed),
         Change::SetFxOracle(oracle) => controls::apply_fx_oracle(e, oracle),
+        Change::SetSuccessor(member, successor, inactive, wait) => {
+            continuity::apply_successor(e, member, successor, *inactive, *wait);
+        }
+        Change::SetSealVerifier(verifier) => seal_key::apply_verifier(e, verifier),
     }
     Ok(())
 }
@@ -2000,6 +2037,8 @@ extern crate std;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_continuity;
 #[cfg(test)]
 mod test_controls;
 #[cfg(test)]

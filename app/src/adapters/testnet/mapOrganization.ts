@@ -29,6 +29,7 @@ import type {
 } from "../../domain/rules/requests.ts";
 import { customRole } from "../../domain/rules/roles.ts";
 import { templates } from "../../domain/rules/templates.ts";
+import type { Continuity } from "./continuityRead.ts";
 import type { Controls } from "./controlsRead.ts";
 import { mapDealAction } from "./dealCodec.ts";
 import type { ChainTransfer } from "./orgHistory.ts";
@@ -70,6 +71,8 @@ export type OnchainSnapshot = {
 	version: number;
 	/** Allowances, allowlist and exchange rates (interface 8); null for earlier code. */
 	controls: Controls | null;
+	/** Succession plans and seal keys (interface 9); null for earlier code. */
+	continuity: Continuity | null;
 };
 
 const STATUS: Record<string, RequestStatus> = {
@@ -171,6 +174,13 @@ export const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
 	51: "That exchange-rate service didn't answer. Try again later.",
 	52: "The deal couldn't be read. Check the deal number and try again.",
 	53: "The deal didn't accept this step; it may have moved on. Reload to see where it stands.",
+	54: "Only the successor named for this person can claim their position.",
+	55: "This person was active recently, so their position can't be claimed yet.",
+	56: "There is no open claim on this position (the person may have been active since).",
+	57: "The waiting period hasn't passed yet.",
+	58: "A successor is another member; the quiet period and the wait run from one minute to two years.",
+	59: "This organization seals with quantum-safe keys. Create your seal key on your pass first.",
+	60: "The quantum-safe signature didn't match your registered seal key. Seal from the device that holds your key.",
 	37: "Only the person who set this standing order, or the top role, can stop it.",
 	38: "This standing order was stopped.",
 };
@@ -336,6 +346,16 @@ function mapChange(value: unknown): GovernanceChange {
 			};
 		case "SetFxOracle":
 			return { type: "setFxOracle", oracle: fields[0] ? str(fields[0]) : null };
+		case "SetSuccessor":
+			return {
+				type: "setSuccessor",
+				personId: str(fields[0]),
+				successorId: fields[1] ? str(fields[1]) : null,
+				inactiveSeconds: num(fields[2]),
+				waitSeconds: num(fields[3]),
+			};
+		case "SetSealVerifier":
+			return { type: "setSealVerifier", verifier: fields[0] ? str(fields[0]) : null };
 		case "Upgrade":
 			return {
 				type: "upgrade",
@@ -481,6 +501,7 @@ export function mapOrganization(
 				roleId: str(m.role),
 				...(limit ? { limit } : {}),
 				...(allowances ? { allowances } : {}),
+				...(snapshot.continuity?.sealKeyHolders.has(str(m.address)) ? { hasSealKey: true } : {}),
 			};
 		}),
 		policy: mapPolicy(snapshot.policy),
@@ -489,6 +510,12 @@ export function mapOrganization(
 		assets,
 		...(snapshot.controls
 			? { recipients: snapshot.controls.recipients, fx: snapshot.controls.fx }
+			: {}),
+		...(snapshot.continuity
+			? {
+					successions: snapshot.continuity.successions,
+					sealVerifier: snapshot.continuity.sealVerifier,
+				}
 			: {}),
 	};
 	const requests = snapshot.requests.map((r) =>
@@ -616,6 +643,7 @@ export function mapOrganization(
 			batches: snapshot.version >= 5,
 			upgrades: snapshot.version >= 7,
 			controls: snapshot.version >= 8,
+			continuity: snapshot.version >= 9,
 		},
 		balances: assets.map((asset) => {
 			const reserve = snapshot.reserves.get(asset.token);

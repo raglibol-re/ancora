@@ -67,6 +67,8 @@ export type Member = {
 	roleId: RoleId;
 	limit?: SpendingLimit;
 	allowances?: readonly Allowance[];
+	/** The member registered an ML-DSA seal key (on some device). */
+	hasSealKey?: boolean;
 };
 
 /**
@@ -110,6 +112,21 @@ export type Org = {
 	recipients?: RecipientRule;
 	/** Rates for the tiers of payments in another currency; absent: strictest tier. */
 	fx?: FxRates | null;
+	/** Who takes over whose position if they go quiet (Lifeline succession). */
+	successions?: readonly Succession[];
+	/** The ML-DSA verifier seals are checked with; absent or null: passkey seals. */
+	sealVerifier?: string | null;
+};
+
+/** A member's successor and the state of any claim (timestamps ms). */
+export type Succession = {
+	personId: PersonId;
+	successorId: PersonId;
+	inactiveSeconds: number;
+	waitSeconds: number;
+	lastSeen: number;
+	/** When an open claim can be finished; null without a claim. */
+	claimReadyAt: number | null;
 };
 
 /** What a specific request needs before it can execute. */

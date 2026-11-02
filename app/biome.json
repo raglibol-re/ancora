@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!dev-dist", "!public/brand"]
+		"includes": ["**", "!dev-dist", "!public/brand", "!pnpm-lock.yaml"]
 	},
 	"formatter": {
 		"enabled": true,

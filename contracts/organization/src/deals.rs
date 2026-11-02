@@ -9,9 +9,9 @@ use soroban_sdk::{contractclient, contractimpl, vec, Address, Env, IntoVal, Symb
 
 use crate::types::{DealAction, DealCall, DealTerms, Error, Evaluation, OrgInfo, RequestKind};
 use crate::{
-    add_committed, available, controls, extend_instance, find_asset, load_assets, load_info,
-    load_policy, new_request, ranked, rules, save_request, settle, Organization, OrganizationArgs,
-    OrganizationClient,
+    add_committed, available, continuity, controls, extend_instance, find_asset, load_assets,
+    load_info, load_policy, new_request, ranked, rules, save_request, settle, Organization,
+    OrganizationArgs, OrganizationClient,
 };
 
 /// The deal contract's interface as the organization uses it (contracts/deal).
@@ -37,6 +37,7 @@ impl Organization {
     /// Auth: `by`, a member.
     pub fn propose_deal(e: &Env, by: Address, call: DealCall) -> Result<u64, Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         let info = load_info(e);
         rules::rank_of_member(&ranked(e, &info.roles), &by).ok_or(Error::NotMember)?;
@@ -55,6 +56,7 @@ impl Organization {
     /// Auth: `by`, the founder.
     pub fn deal_directly(e: &Env, by: Address, call: DealCall) -> Result<(), Error> {
         by.require_auth();
+        continuity::touch(e, &by);
         extend_instance(e);
         let info = load_info(e);
         if by != info.founder {

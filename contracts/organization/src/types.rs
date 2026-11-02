@@ -89,6 +89,21 @@ pub enum Error {
     DealUnavailable = 52,
     /// The deal contract refused this step (for example because the deal's status changed).
     DealRefused = 53,
+    /// Only the successor named for this member may claim the position.
+    NotSuccessor = 54,
+    /// The member was active within their inactivity period; nothing to claim.
+    StillActive = 55,
+    /// No succession claim is open for this member.
+    NoSuccessionClaim = 56,
+    /// The succession's waiting period hasn't passed.
+    SuccessionNotReady = 57,
+    /// A successor must be another member; periods run from one minute to two years.
+    InvalidSuccession = 58,
+    /// This organization seals with ML-DSA keys: use `seal_with_key`, with a registered key.
+    SealKeyRequired = 59,
+    /// The ML-DSA signature doesn't match the member's registered key and this request, the key
+    /// isn't a 1,312-byte ML-DSA-44 key, or the verifier doesn't answer like one.
+    BadSealSignature = 60,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -204,6 +219,30 @@ pub struct Allowance {
     pub window_start: u64,
 }
 
+/// Who takes over a member's position if they go quiet (Lifeline succession).
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Succession {
+    pub successor: Address,
+    pub inactive_seconds: u64,
+    pub wait_seconds: u64,
+    /// When the plan was set; inactivity counts from here if the member never acted since.
+    pub set_at: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct SuccessionView {
+    pub member: Address,
+    pub successor: Address,
+    pub inactive_seconds: u64,
+    pub wait_seconds: u64,
+    /// The member's last action (or when the plan was set, if later).
+    pub last_seen: u64,
+    /// When an open claim can be finished; `None` without a claim.
+    pub claim_ready_at: Option<u64>,
+}
+
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub struct MemberAllowance {
@@ -292,6 +331,12 @@ pub enum Change {
     /// The SEP-40 oracle (Reflector) whose exchange rates set the tier of payments in another
     /// currency; `None` sends them to the strictest tier again.
     SetFxOracle(Option<Address>),
+    /// Name who takes over a member's position after they were inactive for `inactive_seconds`,
+    /// with `wait_seconds` for the member to object: member, successor (`None` clears),
+    /// inactive seconds, wait seconds.
+    SetSuccessor(Address, Option<Address>, u64, u64),
+    /// The ML-DSA verifier seals must be checked with; `None` goes back to passkey seals.
+    SetSealVerifier(Option<Address>),
 }
 
 #[contracttype]

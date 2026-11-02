@@ -150,6 +150,19 @@ export function changeToScVal(change: GovernanceChange, policyHashHex?: string):
 				symbol("SetFxOracle"),
 				change.oracle ? address(change.oracle) : xdr.ScVal.scvVoid(),
 			]);
+		case "setSuccessor":
+			return xdr.ScVal.scvVec([
+				symbol("SetSuccessor"),
+				address(change.personId),
+				change.successorId ? address(change.successorId) : xdr.ScVal.scvVoid(),
+				u64(change.inactiveSeconds),
+				u64(change.waitSeconds),
+			]);
+		case "setSealVerifier":
+			return xdr.ScVal.scvVec([
+				symbol("SetSealVerifier"),
+				change.verifier ? address(change.verifier) : xdr.ScVal.scvVoid(),
+			]);
 		case "switchTemplate":
 			return null;
 	}
