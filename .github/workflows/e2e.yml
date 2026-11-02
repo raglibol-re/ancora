@@ -1,6 +1,7 @@
 name: E2E
 
-# The core path and a two-pass approval on the real Stellar testnet with virtual passkeys, against production. Nightly
+# The core path, a two-pass approval and a deal between two organizations on the real Stellar testnet
+# with virtual passkeys, against production. Nightly
 # and by hand; not on every push, because each run creates a pass and an organization whose
 # fees the operator sponsors.
 

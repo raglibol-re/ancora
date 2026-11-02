@@ -6,6 +6,13 @@ import { expect, type Page } from "@playwright/test";
 /** BlendUSDC on testnet: the one stablecoin whose test money the operator can always hand out. */
 export const BLEND_USDC = "CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU";
 
+/** The testnet stablecoins an organization accepts (BlendUSDC, Circle USDC, Circle EURC). */
+const TOKENS = [
+	BLEND_USDC,
+	"CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+	"CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ",
+];
+
 /** The demo operator's account holds a BlendUSDC trustline, so it can receive a test payment. */
 export const RECIPIENT = "GC2BKJOG56UXZQKMV475BNHMEHUA54GPGY6W2FILRB4DHCOJFJXOYJE3";
 
@@ -65,4 +72,17 @@ export async function requestPayment(page: Page, payee: string, amount: string):
 	await page.locator("#amount").fill(amount);
 	await page.getByRole("button", { name: "Continue" }).click();
 	await expect(page).toHaveURL(/\/app\/approvals\/\d+$/);
+}
+
+/** The open organization's address, as Settings shows it (the first C-address that isn't a token). */
+export async function readOrganizationId(page: Page): Promise<string> {
+	await page.goto("/app/settings");
+	await expect(page.getByText("Account address on Stellar")).toBeVisible();
+	const addresses = await page.locator("code").allInnerTexts();
+	const organization =
+		addresses
+			.map((text) => text.trim())
+			.find((text) => /^C[A-Z2-7]{55}$/.test(text) && !TOKENS.includes(text)) ?? "";
+	expect(organization).toMatch(/^C[A-Z2-7]{55}$/);
+	return organization;
 }

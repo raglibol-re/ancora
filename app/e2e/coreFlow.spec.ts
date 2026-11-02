@@ -4,6 +4,7 @@ import {
 	createPass,
 	foundOrganization,
 	RECIPIENT,
+	readOrganizationId,
 	requestPayment,
 	stamp,
 	takeTestMoney,
@@ -14,12 +15,6 @@ import { addVirtualPasskey } from "./virtualPasskey.ts";
 // and back in on the same device (the wallet index), found an organization, take test money,
 // pay someone. Every step is a real transaction; the operator sponsors the fees.
 
-// The testnet stablecoins an organization accepts (BlendUSDC, Circle USDC, Circle EURC).
-const TOKENS = [
-	BLEND_USDC,
-	"CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
-	"CCUUDM434BMZMYWYDITHFXHDMIVTGGD6T2I5UKNX5BSLXLW7HVR4MCGZ",
-];
 const name = `E2E ${stamp}`;
 
 test("a new organization goes from passkey to first payment", async ({ page }) => {
@@ -97,15 +92,9 @@ ${RECIPIENT};1;Fees
 		await page.getByRole("button", { name: "Create link" }).click();
 		await expect(page.getByText("Paid 0 of 1")).toBeVisible();
 		// The public page needs no ancora pass: it reads the link straight from the contract.
-		await page.goto("/app/settings");
+		const organization = await readOrganizationId(page);
 		// A new organization runs the latest ancora-organization release on the Stellar Registry.
 		await expect(page.getByText(/ancora release [\d.]+, the latest/)).toBeVisible();
-		// The first C-address on Settings that isn't one of the accepted tokens.
-		const addresses = await page.locator("code").allInnerTexts();
-		const organization =
-			addresses
-				.map((text) => text.trim())
-				.find((text) => /^C[A-Z2-7]{55}$/.test(text) && !TOKENS.includes(text)) ?? "";
 		// In the report, so a run can be followed on stellar.expert or its link paid from a wallet.
 		test.info().annotations.push({
 			type: "organization",
