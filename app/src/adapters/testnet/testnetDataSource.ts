@@ -31,7 +31,13 @@ import type { DiscussionEntry } from "../../domain/discussion.ts";
 import type { RecoveryPlan } from "../../domain/lifeline.ts";
 import type { Cents } from "../../domain/money.ts";
 import { withWork } from "../../domain/pendingWork.ts";
-import { privateNotesOf, revealNotes } from "../../domain/privateNote.ts";
+import {
+	type PayeeLabel,
+	PRIVATE_PAYEE_NAME,
+	privateNotesOf,
+	revealNotes,
+	revealPayees,
+} from "../../domain/privateNote.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
@@ -62,6 +68,7 @@ import { describeKitError, passkeyKit } from "./passkeyKit.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
 import { createPrivateKeys, type PrivateKeys } from "./privacySupport.ts";
 import { decryptNote } from "./privateCrypto.ts";
+import { labelsFor } from "./privateLabels.ts";
 import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
 import { registerContractArgs, resolveRegistryName } from "./registryNames.ts";
@@ -135,6 +142,8 @@ export class TestnetDataSource implements DataSource {
 	/** Private notes this device decrypted, and those it tried, so each is opened once. */
 	private readonly plainNotes = new Map<string, string>();
 	private readonly triedNotes = new Set<string>();
+	/** Private recipients' names and notes this device could open, per organization. */
+	private readonly payeeLabels = new Map<string, Map<string, PayeeLabel>>();
 	readonly lifeline: LifelineSupport = {
 		overview: (person) =>
 			this.remember(`lifeline:${person}`, 20_000, () =>
@@ -213,7 +222,7 @@ export class TestnetDataSource implements DataSource {
 			this.raw = [...cached.workspace.accounts];
 			this.snapshot = {
 				...cached.workspace,
-				accounts: this.raw.map((account) => revealNotes(account, this.plainNotes)),
+				accounts: this.raw.map((account) => this.reveal(account)),
 			};
 			this.profiles = new Map(cached.profiles);
 			this.restoringSession = false;
@@ -293,6 +302,7 @@ export class TestnetDataSource implements DataSource {
 					failed,
 					refresh: () => this.refresh(),
 					members: (orgId) => this.account(orgId)?.org.members.map((m) => m.personId) ?? [],
+					readAccount: (orgId) => this.readAccount(orgId),
 				})
 			: null;
 		this.privacy = this.privateKeys?.support ?? null;
@@ -523,7 +533,7 @@ export class TestnetDataSource implements DataSource {
 		}));
 		this.snapshot = {
 			people,
-			accounts: accounts.map((account) => revealNotes(account, this.plainNotes)),
+			accounts: accounts.map((account) => this.reveal(account)),
 		};
 		if (this.me?.id === me) {
 			// Private notes are cached as stored (encrypted): plain text never reaches local storage.
@@ -578,9 +588,17 @@ export class TestnetDataSource implements DataSource {
 		let revealed = false;
 		for (const account of this.raw) {
 			const notes = privateNotesOf(account).filter((note) => !this.triedNotes.has(note));
-			if (notes.length === 0) continue;
+			const privatePayees = account.payees.some((p) => p.name === PRIVATE_PAYEE_NAME);
+			if (notes.length === 0 && !privatePayees) continue;
 			try {
-				const orgKeys = await keys.keysFor(account.org.id, me);
+				const orgKeys = await keys.reads.keysFor(account.org.id, me);
+				if (privatePayees) {
+					this.payeeLabels.set(
+						account.org.id,
+						await labelsFor(keys.reads, account.org.id, orgKeys),
+					);
+					revealed = true;
+				}
 				for (const note of notes) {
 					this.triedNotes.add(note);
 					const plain = await decryptNote(note, orgKeys);
@@ -600,9 +618,32 @@ export class TestnetDataSource implements DataSource {
 		if (!revealed || this.me?.id !== me) return;
 		this.snapshot = {
 			...this.snapshot,
-			accounts: this.raw.map((account) => revealNotes(account, this.plainNotes)),
+			accounts: this.raw.map((account) => this.reveal(account)),
 		};
 		this.notify();
+	}
+
+	/** The account with the private notes and recipient labels this device opened so far. */
+	private reveal(account: OrgAccount): OrgAccount {
+		return revealPayees(
+			revealNotes(account, this.plainNotes),
+			this.payeeLabels.get(account.org.id) ?? new Map(),
+		);
+	}
+
+	/** Any organization, read from its contract (an auditor's view; they aren't a member). */
+	private async readAccount(orgId: string): Promise<OrgAccount> {
+		const snapshot = await readOrganization(this.config, orgId, null);
+		const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
+		return {
+			...mapOrganization(
+				snapshot,
+				(who) => this.profiles.get(who)?.name ?? undefined,
+				Date.now(),
+				(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
+			),
+			discussions: {},
+		};
 	}
 
 	/** A note as it is stored: encrypted when the organization keeps references private. */
@@ -951,20 +992,25 @@ export class TestnetDataSource implements DataSource {
 		return result.ok ? ok(undefined) : result;
 	}
 
-	savePayee(
+	async savePayee(
 		orgId: string,
 		actorId: PersonId,
 		payee: { account: string; name: string; note: string },
 	) {
 		const to = payee.account.trim();
 		if (!StrKey.isValidContract(to) && !StrKey.isValidEd25519PublicKey(to)) {
-			return Promise.resolve(failed("Enter a Stellar address (starts with G or C)."));
+			return failed("Enter a Stellar address (starts with G or C).");
 		}
+		const label = { name: payee.name.trim(), note: payee.note.trim() };
+		const stored = this.privateKeys
+			? await this.privateKeys.protectLabel(orgId, actorId, to, label)
+			: ok(label);
+		if (!stored.ok) return stored;
 		return this.invoke(orgId, "set_payee", [
 			address(actorId),
 			address(to),
-			text(payee.name.trim()),
-			text(payee.note.trim()),
+			text(stored.value.name),
+			text(stored.value.note),
 		]);
 	}
 

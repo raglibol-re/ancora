@@ -4,6 +4,7 @@ import { StatementPage } from "./features/activity/StatementPage.tsx";
 import { AdminPage } from "./features/admin/AdminPage.tsx";
 import { ApprovalsPage } from "./features/approvals/ApprovalsPage.tsx";
 import { RequestDetailPage } from "./features/approvals/RequestDetailPage.tsx";
+import { AuditPage } from "./features/audit/AuditPage.tsx";
 import { DealDetailPage } from "./features/deals/DealDetailPage.tsx";
 import { DealsPage } from "./features/deals/DealsPage.tsx";
 import { EscrowPage } from "./features/escrow/EscrowPage.tsx";
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
 			{ path: "activity", element: <ActivityPage /> },
 			{ path: "links", element: <LinksPage /> },
 			{ path: "deals", element: <DealsPage /> },
+			{ path: "audit", element: <AuditPage /> },
 			{ path: "deals/:dealId", element: <DealDetailPage /> },
 			{ path: "statement", element: <StatementPage /> },
 			{ path: "escrow/:orgId/:requestId", element: <EscrowPage /> },

@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-02: Auditors and private recipients. Members can add an auditor (an accountant, a funder's reviewer) under Settings → Private details; once access is shared, the auditor reads requests and recipients on their own Audit page, read-only. With private details on, saved recipients' names and notes are stored encrypted too. The end-to-end tests now pick the testnet themselves instead of following the site-wide default. New keyring contract (release 0.10.0).
 - 2026-11-02: The server now logs why it falls back to sample data when the demo setting can't be read from Vercel Blob, and the hourly live check fails (emailing the team) instead of only warning.
 - 2026-11-02: Backup codes for the keys that live on a device (private details and the quantum-safe seal): your pass → Keys on this device shows one and restores from one, so a new device reads private details and seals without anyone re-sharing. The app's local cache now keeps private notes encrypted.
 - 2026-11-02: The Send page and batch form say when references are private and flag one too long to keep private before it is sent.

@@ -4,7 +4,7 @@ use soroban_sdk::{Address, Bytes, BytesN, Env, IntoVal, Vec};
 use crate::{Error, Keyring, KeyringClient};
 
 /// Stands in for an organization contract: just its member list.
-mod mock_org {
+pub(crate) mod mock_org {
     use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Vec};
 
     use crate::Member;
@@ -36,15 +36,15 @@ mod mock_org {
     }
 }
 
-struct World {
-    e: Env,
-    keyring: KeyringClient<'static>,
-    org: Address,
-    ana: Address,
-    bo: Address,
+pub(crate) struct World {
+    pub(crate) e: Env,
+    pub(crate) keyring: KeyringClient<'static>,
+    pub(crate) org: Address,
+    pub(crate) ana: Address,
+    pub(crate) bo: Address,
 }
 
-fn world() -> World {
+pub(crate) fn world() -> World {
     let e = Env::default();
     e.mock_all_auths();
     let ana = Address::generate(&e);
@@ -64,7 +64,7 @@ fn world() -> World {
     }
 }
 
-fn wrapped(e: &Env, fill: u8) -> Bytes {
+pub(crate) fn wrapped(e: &Env, fill: u8) -> Bytes {
     Bytes::from_slice(e, &[fill; 92])
 }
 

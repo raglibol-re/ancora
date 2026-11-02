@@ -27,10 +27,12 @@ pub enum Error {
     NotMember = 1,
     /// No epoch with this number has been opened for the organization.
     UnknownEpoch = 2,
-    /// A wrapped key is at most 160 bytes.
+    /// Too long: a wrapped key is at most 160 bytes, a label 512.
     TooLong = 3,
     /// The member hasn't published an encryption key yet.
     NoKey = 4,
+    /// An organization lists up to 10 auditors and 200 labels; a label is at most 512 bytes.
+    TooMany = 5,
 }
 
 /// A member, as the organization contract lists it (`ancora_organization::Member`).
@@ -62,6 +64,11 @@ enum DataKey {
     PublicKey(Address),
     Epoch(Address),
     Wrapped(Address, Address, u32),
+    /// People outside the organization its members let read its private details.
+    Auditors(Address),
+    /// An encrypted label (name, note) for an address, and the labelled addresses, per org.
+    Label(Address, Address),
+    Labelled(Address),
 }
 
 /// A new epoch was opened, or a member received the key of one.
@@ -133,7 +140,8 @@ impl Keyring {
 
     /// Stores the organization's key of `epoch`, wrapped for `member`'s current public key.
     ///
-    /// Auth: `by`, a member of `org`; `member` must be a member with a published key.
+    /// Auth: `by`, a member of `org`; `member` must be a member or an auditor of `org` with a
+    /// published key.
     pub fn share(
         e: &Env,
         by: Address,
@@ -150,7 +158,9 @@ impl Keyring {
             return Err(Error::UnknownEpoch);
         }
         member_check(e, &org, &by)?;
-        member_check(e, &org, &member)?;
+        if !auditors::is_auditor(e, &org, &member) {
+            member_check(e, &org, &member)?;
+        }
         let for_key = Self::key(e, member.clone()).ok_or(Error::NoKey)?;
         let storage_key = DataKey::Wrapped(org.clone(), member.clone(), epoch);
         e.storage().persistent().set(
@@ -183,7 +193,7 @@ impl Keyring {
     }
 }
 
-fn member_check(e: &Env, org: &Address, who: &Address) -> Result<(), Error> {
+pub(crate) fn member_check(e: &Env, org: &Address, who: &Address) -> Result<(), Error> {
     let members = OrganizationClient::new(e, org).members();
     if members.iter().any(|m| m.address == *who) {
         Ok(())
@@ -192,5 +202,10 @@ fn member_check(e: &Env, org: &Address, who: &Address) -> Result<(), Error> {
     }
 }
 
+mod auditors;
+mod labels;
+
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod test_access;

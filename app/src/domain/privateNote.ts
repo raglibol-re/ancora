@@ -84,3 +84,25 @@ export function privateNotesOf(account: OrgAccount): string[] {
 	}
 	return [...notes];
 }
+
+/** What members call a saved recipient, kept encrypted in the keyring when details are private. */
+export type PayeeLabel = { name: string; note: string };
+
+/** The name stored on-chain for a recipient whose real name is private. */
+export const PRIVATE_PAYEE_NAME = "Private";
+export const UNREADABLE_PAYEE = "Private recipient";
+
+/** The account with private recipients' names and notes as this device could read them. */
+export function revealPayees(
+	account: OrgAccount,
+	labels: ReadonlyMap<string, PayeeLabel>,
+): OrgAccount {
+	return {
+		...account,
+		payees: account.payees.map((payee) => {
+			const label = labels.get(payee.account);
+			if (label) return { ...payee, name: label.name, note: label.note };
+			return payee.name === PRIVATE_PAYEE_NAME ? { ...payee, name: UNREADABLE_PAYEE } : payee;
+		}),
+	};
+}

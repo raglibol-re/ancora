@@ -7,6 +7,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
+import { AuditorsSection } from "./AuditorsSection.tsx";
 import styles from "./SettingsPage.module.css";
 
 /**
@@ -155,6 +156,14 @@ export function PrivacyCard({ account }: { account: OrgAccount }) {
 						</button>
 					)}
 				</div>
+			)}
+			{status && status.epoch > 0 && (
+				<AuditorsSection
+					support={support}
+					orgId={account.org.id}
+					auditors={status.auditors}
+					onChanged={load}
+				/>
 			)}
 		</Card>
 	);

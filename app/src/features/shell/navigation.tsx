@@ -65,5 +65,6 @@ export const tabBarItems: readonly NavItem[] = [
 export const utilityItems: readonly NavItem[] = [
 	{ to: "/app/me", label: "Your pass", icon: <FingerprintIcon />, inTabBar: false },
 	{ to: "/app/me#data-source", label: "Network & data", icon: <SignalIcon />, inTabBar: false },
+	{ to: "/app/audit", label: "Audit", icon: <ApprovalsIcon />, inTabBar: false },
 	{ to: "/", label: "About ancora", icon: <CompassIcon />, inTabBar: false },
 ];

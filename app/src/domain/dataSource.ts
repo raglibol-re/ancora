@@ -1,4 +1,4 @@
-import type { Workspace } from "./account.ts";
+import type { OrgAccount, Workspace } from "./account.ts";
 import type { Deal, DealAction } from "./deals.ts";
 import type { EntryKind, Reaction } from "./discussion.ts";
 import type { ClaimStatus, LifelineOverview, RecoveryPlan } from "./lifeline.ts";
@@ -100,6 +100,8 @@ export type PrivacyStatus = {
 	waiting: PersonId[];
 	/** Members who haven't set up private details on any device yet. */
 	withoutKey: PersonId[];
+	/** People outside the organization its members let read its private details. */
+	auditors: PersonId[];
 };
 
 /**
@@ -116,6 +118,16 @@ export interface PrivacySupport {
 	newEpoch(orgId: string, actorId: PersonId): Promise<Result<void, RuleError>>;
 	/** Shares every key this device can read with the members still waiting for one. */
 	shareWaiting(orgId: string, actorId: PersonId): Promise<Result<number, RuleError>>;
+	/** Lets an outside person (an accountant) receive the key; share access afterwards. */
+	addAuditor(orgId: string, actorId: PersonId, auditor: string): Promise<Result<void, RuleError>>;
+	/** Takes an auditor off the list; renew the key so they can't read what follows. */
+	removeAuditor(
+		orgId: string,
+		actorId: PersonId,
+		auditor: string,
+	): Promise<Result<void, RuleError>>;
+	/** An organization as its auditor sees it: read-only, private details opened where shared. */
+	audit(orgId: string, personId: PersonId): Promise<Result<OrgAccount, RuleError>>;
 }
 
 /** The keys that live only on this device, backed up and restored with a code. */

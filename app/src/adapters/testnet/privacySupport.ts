@@ -1,25 +1,28 @@
 import { xdr } from "@stellar/stellar-sdk";
+import type { OrgAccount } from "../../domain/account.ts";
 import type { PrivacyStatus, PrivacySupport } from "../../domain/dataSource.ts";
-import { fitsPrivately } from "../../domain/privateNote.ts";
+import { fitsPrivately, type PayeeLabel } from "../../domain/privateNote.ts";
 import { ok, type Result } from "../../domain/result.ts";
 import type { PersonId, RuleError } from "../../domain/rules/model.ts";
-import { readDeviceBytes, writeDeviceBytes } from "./deviceStore.ts";
+import { writeDeviceBytes } from "./deviceStore.ts";
+import { hex, type KeyringReads, keyringReads, PRIVATE_KEY_DATABASE } from "./keyringReads.ts";
 import {
 	encryptNote,
 	newKeyPair,
 	newOrganizationKey,
 	publicKeyOf,
-	unwrapKey,
 	wrapKey,
 } from "./privateCrypto.ts";
-import { type Network, readContract } from "./readContract.ts";
+import { revealFor, sealLabel } from "./privateLabels.ts";
+import type { Network } from "./readContract.ts";
 import { address, u32 } from "./scv.ts";
 
 // Private details on the testnet: the person's X25519 secret stays in this browser
-// (deviceStore), the public key and the wrapped organization keys live in ancora's keyring
-// contract, and the keyring asks the organization contract who its members are.
+// (deviceStore), the public key, the wrapped organization keys, the auditors and the encrypted
+// recipient labels live in ancora's keyring contract, which asks the organization contract who
+// its members are.
 
-export const PRIVATE_KEY_DATABASE = "ancora-private";
+export { PRIVATE_KEY_DATABASE };
 
 type Invoke = (target: string, fn: string, args: xdr.ScVal[]) => Promise<Result<void, RuleError>>;
 
@@ -31,17 +34,15 @@ type Deps = {
 	refresh: () => Promise<void>;
 	/** The organization's members, as last read. */
 	members: (orgId: string) => readonly PersonId[];
+	/** Any organization read from its contract (for auditors, who aren't members). */
+	readAccount: (orgId: string) => Promise<OrgAccount>;
 };
 
-type Wrapped = { key: Uint8Array; forKey: string };
-
-const hex = (bytes: Uint8Array) => Buffer.from(bytes).toString("hex");
 const describe = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export type PrivateKeys = {
 	support: PrivacySupport;
-	/** The organization keys this device can open, by epoch (empty while nothing is private). */
-	keysFor: (orgId: string, personId: PersonId) => Promise<Map<number, Uint8Array>>;
+	reads: KeyringReads;
 	/**
 	 * `text` encrypted with the current key, `text` itself while nothing is private, or an error
 	 * when the organization is private but this device can't write privately. `onChain` texts
@@ -53,49 +54,45 @@ export type PrivateKeys = {
 		text: string,
 		onChain: boolean,
 	) => Promise<Result<string, RuleError>>;
+	/**
+	 * Saves a recipient's real name and note encrypted in the keyring when details are private,
+	 * and returns what to store on-chain (a placeholder then, the label itself otherwise).
+	 */
+	protectLabel: (
+		orgId: string,
+		personId: PersonId,
+		subject: string,
+		label: PayeeLabel,
+	) => Promise<Result<PayeeLabel, RuleError>>;
 };
 
 export function createPrivateKeys(deps: Deps): PrivateKeys {
-	const read = (fn: string, args: xdr.ScVal[]) =>
-		readContract(deps.network, deps.keyring, fn, args);
-	const publicKey = async (person: PersonId) => {
-		const key = (await read("key", [address(person)])) as Uint8Array | null;
-		return key ? new Uint8Array(key) : null;
+	const reads = keyringReads(deps.network, deps.keyring);
+	const recipients = async (orgId: string) => [
+		...new Set([...deps.members(orgId), ...(await reads.auditors(orgId))]),
+	];
+	const currentKey = async (orgId: string, person: PersonId) => {
+		const epoch = await reads.epochOf(orgId);
+		if (epoch === 0) return { epoch, key: null };
+		return { epoch, key: (await reads.keysFor(orgId, person)).get(epoch) ?? null };
 	};
-	const epochOf = async (orgId: string) => Number(await read("epoch", [address(orgId)]));
-	const wrappedFor = async (orgId: string, member: PersonId, epoch: number) => {
-		const row = (await read("wrapped", [address(orgId), address(member), u32(epoch)])) as {
-			key: Uint8Array;
-			for_key: Uint8Array;
-		} | null;
-		return row ? ({ key: new Uint8Array(row.key), forKey: hex(row.for_key) } as Wrapped) : null;
-	};
-	const deviceSecret = (person: PersonId) => readDeviceBytes(PRIVATE_KEY_DATABASE, person);
+	const cannotWrite = () =>
+		deps.failed(
+			"This organization keeps details private, and this device can't write them yet. Set it up under Settings → Private details.",
+		);
 
-	const keysFor = async (orgId: string, person: PersonId) => {
-		const keys = new Map<number, Uint8Array>();
-		const [epoch, secret] = await Promise.all([epochOf(orgId), deviceSecret(person)]);
-		if (epoch === 0 || !secret) return keys;
-		const mine = hex(publicKeyOf(secret));
-		for (let e = 1; e <= epoch; e++) {
-			const wrapped = await wrappedFor(orgId, person, e);
-			if (wrapped && wrapped.forKey === mine) keys.set(e, await unwrapKey(wrapped.key, secret));
-		}
-		return keys;
-	};
-
-	/** Shares `key` of `epoch` with every member whose copy is missing or for an old key. */
+	/** Shares `key` of `epoch` with every member and auditor whose copy is missing or stale. */
 	const shareKey = async (orgId: string, actor: PersonId, epoch: number, key: Uint8Array) => {
 		let shared = 0;
-		for (const member of deps.members(orgId)) {
-			const published = await publicKey(member);
+		for (const person of await recipients(orgId)) {
+			const published = await reads.publicKey(person);
 			if (!published) continue;
-			const existing = await wrappedFor(orgId, member, epoch);
+			const existing = await reads.wrappedFor(orgId, person, epoch);
 			if (existing && existing.forKey === hex(published)) continue;
 			const result = await deps.invoke(deps.keyring, "share", [
 				address(actor),
 				address(orgId),
-				address(member),
+				address(person),
 				u32(epoch),
 				xdr.ScVal.scvBytes(Buffer.from(await wrapKey(key, published))),
 			]);
@@ -106,58 +103,59 @@ export function createPrivateKeys(deps: Deps): PrivateKeys {
 	};
 
 	const status = async (orgId: string, actor: PersonId): Promise<PrivacyStatus> => {
-		const [epoch, secret, mine] = await Promise.all([
-			epochOf(orgId),
-			deviceSecret(actor),
-			publicKey(actor),
+		const [epoch, secret, mine, auditors] = await Promise.all([
+			reads.epochOf(orgId),
+			reads.deviceSecret(actor),
+			reads.publicKey(actor),
+			reads.auditors(orgId),
 		]);
 		const deviceReady = secret !== null && mine !== null && hex(publicKeyOf(secret)) === hex(mine);
-		const keys = deviceReady ? await keysFor(orgId, actor) : new Map<number, Uint8Array>();
+		const keys = deviceReady ? await reads.keysFor(orgId, actor) : new Map<number, Uint8Array>();
 		const waiting: PersonId[] = [];
 		const withoutKey: PersonId[] = [];
-		for (const member of deps.members(orgId)) {
-			const published = await publicKey(member);
+		for (const person of await recipients(orgId)) {
+			const published = await reads.publicKey(person);
 			if (!published) {
-				withoutKey.push(member);
+				withoutKey.push(person);
 				continue;
 			}
-			const wrapped = epoch > 0 ? await wrappedFor(orgId, member, epoch) : null;
-			if (epoch > 0 && (!wrapped || wrapped.forKey !== hex(published))) waiting.push(member);
+			const wrapped = epoch > 0 ? await reads.wrappedFor(orgId, person, epoch) : null;
+			if (epoch > 0 && (!wrapped || wrapped.forKey !== hex(published))) waiting.push(person);
 		}
-		return { epoch, deviceReady, canRead: keys.has(epoch), waiting, withoutKey };
+		return { epoch, deviceReady, canRead: keys.has(epoch), waiting, withoutKey, auditors };
+	};
+
+	const guarded = async <T>(what: string, run: () => Promise<Result<T, RuleError>>) => {
+		try {
+			return await run();
+		} catch (error) {
+			return deps.failed(`${what}: ${describe(error)}`);
+		}
 	};
 
 	const support: PrivacySupport = {
-		epoch: (orgId) => epochOf(orgId).catch(() => 0),
-		status: async (orgId, actor) => {
-			try {
-				return ok(await status(orgId, actor));
-			} catch (error) {
-				return deps.failed(`Couldn't read the private details setup: ${describe(error)}`);
-			}
-		},
-		setUpDevice: async (actor) => {
-			try {
-				let secret = await deviceSecret(actor);
+		epoch: (orgId) => reads.epochOf(orgId).catch(() => 0),
+		status: (orgId, actor) =>
+			guarded("Couldn't read the private details setup", async () =>
+				ok(await status(orgId, actor)),
+			),
+		setUpDevice: (actor) =>
+			guarded("Couldn't set up private details on this device", async () => {
+				let secret = await reads.deviceSecret(actor);
 				if (!secret) {
 					secret = newKeyPair().secretKey;
 					await writeDeviceBytes(PRIVATE_KEY_DATABASE, actor, secret);
 				}
-				const result = await deps.invoke(deps.keyring, "set_key", [
+				return deps.invoke(deps.keyring, "set_key", [
 					address(actor),
 					xdr.ScVal.scvBytes(Buffer.from(publicKeyOf(secret))),
 				]);
-				return result;
-			} catch (error) {
-				return deps.failed(`Couldn't set up private details on this device: ${describe(error)}`);
-			}
-		},
-		newEpoch: async (orgId, actor) => {
-			try {
+			}),
+		newEpoch: (orgId, actor) =>
+			guarded("Couldn't renew the organization's key", async () => {
 				const current = await status(orgId, actor);
-				if (!current.deviceReady) {
+				if (!current.deviceReady)
 					return deps.failed("Set up private details on this device first.");
-				}
 				const opened = await deps.invoke(deps.keyring, "open_epoch", [
 					address(actor),
 					address(orgId),
@@ -166,40 +164,70 @@ export function createPrivateKeys(deps: Deps): PrivateKeys {
 				const shared = await shareKey(orgId, actor, current.epoch + 1, newOrganizationKey());
 				await deps.refresh();
 				return shared.ok ? ok(undefined) : shared;
-			} catch (error) {
-				return deps.failed(`Couldn't renew the organization's key: ${describe(error)}`);
-			}
-		},
-		shareWaiting: async (orgId, actor) => {
-			try {
+			}),
+		shareWaiting: (orgId, actor) =>
+			guarded("Couldn't share access", async () => {
 				let total = 0;
-				for (const [epoch, key] of await keysFor(orgId, actor)) {
+				for (const [epoch, key] of await reads.keysFor(orgId, actor)) {
 					const shared = await shareKey(orgId, actor, epoch, key);
 					if (!shared.ok) return shared;
 					total += shared.value;
 				}
 				return ok(total);
-			} catch (error) {
-				return deps.failed(`Couldn't share access: ${describe(error)}`);
-			}
-		},
+			}),
+		addAuditor: (orgId, actor, auditor) =>
+			guarded("Couldn't add the auditor", () =>
+				deps.invoke(deps.keyring, "add_auditor", [
+					address(actor),
+					address(orgId),
+					address(auditor.trim()),
+				]),
+			),
+		removeAuditor: (orgId, actor, auditor) =>
+			guarded("Couldn't remove the auditor", () =>
+				deps.invoke(deps.keyring, "remove_auditor", [
+					address(actor),
+					address(orgId),
+					address(auditor),
+				]),
+			),
+		audit: (orgId, person) =>
+			guarded("Couldn't open this organization", async () =>
+				ok(await revealFor(reads, await deps.readAccount(orgId), person)),
+			),
 	};
 
 	const protect = async (orgId: string, person: PersonId, text: string, onChain: boolean) => {
 		if (!text) return ok(text);
-		const epoch = await epochOf(orgId);
+		const { epoch, key } = await currentKey(orgId, person);
 		if (epoch === 0) return ok(text);
-		const key = (await keysFor(orgId, person)).get(epoch);
-		if (!key) {
-			return deps.failed(
-				"This organization keeps references private, and this device can't write them yet. Set it up under Settings → Private details.",
-			);
-		}
+		if (!key) return cannotWrite();
 		if (onChain && !fitsPrivately(text, epoch)) {
 			return deps.failed("Private references are limited to about 70 characters. Shorten it.");
 		}
 		return ok(await encryptNote(text, key, epoch));
 	};
 
-	return { support, keysFor, protect };
+	const protectLabel = async (
+		orgId: string,
+		person: PersonId,
+		subject: string,
+		label: PayeeLabel,
+	): Promise<Result<PayeeLabel, RuleError>> => {
+		const { epoch, key } = await currentKey(orgId, person);
+		if (epoch === 0) return ok(label);
+		if (!key) return cannotWrite();
+		const sealed = await sealLabel(label, key, epoch);
+		if (!sealed)
+			return deps.failed("This name and note are too long to keep private. Shorten them.");
+		const stored = await deps.invoke(deps.keyring, "set_label", [
+			address(person),
+			address(orgId),
+			address(subject),
+			xdr.ScVal.scvBytes(Buffer.from(new TextEncoder().encode(sealed.sealed))),
+		]);
+		return stored.ok ? ok(sealed.onChain) : stored;
+	};
+
+	return { support, reads, protect, protectLabel };
 }
