@@ -39,6 +39,9 @@ name = "ancora-organization"
 version = "0.10.0"
 dependencies = [
  "ancora-deal",
+ "ancora-pot",
+ "ancora-pot-auditors",
+ "ancora-pot-verifier",
  "ancora-registry",
  "ancora-seal-verifier",
  "fips204",
@@ -46,6 +49,7 @@ dependencies = [
  "serde_json",
  "soroban-sdk",
  "stellar-access",
+ "stellar-confidential",
 ]
 
 [[package]]

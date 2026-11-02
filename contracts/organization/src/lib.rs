@@ -11,6 +11,7 @@
 mod continuity;
 mod controls;
 mod deals;
+mod pot;
 mod rules;
 mod seal_key;
 mod templates;
@@ -42,9 +43,10 @@ const MAX_LINK_PAYMENTS: u32 = 500;
 /// orders, 3 = custom roles (`SetRoles`), 4 = address book, 5 = batch payments, 6 = payment links,
 /// 7 = upgrades to published releases (`Upgrade`), 8 = allowances per asset and category,
 /// recipient allowlists, exchange rates for the tiers (`controls.rs`), deals with other parties
-/// (`deals.rs`), 9 = succession per position (`continuity.rs`) and ML-DSA seals (`seal_key.rs`).
+/// (`deals.rs`), 9 = succession per position (`continuity.rs`) and ML-DSA seals (`seal_key.rs`),
+/// 10 = the confidential pot (`pot.rs`).
 /// Organizations before this view report nothing.
-const CONTRACT_VERSION: u32 = 9;
+const CONTRACT_VERSION: u32 = 10;
 /// The organization's code on the Stellar Registry (`scripts/publish-registry.sh`).
 const RELEASE_NAME: &str = "ancora-organization";
 const SECONDS_PER_HOUR: u64 = 3_600;
@@ -1111,6 +1113,7 @@ impl Organization {
             }
             RequestKind::Change(_) => {}
             RequestKind::Deal(call) => deals::release_reserved(e, call),
+            RequestKind::Pot(call) => pot::release_reserved(e, call),
         }
         save_request(e, &request);
         Ok(())
@@ -1654,6 +1657,13 @@ fn execute_now(e: &Env, mut request: Request, info: &OrgInfo) -> Request {
                 request.failure = Some(code);
             }
         },
+        RequestKind::Pot(call) => match pot::perform(e, call) {
+            Ok(()) => request.status = Status::Executed,
+            Err(code) => {
+                request.status = Status::Failed;
+                request.failure = Some(code);
+            }
+        },
     }
     request
 }
@@ -2043,6 +2053,8 @@ mod test_continuity;
 mod test_controls;
 #[cfg(test)]
 mod test_deals;
+#[cfg(test)]
+mod test_pot;
 #[cfg(test)]
 mod test_upgrade;
 

@@ -26,6 +26,11 @@ pub(crate) fn euros(whole: i128) -> i128 {
 
 /// A club founded by `founder` as treasurer, funded with `balance_euros`, registered.
 pub(crate) fn club(balance_euros: i128) -> World {
+    club_at(balance_euros, None)
+}
+
+/// The same club at a fixed address (for proofs made for that address), or anywhere.
+pub(crate) fn club_at(balance_euros: i128, at: Option<&str>) -> World {
     let e = Env::default();
     e.mock_all_auths();
     let operator = Address::generate(&e);
@@ -43,21 +48,25 @@ pub(crate) fn club(balance_euros: i128) -> World {
             vault: None,
         }],
     );
-    let org_id = e.register(
-        Organization,
-        (
-            &registry_id,
-            &recovery,
-            &releases_id,
-            symbol_short!("EUR"),
-            accepted,
-            &founder,
-            Symbol::new(&e, "treasurer"),
-            symbol_short!("club"),
-            String::from_str(&e, "Tejo Rowing Club"),
-            BytesN::from_array(&e, &[1u8; 32]),
-        ),
+    let args = (
+        &registry_id,
+        &recovery,
+        &releases_id,
+        symbol_short!("EUR"),
+        accepted,
+        &founder,
+        Symbol::new(&e, "treasurer"),
+        symbol_short!("club"),
+        String::from_str(&e, "Tejo Rowing Club"),
+        BytesN::from_array(&e, &[1u8; 32]),
     );
+    let org_id = match at {
+        Some(strkey) => {
+            let id = Address::from_str(&e, strkey);
+            e.register_at(&id, Organization, args)
+        }
+        None => e.register(Organization, args),
+    };
     registry.register_org(&org_id, &founder);
     token::StellarAssetClient::new(&e, &asset.address()).mint(&org_id, &euros(balance_euros));
     World {

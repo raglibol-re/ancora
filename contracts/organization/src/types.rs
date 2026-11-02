@@ -1,4 +1,4 @@
-use soroban_sdk::{contracterror, contracttype, Address, BytesN, String, Symbol, Vec};
+use soroban_sdk::{contracterror, contracttype, Address, Bytes, BytesN, String, Symbol, Vec};
 
 /// Amounts are token minor units (7 decimals on Stellar). Policies are entered in cents and scaled.
 pub const CENT: i128 = 100_000;
@@ -104,6 +104,9 @@ pub enum Error {
     /// The ML-DSA signature doesn't match the member's registered key and this request, the key
     /// isn't a 1,312-byte ML-DSA-44 key, or the verifier doesn't answer like one.
     BadSealSignature = 60,
+    /// The pot didn't answer like ancora's confidential pot (contracts/pot). (When a pot action
+    /// fails at execution, the request records 2000 + the pot's own error code.)
+    PotUnavailable = 61,
 }
 
 /// "count people holding `role` (or a higher-ranked role) must approve".
@@ -414,6 +417,8 @@ pub enum RequestKind {
     Batch(Batch),
     /// An action in a deal with another party (contracts/deal), taken once the rules allow it.
     Deal(DealCall),
+    /// An action on the organization's confidential pot (contracts/pot).
+    Pot(PotCall),
 }
 
 /// A milestone as proposed in a deal's terms (same shape as `ancora_deal::MilestoneTerms`).
@@ -556,4 +561,31 @@ pub struct OrgInfo {
     pub created_at: u64,
     /// https URL of the logo (an image in ancora's store); empty for none.
     pub logo: String,
+}
+
+/// What the organization does with its confidential pot. The proofs (`data`) are made in a
+/// member's browser; the pot checks them, the organization only decides whether to send them.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub enum PotAction {
+    /// Opens the organization's account in the pot, with its auditor key number.
+    Register(u32, Bytes),
+    /// Moves this amount of the pot's asset into the pot (public).
+    Deposit(i128),
+    /// Takes this amount back out to the organization's account (public).
+    Withdraw(i128, Bytes),
+    /// Pays another pot account an amount only the two sides (and their auditors) can read.
+    Transfer(Address, Bytes),
+}
+
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PotCall {
+    /// The pot (ancora's, from the app's configuration).
+    pub pot: Address,
+    pub action: PotAction,
+    /// Set by the organization for a deposit: the asset and amount it holds back until the
+    /// request executes, fails or is declined (none and 0 otherwise).
+    pub reserved_token: Option<Address>,
+    pub reserved_amount: i128,
 }
