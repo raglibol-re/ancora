@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import type { OrgAccount } from "../../domain/account.ts";
-import type { PrivacyStatus } from "../../domain/dataSource.ts";
 import type { Result } from "../../domain/result.ts";
 import type { RuleError } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
@@ -9,6 +7,7 @@ import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AuditorsSection } from "./AuditorsSection.tsx";
 import styles from "./SettingsPage.module.css";
+import { usePrivacyStatus } from "./usePrivacyStatus.ts";
 
 /**
  * Private details: payment references and discussion entries stored on Stellar encrypted, so
@@ -18,27 +17,7 @@ export function PrivacyCard({ account }: { account: OrgAccount }) {
 	const { dataSource, me, personName } = useWorkspace();
 	const { run, busy } = useCommand();
 	const support = dataSource.privacy;
-	const [status, setStatus] = useState<PrivacyStatus | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	// Only the latest load may publish its result.
-	const latest = useRef(0);
-
-	const load = useCallback(() => {
-		if (!support) return;
-		const request = ++latest.current;
-		void support.status(account.org.id, me.id).then((result) => {
-			if (request !== latest.current) return;
-			if (result.ok) setStatus(result.value);
-			else setError(result.error.message);
-		});
-	}, [support, account.org.id, me.id]);
-
-	useEffect(() => {
-		load();
-		return () => {
-			latest.current += 1;
-		};
-	}, [load]);
+	const { status, error, load } = usePrivacyStatus(account.org.id);
 
 	if (!support || !account.onchain) return null;
 	const names = (ids: readonly string[]) => ids.map(personName).join(", ");
