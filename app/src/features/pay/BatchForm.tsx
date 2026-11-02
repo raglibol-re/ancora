@@ -8,6 +8,7 @@ import {
 } from "../../domain/account.ts";
 import type { BatchLineInput } from "../../domain/batchImport.ts";
 import { parseAmountInput } from "../../domain/money.ts";
+import { fitsPrivately } from "../../domain/privateNote.ts";
 import { MAX_BATCH_LINES } from "../../domain/rules/requests.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
@@ -18,6 +19,7 @@ import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./BatchForm.module.css";
 import { BatchImport } from "./BatchImport.tsx";
 import { RulePreview } from "./RulePreview.tsx";
+import { usePrivateEpoch } from "./usePrivateEpoch.ts";
 
 type Line = BatchLineInput;
 const emptyLine = (): Line => ({ to: "", amount: "", note: "" });
@@ -28,6 +30,7 @@ const emptyLine = (): Line => ({ to: "", amount: "", note: "" });
  */
 export function BatchForm({ account }: { account: OrgAccount }) {
 	const { dataSource, me } = useWorkspace();
+	const privateEpoch = usePrivateEpoch(account.org.id);
 	const { run, busy } = useCommand();
 	const navigate = useNavigate();
 	const [token, setToken] = useState(primaryToken(account));
@@ -216,7 +219,16 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 				<Field
 					label="Reference for the whole batch"
 					htmlFor="batch-note"
-					hint="Shown to approvers."
+					hint={
+						privateEpoch > 0
+							? "Private, like every line's reference: only your organization reads them (about 70 characters each)."
+							: "Shown to approvers."
+					}
+					error={
+						privateEpoch > 0 && !fitsPrivately(note.trim(), privateEpoch)
+							? "Too long to keep private; shorten it."
+							: null
+					}
 				>
 					<input
 						id="batch-note"

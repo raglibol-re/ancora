@@ -8,6 +8,7 @@ import {
 	primaryToken,
 } from "../../domain/account.ts";
 import { parseAmountInput } from "../../domain/money.ts";
+import { fitsPrivately } from "../../domain/privateNote.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
@@ -21,6 +22,7 @@ import { BatchForm } from "./BatchForm.tsx";
 import styles from "./PayPage.module.css";
 import { RulePreview } from "./RulePreview.tsx";
 import { REPEAT_OPTIONS, type RepeatValue, StandingOrdersCard } from "./StandingOrdersCard.tsx";
+import { usePrivateEpoch } from "./usePrivateEpoch.ts";
 
 const NEW_RECIPIENT = "new";
 /** Other organizations on Stellar in this browser, payable without typing their address. */
@@ -56,6 +58,7 @@ function SendMoney({ account }: { account: OrgAccount }) {
 
 function PayForm({ account }: { account: OrgAccount }) {
 	const { dataSource, me, workspace } = useWorkspace();
+	const privateEpoch = usePrivateEpoch(account.org.id);
 	const { run, busy } = useCommand();
 	const navigate = useNavigate();
 	const [params] = useSearchParams();
@@ -413,7 +416,20 @@ function PayForm({ account }: { account: OrgAccount }) {
 							</span>
 						</label>
 					)}
-					<Field label="Reference" htmlFor="note" hint="Shown to approvers and on the statement.">
+					<Field
+						label="Reference"
+						htmlFor="note"
+						hint={
+							privateEpoch > 0
+								? "Private: only your organization reads it (about 70 characters)."
+								: "Shown to approvers and on the statement."
+						}
+						error={
+							privateEpoch > 0 && !fitsPrivately(note.trim(), privateEpoch)
+								? "Too long to keep private; shorten it."
+								: null
+						}
+					>
 						<input
 							id="note"
 							className={controlClass}

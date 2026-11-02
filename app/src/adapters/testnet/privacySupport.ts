@@ -128,6 +128,7 @@ export function createPrivateKeys(deps: Deps): PrivateKeys {
 	};
 
 	const support: PrivacySupport = {
+		epoch: (orgId) => epochOf(orgId).catch(() => 0),
 		status: async (orgId, actor) => {
 			try {
 				return ok(await status(orgId, actor));

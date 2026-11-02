@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-11-02: The Send page and batch form say when references are private and flag one too long to keep private before it is sent.
+
 - 2026-11-02: A fifth nightly end-to-end run: two members set up private details, a payment reference is read by both in the app while the organization contract stores only ciphertext.
 - 2026-11-02: Private details: an organization can keep payment references, batch lines, standing orders and discussions private. They are stored on Stellar encrypted with the organization's key; each member's key stays on their device; Settings → Private details sets up a device, turns it on, shares access and renews the key after someone leaves. Amounts and who is paid stay public. New keyring contract.
 - 2026-11-02: A fourth nightly end-to-end run: a board member creates a quantum-safe seal key on their device, approves and seals a payment, and the organization's contract checks the ML-DSA signature before paying out.

@@ -107,6 +107,8 @@ export type PrivacyStatus = {
  * organization's key, readable only by its members (and whoever they share it with).
  */
 export interface PrivacySupport {
+	/** The organization's current key epoch; 0 (also when unreadable) while nothing is private. */
+	epoch(orgId: string): Promise<number>;
 	status(orgId: string, actorId: PersonId): Promise<Result<PrivacyStatus, RuleError>>;
 	/** Creates this device's encryption key for the person (or keeps it) and publishes it. */
 	setUpDevice(actorId: PersonId): Promise<Result<void, RuleError>>;
