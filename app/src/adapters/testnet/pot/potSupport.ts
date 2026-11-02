@@ -34,7 +34,12 @@ type Deps = PotDeps & {
 	refresh: () => Promise<void>;
 };
 
-const describe = (error: unknown) => (error instanceof Error ? error.message : String(error));
+/** RPC errors arrive as plain `{ code, message }` objects, not `Error`s. */
+const describe = (error: unknown) => {
+	if (error instanceof Error) return error.message;
+	if (error && typeof error === "object" && "message" in error) return String(error.message);
+	return JSON.stringify(error);
+};
 
 export function createPotSupport(deps: Deps): PotSupport {
 	const { pot, verifier, auditors, asset } = deps.config;

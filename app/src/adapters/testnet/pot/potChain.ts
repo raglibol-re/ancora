@@ -75,6 +75,9 @@ export function potData(payload: Record<string, Uint8Array>, proof: Uint8Array):
 	return struct({ payload: struct(fields), proof: xdr.ScVal.scvBytes(Buffer.from(proof)) }).toXDR();
 }
 
+/** About ten minutes of ledgers. */
+const PRUNE_MARGIN_LEDGERS = 120;
+
 /** Every pot event naming `account` that the RPC still holds, oldest first. */
 export async function readPotEvents(
 	network: Network,
@@ -94,10 +97,12 @@ export async function readPotEvents(
 			],
 		},
 	];
+	// The oldest ledger moves on while the chunks are read; starting a little above it keeps the
+	// first chunk from asking for a ledger the RPC just dropped.
 	const events = await scanEvents(
 		server,
 		filters,
-		health.oldestLedger,
+		health.oldestLedger + PRUNE_MARGIN_LEDGERS,
 		health.latestLedger + 1,
 		toPotEvent,
 	);
