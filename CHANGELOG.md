@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: Fixed: a page load on a slow network could sign the person out. When the passkey session took longer than 8 seconds to come back, ancora treated the device as signed out and forgot the pass; it now keeps the pass and follows the session once it answers.
 - 2026-11-03: Installing ancora: the app has a fixed identity, store categories and shortcuts on its icon (Send money, Approvals, Activity); the payment-link page's tab title follows the language.
 - 2026-11-03: German error messages and status lines: the rules engine's and the contracts' reasons (approvals, budgets, deals, the confidential pot, Lifeline, private details, wallets and the anchor), the working bar ("Wird an Stellar gesendet …") and deal titles and states. A test keeps every contract, deal and pot error translated.
 - 2026-11-03: German request titles and rule previews: payments, batches, rule and role changes, deals, the confidential pot and the "Needs 2 board members, then a 48-hour objection window" preview.

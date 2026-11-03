@@ -96,7 +96,7 @@ import { inspectToken } from "./tokenInspect.ts";
 const EMPTY: Workspace = { people: [], accounts: [] };
 const MAX_NAME_BYTES = 64;
 const MAX_AVATAR_BYTES = 256;
-/** A session restore that takes longer than this shows the sign-in page instead of blocking it. */
+/** A session restore slower than this stops blocking the screen; a cached pass stays signed in. */
 const RESTORE_TIMEOUT_MS = 8_000;
 
 const describeError = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -421,24 +421,38 @@ export class TestnetDataSource implements DataSource {
 			// The passkey session check and the chain reads don't depend on each other.
 			const connection = this.kit.connectWallet();
 			this.connecting = connection.catch(() => null);
-			const [session] = await Promise.all([
+			const [outcome] = await Promise.all([
 				Promise.race([
-					connection,
-					new Promise<null>((resolve) => setTimeout(() => resolve(null), RESTORE_TIMEOUT_MS)),
+					connection.then((session) => ({ session })),
+					new Promise<"slow">((resolve) => setTimeout(() => resolve("slow"), RESTORE_TIMEOUT_MS)),
 				]),
 				cachedId ? this.refresh() : Promise.resolve(),
 			]);
-			if (session && session.contractId !== cachedId) {
-				await this.becomeIdentity(session.contractId);
-			} else if (!session && cachedId) {
-				// The cache belonged to a session this device no longer has.
-				this.forget();
+			if (outcome === "slow") {
+				// A slow network is not a signed-out device: keep what the cache shows and settle
+				// once the kit answers.
+				void connection
+					.then((session) => this.settleSession(session?.contractId ?? null, cachedId))
+					.catch(() => this.settleSession(null, cachedId));
+				return;
 			}
+			await this.settleSession(outcome.session?.contractId ?? null, cachedId);
 		} catch {
 			// No usable session on this device: the sign-in page takes over.
 			if (cachedId) this.forget();
 		} finally {
 			this.restoringSession = false;
+			this.notify();
+		}
+	}
+
+	/** Follows the session the kit found: another pass, the cached one, or none on this device. */
+	private async settleSession(sessionId: string | null, cachedId: string | null) {
+		if (sessionId && sessionId !== cachedId) {
+			await this.becomeIdentity(sessionId);
+		} else if (!sessionId && cachedId) {
+			// The cache belonged to a session this device no longer has.
+			this.forget();
 			this.notify();
 		}
 	}
