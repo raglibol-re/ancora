@@ -3,6 +3,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 
 const nightBlue = "#0B1730";
+const shortcutIcon = { src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" };
 
 export default defineConfig({
 	plugins: [
@@ -15,9 +16,13 @@ export default defineConfig({
 				"brand/apple-touch-icon-180.png",
 			],
 			manifest: {
+				id: "/app",
 				name: "ancora",
 				short_name: "ancora",
-				description: "The finance account for your organization.",
+				description: "The business account your organization controls.",
+				lang: "en",
+				dir: "ltr",
+				categories: ["finance", "business", "productivity"],
 				start_url: "/app",
 				scope: "/",
 				display: "standalone",
@@ -33,6 +38,12 @@ export default defineConfig({
 						type: "image/png",
 						purpose: "maskable",
 					},
+				],
+				// Long-press the installed icon: the three things members open most.
+				shortcuts: [
+					{ name: "Send money", short_name: "Send", url: "/app/pay", icons: [shortcutIcon] },
+					{ name: "Approvals", url: "/app/approvals", icons: [shortcutIcon] },
+					{ name: "Activity", url: "/app/activity", icons: [shortcutIcon] },
 				],
 			},
 			workbox: {

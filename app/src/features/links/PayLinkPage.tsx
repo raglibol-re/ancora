@@ -27,7 +27,10 @@ export function PayLinkPage() {
 	const pickerHost = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		document.title = "Pay with ancora";
+		document.title = t("Pay with ancora");
+	}, [t]);
+
+	useEffect(() => {
 		void payer()
 			.then((m) => m.readPublicLink(orgId, linkId))
 			.then((result) => (result.ok ? setLink(result.value) : setProblem(result.error.message)));

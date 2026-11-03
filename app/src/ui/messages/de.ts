@@ -1745,4 +1745,5 @@ export const de: Readonly<Record<string, string>> = {
 	"Not a Stellar address.": "Keine Stellar-Adresse.",
 	"A successor is another member; the quiet period and the wait run from one minute to two years.":
 		"Die Nachfolge ist ein anderes Mitglied; die inaktive Zeit und die Wartezeit liegen zwischen einer Minute und zwei Jahren.",
+	"Pay with ancora": "Mit ancora bezahlen",
 };
