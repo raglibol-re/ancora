@@ -123,9 +123,13 @@ export function ProfilePage() {
 									{lifeline.overview?.plan ? (
 										<>
 											<span className={styles.protected}>{t("Protected by Lifeline")}</span>:{" "}
-											{lifeline.overview.plan.threshold} {t("of")}{" "}
-											{lifeline.overview.plan.guardians.length}{" "}
-											{t("guardians can confirm a new pass for you. Details below.")}
+											{t(
+												"{needed} of {total} guardians can confirm a new pass for you. Details below.",
+												{
+													needed: lifeline.overview.plan.threshold,
+													total: lifeline.overview.plan.guardians.length,
+												},
+											)}
 										</>
 									) : (
 										<>

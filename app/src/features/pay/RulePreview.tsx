@@ -68,29 +68,41 @@ export function RulePreview({
 		<div className={styles.preview} aria-live="polite">
 			{budget.kind === "refused" ? (
 				<p className={styles.warning}>
-					{t("Beyond what is left of the #")}
-					{budget.line.category} {t("budget this")} {t(describePeriod(budget.line.periodSeconds))} (
-					{formatMoney(Math.max(0, budget.line.remaining), currency)}
-					{t("). It is a hard budget, so this payment won't be accepted.")}
+					{t(
+						"Beyond what is left of the #{category} budget this {period} ({left}). It is a hard budget, so this payment won't be accepted.",
+						{
+							category: budget.line.category,
+							period: t(describePeriod(budget.line.periodSeconds)),
+							left: formatMoney(Math.max(0, budget.line.remaining), currency),
+						},
+					)}
 				</p>
 			) : (
 				<p className={styles.rule}>{describeEvaluation(account.org, evaluation)}</p>
 			)}
 			{(budget.kind === "within" || budget.kind === "over") && (
 				<p className={styles.detail}>
-					#{budget.line.category}: {formatMoney(Math.max(0, budget.line.remaining), currency)}{" "}
-					{t("of")} {formatMoney(budget.line.amount, currency)} {t("left this")}{" "}
-					{t(describePeriod(budget.line.periodSeconds))}
+					#{budget.line.category}:{" "}
+					{t("{left} of {total} left this {period}", {
+						left: formatMoney(Math.max(0, budget.line.remaining), currency),
+						total: formatMoney(budget.line.amount, currency),
+						period: t(describePeriod(budget.line.periodSeconds)),
+					})}
 					{budget.kind === "over" ? t("; this payment goes beyond it.") : "."}
 				</p>
 			)}
 			{allowance && (
 				<p className={styles.detail}>
-					{t("Inside your allowance")}
-					{allowance.category ? ` for #${allowance.category}` : ""}:{" "}
-					{formatMoney(remainingAllowance(allowance, now), currency)} {t("of")}{" "}
-					{formatMoney(allowance.amount, currency)} {t("left this")}{" "}
-					{t(periodLabel(allowance.periodSeconds))}.
+					{allowance.category
+						? t("Inside your allowance for #{category}", { category: allowance.category })
+						: t("Inside your allowance")}
+					:{" "}
+					{t("{left} of {total} left this {period}", {
+						left: formatMoney(remainingAllowance(allowance, now), currency),
+						total: formatMoney(allowance.amount, currency),
+						period: t(periodLabel(allowance.periodSeconds)),
+					})}
+					.
 				</p>
 			)}
 			{outsideAllowlist && (
@@ -100,17 +112,26 @@ export function RulePreview({
 			)}
 			{member?.limit && !foreignCurrency && !allowance && (
 				<p className={styles.detail}>
-					{t("Your spending limit:")} {formatMoney(remainingAllowance(member.limit, now), currency)}{" "}
-					{t("of")} {formatMoney(member.limit.amount, currency)} {t("left this")}{" "}
-					{t(periodLabel(member.limit.periodSeconds))}
+					{t("Your spending limit:")}{" "}
+					{t("{left} of {total} left this {period}", {
+						left: formatMoney(remainingAllowance(member.limit, now), currency),
+						total: formatMoney(member.limit.amount, currency),
+						period: t(periodLabel(member.limit.periodSeconds)),
+					})}
 					{withinLimit ? "." : t("; this payment goes through the normal rules.")}
 				</p>
 			)}
 			{foreignCurrency && !withinLimit && (
 				<p className={styles.detail}>
 					{amountInTiers !== null
-						? `The rules are in ${account.org.baseCurrency}: at today's rate this is about ${formatMoney(amountInTiers, account.org.baseCurrency)}.`
-						: `The rules are in ${account.org.baseCurrency}; without a current exchange rate a payment in ${currency} takes the strictest approvals and the seal.`}
+						? t("The rules are in {base}: at today's rate this is about {amount}.", {
+								base: account.org.baseCurrency,
+								amount: formatMoney(amountInTiers, account.org.baseCurrency),
+							})
+						: t(
+								"The rules are in {base}; without a current exchange rate a payment in {currency} takes the strictest approvals and the seal.",
+								{ base: account.org.baseCurrency, currency },
+							)}
 				</p>
 			)}
 			{!withinLimit && recipientIsNew && account.org.policy.newRecipientApprovals.length > 0 && (
@@ -120,7 +141,9 @@ export function RulePreview({
 			)}
 			{amount > available && (
 				<p className={styles.warning}>
-					{t("Only")} {formatMoney(available, currency)} {t("is available on the main account.")}
+					{t("Only {amount} is available on the main account.", {
+						amount: formatMoney(available, currency),
+					})}
 				</p>
 			)}
 		</div>

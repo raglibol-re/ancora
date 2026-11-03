@@ -92,12 +92,14 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 						>
 							<span>
 								{personName(row.personId)} {scope(row.allowance)}:{" "}
-								{formatMoney(
-									remainingAllowance(row.allowance, now),
-									currencyFor(row.allowance.token),
-								)}{" "}
-								{t("of")} {formatMoney(row.allowance.amount, currencyFor(row.allowance.token))}{" "}
-								{t("left this")} {t(periodLabel(row.allowance.periodSeconds))}
+								{t("{left} of {total} left this {period}", {
+									left: formatMoney(
+										remainingAllowance(row.allowance, now),
+										currencyFor(row.allowance.token),
+									),
+									total: formatMoney(row.allowance.amount, currencyFor(row.allowance.token)),
+									period: t(periodLabel(row.allowance.periodSeconds)),
+								})}
 							</span>
 							<button
 								type="button"
@@ -135,7 +137,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 							onChange={(e) => setToken(e.target.value)}
 						>
 							<option value="">
-								{t("Any, counted in")} {org.baseCurrency}
+								{t("Any, counted in {currency}", { currency: org.baseCurrency })}
 							</option>
 							{org.assets.map((a) => (
 								<option key={a.token} value={a.token}>

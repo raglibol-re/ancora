@@ -216,9 +216,13 @@ function Links({ account }: { account: OrgAccount }) {
 										</span>
 									</div>
 									<span className={styles.meta}>
-										{t("Paid")} {link.payments.length} {t("of")} {link.maxPayments} {t("· total")}{" "}
-										{formatMoney(link.amount * link.payments.length, currency)} {t("· created")}{" "}
-										{formatDateTime(link.createdAt)} {t("by")} {personName(link.createdBy)}
+										{t("Paid {count} of {max} · total {amount} · created {date} by {name}", {
+											count: link.payments.length,
+											max: link.maxPayments,
+											amount: formatMoney(link.amount * link.payments.length, currency),
+											date: formatDateTime(link.createdAt),
+											name: personName(link.createdBy),
+										})}
 									</span>
 									{link.payments.length > 0 && (
 										<ul className={styles.payers}>

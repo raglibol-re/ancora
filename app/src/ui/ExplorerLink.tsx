@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import styles from "./ExplorerLink.module.css";
 import { explorerUrl } from "./explorerUrl.ts";
+import { useT } from "./useLanguage.ts";
 
 type ExplorerLinkProps = {
 	/** A transaction hash, or an account / contract address (G… / C…). */
@@ -10,9 +11,10 @@ type ExplorerLinkProps = {
 
 /** Opens a transaction, account or contract on stellar.expert (testnet). */
 export function ExplorerLink({ target, children }: ExplorerLinkProps) {
+	const t = useT();
 	return (
 		<a className={styles.link} href={explorerUrl(target)} target="_blank" rel="noreferrer">
-			{children ?? "View on Stellar"}
+			{children ?? t("View on Stellar")}
 		</a>
 	);
 }

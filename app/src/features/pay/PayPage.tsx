@@ -302,7 +302,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 							))}
 							{otherOrgs.map((other) => (
 								<option key={other.org.id} value={`${ORG_PREFIX}${other.org.id}`}>
-									{other.org.name} {t("(organization on ancora)")}
+									{t("{name} (organization on ancora)", { name: other.org.name })}
 								</option>
 							))}
 							<option value={NEW_RECIPIENT}>{t("New recipient…")}</option>
@@ -345,8 +345,10 @@ function PayForm({ account }: { account: OrgAccount }) {
 										onChange={(e) => setSaveNew(e.target.checked)}
 									/>
 									<span>
-										<strong>{t("Save to the address book.")}</strong> {t("Everyone in")}{" "}
-										{account.org.name} {t("then sees this name for the address.")}
+										<strong>{t("Save to the address book.")}</strong>{" "}
+										{t("Everyone in {organization} then sees this name for the address.", {
+											organization: account.org.name,
+										})}
 									</span>
 								</label>
 							)}
@@ -374,7 +376,9 @@ function PayForm({ account }: { account: OrgAccount }) {
 					)}
 					{unreachable === null && isNew && (
 						<p className={styles.recipientOk} role="status">
-							{t("This address can receive")} {asset?.symbol ?? t("the chosen asset")}.
+							{t("This address can receive {asset}.", {
+								asset: asset?.symbol ?? t("the chosen asset"),
+							})}
 						</p>
 					)}
 					<RulePreview
@@ -445,9 +449,9 @@ function PayForm({ account }: { account: OrgAccount }) {
 							<span>
 								<strong>{t("Secure handover.")}</strong>{" "}
 								{t(
-									"After approval the money is set aside and only paid out once the recipient and",
-								)}{" "}
-								{account.org.name} {t("both confirm. You get a link to send the recipient.")}
+									"After approval the money is set aside and only paid out once the recipient and {organization} both confirm. You get a link to send the recipient.",
+									{ organization: account.org.name },
+								)}
 							</span>
 						</label>
 					)}

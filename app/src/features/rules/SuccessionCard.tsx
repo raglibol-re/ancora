@@ -53,11 +53,17 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 		if (plan.claimReadyAt !== null) {
 			return plan.claimReadyAt <= now
 				? t("Claimed; the handover can be finished now.")
-				: `Claimed; handover on ${formatDateTime(plan.claimReadyAt)} unless ${personName(plan.personId)} acts first.`;
+				: t("Claimed; handover on {date} unless {name} acts first.", {
+						date: formatDateTime(plan.claimReadyAt),
+						name: personName(plan.personId),
+					});
 		}
 		return quietUntil <= now
-			? `Quiet since ${formatDateTime(plan.lastSeen)}: ${personName(plan.successorId)} may claim the position.`
-			: `Last seen ${formatDateTime(plan.lastSeen)}.`;
+			? t("Quiet since {date}: {successor} may claim the position.", {
+					date: formatDateTime(plan.lastSeen),
+					successor: personName(plan.successorId),
+				})
+			: t("Last seen {date}.", { date: formatDateTime(plan.lastSeen) });
 	};
 
 	const act = (label: string, action: () => ReturnType<NonNullable<typeof support>["stillHere"]>) =>
@@ -77,8 +83,11 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 						return (
 							<li key={plan.personId} className={styles.item}>
 								<span>
-									{personName(plan.successorId)} {t("takes over from")} {personName(plan.personId)}{" "}
-									{t("after")} {Math.round(plan.inactiveSeconds / DAY)} {t("quiet days.")}{" "}
+									{t("{successor} takes over from {name} after {days} quiet days.", {
+										successor: personName(plan.successorId),
+										name: personName(plan.personId),
+										days: Math.round(plan.inactiveSeconds / DAY),
+									})}{" "}
 									{status(plan)}
 								</span>
 								{support && (

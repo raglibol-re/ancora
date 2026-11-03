@@ -44,7 +44,7 @@ export function ExchangeRatesCard({ account }: { account: OrgAccount }) {
 					<ul className={styles.list}>
 						{others.length === 0 && (
 							<li className={styles.item}>
-								{t("All accepted assets are in")} {org.baseCurrency}.
+								{t("All accepted assets are in {currency}.", { currency: org.baseCurrency })}
 							</li>
 						)}
 						{others.map((currency) => (
@@ -65,11 +65,10 @@ export function ExchangeRatesCard({ account }: { account: OrgAccount }) {
 			) : (
 				<>
 					<p className={styles.muted}>
-						{t("Today a payment in another currency than")} {org.baseCurrency}{" "}
 						{t(
-							"takes the strictest approvals and the seal. With live rates it is judged by its value in",
-						)}{" "}
-						{org.baseCurrency}.
+							"Today a payment in another currency than {currency} takes the strictest approvals and the seal. With live rates it is judged by its value in {currency}.",
+							{ currency: org.baseCurrency },
+						)}
 					</p>
 					<button
 						type="button"

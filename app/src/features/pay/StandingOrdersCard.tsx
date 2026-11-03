@@ -70,13 +70,19 @@ export function StandingOrdersCard({ account }: { account: OrgAccount }) {
 							<li key={order.id} className={styles.row}>
 								<span className={styles.text}>
 									<span>
-										{formatMoney(order.amount, currency)} {t("to")}{" "}
-										{recipientLabel(account, order.to)} {intervalLabel(order.intervalSeconds)}
+										{t("{amount} to {recipient} {interval}", {
+											amount: formatMoney(order.amount, currency),
+											recipient: recipientLabel(account, order.to),
+											interval: intervalLabel(order.intervalSeconds),
+										})}
 									</span>
 									<span className={styles.meta}>
-										{due ? t("Due now") : `Next on ${formatDateTime(order.nextAt)}`} {t("· set by")}{" "}
-										{personName(order.by)}
-										{order.runs > 0 && ` · ${order.runs} ${order.runs === 1 ? "run" : "runs"}`}
+										{due
+											? t("Due now")
+											: t("Next on {date}", { date: formatDateTime(order.nextAt) })}{" "}
+										· {t("set by {name}", { name: personName(order.by) })}
+										{order.runs > 0 &&
+											` · ${order.runs === 1 ? t("1 run") : t("{count} runs", { count: order.runs })}`}
 										{order.memo && ` · ${order.memo}`}
 									</span>
 								</span>

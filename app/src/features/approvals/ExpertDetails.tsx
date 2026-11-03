@@ -32,7 +32,10 @@ export function ExpertDetails({
 						? t("Within the requester's spending limit (no tier)")
 						: request.evaluation.tierIndex === null
 							? t("Strictest tier (membership or rule change)")
-							: `Tier ${request.evaluation.tierIndex + 1} of ${account.org.policy.tiers.length}`}
+							: t("Tier {number} of {count}", {
+									number: request.evaluation.tierIndex + 1,
+									count: account.org.policy.tiers.length,
+								})}
 				</dd>
 				{request.kind === "payment" && (
 					<>

@@ -143,9 +143,17 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 								</p>
 								{held === 0 && (
 									<p className={styles.warning}>
-										{t("This wallet holds none of this asset. It needs a trustline for exactly")}{" "}
-										{assetName ?? asset.symbol}
-										{issuer ? ` (issuer ${shortAddress(issuer)})` : ""} {t("and some balance.")}
+										{t(
+											"This wallet holds none of this asset. It needs a trustline for exactly {asset} and some balance.",
+											{
+												asset: issuer
+													? t("{asset} (issuer {issuer})", {
+															asset: assetName ?? asset.symbol,
+															issuer: shortAddress(issuer),
+														})
+													: (assetName ?? asset.symbol),
+											},
+										)}
 									</p>
 								)}
 								<Field
@@ -170,7 +178,10 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 								>
 									{busy
 										? t("Waiting for your wallet…")
-										: `Send ${asset.symbol} to ${account.org.name}`}
+										: t("Send {asset} to {organization}", {
+												asset: asset.symbol,
+												organization: account.org.name,
+											})}
 								</button>
 							</form>
 						) : (

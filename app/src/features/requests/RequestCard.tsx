@@ -61,7 +61,8 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 						{title}
 					</Link>
 					<span className={styles.meta}>
-						{t("Requested by")} {requester} · {formatRelative(request.createdAt, Date.now())}
+						{t("Requested by {name}", { name: requester })} ·{" "}
+						{formatRelative(request.createdAt, Date.now())}
 						{(request.kind === "payment" || request.kind === "batch") &&
 							request.recipientIsNew &&
 							t(" · new recipient")}
@@ -96,7 +97,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 			)}
 			{discussion && (
 				<Link to={`/app/approvals/${request.id}`} className={styles.meta}>
-					{t("Discussion:")} {discussion}
+					{t("Discussion: {text}", { text: discussion })}
 				</Link>
 			)}
 			<RequestProgress account={account} request={request} />

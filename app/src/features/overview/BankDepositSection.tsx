@@ -70,11 +70,10 @@ export function BankDepositSection({
 		<section className={styles.section}>
 			<h3>{t("From a bank account")}</h3>
 			<p className={styles.muted}>
-				{t("Through the Stellar anchor")} {info.homeDomain}{" "}
 				{t(
-					"(testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the bank details, the",
-				)}{" "}
-				{asset.symbol} {t("arrives in your wallet, and from there it goes to the organization.")}
+					"Through the Stellar anchor {anchor} (testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the bank details, the {asset} arrives in your wallet, and from there it goes to the organization.",
+					{ anchor: info.homeDomain, asset: asset.symbol },
+				)}
 			</p>
 			{!wallet ? (
 				<button type="button" className={buttonClass()} disabled={busy} onClick={onConnect}>

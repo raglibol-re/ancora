@@ -183,7 +183,7 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 							{t("decimals) at")} <span className={styles.id}>{found.token}</span>
 						</p>
 						<button type="button" className={buttonClass()} disabled={busy} onClick={acceptFound}>
-							{t("Accept")} {found.symbol} {t("as")} {currency}
+							{t("Accept {asset} as {currency}", { asset: found.symbol, currency })}
 						</button>
 					</>
 				) : (

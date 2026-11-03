@@ -48,9 +48,7 @@ export function DevicesSection({ identity }: { identity: IdentitySupport }) {
 					"Reading your passkeys…"
 				) : count > 1 ? (
 					<>
-						<span className={styles.protected}>
-							{count} {t("passkeys")}
-						</span>{" "}
+						<span className={styles.protected}>{t("{count} passkeys", { count })}</span>{" "}
 						{t("can sign for this account.")}
 					</>
 				) : (

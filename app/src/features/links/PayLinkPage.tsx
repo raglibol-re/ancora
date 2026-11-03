@@ -39,7 +39,7 @@ export function PayLinkPage() {
 	const connect = async () => {
 		if (!link) return;
 		setProblem(null);
-		setWorking("Choose your wallet…");
+		setWorking(t("Choose your wallet…"));
 		const m = await payer();
 		const result = await m.connectWallet(pickerHost.current ?? undefined);
 		if (!result.ok) {
@@ -54,7 +54,7 @@ export function PayLinkPage() {
 	const pay = async () => {
 		if (!link || !wallet) return;
 		setProblem(null);
-		setWorking("Confirm in your wallet, then the payment goes to Stellar…");
+		setWorking(t("Confirm in your wallet, then the payment goes to Stellar…"));
 		const result = await (await payer()).payLink(link, linkId, wallet.address);
 		setWorking(null);
 		if (result.ok) setPaid(result.value);
@@ -73,7 +73,7 @@ export function PayLinkPage() {
 				{link && (
 					<>
 						<p className={styles.kicker}>
-							{link.orgName} {t("asks for")}
+							{t("{organization} asks for", { organization: link.orgName })}
 						</p>
 						<p className={styles.amount}>
 							{formatMoney(link.amount, link.currency)} <span>{link.symbol}</span>
@@ -81,14 +81,20 @@ export function PayLinkPage() {
 						<p className={styles.memo}>{link.memo}</p>
 						{link.maxPayments > 1 && (
 							<p className={styles.muted}>
-								{t("Paid by")} {link.paidCount} {t("of up to")} {link.maxPayments} {t("people.")}
+								{t("Paid by {count} of up to {max} people.", {
+									count: link.paidCount,
+									max: link.maxPayments,
+								})}
 							</p>
 						)}
 					</>
 				)}
 				{paid && (
 					<div className={styles.done} role="status">
-						<strong>{t("Paid. Thank you.")}</strong> {link?.orgName} {t("sees your payment now.")}
+						<strong>{t("Paid. Thank you.")}</strong>{" "}
+						{t("{organization} sees your payment now.", {
+							organization: link?.orgName ?? t("The organization"),
+						})}
 						<ExplorerLink target={paid}>{t("View the transaction")}</ExplorerLink>
 					</div>
 				)}
@@ -102,10 +108,13 @@ export function PayLinkPage() {
 						{wallet ? (
 							<>
 								<p className={styles.muted}>
-									{t("From")} {wallet.walletName} · {wallet.address.slice(0, 4)}…
-									{wallet.address.slice(-4)}
+									{t("From {wallet}", { wallet: wallet.walletName })} · {wallet.address.slice(0, 4)}
+									…{wallet.address.slice(-4)}
 									{wallet.balance !== null &&
-										` · holds ${formatMoney(wallet.balance, link.currency)} ${link.symbol}`}
+										` · ${t("holds {amount} {asset}", {
+											amount: formatMoney(wallet.balance, link.currency),
+											asset: link.symbol,
+										})}`}
 								</p>
 								<button
 									type="button"
@@ -113,7 +122,7 @@ export function PayLinkPage() {
 									disabled={working !== null}
 									onClick={() => void pay()}
 								>
-									{t("Pay")} {formatMoney(link.amount, link.currency)}
+									{t("Pay {amount}", { amount: formatMoney(link.amount, link.currency) })}
 								</button>
 							</>
 						) : (
@@ -149,8 +158,10 @@ export function PayLinkPage() {
 				<div ref={pickerHost} />
 			</section>
 			<p className={styles.small}>
-				{t("Payments go straight to")} {link?.orgName ?? t("the organization")}
-				{t("'s account on Stellar. ancora is not a bank and never holds the money.")}
+				{t(
+					"Payments go straight to the account of {organization} on Stellar. ancora is not a bank and never holds the money.",
+					{ organization: link?.orgName ?? t("the organization") },
+				)}
 			</p>
 		</main>
 	);

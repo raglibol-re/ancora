@@ -86,7 +86,9 @@ export function RegistryNameCard({ account }: { account: OrgAccount }) {
 				{t(
 					"The Stellar Registry is a public, on-chain directory of contracts by name. A name lets people find and verify this organization's treasury contract without copying an address.",
 				)}
-				{channel ? ` Names go into the registry's open channel (${channel}).` : ""}
+				{channel
+					? ` ${t("Names go into the registry's open channel ({channel}).", { channel })}`
+					: ""}
 			</p>
 			{status?.name ? (
 				<dl className={styles.facts}>

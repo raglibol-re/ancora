@@ -7,17 +7,21 @@ import {
 } from "../../adapters/site/pushNotifications.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
+import { msg } from "../../ui/i18n.ts";
 import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./NotificationsCard.module.css";
 
 const STATE_TEXT: Record<PushState, string> = {
-	on: "On for this device.",
-	off: "Off for this device.",
-	blocked: "Blocked in this browser's site settings. Allow notifications for ancora there first.",
-	unsupported:
+	on: msg("On for this device."),
+	off: msg("Off for this device."),
+	blocked: msg(
+		"Blocked in this browser's site settings. Allow notifications for ancora there first.",
+	),
+	unsupported: msg(
 		"This browser can't receive notifications. On an iPhone, add ancora to the home screen and open it from there.",
+	),
 };
 
 /**
@@ -50,7 +54,7 @@ export function NotificationsCard() {
 					"ancora tells this device when a payment or change waits for your approval, when your request went through or was declined, and when a guardian starts recovering your pass.",
 				)}
 			</p>
-			{state && <p className={styles.state}>{STATE_TEXT[state]}</p>}
+			{state && <p className={styles.state}>{t(STATE_TEXT[state])}</p>}
 			{(state === "on" || state === "off") && (
 				<button
 					type="button"

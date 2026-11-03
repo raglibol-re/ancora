@@ -139,12 +139,14 @@ export function RecoverPassCard() {
 					)}
 					{done && (
 						<p className={styles.muted}>
-							{t("Handed over in")} {done.recovered.length} {t("organization")}
-							{done.recovered.length === 1 ? "" : "s"}
-							{done.skipped.length > 0
-								? `; ${done.skipped.length} older organization${done.skipped.length === 1 ? "" : "s"} can't hand over positions (ask them to invite this pass)`
-								: ""}
-							.
+							{done.recovered.length === 1
+								? t("Handed over in 1 organization.")
+								: t("Handed over in {count} organizations.", { count: done.recovered.length })}
+							{done.skipped.length > 0 &&
+								` ${t(
+									"{count} older organizations can't hand over positions; ask them to invite this pass.",
+									{ count: done.skipped.length },
+								)}`}
 						</p>
 					)}
 				</div>

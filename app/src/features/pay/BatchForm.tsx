@@ -194,8 +194,10 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 					{t("Add a line")}
 				</button>
 				<p className={styles.total}>
-					{t("Total")} {formatMoney(total, currency)} {t("to")}{" "}
-					{lines.filter((l) => l.to.trim()).length} {t("recipients")}
+					{t("Total {amount} to {count} recipients", {
+						amount: formatMoney(total, currency),
+						count: lines.filter((l) => l.to.trim()).length,
+					})}
 				</p>
 				<RulePreview
 					account={account}

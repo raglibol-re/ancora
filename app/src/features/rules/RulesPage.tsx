@@ -47,7 +47,7 @@ function Rules({ account }: { account: OrgAccount }) {
 							? t(
 									"The founder is still setting up this organization and can make changes directly.",
 								)
-							: `Changes to people and rules are requests too. ${describeEvaluation(account.org, evaluateGovernance(account.org.policy))}`}
+							: `${t("Changes to people and rules are requests too.")} ${describeEvaluation(account.org, evaluateGovernance(account.org.policy))}`}
 				</p>
 			</Card>
 			{/* Keyed so form state resets when the organization or its rules change. */}

@@ -7,7 +7,7 @@ import type { RuleError } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatDateTime, formatMoney } from "../../ui/format.ts";
-import { t } from "../../ui/i18n.ts";
+import { msg, t } from "../../ui/i18n.ts";
 import { Page } from "../../ui/Page.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
 import { useT } from "../../ui/useLanguage.ts";
@@ -23,10 +23,10 @@ const said = (done: string) => (outcome: PotOutcome) =>
 	outcome === "applied" ? done : t("Requested. It goes once your rules are met (see Approvals).");
 
 const ENTRY_LABELS = {
-	deposit: "Moved in",
-	withdraw: "Taken out",
-	sent: "Paid",
-	received: "Received",
+	deposit: msg("Moved in"),
+	withdraw: msg("Taken out"),
+	sent: msg("Paid"),
+	received: msg("Received"),
 } as const;
 
 export function PotPage() {
@@ -226,7 +226,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 						step(
 							"Move money into the pot",
 							() => support.deposit(orgId, me.id, amount),
-							said(`${money(amount)} moved into the pot.`),
+							said(t("{amount} moved into the pot.", { amount: money(amount) })),
 						)
 					}
 				/>
@@ -260,7 +260,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 						step(
 							"Take money out of the pot",
 							() => support.withdraw(orgId, me.id, amount),
-							said(`${money(amount)} taken out of the pot.`),
+							said(t("{amount} taken out of the pot.", { amount: money(amount) })),
 						)
 					}
 				/>
@@ -273,7 +273,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 					{status.entries.map((entry) => (
 						<li key={entry.id} className={styles.row}>
 							<span>
-								{ENTRY_LABELS[entry.kind]}
+								{t(ENTRY_LABELS[entry.kind])}
 								<span className={styles.meta}>
 									{" "}
 									· {formatDateTime(entry.at)} ·{" "}

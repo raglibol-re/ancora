@@ -52,7 +52,9 @@ export function RequestProgress({
 			{request.status === "scheduled" && request.executeAfter !== null && (
 				<li>
 					<span className={styles.count}>⏱</span>
-					{t("Goes out")} {formatRelative(request.executeAfter, now)} {t("unless someone objects")}
+					{t("Goes out {when} unless someone objects", {
+						when: formatRelative(request.executeAfter, now),
+					})}
 				</li>
 			)}
 			{request.status === "failed" && request.failure && (
@@ -60,8 +62,9 @@ export function RequestProgress({
 			)}
 			{request.status === "declined" && request.declinedBy && (
 				<li className={styles.failed}>
-					{request.declinedBy === request.requesterId ? t("Cancelled") : t("Declined")} {t("by")}{" "}
-					{personName(request.declinedBy)}
+					{request.declinedBy === request.requesterId
+						? t("Cancelled by {name}", { name: personName(request.declinedBy) })
+						: t("Declined by {name}", { name: personName(request.declinedBy) })}
 				</li>
 			)}
 		</ul>

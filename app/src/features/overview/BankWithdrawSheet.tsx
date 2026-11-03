@@ -99,12 +99,18 @@ export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdra
 				<section className={styles.section}>
 					<p className={styles.muted}>
 						{info
-							? `Through the Stellar anchor ${info.homeDomain} (testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the amount and the bank details, then ancora creates a payment request from ${account.org.name} to the anchor with the anchor's reference. It needs the same approvals as any payment of that size. Settlement by the test anchor after the organization pays is still being tested.`
+							? t(
+									"Through the Stellar anchor {anchor} (testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the amount and the bank details, then ancora creates a payment request from {organization} to the anchor with the anchor's reference. It needs the same approvals as any payment of that size. Settlement by the test anchor after the organization pays is still being tested.",
+									{ anchor: info.homeDomain, organization: account.org.name },
+								)
 							: t("Reaching the anchor…")}
 					</p>
 					{info && !supported && (
 						<p className={styles.warning}>
-							{info.homeDomain} {t("doesn't pay out")} {asset.symbol}.
+							{t("{anchor} doesn't pay out {asset}.", {
+								anchor: info.homeDomain,
+								asset: asset.symbol,
+							})}
 						</p>
 					)}
 					{supported && !wallet && (
@@ -145,14 +151,21 @@ export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdra
 					{instructions && amount !== null && (
 						<>
 							<p className={styles.muted}>
-								{t("The anchor asks for")} {formatMoney(amount, asset.currency)} {asset.symbol}{" "}
-								{t("to")} {shortAddress(instructions.account)} {t("with reference “")}
-								{instructions.memo}”.
+								{t(
+									"The anchor asks for {amount} {asset} to {account} with reference “{reference}”.",
+									{
+										amount: formatMoney(amount, asset.currency),
+										asset: asset.symbol,
+										account: shortAddress(instructions.account),
+										reference: instructions.memo,
+									},
+								)}
 							</p>
 							{amount > available && (
 								<p className={styles.warning}>
-									{t("Only")} {formatMoney(available, asset.currency)}{" "}
-									{t("is available on the main account.")}
+									{t("Only {amount} is available on the main account.", {
+										amount: formatMoney(available, asset.currency),
+									})}
 								</p>
 							)}
 							<button

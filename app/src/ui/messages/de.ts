@@ -194,8 +194,6 @@ export const de: Readonly<Record<string, string>> = {
 	Request: "Anfrage",
 	"← Approvals": "← Freigaben",
 	"Rules for this request": "Regeln für diese Anfrage",
-	"The rules were fixed when the request was created on":
-		"Die Regeln wurden beim Erstellen der Anfrage festgelegt am",
 	History: "Verlauf",
 	"Requests across all your organizations that are waiting for your approval.":
 		"Anfragen aus all Ihren Organisationen, die auf Ihre Freigabe warten.",
@@ -236,9 +234,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Freighter, Hana, xBull or Albedo on testnet. ancora prepares the transfer to the organization's contract; your wallet only signs it.":
 		"Freighter, Hana, xBull oder Albedo im Testnet. ancora bereitet die Überweisung an den Vertrag der Organisation vor; Ihre Wallet signiert sie nur.",
 	Disconnect: "Trennen",
-	"This wallet holds none of this asset. It needs a trustline for exactly":
-		"Diese Wallet hält nichts von dieser Währung. Sie braucht eine Trustline für genau",
-	"and some balance.": "und etwas Guthaben.",
 	"Amount ({currency})": "Betrag ({currency})",
 	"Waiting for your wallet…": "Warte auf Ihre Wallet…",
 	"Connect wallet": "Wallet verbinden",
@@ -251,14 +246,7 @@ export const de: Readonly<Record<string, string>> = {
 	"To a bank account": "Auf ein Bankkonto",
 	"Move to Reserve": "In die Reserve",
 	"Move to account": "Aufs Konto",
-	"No Reserve for": "Noch keine Reserve für",
-	"yet.": ".",
 	"From a bank account": "Von einem Bankkonto",
-	"Through the Stellar anchor": "Über den Stellar-Anchor",
-	"(testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the bank details, the":
-		"(Testnet: eine Testbank, kein echtes Geld). Ihre Wallet meldet sich an, das Formular des Anchors nimmt die Bankdaten auf, das",
-	"arrives in your wallet, and from there it goes to the organization.":
-		"kommt in Ihrer Wallet an, und von dort geht es an die Organisation.",
 	"Open the anchor's form": "Formular des Anchors öffnen",
 	"Start another deposit": "Weitere Einzahlung starten",
 	"Signing in with the anchor…": "Anmeldung beim Anchor…",
@@ -267,13 +255,9 @@ export const de: Readonly<Record<string, string>> = {
 		"Zahlungsanfrage an den Anchor erstellt. Sie folgt Ihren Regeln wie jede Zahlung.",
 	"{asset} to a bank account": "{asset} auf ein Bankkonto",
 	"Reaching the anchor…": "Anchor wird erreicht…",
-	"doesn't pay out": "zahlt nicht aus:",
 	"Start a bank withdrawal": "Bankauszahlung starten",
-	"The anchor asks for": "Der Anchor erwartet",
 	to: "an",
-	"with reference “": "mit Verwendungszweck „",
 	Only: "Nur",
-	"is available on the main account.": "sind auf dem Hauptkonto verfügbar.",
 	"Create the payment request": "Zahlungsanfrage erstellen",
 	"Edit in Rules": "In den Regeln bearbeiten",
 	"Total ·": "Gesamt ·",
@@ -318,8 +302,6 @@ export const de: Readonly<Record<string, string>> = {
 	"IBAN or a saved name": "IBAN oder ein gespeicherter Name",
 	"Remove line {number}": "Zeile {number} entfernen",
 	"Add a line": "Zeile hinzufügen",
-	Total: "Gesamt",
-	recipients: "Empfänger",
 	"Budget category": "Budgetkategorie",
 	None: "Keine",
 	"Reference for the whole batch": "Verwendungszweck für den ganzen Sammelauftrag",
@@ -350,14 +332,10 @@ export const de: Readonly<Record<string, string>> = {
 	"no balance": "kein Guthaben",
 	" · recipient can receive it": " · Empfänger kann es empfangen",
 	Recipient: "Empfänger",
-	"(organization on ancora)": "(Organisation auf ancora)",
 	"New recipient…": "Neuer Empfänger…",
 	Name: "Name",
 	"Stellar address": "Stellar-Adresse",
 	"Save to the address book.": "Im Adressbuch speichern.",
-	"Everyone in": "Alle in",
-	"then sees this name for the address.": "sehen dann diesen Namen für die Adresse.",
-	"This address can receive": "Diese Adresse kann empfangen:",
 	"Optional. The payment counts against this budget; beyond it the rules escalate or refuse.":
 		"Optional. Die Zahlung zählt gegen dieses Budget; darüber hinaus verschärfen die Regeln die Freigabe oder lehnen ab.",
 	Repeat: "Wiederholen",
@@ -365,10 +343,6 @@ export const de: Readonly<Record<string, string>> = {
 		"Ein Dauerauftrag zahlt planmäßig erneut; jede Ausführung folgt den Regeln wie eine Einzelzahlung.",
 	Once: "Einmalig",
 	"Secure handover.": "Sichere Übergabe.",
-	"After approval the money is set aside and only paid out once the recipient and":
-		"Nach der Freigabe wird das Geld zurückgelegt und erst ausgezahlt, wenn der Empfänger und",
-	"both confirm. You get a link to send the recipient.":
-		"beide bestätigen. Sie erhalten einen Link für den Empfänger.",
 	"Private: only your organization reads it (about 70 characters).":
 		"Vertraulich: Nur Ihre Organisation liest ihn (etwa 70 Zeichen).",
 	"Shown to approvers and on the statement.":
@@ -379,12 +353,6 @@ export const de: Readonly<Record<string, string>> = {
 		"Geben Sie einen Betrag ein, um zu sehen, was Ihre Regeln verlangen.",
 	"Your organization only pays recipients on its allowlist, and this one isn't on it. Ask for them to be added on the Rules page.":
 		"Ihre Organisation zahlt nur an Empfänger auf ihrer Freigabeliste, und dieser steht nicht darauf. Bitten Sie auf der Seite Regeln darum, ihn hinzuzufügen.",
-	"Beyond what is left of the #": "Mehr als noch übrig im Budget #",
-	"budget this": "für",
-	"). It is a hard budget, so this payment won't be accepted.":
-		"). Es ist ein festes Budget, daher wird diese Zahlung nicht angenommen.",
-	of: "von",
-	"left this": "übrig für",
 	"; this payment goes beyond it.": "; diese Zahlung geht darüber hinaus.",
 	"Inside your allowance": "Innerhalb Ihres Kontingents",
 	"This recipient isn't on your allowlist, so the strictest approvals apply.":
@@ -408,7 +376,6 @@ export const de: Readonly<Record<string, string>> = {
 	'None yet. Choose "Repeat" on the form above to pay someone weekly, fortnightly or monthly; every run follows the organization\'s rules like a one-off payment.':
 		"Noch keine. Wählen Sie oben im Formular „Wiederholen“, um jemanden wöchentlich, zweiwöchentlich oder monatlich zu bezahlen; jede Ausführung folgt den Regeln der Organisation wie eine Einzelzahlung.",
 	"Due now": "Jetzt fällig",
-	"· set by": "· eingerichtet von",
 	"Standing order run: the payment follows the rules from here.":
 		"Dauerauftrag ausgeführt: Die Zahlung folgt ab hier den Regeln.",
 	"Run now": "Jetzt ausführen",
@@ -418,8 +385,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Link copied. Send it to the recipient to confirm.":
 		"Link kopiert. Senden Sie ihn zur Bestätigung an den Empfänger.",
 	"Couldn't copy. The link is {link}": "Kopieren fehlgeschlagen. Der Link lautet {link}",
-	"Requested by": "Angefragt von",
-	"Discussion:": "Diskussion:",
 	"Secure handover: approved and set aside, paid out once both sides confirm.":
 		"Sichere Übergabe: freigegeben und zurückgelegt, ausgezahlt, sobald beide Seiten bestätigen.",
 	"Confirm release": "Auszahlung bestätigen",
@@ -431,8 +396,6 @@ export const de: Readonly<Record<string, string>> = {
 	Approve: "Freigeben",
 	"Add security seal": "Sicherheitssiegel hinzufügen",
 	"Security seal": "Sicherheitssiegel",
-	"Goes out": "Geht raus",
-	"unless someone objects": "sofern niemand widerspricht",
 	Cancelled: "Abgebrochen",
 	Declined: "Abgelehnt",
 	by: "von",
@@ -667,7 +630,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Check status": "Status prüfen",
 	"Hand over remaining positions": "Restliche Positionen übergeben",
 	"Complete recovery": "Wiederherstellung abschließen",
-	"Handed over in": "Übergeben in",
 	organization: "Organisation",
 	"Ask for money: invoices and membership fees anyone pays from their own wallet.":
 		"Geld anfordern: Rechnungen und Mitgliedsbeiträge, die jede Person aus der eigenen Wallet bezahlt.",
@@ -697,8 +659,6 @@ export const de: Readonly<Record<string, string>> = {
 	Links: "Links",
 	"No payment links yet.": "Noch keine Zahlungslinks.",
 	Paid: "Bezahlt",
-	"· total": "· gesamt",
-	"· created": "· erstellt",
 	"Copy link": "Link kopieren",
 	"QR code": "QR-Code",
 	"Close the link {reference}": "Link {reference} schließen",
@@ -708,24 +668,16 @@ export const de: Readonly<Record<string, string>> = {
 		"Beispieldaten: Zahlende öffnen Links von Organisationen im Stellar-Testnet.",
 	"QR code for the payment link {reference}": "QR-Code für den Zahlungslink {reference}",
 	"Reading the payment link from Stellar…": "Zahlungslink wird von Stellar gelesen…",
-	"asks for": "bittet um",
-	"of up to": "von bis zu",
-	"people.": "Personen.",
 	"Paid. Thank you.": "Bezahlt. Vielen Dank.",
-	"sees your payment now.": "sieht Ihre Zahlung jetzt.",
 	"View the transaction": "Transaktion ansehen",
 	"This link is closed or fully paid. Nothing to pay here.":
 		"Dieser Link ist geschlossen oder vollständig bezahlt. Hier gibt es nichts zu zahlen.",
-	From: "Von",
 	Pay: "Zahlen",
 	"Pay with a Stellar wallet": "Mit einer Stellar-Wallet zahlen",
 	"Freighter, xBull, Hana or Albedo on the Stellar testnet. Your wallet needs some XLM for the fee and a trustline for":
 		"Freighter, xBull, Hana oder Albedo im Stellar-Testnet. Ihre Wallet braucht etwas XLM für die Gebühr und eine Trustline für",
 	". Test money only; nothing real moves.": ". Nur Testgeld; nichts Echtes bewegt sich.",
-	"Payments go straight to": "Zahlungen gehen direkt auf das Konto von",
 	"the organization": "der Organisation",
-	"'s account on Stellar. ancora is not a bank and never holds the money.":
-		" auf Stellar. ancora ist keine Bank und verwahrt das Geld nie.",
 	"Give your organization a name.": "Geben Sie Ihrer Organisation einen Namen.",
 	"Pick at least one asset the organization accepts.":
 		"Wählen Sie mindestens eine Währung, die die Organisation annimmt.",
@@ -918,8 +870,6 @@ export const de: Readonly<Record<string, string>> = {
 		"Ihr Passkey auf diesem Gerät. Er signiert jede Freigabe über Ihr eigenes Konto auf Stellar; der private Schlüssel verlässt das Gerät nie.",
 	Recovery: "Wiederherstellung",
 	"Protected by Lifeline": "Durch Lifeline geschützt",
-	"guardians can confirm a new pass for you. Details below.":
-		"Vertrauenspersonen können einen neuen Pass für Sie bestätigen. Details unten.",
 	": this passkey is the only key to your positions. Name guardians in Lifeline below.":
 		": Dieser Passkey ist der einzige Schlüssel zu Ihren Positionen. Benennen Sie unten in Lifeline Vertrauenspersonen.",
 	"Sign out": "Abmelden",
@@ -944,7 +894,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Allowances by asset or category": "Kontingente nach Währung oder Kategorie",
 	"Let someone pay up to an amount per period without approvals, only in one asset or only for one budget category. Recipients outside an allowlist never use an allowance.":
 		"Lassen Sie jemanden bis zu einem Betrag pro Zeitraum ohne Freigabe zahlen, nur in einer Währung oder nur für eine Budgetkategorie. Empfänger außerhalb einer Freigabeliste nutzen nie ein Kontingent.",
-	"Any, counted in": "Beliebig, gezählt in",
 	Category: "Kategorie",
 	Any: "Beliebig",
 	Per: "Pro",
@@ -971,7 +920,6 @@ export const de: Readonly<Record<string, string>> = {
 		"Ein DeFindex-Tresor für diesen Token, falls es einen gibt.",
 	Found: "Gefunden:",
 	"decimals) at": "Dezimalstellen) bei",
-	as: "als",
 	"Asking the token…": "Token wird abgefragt…",
 	"Name the category with letters or digits, like equipment or travel.":
 		"Benennen Sie die Kategorie mit Buchstaben oder Ziffern, etwa ausruestung oder reisen.",
@@ -992,12 +940,7 @@ export const de: Readonly<Record<string, string>> = {
 	"Exchange rates": "Wechselkurse",
 	"Payments in other currencies are judged at the live rate from Reflector, a price service on Stellar. Without a rate from the last four days they take the strictest approvals and the seal, so nothing is ever under-approved.":
 		"Zahlungen in anderen Währungen werden zum aktuellen Kurs von Reflector bewertet, einem Preisdienst auf Stellar. Ohne einen Kurs aus den letzten vier Tagen nehmen sie die strengsten Freigaben und das Siegel, sodass nie etwas zu wenig freigegeben wird.",
-	"All accepted assets are in": "Alle angenommenen Währungen lauten auf",
 	"Stop using live rates": "Keine aktuellen Kurse mehr nutzen",
-	"Today a payment in another currency than":
-		"Heute nimmt eine Zahlung in einer anderen Währung als",
-	"takes the strictest approvals and the seal. With live rates it is judged by its value in":
-		"die strengsten Freigaben und das Siegel. Mit aktuellen Kursen wird sie nach ihrem Wert bewertet in",
 	"Use live exchange rates": "Aktuelle Wechselkurse nutzen",
 	People: "Personen",
 	"Sample directory": "Beispielverzeichnis",
@@ -1015,8 +958,6 @@ export const de: Readonly<Record<string, string>> = {
 	per: "pro",
 	"Save limit": "Limit speichern",
 	"Remove limit": "Limit entfernen",
-	"Spending limit": "Ausgabelimit",
-	"left; payments inside it need no approval.": "übrig; Zahlungen darin brauchen keine Freigabe.",
 	"Set a limit": "Limit festlegen",
 	Anyone: "Alle",
 	"Others need the strictest approvals": "Andere brauchen die strengsten Freigaben",
@@ -1080,9 +1021,7 @@ export const de: Readonly<Record<string, string>> = {
 	Succession: "Nachfolge",
 	"If someone goes quiet for longer than their quiet period, the successor they were given can claim their position. Any action of theirs during the wait cancels the claim; after it, the successor takes over and they leave. Money never moves.":
 		"Ist jemand länger als die Ruhezeit untätig, kann die für die Person bestimmte Nachfolge ihre Position beanspruchen. Jede Aktion der Person während der Wartezeit bricht den Anspruch ab; danach übernimmt die Nachfolge, und die Person scheidet aus. Geld bewegt sich nie.",
-	"takes over from": "übernimmt von",
 	after: "nach",
-	"quiet days.": "Ruhetagen.",
 	"I'm still here": "Ich bin noch da",
 	"Claim the position": "Position beanspruchen",
 	"Finish the handover": "Übergabe abschließen",
@@ -1750,4 +1689,107 @@ export const de: Readonly<Record<string, string>> = {
 		"Anspruch für {pass} (dieser Pass): {confirmed} von {needed} Vertrauenspersonen haben bestätigt.",
 	"Claim for {pass} (not this pass): {confirmed} of {needed} guardians confirmed.":
 		"Anspruch für {pass} (nicht dieser Pass): {confirmed} von {needed} Vertrauenspersonen haben bestätigt.",
+	"{name} (organization on ancora)": "{name} (Organisation auf ancora)",
+	"Everyone in {organization} then sees this name for the address.":
+		"Alle in {organization} sehen dann diesen Namen für die Adresse.",
+	"This address can receive {asset}.": "Diese Adresse kann {asset} empfangen.",
+	"After approval the money is set aside and only paid out once the recipient and {organization} both confirm. You get a link to send the recipient.":
+		"Nach der Freigabe wird das Geld zurückgelegt und erst ausgezahlt, wenn der Empfänger und {organization} beide bestätigen. Sie erhalten einen Link für den Empfänger.",
+	"Beyond what is left of the #{category} budget this {period} ({left}). It is a hard budget, so this payment won't be accepted.":
+		"Mehr als im Budget #{category} für diesen Zeitraum ({period}) übrig ist ({left}). Es ist ein festes Budget, daher wird diese Zahlung nicht angenommen.",
+	"{left} of {total} left this {period}": "{left} von {total} übrig in diesem Zeitraum ({period})",
+	"Inside your allowance for #{category}": "Innerhalb Ihres Kontingents für #{category}",
+	"The rules are in {base}: at today's rate this is about {amount}.":
+		"Die Regeln sind in {base}: Zum heutigen Kurs sind das etwa {amount}.",
+	"The rules are in {base}; without a current exchange rate a payment in {currency} takes the strictest approvals and the seal.":
+		"Die Regeln sind in {base}; ohne aktuellen Wechselkurs braucht eine Zahlung in {currency} die strengsten Freigaben und das Siegel.",
+	"Only {amount} is available on the main account.":
+		"Auf dem Hauptkonto sind nur {amount} verfügbar.",
+	"Total {amount} to {count} recipients": "Insgesamt {amount} an {count} Empfänger",
+	"{amount} to {recipient} {interval}": "{amount} an {recipient} {interval}",
+	"Next on {date}": "Nächste am {date}",
+	"set by {name}": "eingerichtet von {name}",
+	"1 run": "1 Ausführung",
+	"{count} runs": "{count} Ausführungen",
+	"Requested by {name}": "Beantragt von {name}",
+	"Discussion: {text}": "Diskussion: {text}",
+	"Goes out {when} unless someone objects": "Geht {when} raus, wenn niemand widerspricht",
+	"Cancelled by {name}": "Abgebrochen von {name}",
+	"Declined by {name}": "Abgelehnt von {name}",
+	"The rules were fixed when the request was created on {date}.":
+		"Die Regeln wurden beim Erstellen der Anfrage am {date} festgelegt.",
+	"No Reserve for {asset} yet.": "Noch keine Reserve für {asset}.",
+	"This wallet holds none of this asset. It needs a trustline for exactly {asset} and some balance.":
+		"Diese Wallet hält nichts von diesem Asset. Sie braucht eine Trustline für genau {asset} und etwas Guthaben.",
+	"Through the Stellar anchor {anchor} (testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the bank details, the {asset} arrives in your wallet, and from there it goes to the organization.":
+		"Über den Stellar-Anchor {anchor} (Testnetz: eine Testbank, kein echtes Geld). Ihre Wallet meldet sich an, das Formular des Anchors nimmt die Bankdaten auf, die {asset} kommen in Ihrer Wallet an und gehen von dort an die Organisation.",
+	"{anchor} doesn't pay out {asset}.": "{anchor} zahlt keine {asset} aus.",
+	"The anchor asks for {amount} {asset} to {account} with reference “{reference}”.":
+		"Der Anchor verlangt {amount} {asset} an {account} mit Verwendungszweck „{reference}“.",
+	"Paid {count} of {max} · total {amount} · created {date} by {name}":
+		"{count} von {max} bezahlt · insgesamt {amount} · erstellt am {date} von {name}",
+	"{organization} asks for": "{organization} bittet um",
+	"Paid by {count} of up to {max} people.": "Bezahlt von {count} von bis zu {max} Personen.",
+	"{organization} sees your payment now.": "{organization} sieht Ihre Zahlung jetzt.",
+	"The organization": "Die Organisation",
+	"From {wallet}": "Von {wallet}",
+	"holds {amount} {asset}": "hält {amount} {asset}",
+	"Pay {amount}": "{amount} bezahlen",
+	"Payments go straight to the account of {organization} on Stellar. ancora is not a bank and never holds the money.":
+		"Zahlungen gehen direkt auf das Konto von {organization} auf Stellar. ancora ist keine Bank und verwahrt das Geld nie.",
+	"Handed over in 1 organization.": "In 1 Organisation übergeben.",
+	"Handed over in {count} organizations.": "In {count} Organisationen übergeben.",
+	"{count} older organizations can't hand over positions; ask them to invite this pass.":
+		"{count} ältere Organisationen können keine Positionen übergeben; bitten Sie sie, diesen Pass einzuladen.",
+	"Any, counted in {currency}": "Beliebig, gezählt in {currency}",
+	"Accept {asset} as {currency}": "{asset} als {currency} annehmen",
+	"All accepted assets are in {currency}.": "Alle angenommenen Währungen sind in {currency}.",
+	"Today a payment in another currency than {currency} takes the strictest approvals and the seal. With live rates it is judged by its value in {currency}.":
+		"Heute braucht eine Zahlung in einer anderen Währung als {currency} die strengsten Freigaben und das Siegel. Mit aktuellen Kursen zählt ihr Wert in {currency}.",
+	"Spending limit {amount} per {period} · {left} left; payments inside it need no approval.":
+		"Ausgabelimit {amount} pro {period} · {left} übrig; Zahlungen darin brauchen keine Freigabe.",
+	"{successor} takes over from {name} after {days} quiet days.":
+		"{successor} übernimmt für {name} nach {days} inaktiven Tagen.",
+	"{count} passkeys": "{count} Passkeys",
+	"{needed} of {total} guardians can confirm a new pass for you. Details below.":
+		"{needed} von {total} Vertrauenspersonen können einen neuen Pass für Sie bestätigen. Details unten.",
+	"No spending limit: every payment follows the rules.":
+		"Kein Ausgabelimit: Jede Zahlung folgt den Regeln.",
+	"Moved in": "Eingezahlt",
+	"Taken out": "Entnommen",
+	Received: "Erhalten",
+	"{amount} moved into the pot.": "{amount} in die Kasse verschoben.",
+	"{amount} taken out of the pot.": "{amount} aus der Kasse entnommen.",
+	"The pot is open.": "Die Kasse ist eröffnet.",
+	"Paid. Only your two organizations can read the amount.":
+		"Bezahlt. Nur Ihre beiden Organisationen können den Betrag lesen.",
+	"On for this device.": "Auf diesem Gerät an.",
+	"Off for this device.": "Auf diesem Gerät aus.",
+	"Blocked in this browser's site settings. Allow notifications for ancora there first.":
+		"In den Website-Einstellungen dieses Browsers blockiert. Erlauben Sie dort zuerst Benachrichtigungen für ancora.",
+	"This browser can't receive notifications. On an iPhone, add ancora to the home screen and open it from there.":
+		"Dieser Browser kann keine Benachrichtigungen empfangen. Fügen Sie ancora auf dem iPhone zum Home-Bildschirm hinzu und öffnen Sie es von dort.",
+	"Choose your wallet…": "Wählen Sie Ihre Wallet …",
+	"Confirm in your wallet, then the payment goes to Stellar…":
+		"Bestätigen Sie in Ihrer Wallet, dann geht die Zahlung an Stellar …",
+	"This image couldn't be read. Try another file.":
+		"Dieses Bild ließ sich nicht lesen. Versuchen Sie eine andere Datei.",
+	"DeFindex vaults on Stellar: how the Reserve earns":
+		"DeFindex-Tresore auf Stellar: so erwirtschaftet die Reserve Erträge",
+	"Reserve by DeFindex": "Reserve von DeFindex",
+	"Above {amount}": "Über {amount}",
+	"Tier {number} of {count}": "Stufe {number} von {count}",
+	"automatic payout on {date} ({when})": "automatische Auszahlung am {date} ({when})",
+	"Send {asset} to {organization}": "{asset} an {organization} senden",
+	"Through the Stellar anchor {anchor} (testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the amount and the bank details, then ancora creates a payment request from {organization} to the anchor with the anchor's reference. It needs the same approvals as any payment of that size. Settlement by the test anchor after the organization pays is still being tested.":
+		"Über den Stellar-Anchor {anchor} (Testnetz: eine Testbank, kein echtes Geld). Ihre Wallet meldet sich an, das Formular des Anchors nimmt Betrag und Bankdaten auf, dann erstellt ancora eine Zahlungsanfrage von {organization} an den Anchor mit dessen Verwendungszweck. Sie braucht dieselben Freigaben wie jede Zahlung dieser Höhe. Die Auszahlung durch den Test-Anchor, nachdem die Organisation bezahlt hat, wird noch getestet.",
+	"Changes to people and rules are requests too.":
+		"Änderungen an Personen und Regeln sind ebenfalls Anfragen.",
+	"Claimed; handover on {date} unless {name} acts first.":
+		"Beansprucht; Übergabe am {date}, sofern {name} nicht vorher aktiv wird.",
+	"Quiet since {date}: {successor} may claim the position.":
+		"Inaktiv seit {date}: {successor} kann die Position übernehmen.",
+	"Last seen {date}.": "Zuletzt aktiv am {date}.",
+	"Names go into the registry's open channel ({channel}).":
+		"Namen kommen in den offenen Kanal der Registry ({channel}).",
 };

@@ -151,7 +151,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 							</>
 						) : (
 							<p className={styles.muted}>
-								{t("No Reserve for")} {asset.symbol} {t("yet.")}
+								{t("No Reserve for {asset} yet.", { asset: asset.symbol })}
 							</p>
 						)}
 					</section>

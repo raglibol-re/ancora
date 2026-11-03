@@ -264,18 +264,18 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 	}
 	return (
 		<p className={styles.limit}>
-			{member.limit ? (
-				<>
-					{t("Spending limit")} {formatMoney(member.limit.amount, currency)} {t("per")}{" "}
-					{t(periodLabel(member.limit.periodSeconds))} ·{" "}
-					{formatMoney(remainingAllowance(member.limit, Date.now()), currency)}{" "}
-					{t("left; payments inside it need no approval.")}
-				</>
-			) : (
-				"No spending limit: every payment follows the rules."
-			)}{" "}
+			{member.limit
+				? t(
+						"Spending limit {amount} per {period} · {left} left; payments inside it need no approval.",
+						{
+							amount: formatMoney(member.limit.amount, currency),
+							period: t(periodLabel(member.limit.periodSeconds)),
+							left: formatMoney(remainingAllowance(member.limit, Date.now()), currency),
+						},
+					)
+				: t("No spending limit: every payment follows the rules.")}{" "}
 			<button type="button" className={styles.linkButton} disabled={busy} onClick={onEdit}>
-				{member.limit ? "Change" : t("Set a limit")}
+				{member.limit ? t("Change") : t("Set a limit")}
 			</button>
 		</p>
 	);

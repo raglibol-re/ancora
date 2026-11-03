@@ -66,8 +66,8 @@ function Approvals({ account }: { account: OrgAccount }) {
 							return (
 								<li key={tier.upTo ?? "top"}>
 									{tier.upTo === null
-										? `Above ${formatMoney(from, account.org.baseCurrency)}: `
-										: `Up to ${formatMoney(tier.upTo, account.org.baseCurrency)}: `}
+										? `${t("Above {amount}", { amount: formatMoney(from, account.org.baseCurrency) })}: `
+										: `${t("Up to {amount}", { amount: formatMoney(tier.upTo, account.org.baseCurrency) })}: `}
 									{describeEvaluation(account.org, evaluation)}
 								</li>
 							);

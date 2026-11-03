@@ -39,7 +39,7 @@ export function EditProfileCard({ identity }: { identity: IdentitySupport }) {
 			const blob = await (await fetch(dataUrl)).blob();
 			setPicture({ preview: dataUrl, blob });
 		} catch {
-			setPictureError("This image couldn't be read. Try another file.");
+			setPictureError(t("This image couldn't be read. Try another file."));
 		}
 	};
 

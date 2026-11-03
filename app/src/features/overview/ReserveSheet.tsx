@@ -70,7 +70,7 @@ export function ReserveSheet({ account, token, direction, onClose }: ReserveShee
 				<Field
 					label={t("Amount")}
 					htmlFor="reserve-amount"
-					hint={`Up to ${formatMoney(max, currency)}`}
+					hint={t("Up to {amount}", { amount: formatMoney(max, currency) })}
 					error={error}
 				>
 					<input

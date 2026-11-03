@@ -163,7 +163,10 @@ function Detail({ account, dealId }: { account: OrgAccount; dealId: number }) {
 									{m.status === "requested" &&
 										due !== null &&
 										(due > now
-											? ` · automatic payout on ${formatDateTime(due)} (${formatRelative(due, now)})`
+											? ` · ${t("automatic payout on {date} ({when})", {
+													date: formatDateTime(due),
+													when: formatRelative(due, now),
+												})}`
 											: t(" · due for payout"))}
 								</span>
 							</li>

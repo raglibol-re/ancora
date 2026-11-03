@@ -33,8 +33,9 @@ export function RequestDetailPage() {
 			<Card title={t("Rules for this request")}>
 				<p>{describeEvaluation(account.org, request.evaluation)}</p>
 				<p>
-					{t("The rules were fixed when the request was created on")}{" "}
-					{formatDateTime(request.createdAt)}.
+					{t("The rules were fixed when the request was created on {date}.", {
+						date: formatDateTime(request.createdAt),
+					})}
 				</p>
 			</Card>
 			{request.approvals.length > 0 && (
