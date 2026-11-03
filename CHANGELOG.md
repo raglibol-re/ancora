@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: An eighth nightly end-to-end run, in German: a German-speaking browser gets the landing page, the pass, a new organization, test money and a payment in German (request title included), and the language switch turns it back to English.
 - 2026-11-03: The rest of the screens in whole German sentences: Send (rule preview, budgets, allowances, batches, standing orders), request cards and progress, bank in and out, payment links and the public pay page, rules (assets, exchange rates, spending limits, succession), your pass, the confidential pot and notifications; a few texts that were still English everywhere ("View on Stellar", tier names, the limit editor) now translate too.
 - 2026-11-03: German sentences in the right order: adding and sending money ("BlendUSDC hinzufügen"), test money, statements, approvals, the auditor's pot note, deals, secure handover and every Lifeline line, with waiting times in German; the close button of every sheet is labelled in German.
 - 2026-11-03: Fixed: a page load on a slow network could sign the person out. When the passkey session took longer than 8 seconds to come back, ancora treated the device as signed out and forgot the pass; it now keeps the pass and follows the session once it answers.

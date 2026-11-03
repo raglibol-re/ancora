@@ -40,7 +40,7 @@ shown is real on the testnet; say so once at the start.
 - Your pass → Keys on this device: backup code, and "Bring back with my passkey" on a phone the
   passkey syncs to. Mention the quantum-safe ML-DSA seal for large payments (Settings → Security
   seal).
-- Close: open source (Apache-2.0), six end-to-end flows run against production every night;
+- Close: open source (Apache-2.0), eight end-to-end flows run against production every night;
   the SCF plan in `docs/ROADMAP.md`.
 
 Labels to keep on screen: "Preview" on the pot, "Simulated" wherever sample data shows.

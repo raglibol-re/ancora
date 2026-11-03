@@ -118,7 +118,7 @@ Starting point (2 Nov 2026), all real on testnet and open source under Apache-2.
   - Lifeline succession and quantum-safe ML-DSA seals checked by the contract;
   - private details: encrypted references and recipients, auditors, backup codes and passkey-derived keys;
   - a confidential pot preview on OpenZeppelin's confidential token, with ancora's own browser client.
-- **Coverage:** six end-to-end flows run against production every night (core, approvals, deals, seals, privacy, pot).
+- **Coverage:** eight end-to-end flows run against production every night (core, approvals, deals, seals, privacy, pot, money, and the first path in German).
 
 Weeks count from the award; the budget per milestone is set by the team in the application.
 
