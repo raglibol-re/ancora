@@ -5,6 +5,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { Page } from "../../ui/Page.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AuditedOrganization } from "./AuditedOrganization.tsx";
@@ -15,6 +16,7 @@ import styles from "./AuditPage.module.css";
  * private details its members shared with this person opened. Nothing here can change anything.
  */
 export function AuditPage() {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const support = dataSource.privacy;
@@ -24,10 +26,10 @@ export function AuditPage() {
 
 	if (!support) {
 		return (
-			<Page title="Audit">
+			<Page title={t("Audit")}>
 				<Card>
 					<p className={styles.muted}>
-						Audits run on the Stellar testnet. Sign in with your pass there.
+						{t("Audits run on the Stellar testnet. Sign in with your pass there.")}
 					</p>
 				</Card>
 			</Page>
@@ -38,7 +40,7 @@ export function AuditPage() {
 		event.preventDefault();
 		const id = orgId.trim();
 		if (!StrKey.isValidContract(id)) {
-			setError("Enter the organization's account address (starts with C).");
+			setError(t("Enter the organization's account address (starts with C)."));
 			return;
 		}
 		setError(null);
@@ -48,13 +50,15 @@ export function AuditPage() {
 
 	return (
 		<Page
-			title="Audit"
-			lead="Read an organization's requests and recipients as its auditor. Its members add you and share access; you can't change anything."
+			title={t("Audit")}
+			lead={t(
+				"Read an organization's requests and recipients as its auditor. Its members add you and share access; you can't change anything.",
+			)}
 		>
-			<Card title="Your part">
+			<Card title={t("Your part")}>
 				<p className={styles.muted}>
-					Give the organization your ancora ID, <code className={styles.code}>{me.id}</code>, and
-					set up this device so they can share their key with you.
+					{t("Give the organization your ancora ID,")} <code className={styles.code}>{me.id}</code>
+					{t(", and set up this device so they can share their key with you.")}
 				</p>
 				<button
 					type="button"
@@ -62,17 +66,17 @@ export function AuditPage() {
 					disabled={busy}
 					onClick={() =>
 						run(() => support.setUpDevice(me.id), {
-							signature: { kind: "passkey", title: "Set up private details on this device" },
-							success: "This device is set up. The organization can now share access with you.",
+							signature: { kind: "passkey", title: t("Set up private details on this device") },
+							success: t("This device is set up. The organization can now share access with you."),
 						})
 					}
 				>
-					Set up this device
+					{t("Set up this device")}
 				</button>
 			</Card>
-			<Card title="Open an organization">
+			<Card title={t("Open an organization")}>
 				<form className={styles.form} onSubmit={open} noValidate>
-					<Field label="Organization address" htmlFor="audit-org" error={error}>
+					<Field label={t("Organization address")} htmlFor="audit-org" error={error}>
 						<input
 							id="audit-org"
 							className={controlClass}
@@ -83,7 +87,7 @@ export function AuditPage() {
 						/>
 					</Field>
 					<button type="submit" className={buttonClass()} disabled={busy}>
-						Open read-only
+						{t("Open read-only")}
 					</button>
 				</form>
 			</Card>

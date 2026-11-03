@@ -3,6 +3,7 @@ import type { Person } from "../../domain/account.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import styles from "./PassCard.module.css";
 
@@ -21,6 +22,7 @@ const grouped = (id: string) => id.match(/.{1,4}/g)?.join(" ") ?? id;
  * this ID, so it is made to be shown, scanned and copied.
  */
 export function PassCard({ person, onchain, positions }: PassCardProps) {
+	const t = useT();
 	const notify = useNotify();
 	const [qr, setQr] = useState<string | null>(null);
 
@@ -49,59 +51,64 @@ export function PassCard({ person, onchain, positions }: PassCardProps) {
 	const copy = async () => {
 		try {
 			await navigator.clipboard.writeText(person.id);
-			notify({ tone: "success", text: "Your ancora ID is copied. Share it to get invited." });
+			notify({ tone: "success", text: t("Your ancora ID is copied. Share it to get invited.") });
 		} catch {
-			notify({ tone: "error", text: "Couldn't copy. Select the ID and copy it by hand." });
+			notify({ tone: "error", text: t("Couldn't copy. Select the ID and copy it by hand.") });
 		}
 	};
 
 	return (
-		<section className={styles.pass} aria-label="Your ancora pass">
+		<section className={styles.pass} aria-label={t("Your ancora pass")}>
 			<div className={styles.identity}>
 				<Avatar name={person.name} imageUrl={person.avatarUrl} size="xl" shape="circle" />
 				<div className={styles.who}>
-					<span className={styles.eyebrow}>ancora pass</span>
+					<span className={styles.eyebrow}>{t("ancora pass")}</span>
 					<h2 className={styles.name}>{person.name}</h2>
 					<span className={styles.kind}>
-						{onchain ? "Account on Stellar, secured by your passkey" : "Sample person"}
+						{onchain ? t("Account on Stellar, secured by your passkey") : t("Sample person")}
 					</span>
 				</div>
 			</div>
 
 			<div className={styles.idBlock}>
-				<span className={styles.eyebrow}>ancora ID</span>
+				<span className={styles.eyebrow}>{t("ancora ID")}</span>
 				<code className={styles.id}>{grouped(person.id)}</code>
 				<div className={styles.actions}>
 					<button type="button" className={buttonClass("secondary")} onClick={copy}>
-						Copy ID
+						{t("Copy ID")}
 					</button>
-					{onchain && <ExplorerLink target={person.id}>View on Stellar</ExplorerLink>}
+					{onchain && <ExplorerLink target={person.id}>{t("View on Stellar")}</ExplorerLink>}
 				</div>
 			</div>
 
 			{onchain && (
 				<div className={styles.qr}>
 					{qr ? (
-						<img src={qr} width={176} height={176} alt={`QR code of the ancora ID ${person.id}`} />
+						<img
+							src={qr}
+							width={176}
+							height={176}
+							alt={t("QR code of the ancora ID {id}", { id: person.id })}
+						/>
 					) : (
 						<span className={styles.qrPlaceholder} />
 					)}
-					<span className={styles.qrHint}>Scan to invite</span>
+					<span className={styles.qrHint}>{t("Scan to invite")}</span>
 				</div>
 			)}
 
 			<dl className={styles.stats}>
 				<div>
-					<dt>Positions</dt>
+					<dt>{t("Positions")}</dt>
 					<dd>{positions}</dd>
 				</div>
 				<div>
-					<dt>Login</dt>
+					<dt>{t("Login")}</dt>
 					<dd>{onchain ? "Passkey" : "Simulated"}</dd>
 				</div>
 				<div>
-					<dt>Network</dt>
-					<dd>{onchain ? "Stellar testnet" : "Sample data"}</dd>
+					<dt>{t("Network")}</dt>
+					<dd>{onchain ? t("Stellar testnet") : t("Sample data")}</dd>
 				</div>
 			</dl>
 		</section>

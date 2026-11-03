@@ -5,26 +5,31 @@ import { templates } from "../../domain/rules/templates.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import styles from "./TemplateCard.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
 
 /** Switching template maps everyone onto the new roles by rank and resets the tiers. */
 export function TemplateCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { propose, busy } = useProposeChange(account);
 	const current = account.org.templateId;
 	const [choice, setChoice] = useState<TemplateId>(current);
 	const target = templates[choice];
 
 	return (
-		<Card title="Template">
+		<Card title={t("Template")}>
 			<p>
-				Based on the <strong>{templates[current].label.toLowerCase()}</strong> template.
+				{t("Based on the")} <strong>{templates[current].label.toLowerCase()}</strong>{" "}
+				{t("template.")}
 			</p>
 			<div className={styles.row}>
 				<Field
-					label="Switch template"
+					label={t("Switch template")}
 					htmlFor="template"
-					hint="People keep their rank (highest role to highest role), so nobody silently loses access. Tier limits reset to the template's defaults."
+					hint={t(
+						"People keep their rank (highest role to highest role), so nobody silently loses access. Tier limits reset to the template's defaults.",
+					)}
 				>
 					<select
 						id="template"
@@ -45,7 +50,7 @@ export function TemplateCard({ account }: { account: OrgAccount }) {
 					disabled={busy || choice === current}
 					onClick={() => propose({ type: "switchTemplate", templateId: target.id })}
 				>
-					Switch
+					{t("Switch")}
 				</button>
 			</div>
 		</Card>

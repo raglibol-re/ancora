@@ -4,6 +4,7 @@ import type { CodeStatus } from "../../domain/dataSource.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useProposeChange } from "../rules/useProposeChange.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./SettingsPage.module.css";
@@ -14,6 +15,7 @@ import styles from "./SettingsPage.module.css";
  * the organization's rules, and the contract only accepts the release the registry names.
  */
 export function OrgCodeCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource } = useWorkspace();
 	const { propose, busy } = useProposeChange(account);
 	const support = dataSource.releases;
@@ -54,34 +56,34 @@ export function OrgCodeCard({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Card title="Organization code">
+		<Card title={t("Organization code")}>
 			<p className={styles.muted}>
-				ancora publishes every version of the organization's code on the Stellar Registry, where
-				anyone can compare it with what this contract runs. Nobody can change the code for you: a
-				move to a new release is a change the members approve under your rules.
+				{t(
+					"ancora publishes every version of the organization's code on the Stellar Registry, where anyone can compare it with what this contract runs. Nobody can change the code for you: a move to a new release is a change the members approve under your rules.",
+				)}
 			</p>
 			{error && <p className={styles.warn}>{error}</p>}
 			{status && (
 				<dl className={styles.facts}>
 					<div>
-						<dt>Runs</dt>
+						<dt>{t("Runs")}</dt>
 						<dd>
 							{upToDate ? `ancora release ${release.version}, the latest` : "Code"}
 							<code className={styles.code}>{status.running}</code>
 						</dd>
 					</div>
 					<div>
-						<dt>Latest release</dt>
+						<dt>{t("Latest release")}</dt>
 						<dd>
 							{release ? (
 								<>
-									ancora-organization {release.version}
+									{t("ancora-organization")} {release.version}
 									<code className={styles.code}>{release.wasmHash}</code>
 								</>
 							) : (
 								"Nothing published on the registry yet."
 							)}
-							<ExplorerLink target={support.registry()}>Registry on Stellar</ExplorerLink>
+							<ExplorerLink target={support.registry()}>{t("Registry on Stellar")}</ExplorerLink>
 						</dd>
 					</div>
 				</dl>
@@ -90,18 +92,19 @@ export function OrgCodeCard({ account }: { account: OrgAccount }) {
 				<div className={styles.actions}>
 					<span className={styles.muted}>
 						{account.onchain.setupPhase
-							? "During the setup phase the founder moves to it directly."
-							: "Moving to it becomes a request that follows your rules for changes."}
+							? t("During the setup phase the founder moves to it directly.")
+							: t("Moving to it becomes a request that follows your rules for changes.")}
 					</span>
 					<button type="button" className={buttonClass()} disabled={busy} onClick={upgrade}>
-						Move to release {release.version}
+						{t("Move to release")} {release.version}
 					</button>
 				</div>
 			)}
 			{release && !upToDate && !account.onchain.upgrades && (
 				<p className={styles.muted}>
-					This organization was created before organizations could move to new releases, so its code
-					stays as it is. Organizations created from 1 Nov 2026 can.
+					{t(
+						"This organization was created before organizations could move to new releases, so its code stays as it is. Organizations created from 1 Nov 2026 can.",
+					)}
 				</p>
 			)}
 		</Card>

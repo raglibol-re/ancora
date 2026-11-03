@@ -7,6 +7,7 @@ import {
 } from "../../adapters/site/pushNotifications.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./NotificationsCard.module.css";
@@ -24,6 +25,7 @@ const STATE_TEXT: Record<PushState, string> = {
  * done or declined, and when a guardian starts recovering your pass. Testnet passes only.
  */
 export function NotificationsCard() {
+	const t = useT();
 	const { me, dataSource } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [state, setState] = useState<PushState | null>(null);
@@ -36,16 +38,17 @@ export function NotificationsCard() {
 
 	const toggle = async () => {
 		const result = await run(() => (state === "on" ? disablePush(me.id) : enablePush(me.id)), {
-			success: state === "on" ? "Notifications are off." : "Notifications are on.",
+			success: state === "on" ? t("Notifications are off.") : t("Notifications are on."),
 		});
 		if (result) setState(await pushState());
 	};
 
 	return (
-		<Card title="Notifications">
+		<Card title={t("Notifications")}>
 			<p className={styles.muted}>
-				ancora tells this device when a payment or change waits for your approval, when your request
-				went through or was declined, and when a guardian starts recovering your pass.
+				{t(
+					"ancora tells this device when a payment or change waits for your approval, when your request went through or was declined, and when a guardian starts recovering your pass.",
+				)}
 			</p>
 			{state && <p className={styles.state}>{STATE_TEXT[state]}</p>}
 			{(state === "on" || state === "off") && (
@@ -55,7 +58,7 @@ export function NotificationsCard() {
 					disabled={busy}
 					onClick={() => void toggle()}
 				>
-					{state === "on" ? "Turn off on this device" : "Turn on for this device"}
+					{state === "on" ? t("Turn off on this device") : t("Turn on for this device")}
 				</button>
 			)}
 		</Card>

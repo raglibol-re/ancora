@@ -7,6 +7,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Controls.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
@@ -16,6 +17,7 @@ import { useProposeChange } from "./useProposeChange.ts";
  * The general allowance per person stays under People & limits.
  */
 export function AllowancesCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { personName } = useWorkspace();
 	const { propose, busy } = useProposeChange(account);
 	const { org } = account;
@@ -33,7 +35,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 		org.assets.find((a) => a.token === t)?.currency ?? org.baseCurrency;
 	const scope = (a: Pick<Allowance, "token" | "category">) =>
 		[
-			a.token ? `in ${org.assets.find((x) => x.token === a.token)?.symbol ?? "an asset"}` : null,
+			a.token ? `in ${org.assets.find((x) => x.token === a.token)?.symbol ?? t("an asset")}` : null,
 			a.category ? `for #${a.category}` : null,
 		]
 			.filter(Boolean)
@@ -54,12 +56,12 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 		const amount = parseAmountInput(amountInput);
 		if (!token && !category) {
 			setError(
-				"Pick an asset or a budget category; the general allowance is under People & limits.",
+				t("Pick an asset or a budget category; the general allowance is under People & limits."),
 			);
 			return;
 		}
 		if (amount === null || amount <= 0) {
-			setError("Enter an amount like 200 or 1,500.");
+			setError(t("Enter an amount like 200 or 1,500."));
 			return;
 		}
 		setError(null);
@@ -75,10 +77,11 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Card title="Allowances by asset or category">
+		<Card title={t("Allowances by asset or category")}>
 			<p className={styles.muted}>
-				Let someone pay up to an amount per period without approvals, only in one asset or only for
-				one budget category. Recipients outside an allowlist never use an allowance.
+				{t(
+					"Let someone pay up to an amount per period without approvals, only in one asset or only for one budget category. Recipients outside an allowlist never use an allowance.",
+				)}
 			</p>
 			{rows.length > 0 && (
 				<ul className={styles.list}>
@@ -93,8 +96,8 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 									remainingAllowance(row.allowance, now),
 									currencyFor(row.allowance.token),
 								)}{" "}
-								of {formatMoney(row.allowance.amount, currencyFor(row.allowance.token))} left this{" "}
-								{periodLabel(row.allowance.periodSeconds)}
+								{t("of")} {formatMoney(row.allowance.amount, currencyFor(row.allowance.token))}{" "}
+								{t("left this")} {periodLabel(row.allowance.periodSeconds)}
 							</span>
 							<button
 								type="button"
@@ -102,7 +105,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 								disabled={busy}
 								onClick={() => remove(row)}
 							>
-								Remove
+								{t("Remove")}
 							</button>
 						</li>
 					))}
@@ -110,7 +113,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 			)}
 			<form className={styles.form} onSubmit={add} noValidate>
 				<div className={styles.row}>
-					<Field label="Person" htmlFor="allowance-person">
+					<Field label={t("Person")} htmlFor="allowance-person">
 						<select
 							id="allowance-person"
 							className={controlClass}
@@ -124,14 +127,16 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 							))}
 						</select>
 					</Field>
-					<Field label="Asset" htmlFor="allowance-asset">
+					<Field label={t("Asset")} htmlFor="allowance-asset">
 						<select
 							id="allowance-asset"
 							className={controlClass}
 							value={token}
 							onChange={(e) => setToken(e.target.value)}
 						>
-							<option value="">Any, counted in {org.baseCurrency}</option>
+							<option value="">
+								{t("Any, counted in")} {org.baseCurrency}
+							</option>
 							{org.assets.map((a) => (
 								<option key={a.token} value={a.token}>
 									{a.symbol} ({a.currency})
@@ -139,14 +144,14 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 							))}
 						</select>
 					</Field>
-					<Field label="Category" htmlFor="allowance-category">
+					<Field label={t("Category")} htmlFor="allowance-category">
 						<select
 							id="allowance-category"
 							className={controlClass}
 							value={category}
 							onChange={(e) => setCategory(e.target.value)}
 						>
-							<option value="">Any</option>
+							<option value="">{t("Any")}</option>
 							{org.policy.budgets.map((b) => (
 								<option key={b.category} value={b.category}>
 									#{b.category}
@@ -156,7 +161,10 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 					</Field>
 				</div>
 				<div className={styles.row}>
-					<Field label={`Amount (${currencyFor(token || null)})`} htmlFor="allowance-amount">
+					<Field
+						label={t("Amount ({currency})", { currency: currencyFor(token || null) })}
+						htmlFor="allowance-amount"
+					>
 						<input
 							id="allowance-amount"
 							className={controlClass}
@@ -166,7 +174,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 							onChange={(e) => setAmountInput(e.target.value)}
 						/>
 					</Field>
-					<Field label="Per" htmlFor="allowance-period">
+					<Field label={t("Per")} htmlFor="allowance-period">
 						<select
 							id="allowance-period"
 							className={controlClass}
@@ -187,7 +195,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 					</p>
 				)}
 				<button type="submit" className={buttonClass("secondary")} disabled={busy}>
-					Set allowance
+					{t("Set allowance")}
 				</button>
 			</form>
 		</Card>

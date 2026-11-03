@@ -5,6 +5,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatDateTime } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Controls.module.css";
@@ -17,6 +18,7 @@ const DAY = 86_400;
  * rule like "two of two" never deadlocks. Plans are rule changes; claims follow the plan.
  */
 export function SuccessionCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource, me, personName } = useWorkspace();
 	const { propose, busy } = useProposeChange(account);
 	const { run } = useCommand();
@@ -35,11 +37,11 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 		const inactiveSeconds = Math.round(Number(quietDays) * DAY);
 		const waitSeconds = Math.round(Number(waitDays) * DAY);
 		if (personId === successorId) {
-			setError("Pick someone else as the successor.");
+			setError(t("Pick someone else as the successor."));
 			return;
 		}
 		if (!(inactiveSeconds >= 60 && waitSeconds >= 60)) {
-			setError("Enter the quiet period and the wait in days (at least a minute each).");
+			setError(t("Enter the quiet period and the wait in days (at least a minute each)."));
 			return;
 		}
 		setError(null);
@@ -50,7 +52,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 		const quietUntil = plan.lastSeen + plan.inactiveSeconds * 1000;
 		if (plan.claimReadyAt !== null) {
 			return plan.claimReadyAt <= now
-				? "Claimed; the handover can be finished now."
+				? t("Claimed; the handover can be finished now.")
 				: `Claimed; handover on ${formatDateTime(plan.claimReadyAt)} unless ${personName(plan.personId)} acts first.`;
 		}
 		return quietUntil <= now
@@ -59,14 +61,14 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 	};
 
 	const act = (label: string, action: () => ReturnType<NonNullable<typeof support>["stillHere"]>) =>
-		run(action, { signature: { kind: "passkey", title: label }, success: "Done." });
+		run(action, { signature: { kind: "passkey", title: label }, success: t("Done.") });
 
 	return (
-		<Card title="Succession">
+		<Card title={t("Succession")}>
 			<p className={styles.muted}>
-				If someone goes quiet for longer than their quiet period, the successor they were given can
-				claim their position. Any action of theirs during the wait cancels the claim; after it, the
-				successor takes over and they leave. Money never moves.
+				{t(
+					"If someone goes quiet for longer than their quiet period, the successor they were given can claim their position. Any action of theirs during the wait cancels the claim; after it, the successor takes over and they leave. Money never moves.",
+				)}
 			</p>
 			{plans.length > 0 && (
 				<ul className={styles.list}>
@@ -75,8 +77,9 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 						return (
 							<li key={plan.personId} className={styles.item}>
 								<span>
-									{personName(plan.successorId)} takes over from {personName(plan.personId)} after{" "}
-									{Math.round(plan.inactiveSeconds / DAY)} quiet days. {status(plan)}
+									{personName(plan.successorId)} {t("takes over from")} {personName(plan.personId)}{" "}
+									{t("after")} {Math.round(plan.inactiveSeconds / DAY)} {t("quiet days.")}{" "}
+									{status(plan)}
 								</span>
 								{support && (
 									<span className={styles.row}>
@@ -88,7 +91,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 													act("I'm still here", () => support.stillHere(org.id, me.id))
 												}
 											>
-												I'm still here
+												{t("I'm still here")}
 											</button>
 										)}
 										{plan.successorId === me.id && quiet && plan.claimReadyAt === null && (
@@ -101,7 +104,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 													)
 												}
 											>
-												Claim the position
+												{t("Claim the position")}
 											</button>
 										)}
 										{plan.claimReadyAt !== null && plan.claimReadyAt <= now && (
@@ -112,7 +115,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 													act("Finish the handover", () => support.finish(org.id, plan.personId))
 												}
 											>
-												Finish the handover
+												{t("Finish the handover")}
 											</button>
 										)}
 									</span>
@@ -124,7 +127,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 			)}
 			<form className={styles.form} onSubmit={save} noValidate>
 				<div className={styles.row}>
-					<Field label="Position of" htmlFor="succession-person">
+					<Field label={t("Position of")} htmlFor="succession-person">
 						<select
 							id="succession-person"
 							className={controlClass}
@@ -138,7 +141,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 							))}
 						</select>
 					</Field>
-					<Field label="Taken over by" htmlFor="succession-successor">
+					<Field label={t("Taken over by")} htmlFor="succession-successor">
 						<select
 							id="succession-successor"
 							className={controlClass}
@@ -154,7 +157,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 					</Field>
 				</div>
 				<div className={styles.row}>
-					<Field label="Quiet days" htmlFor="succession-quiet">
+					<Field label={t("Quiet days")} htmlFor="succession-quiet">
 						<input
 							id="succession-quiet"
 							className={controlClass}
@@ -163,7 +166,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 							onChange={(e) => setQuietDays(e.target.value)}
 						/>
 					</Field>
-					<Field label="Days to object" htmlFor="succession-wait">
+					<Field label={t("Days to object")} htmlFor="succession-wait">
 						<input
 							id="succession-wait"
 							className={controlClass}
@@ -179,7 +182,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 					</p>
 				)}
 				<button type="submit" className={buttonClass("secondary")} disabled={busy}>
-					Save successor
+					{t("Save successor")}
 				</button>
 			</form>
 		</Card>

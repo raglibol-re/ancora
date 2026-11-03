@@ -5,6 +5,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./SettingsPage.module.css";
@@ -17,6 +18,7 @@ const NAME = /^[a-z0-9][a-z0-9-]{1,31}$/;
  * their pass; the registry records that pass as the name's owner.
  */
 export function RegistryNameCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const support = dataSource.registryNames;
@@ -49,7 +51,7 @@ export function RegistryNameCard({ account }: { account: OrgAccount }) {
 	const check = async (event: FormEvent) => {
 		event.preventDefault();
 		if (!NAME.test(name)) {
-			setError("Use 2 to 32 lowercase letters, digits or dashes, like tejo-rowing-club.");
+			setError(t("Use 2 to 32 lowercase letters, digits or dashes, like tejo-rowing-club."));
 			return;
 		}
 		setError(null);
@@ -59,8 +61,14 @@ export function RegistryNameCard({ account }: { account: OrgAccount }) {
 
 	const register = async () => {
 		const result = await run(() => support.register(account.org.id, me.id, name), {
-			signature: { kind: "passkey", title: `Register ${account.org.name} as ${name}` },
-			success: `Registered. ${account.org.name} is now "${name}" on the Stellar Registry.`,
+			signature: {
+				kind: "passkey",
+				title: t("Register {organization} as {name}", { organization: account.org.name, name }),
+			},
+			success: t('Registered. {organization} is now "{name}" on the Stellar Registry.', {
+				organization: account.org.name,
+				name,
+			}),
 		});
 		if (result?.ok) {
 			setName("");
@@ -71,31 +79,34 @@ export function RegistryNameCard({ account }: { account: OrgAccount }) {
 
 	return (
 		<Card
-			title="Name on the Stellar Registry"
+			title={t("Name on the Stellar Registry")}
 			action={dataSource.kind === "sample" ? <SimulatedTag /> : null}
 		>
 			<p className={styles.muted}>
-				The Stellar Registry is a public, on-chain directory of contracts by name. A name lets
-				people find and verify this organization's treasury contract without copying an address.
+				{t(
+					"The Stellar Registry is a public, on-chain directory of contracts by name. A name lets people find and verify this organization's treasury contract without copying an address.",
+				)}
 				{channel ? ` Names go into the registry's open channel (${channel}).` : ""}
 			</p>
 			{status?.name ? (
 				<dl className={styles.facts}>
-					<dt>Registered as</dt>
+					<dt>{t("Registered as")}</dt>
 					<dd>
 						<strong>{status.name}</strong>
-						{status.verified ? " · points to this contract" : " · not found on the registry"}
+						{status.verified ? t(" · points to this contract") : t(" · not found on the registry")}
 					</dd>
 				</dl>
 			) : (
-				<p className={styles.muted}>No name yet.</p>
+				<p className={styles.muted}>{t("No name yet.")}</p>
 			)}
 			{mayEdit ? (
 				<form className={styles.form} onSubmit={check}>
 					<Field
-						label={status?.name ? "Register another name" : "Name"}
+						label={status?.name ? t("Register another name") : "Name"}
 						htmlFor="registry-name"
-						hint="Lowercase letters, digits and dashes. Registered by your pass, which the registry records as the owner."
+						hint={t(
+							"Lowercase letters, digits and dashes. Registered by your pass, which the registry records as the owner.",
+						)}
 						error={error}
 					>
 						<input
@@ -113,24 +124,32 @@ export function RegistryNameCard({ account }: { account: OrgAccount }) {
 					</Field>
 					{free === true ? (
 						<div className={styles.actions}>
-							<span className={styles.muted}>“{name}” is free.</span>
+							<span className={styles.muted}>
+								“{name}
+								{t("” is free.")}
+							</span>
 							<button type="button" className={buttonClass()} disabled={busy} onClick={register}>
-								Register with my passkey
+								{t("Register with my passkey")}
 							</button>
 						</div>
 					) : (
 						<div className={styles.actions}>
 							{free === false && (
-								<span className={styles.warn}>“{name}” is already taken on the registry.</span>
+								<span className={styles.warn}>
+									“{name}
+									{t("” is already taken on the registry.")}
+								</span>
 							)}
 							<button type="submit" className={buttonClass("secondary")} disabled={busy || !name}>
-								Check availability
+								{t("Check availability")}
 							</button>
 						</div>
 					)}
 				</form>
 			) : (
-				<p className={styles.muted}>Only the organization's highest role registers a name.</p>
+				<p className={styles.muted}>
+					{t("Only the organization's highest role registers a name.")}
+				</p>
 			)}
 		</Card>
 	);

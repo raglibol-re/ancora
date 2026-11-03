@@ -13,6 +13,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import styles from "./BudgetsRulesCard.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
 
@@ -22,6 +23,7 @@ import { useProposeChange } from "./useProposeChange.ts";
  * a request), and the rules document hash covers them.
  */
 export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { propose, busy } = useProposeChange(account);
 	const { policy, baseCurrency } = account.org;
 	const [name, setName] = useState("");
@@ -38,11 +40,11 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 		const category = toCategory(name);
 		const cents = parseAmountInput(amount);
 		if (!isCategory(category)) {
-			setError("Name the category with letters or digits, like equipment or travel.");
+			setError(t("Name the category with letters or digits, like equipment or travel."));
 			return;
 		}
 		if (cents === null || cents <= 0) {
-			setError("Enter an amount above zero.");
+			setError(t("Enter an amount above zero."));
 			return;
 		}
 		setError(null);
@@ -61,12 +63,14 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Card title="Budgets">
+		<Card title={t("Budgets")}>
 			<p className={styles.muted}>
-				Envelopes per category and period, in {baseCurrency}. A payment tagged with the category
-				counts against it. Beyond what is left, a <strong>soft</strong> budget sends the payment
-				through the strictest tier and flags it; a <strong>hard</strong> budget refuses it. Enforced
-				by the organization's contract.
+				{t("Envelopes per category and period, in")} {baseCurrency}
+				{t(". A payment tagged with the category counts against it. Beyond what is left, a")}{" "}
+				<strong>{t("soft")}</strong>{" "}
+				{t("budget sends the payment through the strictest tier and flags it; a")}{" "}
+				<strong>{t("hard")}</strong>{" "}
+				{t("budget refuses it. Enforced by the organization's contract.")}
 			</p>
 			<BudgetMeter
 				lines={budgetLines(account, Date.now())}
@@ -78,7 +82,7 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 			/>
 			<form className={styles.form} onSubmit={add}>
 				<div className={styles.row}>
-					<Field label="Category" htmlFor="budget-category">
+					<Field label={t("Category")} htmlFor="budget-category">
 						<input
 							id="budget-category"
 							className={controlClass}
@@ -88,7 +92,10 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 							onChange={(e) => setName(e.target.value)}
 						/>
 					</Field>
-					<Field label={`Amount (${baseCurrency})`} htmlFor="budget-amount">
+					<Field
+						label={t("Amount ({currency})", { currency: baseCurrency })}
+						htmlFor="budget-amount"
+					>
 						<input
 							id="budget-amount"
 							className={controlClass}
@@ -98,7 +105,7 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 							onChange={(e) => setAmount(e.target.value)}
 						/>
 					</Field>
-					<Field label="Per" htmlFor="budget-period">
+					<Field label={t("Per")} htmlFor="budget-period">
 						<select
 							id="budget-period"
 							className={controlClass}
@@ -114,12 +121,12 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 					</Field>
 				</div>
 				<Segmented<"soft" | "hard">
-					label="Beyond the budget"
+					label={t("Beyond the budget")}
 					value={mode}
 					onChange={setMode}
 					options={[
-						{ value: "soft", label: "Soft: strictest tier" },
-						{ value: "hard", label: "Hard: refuse" },
+						{ value: "soft", label: t("Soft: strictest tier") },
+						{ value: "hard", label: t("Hard: refuse") },
 					]}
 				/>
 				{error && (
@@ -130,8 +137,8 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 				<div>
 					<button type="submit" className={buttonClass("secondary")} disabled={busy}>
 						{policy.budgets.some((b) => b.category === toCategory(name))
-							? "Update budget"
-							: "Add budget"}
+							? t("Update budget")
+							: t("Add budget")}
 					</button>
 				</div>
 			</form>

@@ -7,6 +7,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass } from "../../ui/Field.tsx";
 import { currencySymbol, formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { describeRequirements } from "../requests/describe.ts";
 import styles from "./TiersCard.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
@@ -15,6 +16,7 @@ const toInput = (cents: number) => String(cents / 100);
 
 /** Edit tier limits, objection windows and the seal threshold; saving proposes a rule change. */
 export function TiersCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { policy, baseCurrency } = account.org;
 	const unit = currencySymbol(baseCurrency);
 	const { propose, busy } = useProposeChange(account);
@@ -51,7 +53,7 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Card title="Approval tiers">
+		<Card title={t("Approval tiers")}>
 			<form className={styles.form} onSubmit={submit}>
 				<ol className={styles.tiers}>
 					{policy.tiers.map((tier, i) => {
@@ -60,14 +62,19 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 							<li key={tier.upTo ?? "unbounded"} className={styles.tier}>
 								<div className={styles.range}>
 									{tier.upTo === null ? (
-										<span>Above {formatMoney(previous?.upTo ?? 0, baseCurrency)}</span>
+										<span>
+											{t("Above")} {formatMoney(previous?.upTo ?? 0, baseCurrency)}
+										</span>
 									) : (
 										<label>
-											Up to {unit}
+											{t("Up to")} {unit}
 											<input
 												className={`${controlClass} ${styles.small}`}
 												inputMode="decimal"
-												aria-label={`Tier ${i + 1} upper limit in ${baseCurrency}`}
+												aria-label={t("Tier {number} upper limit in {currency}", {
+													number: i + 1,
+													currency: baseCurrency,
+												})}
 												value={limits[i] ?? ""}
 												onChange={(e) => setLimits(set(limits, i, e.target.value))}
 											/>
@@ -75,25 +82,25 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 									)}
 								</div>
 								<p className={styles.needs}>
-									Needs {describeRequirements(account.org, tier.approvals)}
+									{t("Needs")} {describeRequirements(account.org, tier.approvals)}
 								</p>
 								<label className={styles.window}>
-									Objection window
+									{t("Objection window")}
 									<input
 										className={`${controlClass} ${styles.tiny}`}
 										inputMode="numeric"
-										aria-label={`Tier ${i + 1} objection window in hours`}
+										aria-label={t("Tier {number} objection window in hours", { number: i + 1 })}
 										value={windows[i] ?? ""}
 										onChange={(e) => setWindows(set(windows, i, e.target.value))}
 									/>
-									hours
+									{t("hours")}
 								</label>
 							</li>
 						);
 					})}
 				</ol>
 				<label className={styles.seal}>
-					Security seal from {unit}
+					{t("Security seal from")} {unit}
 					<input
 						className={`${controlClass} ${styles.small}`}
 						inputMode="decimal"
@@ -103,7 +110,7 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 				</label>
 				{account.org.policy.newRecipientApprovals.length > 0 && (
 					<p className={styles.needs}>
-						First payment to a new recipient: at least{" "}
+						{t("First payment to a new recipient: at least")}{" "}
 						{describeRequirements(account.org, account.org.policy.newRecipientApprovals)}.
 					</p>
 				)}
@@ -113,7 +120,7 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 					</p>
 				)}
 				<button type="submit" className={buttonClass("secondary")} disabled={busy}>
-					Save changes
+					{t("Save changes")}
 				</button>
 			</form>
 		</Card>

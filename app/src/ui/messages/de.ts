@@ -514,4 +514,776 @@ export const de: Readonly<Record<string, string>> = {
 	"not yet": "noch nicht",
 	Simulated: "Simuliert",
 	"Sample data, not on the Stellar testnet": "Beispieldaten, nicht im Stellar-Testnet",
+	"Download statement (CSV)": "Auszug herunterladen (CSV)",
+	Requests: "Anfragen",
+	"Confidential pot:": "Vertrauliche Kasse:",
+	private: "vertrauliche",
+	"payment is": "Zahlung ist",
+	"payments are": "Zahlungen sind",
+	"in the statement, read with the pot key shared with you.":
+		"im Auszug, gelesen mit dem Kassenschlüssel, der mit Ihnen geteilt wurde.",
+	"Audits run on the Stellar testnet. Sign in with your pass there.":
+		"Prüfungen laufen im Stellar-Testnet. Melden Sie sich dort mit Ihrem Pass an.",
+	"Enter the organization's account address (starts with C).":
+		"Geben Sie die Kontoadresse der Organisation ein (beginnt mit C).",
+	"Read an organization's requests and recipients as its auditor. Its members add you and share access; you can't change anything.":
+		"Lesen Sie als Prüfer die Anfragen und Empfänger einer Organisation. Ihre Mitglieder fügen Sie hinzu und teilen den Zugang; Sie können nichts ändern.",
+	"Your part": "Ihr Teil",
+	"Give the organization your ancora ID,": "Geben Sie der Organisation Ihre ancora-ID,",
+	", and set up this device so they can share their key with you.":
+		", und richten Sie dieses Gerät ein, damit sie ihren Schlüssel mit Ihnen teilen kann.",
+	"Set up private details on this device": "Vertrauliche Angaben auf diesem Gerät einrichten",
+	"This device is set up. The organization can now share access with you.":
+		"Dieses Gerät ist eingerichtet. Die Organisation kann den Zugang jetzt mit Ihnen teilen.",
+	"Set up this device": "Dieses Gerät einrichten",
+	"Open an organization": "Organisation öffnen",
+	"Organization address": "Adresse der Organisation",
+	"Open read-only": "Nur lesend öffnen",
+	"Deal #{id}": "Vereinbarung #{id}",
+	"Reading the deal…": "Vereinbarung wird gelesen…",
+	"This organization takes no part in deal #":
+		"Diese Organisation ist nicht beteiligt an Vereinbarung #",
+	"All deals": "Alle Vereinbarungen",
+	"Paid out.": "Ausgezahlt.",
+	"Approval requested: it goes out once your organization's rules are met.":
+		"Freigabe angefragt: Es geht raus, sobald die Regeln Ihrer Organisation erfüllt sind.",
+	"You pay": "Sie zahlen",
+	"You are paid by": "Sie werden bezahlt von",
+	"Time to object": "Einspruchsfrist",
+	"days per payout": "Tage pro Auszahlung",
+	Arbiter: "Schlichter",
+	"None (disputes aren't possible)": "Keiner (Streitfälle sind nicht möglich)",
+	"Agreement fingerprint": "Fingerabdruck der Vereinbarung",
+	Cancellation: "Stornierung",
+	"asked to cancel; the other side has to agree.":
+		"hat die Stornierung beantragt; die andere Seite muss zustimmen.",
+	"Deal contract": "Vertrag der Vereinbarungen",
+	Milestones: "Meilensteine",
+	" · due for payout": " · zur Auszahlung fällig",
+	"Awaiting internal approval": "Wartet auf interne Freigabe",
+	"Approved; objection window running": "Freigegeben; Einspruchsfrist läuft",
+	"Approval requested": "Freigabe angefragt",
+	"What you can do": "Was Sie tun können",
+	"Nothing for you to do right now.": "Gerade gibt es für Sie nichts zu tun.",
+	"Each step goes through your organization's approval rules, like a payment.":
+		"Jeder Schritt läuft wie eine Zahlung über die Freigaberegeln Ihrer Organisation.",
+	"Settle work with another organization step by step: the amount is deposited up front and paid out milestone by milestone, each side under its own approval rules.":
+		"Rechnen Sie Arbeit mit einer anderen Organisation Schritt für Schritt ab: Der Betrag wird vorab hinterlegt und Meilenstein für Meilenstein ausgezahlt, jede Seite nach ihren eigenen Freigaberegeln.",
+	"Deals run on the Stellar testnet. Switch to the testnet on your pass to start one.":
+		"Vereinbarungen laufen im Stellar-Testnet. Wechseln Sie in Ihrem Pass zum Testnet, um eine zu beginnen.",
+	"This organization runs an earlier release. Move to the latest release under Settings → Organization code to start deals (organizations from before 1 Nov 2026 can't).":
+		"Diese Organisation läuft mit einer älteren Version. Wechseln Sie unter Einstellungen → Code der Organisation zur neuesten Version, um Vereinbarungen zu beginnen (Organisationen von vor dem 1. Nov. 2026 können es nicht).",
+	"Your deals": "Ihre Vereinbarungen",
+	"Reading your deals…": "Ihre Vereinbarungen werden gelesen…",
+	"No deals yet. Propose one above.": "Noch keine Vereinbarungen. Schlagen Sie oben eine vor.",
+	"Deal #": "Vereinbarung #",
+	milestone: "Meilenstein",
+	"· since": "· seit",
+	"Enter the other organization's account address (starts with C or G).":
+		"Geben Sie die Kontoadresse der anderen Organisation ein (beginnt mit C oder G).",
+	"Every milestone needs a name and an amount above zero.":
+		"Jeder Meilenstein braucht einen Namen und einen Betrag über null.",
+	"The time to object is between one minute and 90 days.":
+		"Die Einspruchsfrist liegt zwischen einer Minute und 90 Tagen.",
+	"The arbiter needs a Stellar account address, or leave it empty.":
+		"Der Schlichter braucht eine Stellar-Kontoadresse, oder lassen Sie das Feld leer.",
+	"Attach the agreement; only its fingerprint is recorded, the file stays with you.":
+		"Hängen Sie die Vereinbarung an; nur ihr Fingerabdruck wird festgehalten, die Datei bleibt bei Ihnen.",
+	"Propose a deal of {amount}": "Vereinbarung über {amount} vorschlagen",
+	"Deal proposed. The other side can now accept the terms.":
+		"Vereinbarung vorgeschlagen. Die andere Seite kann die Bedingungen jetzt annehmen.",
+	"Approval requested: the deal goes out once your rules are met.":
+		"Freigabe angefragt: Die Vereinbarung geht raus, sobald Ihre Regeln erfüllt sind.",
+	"Propose a deal": "Vereinbarung vorschlagen",
+	"Other organization": "Andere Organisation",
+	"Their account address, from their Settings. ancora names come later.":
+		"Ihre Kontoadresse, aus ihren Einstellungen. ancora-Namen kommen später.",
+	"Paid in": "Bezahlt in",
+	"Milestone {number}": "Meilenstein {number}",
+	"Design delivered": "Entwurf geliefert",
+	"Add a milestone": "Meilenstein hinzufügen",
+	"Remove the last": "Letzten entfernen",
+	"Days to object": "Tage für Einspruch",
+	"After the other side asks for a payout, you have this long to object; then it pays out automatically.":
+		"Nachdem die andere Seite eine Auszahlung anfragt, haben Sie so lange Zeit für einen Einspruch; danach wird automatisch ausgezahlt.",
+	"Arbiter (optional)": "Schlichter (optional)",
+	"Someone both sides trust to split what is left if you disagree. Without one, disputes aren't possible.":
+		"Eine Person, der beide Seiten vertrauen und die bei Uneinigkeit den Rest aufteilt. Ohne Schlichter sind Streitfälle nicht möglich.",
+	"C… or G…": "C… oder G…",
+	Agreement: "Vereinbarung",
+	"Only the file's fingerprint is recorded; the file itself stays with you.":
+		"Nur der Fingerabdruck der Datei wird festgehalten; die Datei selbst bleibt bei Ihnen.",
+	"Propose the deal": "Vereinbarung vorschlagen",
+	"Question posted.": "Frage gestellt.",
+	"Marked as answered.": "Als beantwortet markiert.",
+	Discussion: "Diskussion",
+	"Reasons for and against, questions and comments help approvers decide. Taking part here doesn't count as an approval.":
+		"Gründe dafür und dagegen, Fragen und Kommentare helfen bei der Entscheidung. Hier mitzureden zählt nicht als Freigabe.",
+	" · answered": " · beantwortet",
+	" · open": " · offen",
+	"Thumbs up": "Daumen hoch",
+	"Thumbs down": "Daumen runter",
+	"Mark as answered": "Als beantwortet markieren",
+	Kind: "Art",
+	"Your question": "Ihre Frage",
+	"Your point": "Ihr Beitrag",
+	"Up to {count} characters. Visible to the organization's members.":
+		"Bis zu {count} Zeichen. Sichtbar für die Mitglieder der Organisation.",
+	Post: "Veröffentlichen",
+	"Only members of the organization can take part.":
+		"Nur Mitglieder der Organisation können mitreden.",
+	"Confirm the secure handover": "Sichere Übergabe bestätigen",
+	"Confirmed. The money goes out as soon as the organization confirms too.":
+		"Bestätigt. Das Geld geht raus, sobald auch die Organisation bestätigt.",
+	"Secure handover": "Sichere Übergabe",
+	"Not found": "Nicht gefunden",
+	"Back to the overview": "Zurück zur Übersicht",
+	"{amount} from {organization}": "{amount} von {organization}",
+	"approved this payment on": "hat diese Zahlung freigegeben am",
+	"and set the money aside. It is paid out once both sides confirm: you, the recipient, and the organization.":
+		"und das Geld zurückgelegt. Es wird ausgezahlt, sobald beide Seiten bestätigen: Sie als Empfänger und die Organisation.",
+	"Recipient confirmed": "Empfänger hat bestätigt",
+	"Not yet": "Noch nicht",
+	"Organization confirmed": "Organisation hat bestätigt",
+	Status: "Status",
+	"Paid out": "Ausgezahlt",
+	"Confirm: I'm the recipient and the terms are right":
+		"Bestätigen: Ich bin der Empfänger, und die Bedingungen stimmen",
+	"Only the recipient's pass (": "Nur der Pass des Empfängers (",
+	") can confirm here. Open this link signed in with that pass.":
+		") kann hier bestätigen. Öffnen Sie diesen Link, angemeldet mit diesem Pass.",
+	"Install the app": "App installieren",
+	"To install: tap": "Zum Installieren: Tippen Sie auf",
+	Share: "Teilen",
+	", then": ", dann auf",
+	"Add to Home Screen": "Zum Home-Bildschirm",
+	"The claim is cancelled. Your pass stays as it is.":
+		"Der Anspruch ist zurückgezogen. Ihr Pass bleibt, wie er ist.",
+	"Recovery of your pass started": "Wiederherstellung Ihres Passes begonnen",
+	"for new pass": "für den neuen Pass",
+	". It can finish": ". Sie kann abgeschlossen werden",
+	". Not you?": ". Nicht Sie?",
+	"Cancel it": "Abbrechen",
+	Details: "Details",
+	"People you protect": "Personen, die Sie schützen",
+	"They named you as a guardian. If one of them loses their pass, they create a new one and tell you its ID; you confirm it here. Verify in person or by voice that it is really them: a guardian's confirmation is what makes a recovery possible.":
+		"Sie wurden als Vertrauensperson benannt. Verliert jemand davon den Pass, erstellt die Person einen neuen und nennt Ihnen dessen ID; Sie bestätigen ihn hier. Prüfen Sie persönlich oder am Telefon, dass es wirklich die Person ist: Erst die Bestätigung der Vertrauenspersonen macht eine Wiederherstellung möglich.",
+	"Recovery of {name}'s pass started; your confirmation counts.":
+		"Wiederherstellung des Passes von {name} begonnen; Ihre Bestätigung zählt.",
+	"You confirmed {name}'s new pass.": "Sie haben den neuen Pass von {name} bestätigt.",
+	"confirm ·": "bestätigen ·",
+	"Recovery in progress: new pass": "Wiederherstellung läuft: neuer Pass",
+	", confirmed by": ", bestätigt von",
+	". Ready: the new pass can complete it.": ". Bereit: Der neue Pass kann sie abschließen.",
+	"Confirm this new pass": "Diesen neuen Pass bestätigen",
+	"{name}'s new ancora ID": "Neue ancora-ID von {name}",
+	"Ask them to read it from their new pass (starts with C). Check it's really them.":
+		"Lassen Sie sie von ihrem neuen Pass vorlesen (beginnt mit C). Prüfen Sie, dass es wirklich die Person ist.",
+	"Start recovery": "Wiederherstellung beginnen",
+	"They lost their pass": "Pass verloren",
+	"Your recovery plan is removed.": "Ihr Wiederherstellungsplan ist entfernt.",
+	Lifeline: "Lifeline",
+	"If you lose this pass, the guardians you name here can confirm a new one. After the waiting period your positions in every organization move to it. Recovery never moves money, and while a claim waits you can cancel it from this pass.":
+		"Wenn Sie diesen Pass verlieren, können die hier benannten Vertrauenspersonen einen neuen bestätigen. Nach der Wartezeit gehen Ihre Positionen in jeder Organisation auf ihn über. Eine Wiederherstellung bewegt nie Geld, und solange ein Anspruch wartet, können Sie ihn von diesem Pass aus abbrechen.",
+	Protected: "Geschützt",
+	guardian: "Vertrauensperson",
+	"waiting period": "Wartezeit",
+	"Not protected yet": "Noch nicht geschützt",
+	"This pass is the only key to your positions. Name guardians.":
+		"Dieser Pass ist der einzige Schlüssel zu Ihren Positionen. Benennen Sie Vertrauenspersonen.",
+	"Someone is recovering your pass.": "Jemand stellt Ihren Pass wieder her.",
+	"New pass": "Neuer Pass",
+	"guardians; can finish": "Vertrauenspersonen; kann abgeschlossen werden",
+	". If this is not you, cancel it now: your current pass keeps everything.":
+		". Wenn das nicht Sie sind, brechen Sie jetzt ab: Ihr jetziger Pass behält alles.",
+	"Cancel this claim": "Diesen Anspruch abbrechen",
+	"Positions in": "Positionen in",
+	"were created before Lifeline and can't be handed over; new organizations can.":
+		"wurden vor Lifeline angelegt und können nicht übergeben werden; neue Organisationen können es.",
+	"Change plan": "Plan ändern",
+	"Set up Lifeline": "Lifeline einrichten",
+	"Remove plan": "Plan entfernen",
+	"Your recovery plan is saved.": "Ihr Wiederherstellungsplan ist gespeichert.",
+	"Guardians (up to": "Vertrauenspersonen (bis zu",
+	Remove: "Entfernen",
+	"Add a guardian by ancora ID": "Vertrauensperson per ancora-ID hinzufügen",
+	"Anyone with an ancora pass, also outside your organizations.":
+		"Jede Person mit einem ancora-Pass, auch außerhalb Ihrer Organisationen.",
+	"Confirmations needed": "Nötige Bestätigungen",
+	"Waiting period": "Wartezeit",
+	"Time you have to cancel a claim that isn't yours.":
+		"Die Zeit, die Sie haben, um einen fremden Anspruch abzubrechen.",
+	"Save plan": "Plan speichern",
+	"Your positions moved to this pass.": "Ihre Positionen sind auf diesen Pass übergegangen.",
+	"Recover an old pass": "Alten Pass wiederherstellen",
+	"Lost your previous pass? Give its ancora ID to the guardians you had named; they confirm this new pass (":
+		"Ihren bisherigen Pass verloren? Nennen Sie seine ancora-ID den Vertrauenspersonen, die Sie benannt hatten; sie bestätigen diesen neuen Pass (",
+	"). Once enough have confirmed and the waiting period is over, complete the recovery here: your positions in every organization move to this pass.":
+		"). Sobald genug bestätigt haben und die Wartezeit vorbei ist, schließen Sie die Wiederherstellung hier ab: Ihre Positionen in jeder Organisation gehen auf diesen Pass über.",
+	"Old ancora ID": "Alte ancora-ID",
+	"Check status": "Status prüfen",
+	"This pass was already recovered to": "Dieser Pass wurde bereits wiederhergestellt auf",
+	"never set up Lifeline, so this pass can't be recovered. Ask the organizations to invite your new pass instead.":
+		"hat Lifeline nie eingerichtet, daher kann dieser Pass nicht wiederhergestellt werden. Bitten Sie die Organisationen, stattdessen Ihren neuen Pass einzuladen.",
+	"No recovery started yet. One of the": "Noch keine Wiederherstellung begonnen. Eine der",
+	"guardians has to start it with your new ID.":
+		"Vertrauenspersonen muss sie mit Ihrer neuen ID beginnen.",
+	"Claim for": "Anspruch für",
+	" (this pass)": " (dieser Pass)",
+	" (not this pass)": " (nicht dieser Pass)",
+	"guardians confirmed": "Vertrauenspersonen haben bestätigt",
+	"Hand over remaining positions": "Restliche Positionen übergeben",
+	"Complete recovery": "Wiederherstellung abschließen",
+	"Handed over in": "Übergeben in",
+	organization: "Organisation",
+	"Ask for money: invoices and membership fees anyone pays from their own wallet.":
+		"Geld anfordern: Rechnungen und Mitgliedsbeiträge, die jede Person aus der eigenen Wallet bezahlt.",
+	"This organization was created before payment links existed; organizations created from 28 Oct 2026 can ask for money with a link.":
+		"Diese Organisation wurde vor den Zahlungslinks gegründet; ab dem 28. Okt. 2026 gegründete Organisationen können Geld per Link anfordern.",
+	"Enter an amount like 30 or 120.50.": "Geben Sie einen Betrag wie 30 oder 120,50 ein.",
+	"A link takes one to 500 payments.": "Ein Link nimmt eine bis 500 Zahlungen an.",
+	"Say what it's for, like Membership 2027 or Invoice 14.":
+		"Geben Sie den Zweck an, etwa Mitgliedschaft 2027 oder Rechnung 14.",
+	"Create a payment link: {reference}": "Zahlungslink erstellen: {reference}",
+	"Payment link created. Copy it or show its QR code below.":
+		"Zahlungslink erstellt. Kopieren Sie ihn oder zeigen Sie unten seinen QR-Code.",
+	"Link copied. Send it to whoever should pay.":
+		"Link kopiert. Senden Sie ihn an die Person, die zahlen soll.",
+	"Couldn't copy. Open the QR code and share that instead.":
+		"Kopieren fehlgeschlagen. Öffnen Sie den QR-Code und teilen Sie stattdessen diesen.",
+	"Ask for money": "Geld anfordern",
+	"What it's for": "Wofür",
+	"Membership 2027": "Mitgliedschaft 2027",
+	"Paid by": "Bezahlt von",
+	"One payer (invoice)": "Eine zahlende Person (Rechnung)",
+	"Several people (fees)": "Mehrere Personen (Beiträge)",
+	"At most": "Höchstens",
+	"Each wallet pays once; the link closes when this many have paid.":
+		"Jede Wallet zahlt einmal; der Link schließt, wenn so viele bezahlt haben.",
+	"Create link": "Link erstellen",
+	Links: "Links",
+	"No payment links yet.": "Noch keine Zahlungslinks.",
+	Paid: "Bezahlt",
+	"· total": "· gesamt",
+	"· created": "· erstellt",
+	"Copy link": "Link kopieren",
+	"QR code": "QR-Code",
+	"Close the link {reference}": "Link {reference} schließen",
+	"Link closed. It takes no more payments.": "Link geschlossen. Er nimmt keine Zahlungen mehr an.",
+	Close: "Schließen",
+	"Sample data: payers open links of organizations on the Stellar testnet.":
+		"Beispieldaten: Zahlende öffnen Links von Organisationen im Stellar-Testnet.",
+	"QR code for the payment link {reference}": "QR-Code für den Zahlungslink {reference}",
+	"Reading the payment link from Stellar…": "Zahlungslink wird von Stellar gelesen…",
+	"asks for": "bittet um",
+	"of up to": "von bis zu",
+	"people.": "Personen.",
+	"Paid. Thank you.": "Bezahlt. Vielen Dank.",
+	"sees your payment now.": "sieht Ihre Zahlung jetzt.",
+	"View the transaction": "Transaktion ansehen",
+	"This link is closed or fully paid. Nothing to pay here.":
+		"Dieser Link ist geschlossen oder vollständig bezahlt. Hier gibt es nichts zu zahlen.",
+	From: "Von",
+	Pay: "Zahlen",
+	"Pay with a Stellar wallet": "Mit einer Stellar-Wallet zahlen",
+	"Freighter, xBull, Hana or Albedo on the Stellar testnet. Your wallet needs some XLM for the fee and a trustline for":
+		"Freighter, xBull, Hana oder Albedo im Stellar-Testnet. Ihre Wallet braucht etwas XLM für die Gebühr und eine Trustline für",
+	". Test money only; nothing real moves.": ". Nur Testgeld; nichts Echtes bewegt sich.",
+	"Payments go straight to": "Zahlungen gehen direkt auf das Konto von",
+	"the organization": "der Organisation",
+	"'s account on Stellar. ancora is not a bank and never holds the money.":
+		" auf Stellar. ancora ist keine Bank und verwahrt das Geld nie.",
+	"Give your organization a name.": "Geben Sie Ihrer Organisation einen Namen.",
+	"Pick at least one asset the organization accepts.":
+		"Wählen Sie mindestens eine Währung, die die Organisation annimmt.",
+	"Create {name}": "{name} gründen",
+	"Organization created on Stellar. Invite your people by their ancora ID next.":
+		"Organisation auf Stellar gegründet. Laden Sie als Nächstes Ihre Leute über ihre ancora-ID ein.",
+	"Organization created. Add your people next.":
+		"Organisation gegründet. Fügen Sie als Nächstes Ihre Leute hinzu.",
+	"Deploys the organization's own contract on Stellar testnet with you as its founder. Fees are sponsored; no signature needed for this step.":
+		"Legt den eigenen Vertrag der Organisation im Stellar-Testnet an, mit Ihnen als Gründer. Die Gebühren werden übernommen; für diesen Schritt ist keine Signatur nötig.",
+	"An account with your own approval rules, in a minute.":
+		"Ein Konto mit Ihren eigenen Freigaberegeln, in einer Minute.",
+	Template: "Vorlage",
+	Above: "Darüber",
+	"Up to {amount}": "Bis {amount}",
+	"{hours}h objection window": "{hours} Std. Einspruchsfrist",
+	"Security seal from": "Sicherheitssiegel ab",
+	Money: "Geld",
+	"Currency of the rules": "Währung der Regeln",
+	"The tiers above are in this currency. Payments in an accepted asset of another currency take the strictest tier.":
+		"Die Stufen oben gelten in dieser Währung. Zahlungen in einer angenommenen Währung einer anderen Landeswährung nehmen die strengste Stufe.",
+	"Accepted stablecoins": "Angenommene Stablecoins",
+	"Your role": "Ihre Rolle",
+	"You can add people and adjust the rules right after.":
+		"Sie können gleich danach Personen hinzufügen und die Regeln anpassen.",
+	"Confirm with your passkey": "Mit Ihrem Passkey bestätigen",
+	"Your passkey confirms the seal; organizations that require quantum-safe seals also sign it with the key on this device.":
+		"Ihr Passkey bestätigt das Siegel; Organisationen, die quantensichere Siegel verlangen, signieren es zusätzlich mit dem Schlüssel auf diesem Gerät.",
+	"Use Face ID, your fingerprint or your device PIN.":
+		"Nutzen Sie Face ID, Ihren Fingerabdruck oder die PIN Ihres Geräts.",
+	"Simulated signature": "Simulierte Signatur",
+	"Sign with seal": "Mit Siegel signieren",
+	"The people and companies your organization pays.":
+		"Die Personen und Unternehmen, die Ihre Organisation bezahlt.",
+	"Give the recipient a name.": "Geben Sie dem Empfänger einen Namen.",
+	"Enter a Stellar address.": "Geben Sie eine Stellar-Adresse ein.",
+	"Enter an IBAN.": "Geben Sie eine IBAN ein.",
+	"Remove {name} from the address book": "{name} aus dem Adressbuch entfernen",
+	"{name} was removed from the address book.": "{name} wurde aus dem Adressbuch entfernt.",
+	" · not paid yet": " · noch nicht bezahlt",
+	"Saved recipients": "Gespeicherte Empfänger",
+	'Nobody saved yet. Save a recipient below, or tick "Save to the address book" when you pay someone new; every member then sees the same name for that address.':
+		"Noch niemand gespeichert. Speichern Sie unten einen Empfänger, oder setzen Sie bei einer Zahlung an jemand Neues das Häkchen „Im Adressbuch speichern“; jedes Mitglied sieht dann denselben Namen für diese Adresse.",
+	"Paid before, not saved": "Schon bezahlt, nicht gespeichert",
+	"Save a recipient": "Empfänger speichern",
+	"Starts with G or C.": "Beginnt mit G oder C.",
+	Note: "Notiz",
+	"Optional, shown to every member.": "Optional, für jedes Mitglied sichtbar.",
+	"Save changes": "Änderungen speichern",
+	"Save recipient": "Empfänger speichern",
+	"Save recipients": "Empfänger speichern",
+	"This organization was created before the address book existed; organizations created from 28 Oct 2026 keep saved recipients on their contract for every member.":
+		"Diese Organisation wurde vor dem Adressbuch gegründet; ab dem 28. Okt. 2026 gegründete Organisationen speichern Empfänger in ihrem Vertrag für jedes Mitglied.",
+	"Enter an amount above zero.": "Geben Sie einen Betrag über null ein.",
+	"At most {amount}.": "Höchstens {amount}.",
+	"Enter the other organization's account address (starts with C).":
+		"Geben Sie die Kontoadresse der anderen Organisation ein (beginnt mit C).",
+	"Their organization's address": "Adresse ihrer Organisation",
+	"Working on it…": "Wird bearbeitet…",
+	"Requested. It goes once your rules are met (see Approvals).":
+		"Angefragt. Es geht raus, sobald Ihre Regeln erfüllt sind (siehe Freigaben).",
+	"Money in the pot is held by a Stellar contract that hides its balance and the amounts paid between pots. Your members read them on their devices; who pays whom, and what moves in or out, stays public.":
+		"Das Geld in der Kasse verwahrt ein Stellar-Vertrag, der ihren Saldo und die Beträge zwischen Kassen verbirgt. Ihre Mitglieder lesen sie auf ihren Geräten; wer wen bezahlt und was ein- oder ausgeht, bleibt öffentlich.",
+	"The pot runs on the Stellar testnet. Switch to the testnet on your pass to use it.":
+		"Die Kasse läuft im Stellar-Testnet. Wechseln Sie in Ihrem Pass zum Testnet, um sie zu nutzen.",
+	Preview: "Vorschau",
+	"A testnet preview, not audited": "Eine Vorschau im Testnet, nicht geprüft",
+	"A preview on the testnet: the proofs follow OpenZeppelin's confidential token, whose recipe is still provisional, and nothing here has been audited. Each step that moves money is a request under your organization's rules; a payment's amount can't be seen by the contract, so it always takes your strictest approvals.":
+		"Eine Vorschau im Testnet: Die Beweise folgen dem vertraulichen Token von OpenZeppelin, dessen Verfahren noch vorläufig ist, und nichts hier wurde geprüft. Jeder Schritt, der Geld bewegt, ist eine Anfrage nach den Regeln Ihrer Organisation; den Betrag einer Zahlung sieht der Vertrag nicht, daher nimmt sie immer Ihre strengsten Freigaben.",
+	"Reading the pot…": "Kasse wird gelesen…",
+	"Pot contract": "Vertrag der Kasse",
+	"The pot holds the test USDC. Accept it under Rules → Accounts to use the pot.":
+		"Die Kasse hält die Test-USDC. Nehmen Sie sie unter Regeln → Konten an, um die Kasse zu nutzen.",
+	"Opening the pot creates its key (kept with your private details, so every member's device reads it), proves it on this device, and asks your organization to open its pot account. Your passkey is asked a few times.":
+		"Das Öffnen der Kasse erstellt ihren Schlüssel (gespeichert bei Ihren vertraulichen Angaben, sodass das Gerät jedes Mitglieds ihn liest), beweist ihn auf diesem Gerät und bittet Ihre Organisation, ihr Kassenkonto zu eröffnen. Ihr Passkey wird einige Male abgefragt.",
+	"The pot key exists; opening the account waits for your rules (see Approvals). If that request was declined, ask again.":
+		"Der Kassenschlüssel existiert; das Eröffnen des Kontos wartet auf Ihre Regeln (siehe Freigaben). Wurde die Anfrage abgelehnt, fragen Sie erneut an.",
+	"Open the pot": "Kasse öffnen",
+	"Ask again": "Erneut anfragen",
+	"The pot is open, but the history the network keeps (about a week) doesn't reach back far enough to read its balance on this device. Its money is safe; the next payment out or in-and-merge will make it readable again.":
+		"Die Kasse ist offen, aber der Verlauf, den das Netzwerk aufbewahrt (etwa eine Woche), reicht nicht weit genug zurück, um ihren Saldo auf diesem Gerät zu lesen. Das Geld ist sicher; die nächste Auszahlung oder ein Eingang mit Zusammenführung macht ihn wieder lesbar.",
+	"Spendable in the pot": "In der Kasse verfügbar",
+	"A pot payment is waiting for approval. Until it runs, new payments and making incoming money spendable are paused: they would change the balance its proof was made for.":
+		"Eine Zahlung aus der Kasse wartet auf Freigabe. Bis sie läuft, sind neue Zahlungen und das Verfügbarmachen von Eingängen pausiert: Sie würden den Saldo ändern, für den ihr Beweis erstellt wurde.",
+	"The incoming money is spendable now.": "Die Eingänge sind jetzt verfügbar.",
+	"Make it spendable": "Verfügbar machen",
+	"Move money in": "Geld einzahlen",
+	"From the account into the pot. The amount is public; what happens to it in the pot isn't.":
+		"Vom Konto in die Kasse. Der Betrag ist öffentlich; was in der Kasse damit geschieht, nicht.",
+	"Pay another organization": "Andere Organisation bezahlen",
+	"To their pot. Only your two organizations read the amount. The proof is made on this device and takes a few seconds.":
+		"In deren Kasse. Nur Ihre beiden Organisationen lesen den Betrag. Der Beweis wird auf diesem Gerät erstellt und dauert einige Sekunden.",
+	"Take money out": "Geld auszahlen",
+	"Back to the account; the amount becomes public.":
+		"Zurück aufs Konto; der Betrag wird öffentlich.",
+	"Nothing yet in the last week.": "In der letzten Woche noch nichts.",
+	"this organization": "diese Organisation",
+	"Amount (private on the network):": "Betrag (im Netzwerk vertraulich):",
+	"Show the amount": "Betrag anzeigen",
+	"There are no keys on this device yet.": "Auf diesem Gerät gibt es noch keine Schlüssel.",
+	"Backup code copied. Keep it like a password.":
+		"Sicherungscode kopiert. Bewahren Sie ihn wie ein Passwort auf.",
+	"Couldn't copy; select the code and copy it by hand.":
+		"Kopieren fehlgeschlagen; markieren Sie den Code und kopieren Sie ihn von Hand.",
+	"Bring back your keys with your passkey": "Ihre Schlüssel mit Ihrem Passkey zurückholen",
+	"This passkey or browser can't make keys. Use your backup code instead.":
+		"Dieser Passkey oder Browser kann keine Schlüssel erzeugen. Nutzen Sie stattdessen Ihren Sicherungscode.",
+	"Your keys weren't made with this passkey (they were set up before, or with another one). Use your backup code instead.":
+		"Ihre Schlüssel wurden nicht mit diesem Passkey erzeugt (sie wurden früher oder mit einem anderen eingerichtet). Nutzen Sie stattdessen Ihren Sicherungscode.",
+	"Keys on this device": "Schlüssel auf diesem Gerät",
+	"Your key for private details and your quantum-safe seal key live only in this browser. Where your passkey supports it, they are made from your passkey, so a device your passkey syncs to gets them back with it. A backup code works everywhere. It can't move money (that always needs your passkey), but it reads your organizations' private details: keep it like a password.":
+		"Ihr Schlüssel für vertrauliche Angaben und Ihr quantensicherer Siegelschlüssel liegen nur in diesem Browser. Wo Ihr Passkey es unterstützt, werden sie aus Ihrem Passkey erzeugt, sodass ein Gerät, auf das Ihr Passkey synchronisiert wird, sie damit zurückbekommt. Ein Sicherungscode funktioniert überall. Er kann kein Geld bewegen (dafür braucht es immer Ihren Passkey), liest aber die vertraulichen Angaben Ihrer Organisationen: Bewahren Sie ihn wie ein Passwort auf.",
+	"Bring back with my passkey": "Mit meinem Passkey zurückholen",
+	"Copy backup code": "Sicherungscode kopieren",
+	"Show backup code": "Sicherungscode anzeigen",
+	"Restore from a backup code": "Aus einem Sicherungscode wiederherstellen",
+	"ancora-keys-1.…": "ancora-keys-1.…",
+	"Restore keys": "Schlüssel wiederherstellen",
+	"Private details read again on this device.":
+		"Vertrauliche Angaben sind auf diesem Gerät wieder lesbar.",
+	"Quantum-safe seals sign again on this device.":
+		"Quantensichere Siegel signieren auf diesem Gerät wieder.",
+	"Second passkey": "Zweiter Passkey",
+	"The new passkey can now sign for your account.":
+		"Der neue Passkey kann jetzt für Ihr Konto signieren.",
+	Devices: "Geräte",
+	passkeys: "Passkeys",
+	"can sign for this account.": "können für dieses Konto signieren.",
+	"One passkey": "Ein Passkey",
+	": if this device is lost, only Lifeline can get your positions back. Add a second one.":
+		": Geht dieses Gerät verloren, kann nur Lifeline Ihre Positionen zurückholen. Fügen Sie einen zweiten hinzu.",
+	"Name of the new passkey": "Name des neuen Passkeys",
+	"Your browser then asks where to create it: a security key, this device, or another phone by QR code.":
+		"Ihr Browser fragt dann, wo er erstellt werden soll: auf einem Sicherheitsschlüssel, diesem Gerät oder per QR-Code auf einem anderen Telefon.",
+	"YubiKey, old phone…": "YubiKey, altes Telefon…",
+	"Waiting for the passkey…": "Warte auf den Passkey…",
+	"Create and add": "Erstellen und hinzufügen",
+	"Add a passkey": "Passkey hinzufügen",
+	"Profile saved on Stellar. Every organization sees it.":
+		"Profil auf Stellar gespeichert. Jede Organisation sieht es.",
+	"Your profile": "Ihr Profil",
+	"Change picture": "Bild ändern",
+	"Add picture": "Bild hinzufügen",
+	"Remove picture": "Bild entfernen",
+	"PNG, JPG or WebP. Cropped to a 256×256 square in your browser.":
+		"PNG, JPG oder WebP. In Ihrem Browser auf ein Quadrat von 256×256 zugeschnitten.",
+	"Up to 64 characters.": "Bis zu 64 Zeichen.",
+	"Save profile": "Profil speichern",
+	"Notifications are off.": "Benachrichtigungen sind aus.",
+	"Notifications are on.": "Benachrichtigungen sind an.",
+	Notifications: "Benachrichtigungen",
+	"ancora tells this device when a payment or change waits for your approval, when your request went through or was declined, and when a guardian starts recovering your pass.":
+		"ancora benachrichtigt dieses Gerät, wenn eine Zahlung oder Änderung auf Ihre Freigabe wartet, wenn Ihre Anfrage durchging oder abgelehnt wurde und wenn eine Vertrauensperson beginnt, Ihren Pass wiederherzustellen.",
+	"Turn off on this device": "Auf diesem Gerät ausschalten",
+	"Turn on for this device": "Für dieses Gerät einschalten",
+	"Your ancora ID is copied. Share it to get invited.":
+		"Ihre ancora-ID ist kopiert. Teilen Sie sie, um eingeladen zu werden.",
+	"Couldn't copy. Select the ID and copy it by hand.":
+		"Kopieren fehlgeschlagen. Markieren Sie die ID und kopieren Sie sie von Hand.",
+	"Your ancora pass": "Ihr ancora-Pass",
+	"ancora pass": "ancora-Pass",
+	"Account on Stellar, secured by your passkey": "Konto auf Stellar, gesichert durch Ihren Passkey",
+	"Sample person": "Beispielperson",
+	"ancora ID": "ancora-ID",
+	"Copy ID": "ID kopieren",
+	"View on Stellar": "Auf Stellar ansehen",
+	"QR code of the ancora ID {id}": "QR-Code der ancora-ID {id}",
+	"Scan to invite": "Zum Einladen scannen",
+	Positions: "Positionen",
+	Login: "Anmeldung",
+	Network: "Netzwerk",
+	"Stellar testnet": "Stellar-Testnet",
+	"Sample data": "Beispieldaten",
+	You: "Sie",
+	"One pass for every organization you work with.":
+		"Ein Pass für jede Organisation, mit der Sie arbeiten.",
+	"Viewing as": "Ansicht als",
+	Demo: "Demo",
+	Person: "Person",
+	"Switch people to see the demo from their side. Signatures are simulated on sample data.":
+		"Wechseln Sie die Person, um die Demo aus ihrer Sicht zu sehen. Signaturen sind bei Beispieldaten simuliert.",
+	"Your positions": "Ihre Positionen",
+	"No positions yet.": "Noch keine Positionen.",
+	"Create an organization": "Organisation gründen",
+	"or share your ancora ID with one that wants to invite you.":
+		"oder teilen Sie Ihre ancora-ID mit einer Organisation, die Sie einladen möchte.",
+	" · founder": " · Gründer",
+	"Sign-in and recovery": "Anmeldung und Wiederherstellung",
+	"Your passkey on this device. It signs every approval through your own account on Stellar; the private key never leaves the device.":
+		"Ihr Passkey auf diesem Gerät. Er signiert jede Freigabe über Ihr eigenes Konto auf Stellar; der private Schlüssel verlässt das Gerät nie.",
+	Recovery: "Wiederherstellung",
+	"Protected by Lifeline": "Durch Lifeline geschützt",
+	"guardians can confirm a new pass for you. Details below.":
+		"Vertrauenspersonen können einen neuen Pass für Sie bestätigen. Details unten.",
+	": this passkey is the only key to your positions. Name guardians in Lifeline below.":
+		": Dieser Passkey ist der einzige Schlüssel zu Ihren Positionen. Benennen Sie unten in Lifeline Vertrauenspersonen.",
+	"Sign out": "Abmelden",
+	"Sign out to use another passkey on this device.":
+		"Melden Sie sich ab, um auf diesem Gerät einen anderen Passkey zu nutzen.",
+	"Sample data: signatures are simulated. Switch to the Stellar testnet below to sign in with a real passkey.":
+		"Beispieldaten: Signaturen sind simuliert. Wechseln Sie unten zum Stellar-Testnet, um sich mit einem echten Passkey anzumelden.",
+	Appearance: "Darstellung",
+	Theme: "Design",
+	System: "System",
+	Light: "Hell",
+	Dark: "Dunkel",
+	"Expert mode": "Expertenmodus",
+	"Show technical references (request IDs, rule tiers, on-chain links, the rules document).":
+		"Technische Angaben anzeigen (Anfrage-IDs, Regelstufen, On-chain-Links, das Regeldokument).",
+	"ancora works in any phone browser and can be added to your home screen. No app store needed.":
+		"ancora funktioniert in jedem Browser auf dem Telefon und lässt sich zum Home-Bildschirm hinzufügen. Kein App Store nötig.",
+	"an asset": "eine Währung",
+	"Pick an asset or a budget category; the general allowance is under People & limits.":
+		"Wählen Sie eine Währung oder eine Budgetkategorie; das allgemeine Kontingent finden Sie unter Personen & Limits.",
+	"Enter an amount like 200 or 1,500.": "Geben Sie einen Betrag wie 200 oder 1.500 ein.",
+	"Allowances by asset or category": "Kontingente nach Währung oder Kategorie",
+	"Let someone pay up to an amount per period without approvals, only in one asset or only for one budget category. Recipients outside an allowlist never use an allowance.":
+		"Lassen Sie jemanden bis zu einem Betrag pro Zeitraum ohne Freigabe zahlen, nur in einer Währung oder nur für eine Budgetkategorie. Empfänger außerhalb einer Freigabeliste nutzen nie ein Kontingent.",
+	"Any, counted in": "Beliebig, gezählt in",
+	Category: "Kategorie",
+	Any: "Beliebig",
+	Per: "Pro",
+	"Set allowance": "Kontingent festlegen",
+	"Accepted assets": "Angenommene Währungen",
+	"Rules are in": "Die Regeln gelten in",
+	". Payments in an asset of another currency take the strictest tier until a live exchange rate is connected.":
+		". Zahlungen in einer Währung einer anderen Landeswährung nehmen die strengste Stufe, bis ein aktueller Wechselkurs verbunden ist.",
+	" · earns in a Reserve": " · erwirtschaftet Erträge in einer Reserve",
+	"Still holds money or has open requests": "Hält noch Geld oder hat offene Anfragen",
+	"An organization needs at least one asset": "Eine Organisation braucht mindestens eine Währung",
+	"Stop accepting": "Nicht mehr annehmen",
+	"Accept another asset": "Weitere Währung annehmen",
+	Accept: "Annehmen",
+	"Accept any Stellar asset": "Beliebige Stellar-Währung annehmen",
+	"A token contract address (C…) or a classic asset as CODE:ISSUER. The token itself says what it is; the organization's contract checks the same when it accepts it.":
+		"Eine Token-Vertragsadresse (C…) oder ein klassisches Asset als CODE:HERAUSGEBER. Der Token sagt selbst, was er ist; der Vertrag der Organisation prüft dasselbe, wenn er ihn annimmt.",
+	"C… or EURC:GB3Q…": "C… oder EURC:GB3Q…",
+	"Stands for": "Steht für",
+	EUR: "EUR",
+	USD: "USD",
+	"Reserve vault (optional)": "Tresor für die Reserve (optional)",
+	"A DeFindex vault for this token, if one exists.":
+		"Ein DeFindex-Tresor für diesen Token, falls es einen gibt.",
+	Found: "Gefunden:",
+	"decimals) at": "Dezimalstellen) bei",
+	as: "als",
+	"Asking the token…": "Token wird abgefragt…",
+	"Name the category with letters or digits, like equipment or travel.":
+		"Benennen Sie die Kategorie mit Buchstaben oder Ziffern, etwa ausruestung oder reisen.",
+	"Envelopes per category and period, in": "Töpfe pro Kategorie und Zeitraum, in",
+	". A payment tagged with the category counts against it. Beyond what is left, a":
+		". Eine Zahlung mit dieser Kategorie zählt dagegen. Über den Rest hinaus schickt ein",
+	soft: "weiches",
+	"budget sends the payment through the strictest tier and flags it; a":
+		"Budget die Zahlung über die strengste Stufe und markiert sie; ein",
+	hard: "festes",
+	"budget refuses it. Enforced by the organization's contract.":
+		"Budget lehnt sie ab. Durchgesetzt vom Vertrag der Organisation.",
+	"Beyond the budget": "Über das Budget hinaus",
+	"Soft: strictest tier": "Weich: strengste Stufe",
+	"Hard: refuse": "Fest: ablehnen",
+	"Update budget": "Budget aktualisieren",
+	"Add budget": "Budget hinzufügen",
+	"Exchange rates": "Wechselkurse",
+	"Payments in other currencies are judged at the live rate from Reflector, a price service on Stellar. Without a rate from the last four days they take the strictest approvals and the seal, so nothing is ever under-approved.":
+		"Zahlungen in anderen Währungen werden zum aktuellen Kurs von Reflector bewertet, einem Preisdienst auf Stellar. Ohne einen Kurs aus den letzten vier Tagen nehmen sie die strengsten Freigaben und das Siegel, sodass nie etwas zu wenig freigegeben wird.",
+	"All accepted assets are in": "Alle angenommenen Währungen lauten auf",
+	"Stop using live rates": "Keine aktuellen Kurse mehr nutzen",
+	"Today a payment in another currency than":
+		"Heute nimmt eine Zahlung in einer anderen Währung als",
+	"takes the strictest approvals and the seal. With live rates it is judged by its value in":
+		"die strengsten Freigaben und das Siegel. Mit aktuellen Kursen wird sie nach ihrem Wert bewertet in",
+	"Use live exchange rates": "Aktuelle Wechselkurse nutzen",
+	People: "Personen",
+	"Sample directory": "Beispielverzeichnis",
+	"(you)": "(Sie)",
+	"Role of {name}": "Rolle von {name}",
+	"The organization needs at least one member who can approve its rules; the contract refuses this too.":
+		"Die Organisation braucht mindestens ein Mitglied, das ihre Regeln freigeben kann; auch der Vertrag lehnt das ab.",
+	"Invite by ancora ID": "Per ancora-ID einladen",
+	"Ask the person for the ID on their pass (starts with C). An agent's key works the same way: add it as a member and give it a spending limit.":
+		"Fragen Sie die Person nach der ID auf ihrem Pass (beginnt mit C). Der Schlüssel eines Agenten funktioniert genauso: Fügen Sie ihn als Mitglied hinzu und geben Sie ihm ein Ausgabelimit.",
+	Invite: "Einladen",
+	Role: "Rolle",
+	"Add person": "Person hinzufügen",
+	"Up to": "Bis zu",
+	per: "pro",
+	"Save limit": "Limit speichern",
+	"Remove limit": "Limit entfernen",
+	"Spending limit": "Ausgabelimit",
+	"left; payments inside it need no approval.": "übrig; Zahlungen darin brauchen keine Freigabe.",
+	"Set a limit": "Limit festlegen",
+	Anyone: "Alle",
+	"Others need the strictest approvals": "Andere brauchen die strengsten Freigaben",
+	"Only the list": "Nur die Liste",
+	"Enter a Stellar address (starts with G or C).":
+		"Geben Sie eine Stellar-Adresse ein (beginnt mit G oder C).",
+	"Who you pay": "Wen Sie bezahlen",
+	"Keep payments to known recipients. Tick saved recipients from the address book or add an address; the list and the setting change together, as one rule change.":
+		"Beschränken Sie Zahlungen auf bekannte Empfänger. Haken Sie gespeicherte Empfänger aus dem Adressbuch an oder fügen Sie eine Adresse hinzu; Liste und Einstellung ändern sich gemeinsam, als eine Regeländerung.",
+	"No saved recipients yet; add an address below.":
+		"Noch keine gespeicherten Empfänger; fügen Sie unten eine Adresse hinzu.",
+	"Add an address": "Adresse hinzufügen",
+	"G… or C…": "G… oder C…",
+	"Add to the list": "Zur Liste hinzufügen",
+	"Save who you pay": "Empfängerliste speichern",
+	Roles: "Rollen",
+	". This organization was created before custom roles existed; organizations created from 28 Oct 2026 can add, reorder and remove their own roles.":
+		". Diese Organisation wurde vor eigenen Rollen gegründet; ab dem 28. Okt. 2026 gegründete Organisationen können eigene Rollen hinzufügen, umsortieren und entfernen.",
+	"Name the role with letters or digits, like coach or project lead.":
+		"Benennen Sie die Rolle mit Buchstaben oder Ziffern, etwa trainer oder projektleitung.",
+	"This organization already has that role.": "Diese Organisation hat diese Rolle bereits.",
+	"An organization has at most {count} roles.": "Eine Organisation hat höchstens {count} Rollen.",
+	"Highest first. A higher role can approve wherever a lower one is asked for. Changing the roles is a rule change like any other, and the rules document's fingerprint covers them.":
+		"Höchste zuerst. Eine höhere Rolle kann überall freigeben, wo eine niedrigere verlangt wird. Rollen zu ändern ist eine Regeländerung wie jede andere, und der Fingerabdruck des Regeldokuments umfasst sie.",
+	"nobody yet": "noch niemand",
+	"Move {name} up": "{name} nach oben",
+	"Move {name} down": "{name} nach unten",
+	"Remove {name}": "{name} entfernen",
+	"Give these people another role first.": "Geben Sie diesen Personen zuerst eine andere Rolle.",
+	"New role": "Neue Rolle",
+	Coach: "Trainer",
+	"Add role": "Rolle hinzufügen",
+	"Save roles": "Rollen speichern",
+	Discard: "Verwerfen",
+	"Rules document": "Regeldokument",
+	"Does not match the contract": "Stimmt nicht mit dem Vertrag überein",
+	"The rules above are one readable document. Its fingerprint (SHA-256) is":
+		"Die Regeln oben sind ein lesbares Dokument. Sein Fingerabdruck (SHA-256) ist",
+	"stored in the organization's contract": "im Vertrag der Organisation gespeichert",
+	"shown here": "hier angezeigt",
+	", so anyone can check that the active rules are exactly these.":
+		", sodass jede Person prüfen kann, dass genau diese Regeln gelten.",
+	" This organization's active document is version 2; its next approved rule change is written as version 3.":
+		" Das gültige Dokument dieser Organisation ist Version 2; ihre nächste freigegebene Regeländerung wird als Version 3 geschrieben.",
+	" Version 3 is canonical JSON in the style of stellar-registry/perch (sorted keys, no whitespace, amounts as decimal strings).":
+		" Version 3 ist kanonisches JSON im Stil von stellar-registry/perch (sortierte Schlüssel, keine Leerzeichen, Beträge als Dezimal-Strings).",
+	"Who approves what, in {currency}. The organization's contract enforces these rules; payments in another currency take the strictest tier.":
+		"Wer was freigibt, in {currency}. Der Vertrag der Organisation setzt diese Regeln durch; Zahlungen in einer anderen Währung nehmen die strengste Stufe.",
+	"Setup phase": "Einrichtungsphase",
+	"Changing the rules": "Regeln ändern",
+	"Nobody else could approve yet, so you can add people and change the rules directly. Once others can approve, changes need their approval.":
+		"Noch kann niemand sonst freigeben, daher können Sie Personen hinzufügen und die Regeln direkt ändern. Sobald andere freigeben können, brauchen Änderungen deren Freigabe.",
+	"The founder is still setting up this organization and can make changes directly.":
+		"Der Gründer richtet diese Organisation noch ein und kann Änderungen direkt vornehmen.",
+	"Pick someone else as the successor.": "Wählen Sie eine andere Person als Nachfolge.",
+	"Enter the quiet period and the wait in days (at least a minute each).":
+		"Geben Sie die Ruhezeit und die Wartezeit in Tagen ein (jeweils mindestens eine Minute).",
+	"Claimed; the handover can be finished now.":
+		"Beansprucht; die Übergabe kann jetzt abgeschlossen werden.",
+	"Done.": "Erledigt.",
+	Succession: "Nachfolge",
+	"If someone goes quiet for longer than their quiet period, the successor they were given can claim their position. Any action of theirs during the wait cancels the claim; after it, the successor takes over and they leave. Money never moves.":
+		"Ist jemand länger als die Ruhezeit untätig, kann die für die Person bestimmte Nachfolge ihre Position beanspruchen. Jede Aktion der Person während der Wartezeit bricht den Anspruch ab; danach übernimmt die Nachfolge, und die Person scheidet aus. Geld bewegt sich nie.",
+	"takes over from": "übernimmt von",
+	after: "nach",
+	"quiet days.": "Ruhetagen.",
+	"I'm still here": "Ich bin noch da",
+	"Claim the position": "Position beanspruchen",
+	"Finish the handover": "Übergabe abschließen",
+	"Position of": "Position von",
+	"Taken over by": "Übernommen von",
+	"Quiet days": "Ruhetage",
+	"Save successor": "Nachfolge speichern",
+	"Based on the": "Beruht auf der Vorlage",
+	"template.": ".",
+	"Switch template": "Vorlage wechseln",
+	"People keep their rank (highest role to highest role), so nobody silently loses access. Tier limits reset to the template's defaults.":
+		"Personen behalten ihren Rang (höchste Rolle zu höchster Rolle), sodass niemand unbemerkt den Zugang verliert. Die Stufengrenzen werden auf die Werte der Vorlage zurückgesetzt.",
+	Switch: "Wechseln",
+	"Approval tiers": "Freigabestufen",
+	"Tier {number} upper limit in {currency}": "Obergrenze der Stufe {number} in {currency}",
+	Needs: "Braucht",
+	"Tier {number} objection window in hours": "Einspruchsfrist der Stufe {number} in Stunden",
+	hours: "Stunden",
+	"First payment to a new recipient: at least":
+		"Erste Zahlung an einen neuen Empfänger: mindestens",
+	"Done. Applied directly during the setup phase.":
+		"Erledigt. Während der Einrichtungsphase direkt angewendet.",
+	"Change requested. It takes effect once approved.":
+		"Änderung angefragt. Sie gilt, sobald sie freigegeben ist.",
+	"Enter the auditor's ancora ID or Stellar address (starts with C or G).":
+		"Geben Sie die ancora-ID oder Stellar-Adresse des Prüfers ein (beginnt mit C oder G).",
+	"Add an auditor": "Prüfer hinzufügen",
+	"Auditor added. Once they set up their device, share access with them.":
+		"Prüfer hinzugefügt. Sobald das Gerät eingerichtet ist, teilen Sie den Zugang.",
+	"Remove an auditor": "Prüfer entfernen",
+	"Auditor removed. Renew the key so they can't read what comes next.":
+		"Prüfer entfernt. Erneuern Sie den Schlüssel, damit Künftiges nicht mehr lesbar ist.",
+	"Auditors read your private details on their own audit page (ancora → Audit) once access is shared with them. They can't change anything.":
+		"Prüfer lesen Ihre vertraulichen Angaben auf ihrer eigenen Prüfseite (ancora → Prüfung), sobald der Zugang mit ihnen geteilt ist. Sie können nichts ändern.",
+	"Their ancora ID (C…)": "Ihre ancora-ID (C…)",
+	"Add auditor": "Prüfer hinzufügen",
+	"sample data": "Beispieldaten",
+	"Data source": "Datenquelle",
+	"Site default ({mode})": "Standard der Website ({mode})",
+	"Sample data is shown until it answers again.":
+		"Bis es wieder antwortet, werden Beispieldaten angezeigt.",
+	"Change the logo of {organization}": "Logo von {organization} ändern",
+	"Logo updated.": "Logo aktualisiert.",
+	"Organization logo": "Logo der Organisation",
+	"Stored in this browser": "In diesem Browser gespeichert",
+	"PNG, JPG or WebP, up to 5 MB. Resized to 256×256 in your browser":
+		"PNG, JPG oder WebP, bis 5 MB. In Ihrem Browser auf 256×256 verkleinert",
+	", stored with the organization on Stellar": ", bei der Organisation auf Stellar gespeichert",
+	"Only the organization's highest role can change the logo.":
+		"Nur die höchste Rolle der Organisation kann das Logo ändern.",
+	"Organization code": "Code der Organisation",
+	"ancora publishes every version of the organization's code on the Stellar Registry, where anyone can compare it with what this contract runs. Nobody can change the code for you: a move to a new release is a change the members approve under your rules.":
+		"ancora veröffentlicht jede Version des Codes der Organisation in der Stellar Registry, wo jede Person sie mit dem vergleichen kann, was dieser Vertrag ausführt. Niemand kann den Code für Sie ändern: Der Wechsel zu einer neuen Version ist eine Änderung, die die Mitglieder nach Ihren Regeln freigeben.",
+	Runs: "Läuft mit",
+	"Latest release": "Neueste Version",
+	"ancora-organization": "ancora-organization",
+	"Registry on Stellar": "Registry auf Stellar",
+	"During the setup phase the founder moves to it directly.":
+		"In der Einrichtungsphase wechselt der Gründer direkt.",
+	"Moving to it becomes a request that follows your rules for changes.":
+		"Der Wechsel wird eine Anfrage, die Ihren Regeln für Änderungen folgt.",
+	"Move to release": "Zur Version wechseln",
+	"This organization was created before organizations could move to new releases, so its code stays as it is. Organizations created from 1 Nov 2026 can.":
+		"Diese Organisation wurde gegründet, bevor Organisationen zu neuen Versionen wechseln konnten, daher bleibt ihr Code, wie er ist. Ab dem 1. Nov. 2026 gegründete Organisationen können es.",
+	"Private details": "Vertrauliche Angaben",
+	"Payment references and discussion entries can be stored on Stellar encrypted, so only your organization's members read them. Amounts and who you pay stay visible on the public network. Each person's key stays on their device; a new device gets access when another member shares it.":
+		"Verwendungszwecke und Diskussionsbeiträge können verschlüsselt auf Stellar gespeichert werden, sodass nur die Mitglieder Ihrer Organisation sie lesen. Beträge und wen Sie bezahlen, bleiben im öffentlichen Netzwerk sichtbar. Der Schlüssel jeder Person bleibt auf ihrem Gerät; ein neues Gerät erhält Zugang, wenn ein anderes Mitglied ihn teilt.",
+	"References and discussions": "Verwendungszwecke und Diskussionen",
+	"Readable by anyone on the network": "Für alle im Netzwerk lesbar",
+	" · not readable on this device yet": " · auf diesem Gerät noch nicht lesbar",
+	"This device": "Dieses Gerät",
+	"Set up": "Eingerichtet",
+	"Not set up": "Nicht eingerichtet",
+	"Not set up yet": "Noch nicht eingerichtet",
+	"Make details private": "Angaben vertraulich machen",
+	"Share access with": "Zugang teilen mit",
+	"Renew the key (after someone leaves)": "Schlüssel erneuern (nachdem jemand gegangen ist)",
+	"Use 2 to 32 lowercase letters, digits or dashes, like tejo-rowing-club.":
+		"Verwenden Sie 2 bis 32 Kleinbuchstaben, Ziffern oder Bindestriche, etwa tejo-rowing-club.",
+	"Register {organization} as {name}": "{organization} als {name} registrieren",
+	'Registered. {organization} is now "{name}" on the Stellar Registry.':
+		"Registriert. {organization} heißt in der Stellar Registry jetzt „{name}“.",
+	"Name on the Stellar Registry": "Name in der Stellar Registry",
+	"The Stellar Registry is a public, on-chain directory of contracts by name. A name lets people find and verify this organization's treasury contract without copying an address.":
+		"Die Stellar Registry ist ein öffentliches On-chain-Verzeichnis von Verträgen nach Namen. Mit einem Namen finden und prüfen Personen den Vertrag dieser Organisation, ohne eine Adresse zu kopieren.",
+	"Registered as": "Registriert als",
+	" · points to this contract": " · verweist auf diesen Vertrag",
+	" · not found on the registry": " · in der Registry nicht gefunden",
+	"No name yet.": "Noch kein Name.",
+	"Register another name": "Weiteren Namen registrieren",
+	"Lowercase letters, digits and dashes. Registered by your pass, which the registry records as the owner.":
+		"Kleinbuchstaben, Ziffern und Bindestriche. Registriert von Ihrem Pass, den die Registry als Eigentümer festhält.",
+	"” is free.": "“ ist frei.",
+	"Register with my passkey": "Mit meinem Passkey registrieren",
+	"” is already taken on the registry.": "“ ist in der Registry schon vergeben.",
+	"Check availability": "Verfügbarkeit prüfen",
+	"Only the organization's highest role registers a name.":
+		"Nur die höchste Rolle der Organisation registriert einen Namen.",
+	"Register my quantum-safe seal key": "Meinen quantensicheren Siegelschlüssel registrieren",
+	"Your seal key is on this device and registered with the organization.":
+		"Ihr Siegelschlüssel ist auf diesem Gerät und bei der Organisation registriert.",
+	"Payments above the seal threshold need an extra seal. With quantum-safe seals it is signed by an ML-DSA key (FIPS 204) that stays on the approving device, and the organization checks it before the money moves; a passkey alone no longer seals.":
+		"Zahlungen über der Siegelschwelle brauchen ein zusätzliches Siegel. Mit quantensicheren Siegeln wird es mit einem ML-DSA-Schlüssel (FIPS 204) signiert, der auf dem freigebenden Gerät bleibt, und die Organisation prüft es, bevor das Geld fließt; ein Passkey allein siegelt nicht mehr.",
+	Seals: "Siegel",
+	"Quantum-safe keys required": "Quantensichere Schlüssel verlangt",
+	"Your seal key": "Ihr Siegelschlüssel",
+	"On this device": "Auf diesem Gerät",
+	"Registered from another device; seal from there":
+		"Von einem anderen Gerät registriert; siegeln Sie von dort",
+	"Not created yet": "Noch nicht erstellt",
+	"Members with a key": "Mitglieder mit Schlüssel",
+	"None yet": "Noch keine",
+	"Create my seal key on this device": "Meinen Siegelschlüssel auf diesem Gerät erstellen",
+	"Go back to passkey seals": "Zurück zu Passkey-Siegeln",
+	"Require quantum-safe seals": "Quantensichere Siegel verlangen",
+	"For the organization you're viewing. Your own profile, theme and data source are on":
+		"Für die Organisation, die Sie ansehen. Ihr eigenes Profil, Design und Ihre Datenquelle finden Sie unter",
+	"your pass": "Ihr Pass",
+	"On Stellar": "Auf Stellar",
+	"This is a sample organization; nothing about it is on Stellar. Switch to the testnet on your pass to create a real one.":
+		"Dies ist eine Beispielorganisation; nichts davon ist auf Stellar. Wechseln Sie in Ihrem Pass zum Testnet, um eine echte zu gründen.",
+	"Account address on Stellar": "Kontoadresse auf Stellar",
+	"On: the founder can still change people and rules directly.":
+		"An: Der Gründer kann Personen und Regeln noch direkt ändern.",
+	"Over: changes to people and rules need approval like any request.":
+		"Vorbei: Änderungen an Personen und Regeln brauchen wie jede Anfrage eine Freigabe.",
+	"Verify on the Rules page": "Auf der Seite Regeln prüfen",
+	"The contract holds the money, knows its members by their ancora ID and enforces the rules itself. ancora's operator deploys it and sponsors fees, but holds no role in it.":
+		"Der Vertrag hält das Geld, kennt seine Mitglieder über ihre ancora-ID und setzt die Regeln selbst durch. Der Betreiber von ancora legt ihn an und übernimmt die Gebühren, hat darin aber keine Rolle.",
+	"Testnet deployments": "Testnet-Bereitstellungen",
+	"Not configured in this build. Run scripts/setup-testnet.sh to generate app/.env.testnet.":
+		"In diesem Build nicht konfiguriert. Führen Sie scripts/setup-testnet.sh aus, um app/.env.testnet zu erzeugen.",
+	"Checking the Stellar testnet…": "Stellar-Testnet wird geprüft…",
+	"Connecting to Stellar testnet…": "Verbindung zum Stellar-Testnet…",
+	"Unknown person": "Unbekannte Person",
+	"Restoring your session…": "Ihre Sitzung wird wiederhergestellt…",
 };

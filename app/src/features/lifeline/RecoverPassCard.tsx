@@ -4,6 +4,7 @@ import { type ClaimStatus, claimProgress, describeTimeLeft } from "../../domain/
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Lifeline.module.css";
@@ -13,6 +14,7 @@ import styles from "./Lifeline.module.css";
  * confirmed and the waiting period is over.
  */
 export function RecoverPassCard() {
+	const t = useT();
 	const { dataSource, me, personName } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [oldId, setOldId] = useState("");
@@ -35,7 +37,7 @@ export function RecoverPassCard() {
 	const finish = async () => {
 		if (!checked) return;
 		const result = await run(() => dataSource.lifeline.finishClaim(checked), {
-			success: "Your positions moved to this pass.",
+			success: t("Your positions moved to this pass."),
 		});
 		if (result?.ok) {
 			setDone({ recovered: result.value.recovered, skipped: result.value.skipped });
@@ -49,14 +51,18 @@ export function RecoverPassCard() {
 	const forMe = claim?.successor === me.id;
 
 	return (
-		<Card title="Recover an old pass">
+		<Card title={t("Recover an old pass")}>
 			<p className={styles.muted}>
-				Lost your previous pass? Give its ancora ID to the guardians you had named; they confirm
-				this new pass ({shortAddress(me.id)}). Once enough have confirmed and the waiting period is
-				over, complete the recovery here: your positions in every organization move to this pass.
+				{t(
+					"Lost your previous pass? Give its ancora ID to the guardians you had named; they confirm this new pass (",
+				)}
+				{shortAddress(me.id)}
+				{t(
+					"). Once enough have confirmed and the waiting period is over, complete the recovery here: your positions in every organization move to this pass.",
+				)}
 			</p>
 			<form className={styles.row} onSubmit={check}>
-				<Field label="Old ancora ID" htmlFor="old-pass">
+				<Field label={t("Old ancora ID")} htmlFor="old-pass">
 					<input
 						id="old-pass"
 						className={controlClass}
@@ -73,7 +79,7 @@ export function RecoverPassCard() {
 						className={buttonClass("secondary")}
 						disabled={busy || !oldId.trim()}
 					>
-						Check status
+						{t("Check status")}
 					</button>
 				</div>
 			</form>
@@ -81,27 +87,29 @@ export function RecoverPassCard() {
 				<div className={styles.form} aria-live="polite">
 					{status.recoveredTo && (
 						<p className={styles.muted}>
-							This pass was already recovered to {shortAddress(status.recoveredTo)}
+							{t("This pass was already recovered to")} {shortAddress(status.recoveredTo)}
 							{status.recoveredTo === me.id ? " (you)" : ""}.
 						</p>
 					)}
 					{!status.recoveredTo && !plan && (
 						<p className={styles.muted}>
-							{personName(checked)} never set up Lifeline, so this pass can't be recovered. Ask the
-							organizations to invite your new pass instead.
+							{personName(checked)}{" "}
+							{t(
+								"never set up Lifeline, so this pass can't be recovered. Ask the organizations to invite your new pass instead.",
+							)}
 						</p>
 					)}
 					{!status.recoveredTo && plan && !claim && (
 						<p className={styles.muted}>
-							No recovery started yet. One of the {plan.guardians.length} guardians has to start it
-							with your new ID.
+							{t("No recovery started yet. One of the")} {plan.guardians.length}{" "}
+							{t("guardians has to start it with your new ID.")}
 						</p>
 					)}
 					{!status.recoveredTo && plan && claim && progress && (
 						<p className={styles.muted}>
-							Claim for {shortAddress(claim.successor)}
-							{forMe ? " (this pass)" : " (not this pass)"}: {progress.confirmed} of{" "}
-							{progress.needed} guardians confirmed
+							{t("Claim for")} {shortAddress(claim.successor)}
+							{forMe ? t(" (this pass)") : t(" (not this pass)")}: {progress.confirmed} {t("of")}{" "}
+							{progress.needed} {t("guardians confirmed")}
 							{progress.confirmed >= progress.needed && !progress.ready
 								? `; waiting period ends ${describeTimeLeft(progress.waitLeftMs)}`
 								: ""}
@@ -111,13 +119,13 @@ export function RecoverPassCard() {
 					{(status.recoveredTo === me.id || (progress?.ready && forMe)) && (
 						<div>
 							<button type="button" className={buttonClass()} disabled={busy} onClick={finish}>
-								{status.recoveredTo ? "Hand over remaining positions" : "Complete recovery"}
+								{status.recoveredTo ? t("Hand over remaining positions") : t("Complete recovery")}
 							</button>
 						</div>
 					)}
 					{done && (
 						<p className={styles.muted}>
-							Handed over in {done.recovered.length} organization
+							{t("Handed over in")} {done.recovered.length} {t("organization")}
 							{done.recovered.length === 1 ? "" : "s"}
 							{done.skipped.length > 0
 								? `; ${done.skipped.length} older organization${done.skipped.length === 1 ? "" : "s"} can't hand over positions (ask them to invite this pass)`

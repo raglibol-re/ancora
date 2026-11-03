@@ -3,6 +3,7 @@ import { displayRate } from "../../domain/rules/controls.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatDateTime } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Controls.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
@@ -12,6 +13,7 @@ import { useProposeChange } from "./useProposeChange.ts";
  * rate instead of always taking the strictest approvals and the seal.
  */
 export function ExchangeRatesCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource } = useWorkspace();
 	const { propose, busy } = useProposeChange(account);
 	const oracle = dataSource.fxOracle;
@@ -31,17 +33,19 @@ export function ExchangeRatesCard({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Card title="Exchange rates">
+		<Card title={t("Exchange rates")}>
 			{org.fx ? (
 				<>
 					<p className={styles.muted}>
-						Payments in other currencies are judged at the live rate from Reflector, a price service
-						on Stellar. Without a rate from the last four days they take the strictest approvals and
-						the seal, so nothing is ever under-approved.
+						{t(
+							"Payments in other currencies are judged at the live rate from Reflector, a price service on Stellar. Without a rate from the last four days they take the strictest approvals and the seal, so nothing is ever under-approved.",
+						)}
 					</p>
 					<ul className={styles.list}>
 						{others.length === 0 && (
-							<li className={styles.item}>All accepted assets are in {org.baseCurrency}.</li>
+							<li className={styles.item}>
+								{t("All accepted assets are in")} {org.baseCurrency}.
+							</li>
 						)}
 						{others.map((currency) => (
 							<li key={currency} className={styles.item}>
@@ -55,14 +59,17 @@ export function ExchangeRatesCard({ account }: { account: OrgAccount }) {
 						disabled={busy}
 						onClick={() => propose({ type: "setFxOracle", oracle: null })}
 					>
-						Stop using live rates
+						{t("Stop using live rates")}
 					</button>
 				</>
 			) : (
 				<>
 					<p className={styles.muted}>
-						Today a payment in another currency than {org.baseCurrency} takes the strictest
-						approvals and the seal. With live rates it is judged by its value in {org.baseCurrency}.
+						{t("Today a payment in another currency than")} {org.baseCurrency}{" "}
+						{t(
+							"takes the strictest approvals and the seal. With live rates it is judged by its value in",
+						)}{" "}
+						{org.baseCurrency}.
 					</p>
 					<button
 						type="button"
@@ -70,7 +77,7 @@ export function ExchangeRatesCard({ account }: { account: OrgAccount }) {
 						disabled={busy}
 						onClick={() => propose({ type: "setFxOracle", oracle })}
 					>
-						Use live exchange rates
+						{t("Use live exchange rates")}
 					</button>
 				</>
 			)}

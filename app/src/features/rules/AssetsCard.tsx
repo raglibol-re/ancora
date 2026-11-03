@@ -6,6 +6,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./PeopleCard.module.css";
@@ -16,6 +17,7 @@ import { useProposeChange } from "./useProposeChange.ts";
  * any rule change; an asset with money or open requests on it can't be dropped.
  */
 export function AssetsCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource } = useWorkspace();
 	const { propose, busy } = useProposeChange(account);
 	const { org } = account;
@@ -64,10 +66,12 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 	};
 
 	return (
-		<Card title="Accepted assets">
+		<Card title={t("Accepted assets")}>
 			<p className={styles.you}>
-				Rules are in {org.baseCurrency}. Payments in an asset of another currency take the strictest
-				tier until a live exchange rate is connected.
+				{t("Rules are in")} {org.baseCurrency}
+				{t(
+					". Payments in an asset of another currency take the strictest tier until a live exchange rate is connected.",
+				)}
 			</p>
 			<ul className={styles.list}>
 				{org.assets.map((asset) => {
@@ -76,7 +80,7 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 					return (
 						<li key={asset.token} className={styles.person}>
 							<span className={styles.name}>
-								{asset.symbol} ({asset.currency}){asset.vault ? " · earns in a Reserve" : ""}
+								{asset.symbol} ({asset.currency}){asset.vault ? t(" · earns in a Reserve") : ""}
 								<span className={styles.id}>{asset.token}</span>
 							</span>
 							<span className={styles.you}>
@@ -89,14 +93,14 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 								disabled={busy || inUse || org.assets.length === 1}
 								title={
 									inUse
-										? "Still holds money or has open requests"
+										? t("Still holds money or has open requests")
 										: org.assets.length === 1
-											? "An organization needs at least one asset"
+											? t("An organization needs at least one asset")
 											: undefined
 								}
 								onClick={() => propose({ type: "removeAsset", token: asset.token })}
 							>
-								Stop accepting
+								{t("Stop accepting")}
 							</button>
 						</li>
 					);
@@ -104,7 +108,7 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 			</ul>
 			{options.length > 0 && (
 				<form className={styles.invite} onSubmit={add}>
-					<Field label="Accept another asset" htmlFor="asset-choice">
+					<Field label={t("Accept another asset")} htmlFor="asset-choice">
 						<select
 							id="asset-choice"
 							className={controlClass}
@@ -119,21 +123,23 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 						</select>
 					</Field>
 					<button type="submit" className={buttonClass()} disabled={busy || !selected}>
-						Accept
+						{t("Accept")}
 					</button>
 				</form>
 			)}
 			<form className={styles.invite} onSubmit={check}>
 				<Field
-					label="Accept any Stellar asset"
+					label={t("Accept any Stellar asset")}
 					htmlFor="asset-reference"
-					hint="A token contract address (C…) or a classic asset as CODE:ISSUER. The token itself says what it is; the organization's contract checks the same when it accepts it."
+					hint={t(
+						"A token contract address (C…) or a classic asset as CODE:ISSUER. The token itself says what it is; the organization's contract checks the same when it accepts it.",
+					)}
 				>
 					<input
 						id="asset-reference"
 						className={controlClass}
 						value={reference}
-						placeholder="C… or EURC:GB3Q…"
+						placeholder={t("C… or EURC:GB3Q…")}
 						spellCheck={false}
 						autoComplete="off"
 						onChange={(e) => {
@@ -142,22 +148,22 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 						}}
 					/>
 				</Field>
-				<Field label="Stands for" htmlFor="asset-currency">
+				<Field label={t("Stands for")} htmlFor="asset-currency">
 					<select
 						id="asset-currency"
 						className={controlClass}
 						value={currency}
 						onChange={(e) => setCurrency(e.target.value as Currency)}
 					>
-						<option value="EUR">EUR</option>
-						<option value="USD">USD</option>
+						<option value="EUR">{t("EUR")}</option>
+						<option value="USD">{t("USD")}</option>
 					</select>
 				</Field>
 				{onTestnet && (
 					<Field
-						label="Reserve vault (optional)"
+						label={t("Reserve vault (optional)")}
 						htmlFor="asset-vault"
-						hint="A DeFindex vault for this token, if one exists."
+						hint={t("A DeFindex vault for this token, if one exists.")}
 					>
 						<input
 							id="asset-vault"
@@ -173,11 +179,11 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 				{found ? (
 					<>
 						<p className={styles.you}>
-							Found <strong>{found.symbol}</strong> ({found.name}, {found.decimals} decimals) at{" "}
-							<span className={styles.id}>{found.token}</span>
+							{t("Found")} <strong>{found.symbol}</strong> ({found.name}, {found.decimals}{" "}
+							{t("decimals) at")} <span className={styles.id}>{found.token}</span>
 						</p>
 						<button type="button" className={buttonClass()} disabled={busy} onClick={acceptFound}>
-							Accept {found.symbol} as {currency}
+							{t("Accept")} {found.symbol} {t("as")} {currency}
 						</button>
 					</>
 				) : (
@@ -186,7 +192,7 @@ export function AssetsCard({ account }: { account: OrgAccount }) {
 						className={buttonClass("secondary")}
 						disabled={inspecting || !reference.trim()}
 					>
-						{inspecting ? "Asking the token…" : "Check"}
+						{inspecting ? t("Asking the token…") : "Check"}
 					</button>
 				)}
 			</form>

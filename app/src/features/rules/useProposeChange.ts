@@ -1,5 +1,6 @@
 import type { OrgAccount } from "../../domain/account.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
+import { t } from "../../ui/i18n.ts";
 import { describeChange } from "../requests/describe.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -14,8 +15,8 @@ export function useProposeChange(account: OrgAccount) {
 			signature: { kind: "passkey", title: describeChange(account.org, change, personName) },
 			success: (outcome) =>
 				outcome === "applied"
-					? "Done. Applied directly during the setup phase."
-					: "Change requested. It takes effect once approved.",
+					? t("Done. Applied directly during the setup phase.")
+					: t("Change requested. It takes effect once approved."),
 		});
 
 	return { propose, busy };

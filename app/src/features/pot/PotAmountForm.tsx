@@ -4,6 +4,7 @@ import { type Cents, type Currency, parseAmountInput } from "../../domain/money.
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import styles from "./Pot.module.css";
 
 type Props = {
@@ -33,6 +34,7 @@ export function PotAmountForm({
 	busy,
 	onSubmit,
 }: Props) {
+	const t = useT();
 	const id = useId();
 	const [amount, setAmount] = useState("");
 	const [to, setTo] = useState("");
@@ -43,15 +45,15 @@ export function PotAmountForm({
 		event.preventDefault();
 		const cents = parseAmountInput(amount);
 		if (cents === null || cents <= 0) {
-			setError("Enter an amount above zero.");
+			setError(t("Enter an amount above zero."));
 			return;
 		}
 		if (cents > max) {
-			setError(`At most ${formatMoney(max, currency)}.`);
+			setError(t("At most {amount}.", { amount: formatMoney(max, currency) }));
 			return;
 		}
 		if (withRecipient && !StrKey.isValidContract(to.trim())) {
-			setError("Enter the other organization's account address (starts with C).");
+			setError(t("Enter the other organization's account address (starts with C)."));
 			return;
 		}
 		setError(null);
@@ -69,7 +71,7 @@ export function PotAmountForm({
 			<h3>{title}</h3>
 			<p className={styles.muted}>{hint}</p>
 			{withRecipient && (
-				<Field label="Their organization's address" htmlFor={`${id}-to`}>
+				<Field label={t("Their organization's address")} htmlFor={`${id}-to`}>
 					<input
 						id={`${id}-to`}
 						className={controlClass}
@@ -88,7 +90,7 @@ export function PotAmountForm({
 					</datalist>
 				</Field>
 			)}
-			<Field label={`Amount (${currency})`} htmlFor={`${id}-amount`} error={error}>
+			<Field label={t("Amount ({currency})", { currency })} htmlFor={`${id}-amount`} error={error}>
 				<input
 					id={`${id}-amount`}
 					className={controlClass}
@@ -100,7 +102,7 @@ export function PotAmountForm({
 			</Field>
 			<div className={styles.actions}>
 				<button type="submit" className={buttonClass("secondary")} disabled={busy}>
-					{working ? "Working on it…" : action}
+					{working ? t("Working on it…") : action}
 				</button>
 			</div>
 		</form>

@@ -32,11 +32,11 @@ export function AuditedOrganization({ account }: { account: OrgAccount }) {
 					className={buttonClass("secondary")}
 					onClick={() => downloadStatement(account, personName, pot)}
 				>
-					Download statement (CSV)
+					{t("Download statement (CSV)")}
 				</button>
 			}
 		>
-			<h3 className={styles.heading}>Requests</h3>
+			<h3 className={styles.heading}>{t("Requests")}</h3>
 			<ul className={styles.list}>
 				{account.requests.map((request) => (
 					<li key={request.id} className={styles.row}>
@@ -50,7 +50,7 @@ export function AuditedOrganization({ account }: { account: OrgAccount }) {
 					</li>
 				))}
 			</ul>
-			<h3 className={styles.heading}>Recipients</h3>
+			<h3 className={styles.heading}>{t("Recipients")}</h3>
 			<ul className={styles.list}>
 				{account.payees.map((payee) => (
 					<li key={payee.id} className={styles.row}>
@@ -64,8 +64,9 @@ export function AuditedOrganization({ account }: { account: OrgAccount }) {
 			</ul>
 			{pot.length > 0 && (
 				<p className={styles.muted}>
-					Confidential pot: {pot.length} private {pot.length === 1 ? "payment is" : "payments are"}{" "}
-					in the statement, read with the pot key shared with you.
+					{t("Confidential pot:")} {pot.length} {t("private")}{" "}
+					{pot.length === 1 ? t("payment is") : t("payments are")}{" "}
+					{t("in the statement, read with the pot key shared with you.")}
 				</p>
 			)}
 		</Card>

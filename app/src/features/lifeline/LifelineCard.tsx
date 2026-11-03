@@ -16,6 +16,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Lifeline.module.css";
@@ -31,6 +32,7 @@ type LifelineCardProps = {
  * claim waits. Shows an open claim against my pass with a way to cancel it.
  */
 export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) {
+	const t = useT();
 	const { dataSource, me, workspace, personOf, myAccounts } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [editing, setEditing] = useState(false);
@@ -41,14 +43,14 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 
 	const cancel = async () => {
 		const result = await run(() => dataSource.lifeline.cancelClaim(me.id), {
-			success: "The claim is cancelled. Your pass stays as it is.",
+			success: t("The claim is cancelled. Your pass stays as it is."),
 		});
 		if (result?.ok) onChanged();
 	};
 
 	const remove = async () => {
 		const result = await run(() => dataSource.lifeline.clearPlan(me.id), {
-			success: "Your recovery plan is removed.",
+			success: t("Your recovery plan is removed."),
 		});
 		if (result?.ok) {
 			setEditing(false);
@@ -58,29 +60,29 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 
 	return (
 		<div id="lifeline">
-			<Card title="Lifeline" action={sample ? <SimulatedTag /> : null}>
+			<Card title={t("Lifeline")} action={sample ? <SimulatedTag /> : null}>
 				<p className={styles.muted}>
-					If you lose this pass, the guardians you name here can confirm a new one. After the
-					waiting period your positions in every organization move to it. Recovery never moves
-					money, and while a claim waits you can cancel it from this pass.
+					{t(
+						"If you lose this pass, the guardians you name here can confirm a new one. After the waiting period your positions in every organization move to it. Recovery never moves money, and while a claim waits you can cancel it from this pass.",
+					)}
 				</p>
 				{error && <p className={styles.error}>{error}</p>}
 				{overview && !claim && (
 					<p className={styles.status}>
 						{plan ? (
 							<>
-								<span className={styles.protected}>Protected</span>
+								<span className={styles.protected}>{t("Protected")}</span>
 								<span className={styles.muted}>
-									{plan.threshold} of {plan.guardians.length} guardian
-									{plan.guardians.length === 1 ? "" : "s"} confirm ·{" "}
-									{describeWait(plan.waitSeconds)} waiting period
+									{plan.threshold} {t("of")} {plan.guardians.length} {t("guardian")}
+									{plan.guardians.length === 1 ? "" : "s"} {t("confirm ·")}{" "}
+									{describeWait(plan.waitSeconds)} {t("waiting period")}
 								</span>
 							</>
 						) : (
 							<>
-								<span className={styles.warn}>Not protected yet</span>
+								<span className={styles.warn}>{t("Not protected yet")}</span>
 								<span className={styles.muted}>
-									This pass is the only key to your positions. Name guardians.
+									{t("This pass is the only key to your positions. Name guardians.")}
 								</span>
 							</>
 						)}
@@ -88,16 +90,17 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 				)}
 				{plan && claim && (
 					<div className={styles.alert} role="alert">
-						<strong>Someone is recovering your pass.</strong>
+						<strong>{t("Someone is recovering your pass.")}</strong>
 						<span>
-							New pass {shortAddress(claim.successor)}, confirmed by{" "}
-							{claimProgress(plan, claim, Date.now()).confirmed} of {plan.threshold} guardians; can
-							finish {describeTimeLeft(claim.readyAt - Date.now())}. If this is not you, cancel it
-							now: your current pass keeps everything.
+							{t("New pass")} {shortAddress(claim.successor)}
+							{t(", confirmed by")} {claimProgress(plan, claim, Date.now()).confirmed} {t("of")}{" "}
+							{plan.threshold} {t("guardians; can finish")}{" "}
+							{describeTimeLeft(claim.readyAt - Date.now())}
+							{t(". If this is not you, cancel it now: your current pass keeps everything.")}
 						</span>
 						<div>
 							<button type="button" className={buttonClass()} disabled={busy} onClick={cancel}>
-								Cancel this claim
+								{t("Cancel this claim")}
 							</button>
 						</div>
 					</div>
@@ -120,8 +123,8 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 				)}
 				{legacy.length > 0 && (
 					<p className={styles.muted}>
-						Positions in {legacy.map((a) => a.org.name).join(", ")} were created before Lifeline and
-						can't be handed over; new organizations can.
+						{t("Positions in")} {legacy.map((a) => a.org.name).join(", ")}{" "}
+						{t("were created before Lifeline and can't be handed over; new organizations can.")}
 					</p>
 				)}
 				{overview && !editing && (
@@ -132,11 +135,11 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 							disabled={busy}
 							onClick={() => setEditing(true)}
 						>
-							{plan ? "Change plan" : "Set up Lifeline"}
+							{plan ? t("Change plan") : t("Set up Lifeline")}
 						</button>
 						{plan && (
 							<button type="button" className={styles.linkButton} disabled={busy} onClick={remove}>
-								Remove plan
+								{t("Remove plan")}
 							</button>
 						)}
 					</div>
@@ -150,7 +153,7 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 						onCancel={() => setEditing(false)}
 						onSave={async (next) => {
 							const result = await run(() => dataSource.lifeline.setPlan(me.id, next), {
-								success: "Your recovery plan is saved.",
+								success: t("Your recovery plan is saved."),
 							});
 							if (result?.ok) {
 								setEditing(false);
@@ -174,6 +177,7 @@ type PlanFormProps = {
 };
 
 function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: PlanFormProps) {
+	const t = useT();
 	const { me } = useWorkspace();
 	const [guardians, setGuardians] = useState<string[]>([...(initial?.guardians ?? [])]);
 	const [typed, setTyped] = useState("");
@@ -209,7 +213,9 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 	return (
 		<form className={styles.form} onSubmit={submit}>
 			<fieldset className={styles.form}>
-				<legend>Guardians (up to {MAX_GUARDIANS})</legend>
+				<legend>
+					{t("Guardians (up to")} {MAX_GUARDIANS})
+				</legend>
 				{people.length > 0 && (
 					<ul className={styles.guardians}>
 						{people.map((person) => (
@@ -232,16 +238,16 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 						<p key={id} className={styles.guardian}>
 							<span className={styles.guardianName}>{nameOf(id)}</span>
 							<button type="button" className={styles.linkButton} onClick={() => toggle(id)}>
-								Remove
+								{t("Remove")}
 							</button>
 						</p>
 					))}
 				{allowTyping && (
 					<div className={styles.row}>
 						<Field
-							label="Add a guardian by ancora ID"
+							label={t("Add a guardian by ancora ID")}
 							htmlFor="guardian-id"
-							hint="Anyone with an ancora pass, also outside your organizations."
+							hint={t("Anyone with an ancora pass, also outside your organizations.")}
 						>
 							<input
 								id="guardian-id"
@@ -260,14 +266,14 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 								disabled={!typed.trim()}
 								onClick={addTyped}
 							>
-								Add
+								{t("Add")}
 							</button>
 						</div>
 					</div>
 				)}
 			</fieldset>
 			<div className={styles.row}>
-				<Field label="Confirmations needed" htmlFor="threshold">
+				<Field label={t("Confirmations needed")} htmlFor="threshold">
 					<select
 						id="threshold"
 						className={controlClass}
@@ -276,15 +282,15 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 					>
 						{Array.from({ length: Math.max(1, guardians.length) }, (_, i) => i + 1).map((n) => (
 							<option key={n} value={n}>
-								{n} of {Math.max(1, guardians.length)}
+								{n} {t("of")} {Math.max(1, guardians.length)}
 							</option>
 						))}
 					</select>
 				</Field>
 				<Field
-					label="Waiting period"
+					label={t("Waiting period")}
 					htmlFor="wait"
-					hint="Time you have to cancel a claim that isn't yours."
+					hint={t("Time you have to cancel a claim that isn't yours.")}
 				>
 					<select
 						id="wait"
@@ -307,10 +313,10 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 			)}
 			<div className={styles.actions}>
 				<button type="submit" className={buttonClass()} disabled={busy}>
-					{busy ? "Saving…" : "Save plan"}
+					{busy ? "Saving…" : t("Save plan")}
 				</button>
 				<button type="button" className={styles.linkButton} onClick={onCancel}>
-					Cancel
+					{t("Cancel")}
 				</button>
 			</div>
 		</form>

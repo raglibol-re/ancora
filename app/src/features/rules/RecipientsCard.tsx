@@ -5,18 +5,21 @@ import type { RecipientRule } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
+import { msg } from "../../ui/i18n.ts";
 import { Segmented } from "../../ui/Segmented.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import styles from "./Controls.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
 
 const MODES: { value: RecipientRule["mode"]; label: string }[] = [
-	{ value: "open", label: "Anyone" },
-	{ value: "approve", label: "Others need the strictest approvals" },
-	{ value: "only", label: "Only the list" },
+	{ value: "open", label: msg("Anyone") },
+	{ value: "approve", label: msg("Others need the strictest approvals") },
+	{ value: "only", label: msg("Only the list") },
 ];
 
 /** Who the organization pays; saved as one rule change under the usual approvals. */
 export function RecipientsCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { propose, busy } = useProposeChange(account);
 	const current: RecipientRule = account.org.recipients ?? { mode: "open", allowed: [] };
 	const [mode, setMode] = useState(current.mode);
@@ -40,7 +43,7 @@ export function RecipientsCard({ account }: { account: OrgAccount }) {
 			StrKey.isValidEd25519PublicKey(address) ||
 			StrKey.isValidContract(address);
 		if (!address || !valid) {
-			setError("Enter a Stellar address (starts with G or C).");
+			setError(t("Enter a Stellar address (starts with G or C)."));
 			return;
 		}
 		setError(null);
@@ -51,21 +54,22 @@ export function RecipientsCard({ account }: { account: OrgAccount }) {
 	const save = () => propose({ type: "setRecipients", rule: { mode, allowed } });
 
 	return (
-		<Card title="Who you pay">
+		<Card title={t("Who you pay")}>
 			<p className={styles.muted}>
-				Keep payments to known recipients. Tick saved recipients from the address book or add an
-				address; the list and the setting change together, as one rule change.
+				{t(
+					"Keep payments to known recipients. Tick saved recipients from the address book or add an address; the list and the setting change together, as one rule change.",
+				)}
 			</p>
 			<Segmented<RecipientRule["mode"]>
-				label="Recipients"
+				label={t("Recipients")}
 				value={mode}
 				onChange={setMode}
-				options={MODES}
+				options={MODES.map((m) => ({ ...m, label: t(m.label) }))}
 			/>
 			{mode !== "open" && (
 				<>
 					{candidates.length === 0 ? (
-						<p className={styles.muted}>No saved recipients yet; add an address below.</p>
+						<p className={styles.muted}>{t("No saved recipients yet; add an address below.")}</p>
 					) : (
 						<ul className={styles.list}>
 							{candidates.map((address) => (
@@ -83,11 +87,11 @@ export function RecipientsCard({ account }: { account: OrgAccount }) {
 						</ul>
 					)}
 					<div className={styles.row}>
-						<Field label="Add an address" htmlFor="allow-address" error={error}>
+						<Field label={t("Add an address")} htmlFor="allow-address" error={error}>
 							<input
 								id="allow-address"
 								className={controlClass}
-								placeholder="G… or C…"
+								placeholder={t("G… or C…")}
 								spellCheck={false}
 								value={extra}
 								onChange={(e) => setExtra(e.target.value)}
@@ -95,12 +99,12 @@ export function RecipientsCard({ account }: { account: OrgAccount }) {
 						</Field>
 					</div>
 					<button type="button" className={buttonClass("secondary")} onClick={addExtra}>
-						Add to the list
+						{t("Add to the list")}
 					</button>
 				</>
 			)}
 			<button type="button" className={buttonClass()} disabled={busy} onClick={save}>
-				Save who you pay
+				{t("Save who you pay")}
 			</button>
 		</Card>
 	);

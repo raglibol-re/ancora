@@ -9,6 +9,7 @@ import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { currencySymbol, formatMoney } from "../../ui/format.ts";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./PeopleCard.module.css";
 import { useProposeChange } from "./useProposeChange.ts";
@@ -18,6 +19,7 @@ import { useProposeChange } from "./useProposeChange.ts";
  * role changes and limits are proposals like any rule change.
  */
 export function PeopleCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { workspace, personOf, dataSource, me } = useWorkspace();
 	const { propose, busy } = useProposeChange(account);
 	const { org } = account;
@@ -57,7 +59,10 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 	));
 
 	return (
-		<Card title="People" action={onTestnet ? null : <SimulatedTag label="Sample directory" />}>
+		<Card
+			title={t("People")}
+			action={onTestnet ? null : <SimulatedTag label={t("Sample directory")} />}
+		>
 			<ul className={styles.list}>
 				{org.members.map((member) => {
 					const person = personOf(member.personId);
@@ -67,12 +72,12 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 								<Avatar name={person.name} imageUrl={person.avatarUrl} shape="circle" />
 								<span className={styles.name}>
 									{person.name}
-									{member.personId === me.id && <span className={styles.you}> (you)</span>}
+									{member.personId === me.id && <span className={styles.you}> {t("(you)")}</span>}
 									{onTestnet && <span className={styles.id}>{member.personId}</span>}
 								</span>
 								<select
 									className={controlClass}
-									aria-label={`Role of ${person.name}`}
+									aria-label={t("Role of {name}", { name: person.name })}
 									value={member.roleId}
 									disabled={busy}
 									onChange={(e) =>
@@ -91,12 +96,14 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 									disabled={busy || wouldLock(member.personId)}
 									title={
 										wouldLock(member.personId)
-											? "The organization needs at least one member who can approve its rules; the contract refuses this too."
+											? t(
+													"The organization needs at least one member who can approve its rules; the contract refuses this too.",
+												)
 											: undefined
 									}
 									onClick={() => propose({ type: "removeMember", personId: member.personId })}
 								>
-									Remove
+									{t("Remove")}
 								</button>
 							</div>
 							<LimitRow
@@ -117,9 +124,11 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 				<form className={styles.invite} onSubmit={invite}>
 					{onTestnet ? (
 						<Field
-							label="Invite by ancora ID"
+							label={t("Invite by ancora ID")}
 							htmlFor="invite-person"
-							hint="Ask the person for the ID on their pass (starts with C). An agent's key works the same way: add it as a member and give it a spending limit."
+							hint={t(
+								"Ask the person for the ID on their pass (starts with C). An agent's key works the same way: add it as a member and give it a spending limit.",
+							)}
 						>
 							<input
 								id="invite-person"
@@ -132,7 +141,7 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 							/>
 						</Field>
 					) : (
-						<Field label="Invite" htmlFor="invite-person">
+						<Field label={t("Invite")} htmlFor="invite-person">
 							<select
 								id="invite-person"
 								className={controlClass}
@@ -147,7 +156,7 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 							</select>
 						</Field>
 					)}
-					<Field label="Role" htmlFor="invite-role">
+					<Field label={t("Role")} htmlFor="invite-role">
 						<select
 							id="invite-role"
 							className={controlClass}
@@ -158,7 +167,7 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 						</select>
 					</Field>
 					<button type="submit" className={buttonClass()} disabled={busy || !inviteId.trim()}>
-						Add person
+						{t("Add person")}
 					</button>
 				</form>
 			)}
@@ -178,6 +187,7 @@ type LimitRowProps = {
 
 /** A member's allowance: what's left this period, and a small editor for the top role to change it. */
 function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: LimitRowProps) {
+	const t = useT();
 	const currency = account.org.baseCurrency;
 	const [amount, setAmount] = useState(member.limit ? String(member.limit.amount / 100) : "");
 	const [period, setPeriod] = useState(
@@ -211,7 +221,7 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 		return (
 			<form className={styles.limitForm} onSubmit={save}>
 				<label className={styles.limitField}>
-					Up to {currencySymbol(currency)}
+					{t("Up to")} {currencySymbol(currency)}
 					<input
 						className={`${controlClass} ${styles.small}`}
 						inputMode="decimal"
@@ -220,7 +230,7 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 					/>
 				</label>
 				<label className={styles.limitField}>
-					per
+					{t("per")}
 					<select
 						className={controlClass}
 						value={period}
@@ -234,7 +244,7 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 					</select>
 				</label>
 				<button type="submit" className={buttonClass()} disabled={busy || !amount.trim()}>
-					Save limit
+					{t("Save limit")}
 				</button>
 				{member.limit && (
 					<button
@@ -243,11 +253,11 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 						disabled={busy}
 						onClick={remove}
 					>
-						Remove limit
+						{t("Remove limit")}
 					</button>
 				)}
 				<button type="button" className={styles.linkButton} onClick={onDone}>
-					Cancel
+					{t("Cancel")}
 				</button>
 			</form>
 		);
@@ -256,16 +266,16 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 		<p className={styles.limit}>
 			{member.limit ? (
 				<>
-					Spending limit {formatMoney(member.limit.amount, currency)} per{" "}
+					{t("Spending limit")} {formatMoney(member.limit.amount, currency)} {t("per")}{" "}
 					{periodLabel(member.limit.periodSeconds)} ·{" "}
-					{formatMoney(remainingAllowance(member.limit, Date.now()), currency)} left; payments
-					inside it need no approval.
+					{formatMoney(remainingAllowance(member.limit, Date.now()), currency)}{" "}
+					{t("left; payments inside it need no approval.")}
 				</>
 			) : (
 				"No spending limit: every payment follows the rules."
 			)}{" "}
 			<button type="button" className={styles.linkButton} disabled={busy} onClick={onEdit}>
-				{member.limit ? "Change" : "Set a limit"}
+				{member.limit ? "Change" : t("Set a limit")}
 			</button>
 		</p>
 	);

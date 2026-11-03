@@ -7,8 +7,10 @@ import type { RuleError } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatDateTime, formatMoney } from "../../ui/format.ts";
+import { t } from "../../ui/i18n.ts";
 import { Page } from "../../ui/Page.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -18,7 +20,7 @@ import { usePot } from "./usePot.ts";
 
 /** What to say once a pot step went through: done, or waiting for the rules. */
 const said = (done: string) => (outcome: PotOutcome) =>
-	outcome === "applied" ? done : "Requested. It goes once your rules are met (see Approvals).";
+	outcome === "applied" ? done : t("Requested. It goes once your rules are met (see Approvals).");
 
 const ENTRY_LABELS = {
 	deposit: "Moved in",
@@ -28,10 +30,13 @@ const ENTRY_LABELS = {
 } as const;
 
 export function PotPage() {
+	const t = useT();
 	return (
 		<Page
-			title="Confidential pot"
-			lead="Money in the pot is held by a Stellar contract that hides its balance and the amounts paid between pots. Your members read them on their devices; who pays whom, and what moves in or out, stays public."
+			title={t("Confidential pot")}
+			lead={t(
+				"Money in the pot is held by a Stellar contract that hides its balance and the amounts paid between pots. Your members read them on their devices; who pays whom, and what moves in or out, stays public.",
+			)}
 		>
 			<OrgRequired>{(account) => <Pot key={account.org.id} account={account} />}</OrgRequired>
 		</Page>
@@ -39,26 +44,26 @@ export function PotPage() {
 }
 
 function Pot({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { support, status, error, loading, load } = usePot(account.org.id);
 	if (!support) {
 		return (
-			<Card title="Confidential pot">
+			<Card title={t("Confidential pot")}>
 				<p className={styles.muted}>
-					The pot runs on the Stellar testnet. Switch to the testnet on your pass to use it.
+					{t("The pot runs on the Stellar testnet. Switch to the testnet on your pass to use it.")}
 				</p>
 			</Card>
 		);
 	}
 	return (
 		<Card
-			title="Confidential pot"
-			action={<SimulatedTag label="Preview" title="A testnet preview, not audited" />}
+			title={t("Confidential pot")}
+			action={<SimulatedTag label={t("Preview")} title={t("A testnet preview, not audited")} />}
 		>
 			<p className={styles.muted}>
-				A preview on the testnet: the proofs follow OpenZeppelin's confidential token, whose recipe
-				is still provisional, and nothing here has been audited. Each step that moves money is a
-				request under your organization's rules; a payment's amount can't be seen by the contract,
-				so it always takes your strictest approvals.
+				{t(
+					"A preview on the testnet: the proofs follow OpenZeppelin's confidential token, whose recipe is still provisional, and nothing here has been audited. Each step that moves money is a request under your organization's rules; a payment's amount can't be seen by the contract, so it always takes your strictest approvals.",
+				)}
 			</p>
 			{error && (
 				<p className={styles.muted} role="alert">
@@ -74,10 +79,10 @@ function Pot({ account }: { account: OrgAccount }) {
 					onChanged={load}
 				/>
 			) : (
-				<p className={styles.muted}>Reading the pot…</p>
+				<p className={styles.muted}>{t("Reading the pot…")}</p>
 			)}
 			<p className={styles.meta}>
-				Pot contract <code className={styles.code}>{shortAddress(support.contract())}</code>
+				{t("Pot contract")} <code className={styles.code}>{shortAddress(support.contract())}</code>
 			</p>
 		</Card>
 	);
@@ -93,6 +98,7 @@ type BodyProps = {
 };
 
 function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
+	const t = useT();
 	const { me, personName, workspace } = useWorkspace();
 	const { run, busy: running } = useCommand();
 	const busy = running || reading;
@@ -125,7 +131,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 	if (!asset) {
 		return (
 			<p className={styles.muted}>
-				The pot holds the test USDC. Accept it under Rules → Accounts to use the pot.
+				{t("The pot holds the test USDC. Accept it under Rules → Accounts to use the pot.")}
 			</p>
 		);
 	}
@@ -136,8 +142,12 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 			<div className={styles.form}>
 				<p className={styles.muted}>
 					{status.state === "closed"
-						? "Opening the pot creates its key (kept with your private details, so every member's device reads it), proves it on this device, and asks your organization to open its pot account. Your passkey is asked a few times."
-						: "The pot key exists; opening the account waits for your rules (see Approvals). If that request was declined, ask again."}
+						? t(
+								"Opening the pot creates its key (kept with your private details, so every member's device reads it), proves it on this device, and asks your organization to open its pot account. Your passkey is asked a few times.",
+							)
+						: t(
+								"The pot key exists; opening the account waits for your rules (see Approvals). If that request was declined, ask again.",
+							)}
 				</p>
 				<div className={styles.actions}>
 					<button
@@ -152,7 +162,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 							)
 						}
 					>
-						{status.state === "closed" ? "Open the pot" : "Ask again"}
+						{status.state === "closed" ? t("Open the pot") : t("Ask again")}
 					</button>
 				</div>
 			</div>
@@ -161,9 +171,9 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 	if (status.state === "unreadable") {
 		return (
 			<p className={styles.muted}>
-				The pot is open, but the history the network keeps (about a week) doesn't reach back far
-				enough to read its balance on this device. Its money is safe; the next payment out or
-				in-and-merge will make it readable again.
+				{t(
+					"The pot is open, but the history the network keeps (about a week) doesn't reach back far enough to read its balance on this device. Its money is safe; the next payment out or in-and-merge will make it readable again.",
+				)}
 			</p>
 		);
 	}
@@ -173,14 +183,15 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 			<div>
 				<p className={styles.balance}>{money(status.spendable)}</p>
 				<p className={styles.meta}>
-					Spendable in the pot
+					{t("Spendable in the pot")}
 					{status.incoming > 0 ? ` · ${money(status.incoming)} arrived, not yet spendable` : ""}
 				</p>
 			</div>
 			{waiting && (
 				<p className={styles.muted} role="status">
-					A pot payment is waiting for approval. Until it runs, new payments and making incoming
-					money spendable are paused: they would change the balance its proof was made for.
+					{t(
+						"A pot payment is waiting for approval. Until it runs, new payments and making incoming money spendable are paused: they would change the balance its proof was made for.",
+					)}
 				</p>
 			)}
 			{status.incoming > 0 && (
@@ -193,18 +204,20 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 							step(
 								"Make the pot's incoming money spendable",
 								() => support.merge(orgId, me.id),
-								() => "The incoming money is spendable now.",
+								() => t("The incoming money is spendable now."),
 							)
 						}
 					>
-						Make it spendable
+						{t("Make it spendable")}
 					</button>
 				</div>
 			)}
 			<div className={styles.grid}>
 				<PotAmountForm
-					title="Move money in"
-					hint="From the account into the pot. The amount is public; what happens to it in the pot isn't."
+					title={t("Move money in")}
+					hint={t(
+						"From the account into the pot. The amount is public; what happens to it in the pot isn't.",
+					)}
 					action="Move in"
 					currency={asset.currency}
 					max={availableBalance(account, asset.token)}
@@ -218,8 +231,10 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 					}
 				/>
 				<PotAmountForm
-					title="Pay another organization"
-					hint="To their pot. Only your two organizations read the amount. The proof is made on this device and takes a few seconds."
+					title={t("Pay another organization")}
+					hint={t(
+						"To their pot. Only your two organizations read the amount. The proof is made on this device and takes a few seconds.",
+					)}
 					action="Pay privately"
 					currency={asset.currency}
 					max={status.spendable + status.incoming}
@@ -235,8 +250,8 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 					}
 				/>
 				<PotAmountForm
-					title="Take money out"
-					hint="Back to the account; the amount becomes public."
+					title={t("Take money out")}
+					hint={t("Back to the account; the amount becomes public.")}
 					action="Take out"
 					currency={asset.currency}
 					max={status.spendable + status.incoming}
@@ -250,9 +265,9 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 					}
 				/>
 			</div>
-			<h3>History</h3>
+			<h3>{t("History")}</h3>
 			{status.entries.length === 0 ? (
-				<p className={styles.muted}>Nothing yet in the last week.</p>
+				<p className={styles.muted}>{t("Nothing yet in the last week.")}</p>
 			) : (
 				<ul className={styles.list}>
 					{status.entries.map((entry) => (
@@ -263,7 +278,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 									{" "}
 									· {formatDateTime(entry.at)} ·{" "}
 									{entry.counterparty === orgId
-										? "this organization"
+										? t("this organization")
 										: personName(entry.counterparty)}
 								</span>
 							</span>

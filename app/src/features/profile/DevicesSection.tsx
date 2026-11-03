@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import type { IdentitySupport } from "../../domain/dataSource.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { controlClass, Field } from "../../ui/Field.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import styles from "./ProfilePage.module.css";
 
@@ -11,6 +12,7 @@ import styles from "./ProfilePage.module.css";
  * device or a phone (by QR) when you add it.
  */
 export function DevicesSection({ identity }: { identity: IdentitySupport }) {
+	const t = useT();
 	const { run, busy } = useCommand();
 	const [count, setCount] = useState<number | null>(null);
 	const [adding, setAdding] = useState(false);
@@ -28,8 +30,8 @@ export function DevicesSection({ identity }: { identity: IdentitySupport }) {
 
 	const add = async (event: FormEvent) => {
 		event.preventDefault();
-		const result = await run(() => identity.addPasskey(label.trim() || "Second passkey"), {
-			success: "The new passkey can now sign for your account.",
+		const result = await run(() => identity.addPasskey(label.trim() || t("Second passkey")), {
+			success: t("The new passkey can now sign for your account."),
 		});
 		if (result?.ok) {
 			setAdding(false);
@@ -40,41 +42,48 @@ export function DevicesSection({ identity }: { identity: IdentitySupport }) {
 
 	return (
 		<div>
-			<dt>Devices</dt>
+			<dt>{t("Devices")}</dt>
 			<dd>
 				{count === null ? (
 					"Reading your passkeys…"
 				) : count > 1 ? (
 					<>
-						<span className={styles.protected}>{count} passkeys</span> can sign for this account.
+						<span className={styles.protected}>
+							{count} {t("passkeys")}
+						</span>{" "}
+						{t("can sign for this account.")}
 					</>
 				) : (
 					<>
-						<span className={styles.warn}>One passkey</span>: if this device is lost, only Lifeline
-						can get your positions back. Add a second one.
+						<span className={styles.warn}>{t("One passkey")}</span>
+						{t(
+							": if this device is lost, only Lifeline can get your positions back. Add a second one.",
+						)}
 					</>
 				)}
 				{adding ? (
 					<form className={styles.inlineForm} onSubmit={add}>
 						<Field
-							label="Name of the new passkey"
+							label={t("Name of the new passkey")}
 							htmlFor="passkey-label"
-							hint="Your browser then asks where to create it: a security key, this device, or another phone by QR code."
+							hint={t(
+								"Your browser then asks where to create it: a security key, this device, or another phone by QR code.",
+							)}
 						>
 							<input
 								id="passkey-label"
 								className={controlClass}
 								value={label}
-								placeholder="YubiKey, old phone…"
+								placeholder={t("YubiKey, old phone…")}
 								onChange={(e) => setLabel(e.target.value)}
 							/>
 						</Field>
 						<div className={styles.actions}>
 							<button type="submit" className={buttonClass()} disabled={busy}>
-								{busy ? "Waiting for the passkey…" : "Create and add"}
+								{busy ? t("Waiting for the passkey…") : t("Create and add")}
 							</button>
 							<button type="button" className={styles.linkButton} onClick={() => setAdding(false)}>
-								Cancel
+								{t("Cancel")}
 							</button>
 						</div>
 					</form>
@@ -86,7 +95,7 @@ export function DevicesSection({ identity }: { identity: IdentitySupport }) {
 							disabled={busy}
 							onClick={() => setAdding(true)}
 						>
-							Add a passkey
+							{t("Add a passkey")}
 						</button>
 					</div>
 				)}

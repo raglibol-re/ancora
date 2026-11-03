@@ -3,6 +3,7 @@ import { isSetupPhase } from "../../domain/rules/governance.ts";
 import { evaluateGovernance } from "../../domain/rules/policy.ts";
 import { Card } from "../../ui/Card.tsx";
 import { Page } from "../../ui/Page.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { describeEvaluation } from "../requests/describe.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -23,21 +24,29 @@ export function RulesPage() {
 }
 
 function Rules({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { me } = useWorkspace();
 	const setup = isSetupPhase(account.org);
 	const founder = account.org.founderId === me.id;
 
 	return (
 		<Page
-			title="Rules"
-			lead={`Who approves what, in ${account.org.baseCurrency}. The organization's contract enforces these rules; payments in another currency take the strictest tier.`}
+			title={t("Rules")}
+			lead={t(
+				"Who approves what, in {currency}. The organization's contract enforces these rules; payments in another currency take the strictest tier.",
+				{ currency: account.org.baseCurrency },
+			)}
 		>
-			<Card title={setup ? "Setup phase" : "Changing the rules"}>
+			<Card title={setup ? t("Setup phase") : t("Changing the rules")}>
 				<p>
 					{setup && founder
-						? "Nobody else could approve yet, so you can add people and change the rules directly. Once others can approve, changes need their approval."
+						? t(
+								"Nobody else could approve yet, so you can add people and change the rules directly. Once others can approve, changes need their approval.",
+							)
 						: setup
-							? "The founder is still setting up this organization and can make changes directly."
+							? t(
+									"The founder is still setting up this organization and can make changes directly.",
+								)
 							: `Changes to people and rules are requests too. ${describeEvaluation(account.org, evaluateGovernance(account.org.policy))}`}
 				</p>
 			</Card>

@@ -22,6 +22,7 @@ import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatRelative } from "../../ui/format.ts";
 import { Segmented } from "../../ui/Segmented.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./DiscussionCard.module.css";
@@ -37,6 +38,7 @@ export function DiscussionCard({
 	account: OrgAccount;
 	request: ApprovalRequest;
 }) {
+	const t = useT();
 	const { dataSource, me, personOf } = useWorkspace();
 	const { run, busy } = useCommand();
 	const entries = discussionOf(account, request.id);
@@ -57,7 +59,7 @@ export function DiscussionCard({
 		setError(null);
 		const result = await run(
 			() => dataSource.discussions.post(orgId, request.id, me.id, { kind, text: valid.value }),
-			{ success: kind === "question" ? "Question posted." : "Posted." },
+			{ success: kind === "question" ? t("Question posted.") : "Posted." },
 		);
 		if (result?.ok) setText("");
 	};
@@ -69,17 +71,18 @@ export function DiscussionCard({
 
 	const answer = (entry: DiscussionEntry) =>
 		run(() => dataSource.discussions.markAnswered(orgId, request.id, entry.id, me.id), {
-			success: "Marked as answered.",
+			success: t("Marked as answered."),
 		});
 
 	return (
 		<Card
-			title="Discussion"
+			title={t("Discussion")}
 			action={summary ? <span className={styles.summary}>{summary}</span> : null}
 		>
 			<p className={styles.muted}>
-				Reasons for and against, questions and comments help approvers decide. Taking part here
-				doesn't count as an approval.
+				{t(
+					"Reasons for and against, questions and comments help approvers decide. Taking part here doesn't count as an approval.",
+				)}
 			</p>
 			{entries.length > 0 && (
 				<ul className={styles.list}>
@@ -94,7 +97,8 @@ export function DiscussionCard({
 									<div className={styles.head}>
 										<span className={`${styles.kind} ${styles[entry.kind]}`}>
 											{KIND_LABELS[entry.kind]}
-											{entry.kind === "question" && (entry.answered ? " · answered" : " · open")}
+											{entry.kind === "question" &&
+												(entry.answered ? t(" · answered") : t(" · open"))}
 										</span>
 										<span className={styles.muted}>
 											{author.name} · {formatRelative(entry.at, Date.now())}
@@ -107,7 +111,7 @@ export function DiscussionCard({
 											className={`${styles.reaction} ${mine === "up" ? styles.active : ""}`}
 											disabled={busy || !member || !canReact(entry, me.id)}
 											aria-pressed={mine === "up"}
-											aria-label="Thumbs up"
+											aria-label={t("Thumbs up")}
 											onClick={() => react(entry, "up")}
 										>
 											👍 {counts.up}
@@ -117,7 +121,7 @@ export function DiscussionCard({
 											className={`${styles.reaction} ${mine === "down" ? styles.active : ""}`}
 											disabled={busy || !member || !canReact(entry, me.id)}
 											aria-pressed={mine === "down"}
-											aria-label="Thumbs down"
+											aria-label={t("Thumbs down")}
 											onClick={() => react(entry, "down")}
 										>
 											👎 {counts.down}
@@ -129,7 +133,7 @@ export function DiscussionCard({
 												disabled={busy}
 												onClick={() => answer(entry)}
 											>
-												Mark as answered
+												{t("Mark as answered")}
 											</button>
 										)}
 									</div>
@@ -142,16 +146,18 @@ export function DiscussionCard({
 			{member ? (
 				<form className={styles.form} onSubmit={post}>
 					<Segmented<EntryKind>
-						label="Kind"
+						label={t("Kind")}
 						value={kind}
 						onChange={setKind}
 						options={KINDS.map((k) => ({ value: k, label: KIND_LABELS[k] }))}
 					/>
 					<Field
-						label={kind === "question" ? "Your question" : "Your point"}
+						label={kind === "question" ? t("Your question") : t("Your point")}
 						htmlFor="discussion-text"
 						error={error}
-						hint={`Up to ${MAX_ENTRY_LENGTH} characters. Visible to the organization's members.`}
+						hint={t("Up to {count} characters. Visible to the organization's members.", {
+							count: MAX_ENTRY_LENGTH,
+						})}
 					>
 						<textarea
 							id="discussion-text"
@@ -167,12 +173,12 @@ export function DiscussionCard({
 							className={buttonClass("secondary")}
 							disabled={busy || !text.trim()}
 						>
-							Post
+							{t("Post")}
 						</button>
 					</div>
 				</form>
 			) : (
-				<p className={styles.muted}>Only members of the organization can take part.</p>
+				<p className={styles.muted}>{t("Only members of the organization can take part.")}</p>
 			)}
 		</Card>
 	);

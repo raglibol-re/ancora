@@ -6,6 +6,7 @@ import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { resizeLogo, validateLogoFile } from "../settings/logo.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -13,6 +14,7 @@ import styles from "./ProfilePage.module.css";
 
 /** Name and picture, saved to the person's on-chain profile in one passkey signature. */
 export function EditProfileCard({ identity }: { identity: IdentitySupport }) {
+	const t = useT();
 	const { me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [name, setName] = useState(me.name);
@@ -57,12 +59,12 @@ export function EditProfileCard({ identity }: { identity: IdentitySupport }) {
 				setPicture(null);
 				return ok(undefined);
 			},
-			{ success: "Profile saved on Stellar. Every organization sees it." },
+			{ success: t("Profile saved on Stellar. Every organization sees it.") },
 		);
 	};
 
 	return (
-		<Card title="Your profile">
+		<Card title={t("Your profile")}>
 			<form className={styles.form} onSubmit={save}>
 				<div className={styles.pictureRow}>
 					<Avatar name={name || me.name} imageUrl={preview} size="xl" shape="circle" />
@@ -75,7 +77,7 @@ export function EditProfileCard({ identity }: { identity: IdentitySupport }) {
 								disabled={busy}
 								className={styles.fileInput}
 							/>
-							{preview ? "Change picture" : "Add picture"}
+							{preview ? t("Change picture") : t("Add picture")}
 						</label>
 						{preview && (
 							<button
@@ -84,11 +86,11 @@ export function EditProfileCard({ identity }: { identity: IdentitySupport }) {
 								disabled={busy}
 								onClick={() => setPicture("remove")}
 							>
-								Remove picture
+								{t("Remove picture")}
 							</button>
 						)}
 						<span className={styles.muted}>
-							PNG, JPG or WebP. Cropped to a 256×256 square in your browser.
+							{t("PNG, JPG or WebP. Cropped to a 256×256 square in your browser.")}
 						</span>
 						{pictureError && (
 							<span className={styles.error} role="alert">
@@ -97,7 +99,7 @@ export function EditProfileCard({ identity }: { identity: IdentitySupport }) {
 						)}
 					</div>
 				</div>
-				<Field label="Your name" htmlFor="profile-name" hint="Up to 64 characters.">
+				<Field label={t("Your name")} htmlFor="profile-name" hint={t("Up to 64 characters.")}>
 					<input
 						id="profile-name"
 						className={controlClass}
@@ -112,7 +114,7 @@ export function EditProfileCard({ identity }: { identity: IdentitySupport }) {
 						className={buttonClass()}
 						disabled={busy || !changed || !name.trim()}
 					>
-						{busy ? "Saving…" : "Save profile"}
+						{busy ? "Saving…" : t("Save profile")}
 					</button>
 				</div>
 			</form>

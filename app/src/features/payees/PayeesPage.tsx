@@ -6,14 +6,16 @@ import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatDateTime } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./PayeesPage.module.css";
 
 export function PayeesPage() {
+	const t = useT();
 	return (
-		<Page title="Address book" lead="The people and companies your organization pays.">
+		<Page title={t("Address book")} lead={t("The people and companies your organization pays.")}>
 			<OrgRequired>
 				{(account) => <AddressBook key={account.org.id} account={account} />}
 			</OrgRequired>
@@ -30,6 +32,7 @@ function lastPaid(account: OrgAccount, payee: Payee): number | null {
 }
 
 function AddressBook({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource, me, personName } = useWorkspace();
 	const { run, busy } = useCommand();
 	const supported = !account.onchain || account.onchain.addressBook;
@@ -60,19 +63,22 @@ function AddressBook({ account }: { account: OrgAccount }) {
 	const save = async (event: FormEvent) => {
 		event.preventDefault();
 		if (!name.trim()) {
-			setError("Give the recipient a name.");
+			setError(t("Give the recipient a name."));
 			return;
 		}
 		if (!address.trim()) {
-			setError(account.onchain ? "Enter a Stellar address." : "Enter an IBAN.");
+			setError(account.onchain ? t("Enter a Stellar address.") : t("Enter an IBAN."));
 			return;
 		}
 		setError(null);
 		const result = await run(
 			() => dataSource.savePayee(account.org.id, me.id, { account: address, name, note }),
 			{
-				signature: { kind: "passkey", title: `Save ${name.trim()} in the address book` },
-				success: `${name.trim()} is in the address book.`,
+				signature: {
+					kind: "passkey",
+					title: t("Save {name} in the address book", { name: name.trim() }),
+				},
+				success: t("{name} is in the address book.", { name: name.trim() }),
 			},
 		);
 		if (result?.ok) reset();
@@ -80,8 +86,11 @@ function AddressBook({ account }: { account: OrgAccount }) {
 
 	const remove = (payee: Payee) =>
 		run(() => dataSource.removePayee(account.org.id, me.id, payee.account), {
-			signature: { kind: "passkey", title: `Remove ${payee.name} from the address book` },
-			success: `${payee.name} was removed from the address book.`,
+			signature: {
+				kind: "passkey",
+				title: t("Remove {name} from the address book", { name: payee.name }),
+			},
+			success: t("{name} was removed from the address book.", { name: payee.name }),
 		});
 
 	const row = (payee: Payee) => {
@@ -92,7 +101,7 @@ function AddressBook({ account }: { account: OrgAccount }) {
 					<span className={styles.name}>{payee.name}</span>
 					<span className={styles.meta}>
 						<code>{payee.account.length > 24 ? shortAddress(payee.account) : payee.account}</code>
-						{paid !== null ? ` · last paid ${formatDateTime(paid)}` : " · not paid yet"}
+						{paid !== null ? ` · last paid ${formatDateTime(paid)}` : t(" · not paid yet")}
 						{payee.saved && payee.savedBy && ` · saved by ${personName(payee.savedBy)}`}
 					</span>
 					{payee.note && <span className={styles.note}>{payee.note}</span>}
@@ -102,7 +111,7 @@ function AddressBook({ account }: { account: OrgAccount }) {
 						to={`/app/pay?payee=${encodeURIComponent(payee.id)}`}
 						className={buttonClass("secondary")}
 					>
-						Pay
+						{t("Pay")}
 					</Link>
 					{supported && (
 						<button
@@ -121,7 +130,7 @@ function AddressBook({ account }: { account: OrgAccount }) {
 							disabled={busy}
 							onClick={() => void remove(payee)}
 						>
-							Remove
+							{t("Remove")}
 						</button>
 					)}
 				</span>
@@ -131,25 +140,26 @@ function AddressBook({ account }: { account: OrgAccount }) {
 
 	return (
 		<>
-			<Card title="Saved recipients">
+			<Card title={t("Saved recipients")}>
 				{saved.length === 0 ? (
 					<p className={styles.muted}>
-						Nobody saved yet. Save a recipient below, or tick "Save to the address book" when you
-						pay someone new; every member then sees the same name for that address.
+						{t(
+							'Nobody saved yet. Save a recipient below, or tick "Save to the address book" when you pay someone new; every member then sees the same name for that address.',
+						)}
 					</p>
 				) : (
 					<ul className={styles.list}>{saved.map(row)}</ul>
 				)}
 			</Card>
 			{others.length > 0 && (
-				<Card title="Paid before, not saved">
+				<Card title={t("Paid before, not saved")}>
 					<ul className={styles.list}>{others.map(row)}</ul>
 				</Card>
 			)}
 			{supported ? (
-				<Card title={editing?.saved ? `Edit ${editing.name}` : "Save a recipient"}>
+				<Card title={editing?.saved ? `Edit ${editing.name}` : t("Save a recipient")}>
 					<form id="payee-form" className={styles.form} onSubmit={save}>
-						<Field label="Name" htmlFor="book-name">
+						<Field label={t("Name")} htmlFor="book-name">
 							<input
 								id="book-name"
 								className={controlClass}
@@ -160,9 +170,9 @@ function AddressBook({ account }: { account: OrgAccount }) {
 							/>
 						</Field>
 						<Field
-							label={account.onchain ? "Stellar address" : "IBAN"}
+							label={account.onchain ? t("Stellar address") : "IBAN"}
 							htmlFor="book-address"
-							hint={account.onchain ? "Starts with G or C." : undefined}
+							hint={account.onchain ? t("Starts with G or C.") : undefined}
 						>
 							<input
 								id="book-address"
@@ -173,7 +183,11 @@ function AddressBook({ account }: { account: OrgAccount }) {
 								onChange={(e) => setAddress(e.target.value)}
 							/>
 						</Field>
-						<Field label="Note" htmlFor="book-note" hint="Optional, shown to every member.">
+						<Field
+							label={t("Note")}
+							htmlFor="book-note"
+							hint={t("Optional, shown to every member.")}
+						>
 							<input
 								id="book-note"
 								className={controlClass}
@@ -190,21 +204,22 @@ function AddressBook({ account }: { account: OrgAccount }) {
 						)}
 						<div className={styles.buttons}>
 							<button type="submit" className={buttonClass()} disabled={busy}>
-								{editing?.saved ? "Save changes" : "Save recipient"}
+								{editing?.saved ? t("Save changes") : t("Save recipient")}
 							</button>
 							{editing && (
 								<button type="button" className={buttonClass("secondary")} onClick={reset}>
-									Cancel
+									{t("Cancel")}
 								</button>
 							)}
 						</div>
 					</form>
 				</Card>
 			) : (
-				<Card title="Save recipients">
+				<Card title={t("Save recipients")}>
 					<p className={styles.muted}>
-						This organization was created before the address book existed; organizations created
-						from 28 Oct 2026 keep saved recipients on their contract for every member.
+						{t(
+							"This organization was created before the address book existed; organizations created from 28 Oct 2026 keep saved recipients on their contract for every member.",
+						)}
 					</p>
 				</Card>
 			)}

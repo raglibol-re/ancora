@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { OrgAccount } from "../../domain/account.ts";
 import type { PotRequest } from "../../domain/rules/requests.ts";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Pot.module.css";
@@ -17,6 +18,7 @@ export function PotPaymentAmount({
 	account: OrgAccount;
 	request: PotRequest;
 }) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [amount, setAmount] = useState<string | null>(null);
@@ -24,7 +26,12 @@ export function PotPaymentAmount({
 	if (!support || request.action.type !== "pay") return null;
 	const { sealed } = request.action;
 
-	if (amount) return <p className={styles.meta}>Amount (private on the network): {amount}</p>;
+	if (amount)
+		return (
+			<p className={styles.meta}>
+				{t("Amount (private on the network):")} {amount}
+			</p>
+		);
 	return (
 		<button
 			type="button"
@@ -35,7 +42,7 @@ export function PotPaymentAmount({
 				if (result?.ok) setAmount(formatMoney(result.value, request.currency));
 			}}
 		>
-			Show the amount
+			{t("Show the amount")}
 		</button>
 	);
 }

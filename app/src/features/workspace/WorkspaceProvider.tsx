@@ -15,6 +15,7 @@ import {
 import { testnetConfig } from "../../adapters/testnet/testnetConfig.ts";
 import { accountsOf, type Person, shortAddress } from "../../domain/account.ts";
 import type { DataSource } from "../../domain/dataSource.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { SignInPage } from "../identity/SignInPage.tsx";
 import {
 	browserStorage,
@@ -46,6 +47,7 @@ async function loadTestnet(): Promise<DataSource | null> {
 const REFRESH_MS = 30_000;
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+	const t = useT();
 	const [preferences, setPreferences] = useState(() => loadPreferences(storage));
 	// A remembered healthy answer starts the app at once; the live check follows behind.
 	const [health, setHealth] = useState<SiteHealth | null>(() => loadCachedHealth(storage));
@@ -85,9 +87,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		else root.dataset.theme = preferences.theme;
 	}, [preferences.theme]);
 
-	if (!resolution) return <p className={styles.connecting}>Checking the Stellar testnet…</p>;
+	if (!resolution) return <p className={styles.connecting}>{t("Checking the Stellar testnet…")}</p>;
 	const dataSource = wantsTestnet ? testnetSource : sample;
-	if (!dataSource) return <p className={styles.connecting}>Connecting to Stellar testnet…</p>;
+	if (!dataSource)
+		return <p className={styles.connecting}>{t("Connecting to Stellar testnet…")}</p>;
 
 	return (
 		<WorkspaceState
@@ -120,6 +123,7 @@ function WorkspaceState({
 	updatePreferences,
 	children,
 }: WorkspaceStateProps) {
+	const t = useT();
 	const workspace = useSyncExternalStore(dataSource.subscribe, dataSource.getSnapshot);
 	const identity = dataSource.identity;
 	const restoring = useSyncExternalStore(
@@ -153,7 +157,7 @@ function WorkspaceState({
 		const personOf = (personId: string): Person =>
 			people.get(personId) ?? {
 				id: personId,
-				name: personId.length > 20 ? shortAddress(personId) : "Unknown person",
+				name: personId.length > 20 ? shortAddress(personId) : t("Unknown person"),
 			};
 		return {
 			dataSource,
@@ -167,10 +171,10 @@ function WorkspaceState({
 			personName: (personId) => personOf(personId).name,
 			personOf,
 		};
-	}, [dataSource, sourceStatus, workspace, preferences, updatePreferences, current]);
+	}, [dataSource, sourceStatus, workspace, preferences, updatePreferences, current, t]);
 
 	if (identity && restoring) {
-		return <p className={styles.connecting}>Restoring your session…</p>;
+		return <p className={styles.connecting}>{t("Restoring your session…")}</p>;
 	}
 	if (identity && !current) {
 		return (

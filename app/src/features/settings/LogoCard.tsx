@@ -5,6 +5,7 @@ import { ruleError } from "../../domain/rules/model.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { Card } from "../../ui/Card.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./LogoCard.module.css";
@@ -12,6 +13,7 @@ import { resizeLogo, validateLogoFile } from "./logo.ts";
 
 /** Upload the organization's logo; only its highest role may change it. */
 export function LogoCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const allowed = canEditProfile(account.org, me.id);
@@ -32,16 +34,21 @@ export function LogoCard({ account }: { account: OrgAccount }) {
 				return saved.ok ? ok(undefined) : saved;
 			},
 			{
-				signature: { kind: "passkey", title: `Change the logo of ${account.org.name}` },
-				success: "Logo updated.",
+				signature: {
+					kind: "passkey",
+					title: t("Change the logo of {organization}", { organization: account.org.name }),
+				},
+				success: t("Logo updated."),
 			},
 		);
 	};
 
 	return (
 		<Card
-			title="Organization logo"
-			action={dataSource.kind === "sample" ? <SimulatedTag label="Stored in this browser" /> : null}
+			title={t("Organization logo")}
+			action={
+				dataSource.kind === "sample" ? <SimulatedTag label={t("Stored in this browser")} /> : null
+			}
 		>
 			<div className={styles.row}>
 				<Avatar name={account.org.name} imageUrl={account.logoUrl} size="lg" />
@@ -54,12 +61,14 @@ export function LogoCard({ account }: { account: OrgAccount }) {
 							disabled={busy}
 						/>
 						<span>
-							PNG, JPG or WebP, up to 5 MB. Resized to 256×256 in your browser
-							{dataSource.kind === "testnet" && ", stored with the organization on Stellar"}.
+							{t("PNG, JPG or WebP, up to 5 MB. Resized to 256×256 in your browser")}
+							{dataSource.kind === "testnet" && t(", stored with the organization on Stellar")}.
 						</span>
 					</label>
 				) : (
-					<p className={styles.hint}>Only the organization's highest role can change the logo.</p>
+					<p className={styles.hint}>
+						{t("Only the organization's highest role can change the logo.")}
+					</p>
 				)}
 			</div>
 		</Card>

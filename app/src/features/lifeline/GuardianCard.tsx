@@ -11,6 +11,7 @@ import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Lifeline.module.css";
@@ -22,14 +23,15 @@ type GuardianCardProps = {
 
 /** The people who named me as a guardian: start or confirm the recovery of their pass. */
 export function GuardianCard({ overview, onChanged }: GuardianCardProps) {
+	const t = useT();
 	const wards = overview?.protecting ?? [];
 	if (wards.length === 0) return null;
 	return (
-		<Card title="People you protect">
+		<Card title={t("People you protect")}>
 			<p className={styles.muted}>
-				They named you as a guardian. If one of them loses their pass, they create a new one and
-				tell you its ID; you confirm it here. Verify in person or by voice that it is really them: a
-				guardian's confirmation is what makes a recovery possible.
+				{t(
+					"They named you as a guardian. If one of them loses their pass, they create a new one and tell you its ID; you confirm it here. Verify in person or by voice that it is really them: a guardian's confirmation is what makes a recovery possible.",
+				)}
 			</p>
 			<ul className={styles.list}>
 				{wards.map((ward) => (
@@ -41,6 +43,7 @@ export function GuardianCard({ overview, onChanged }: GuardianCardProps) {
 }
 
 function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }) {
+	const t = useT();
 	const { dataSource, me, personOf } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [starting, setStarting] = useState(false);
@@ -55,7 +58,9 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 		const id = successor.trim();
 		if (!id) return;
 		const result = await run(() => dataSource.lifeline.startClaim(ward.personId, me.id, id), {
-			success: `Recovery of ${person.name}'s pass started; your confirmation counts.`,
+			success: t("Recovery of {name}'s pass started; your confirmation counts.", {
+				name: person.name,
+			}),
 		});
 		if (result?.ok) {
 			setStarting(false);
@@ -66,7 +71,7 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 
 	const confirm = async () => {
 		const result = await run(() => dataSource.lifeline.approveClaim(ward.personId, me.id), {
-			success: `You confirmed ${person.name}'s new pass.`,
+			success: t("You confirmed {name}'s new pass.", { name: person.name }),
 		});
 		if (result?.ok) onChanged();
 	};
@@ -79,7 +84,7 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 					<strong>{person.name}</strong>
 					<span className={styles.muted}>
 						{" "}
-						· {ward.plan.threshold} of {ward.plan.guardians.length} confirm ·{" "}
+						· {ward.plan.threshold} {t("of")} {ward.plan.guardians.length} {t("confirm ·")}{" "}
 						{describeWait(ward.plan.waitSeconds)}
 					</span>
 				</span>
@@ -87,10 +92,10 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 			{claim && progress ? (
 				<>
 					<p className={styles.muted}>
-						Recovery in progress: new pass {shortAddress(claim.successor)}, confirmed by{" "}
-						{progress.confirmed} of {progress.needed}
+						{t("Recovery in progress: new pass")} {shortAddress(claim.successor)}
+						{t(", confirmed by")} {progress.confirmed} {t("of")} {progress.needed}
 						{progress.ready
-							? ". Ready: the new pass can complete it."
+							? t(". Ready: the new pass can complete it.")
 							: progress.confirmed >= progress.needed
 								? `. Waiting period ends ${describeTimeLeft(progress.waitLeftMs)}.`
 								: "."}
@@ -98,7 +103,7 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 					{!confirmedByMe && (
 						<div>
 							<button type="button" className={buttonClass()} disabled={busy} onClick={confirm}>
-								Confirm this new pass
+								{t("Confirm this new pass")}
 							</button>
 						</div>
 					)}
@@ -106,9 +111,11 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 			) : starting ? (
 				<form className={styles.form} onSubmit={start}>
 					<Field
-						label={`${person.name}'s new ancora ID`}
+						label={t("{name}'s new ancora ID", { name: person.name })}
 						htmlFor={`successor-${ward.personId}`}
-						hint="Ask them to read it from their new pass (starts with C). Check it's really them."
+						hint={t(
+							"Ask them to read it from their new pass (starts with C). Check it's really them.",
+						)}
 					>
 						<input
 							id={`successor-${ward.personId}`}
@@ -122,10 +129,10 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 					</Field>
 					<div className={styles.actions}>
 						<button type="submit" className={buttonClass()} disabled={busy || !successor.trim()}>
-							Start recovery
+							{t("Start recovery")}
 						</button>
 						<button type="button" className={styles.linkButton} onClick={() => setStarting(false)}>
-							Cancel
+							{t("Cancel")}
 						</button>
 					</div>
 				</form>
@@ -137,7 +144,7 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 						disabled={busy}
 						onClick={() => setStarting(true)}
 					>
-						They lost their pass
+						{t("They lost their pass")}
 					</button>
 				</div>
 			)}

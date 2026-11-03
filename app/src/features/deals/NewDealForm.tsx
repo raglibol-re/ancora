@@ -7,6 +7,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Deals.module.css";
@@ -29,6 +30,7 @@ export function NewDealForm({
 	account: OrgAccount;
 	onCreated: () => void;
 }) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [counterparty, setCounterparty] = useState("");
@@ -57,23 +59,25 @@ export function NewDealForm({
 		const partyB = counterparty.trim();
 		const objectionSeconds = Math.round(Number(days) * 86_400);
 		if (!isStellarAddress(partyB) || partyB === account.org.id) {
-			setError("Enter the other organization's account address (starts with C or G).");
+			setError(t("Enter the other organization's account address (starts with C or G)."));
 			return;
 		}
 		if (rows.some((row, i) => !row.label.trim() || (amounts[i] ?? 0) <= 0)) {
-			setError("Every milestone needs a name and an amount above zero.");
+			setError(t("Every milestone needs a name and an amount above zero."));
 			return;
 		}
 		if (!(objectionSeconds >= 60 && objectionSeconds <= 90 * 86_400)) {
-			setError("The time to object is between one minute and 90 days.");
+			setError(t("The time to object is between one minute and 90 days."));
 			return;
 		}
 		if (arbiter.trim() && !isStellarAddress(arbiter.trim())) {
-			setError("The arbiter needs a Stellar account address, or leave it empty.");
+			setError(t("The arbiter needs a Stellar account address, or leave it empty."));
 			return;
 		}
 		if (!document) {
-			setError("Attach the agreement; only its fingerprint is recorded, the file stays with you.");
+			setError(
+				t("Attach the agreement; only its fingerprint is recorded, the file stays with you."),
+			);
 			return;
 		}
 		setError(null);
@@ -94,11 +98,14 @@ export function NewDealForm({
 					},
 				}),
 			{
-				signature: { kind: "passkey", title: `Propose a deal of ${formatMoney(total, currency)}` },
+				signature: {
+					kind: "passkey",
+					title: t("Propose a deal of {amount}", { amount: formatMoney(total, currency) }),
+				},
 				success: (outcome) =>
 					outcome === "applied"
-						? "Deal proposed. The other side can now accept the terms."
-						: "Approval requested: the deal goes out once your rules are met.",
+						? t("Deal proposed. The other side can now accept the terms.")
+						: t("Approval requested: the deal goes out once your rules are met."),
 			},
 		);
 		if (result?.ok) {
@@ -109,13 +116,13 @@ export function NewDealForm({
 	};
 
 	return (
-		<Card title="Propose a deal">
+		<Card title={t("Propose a deal")}>
 			<form className={styles.form} onSubmit={submit} noValidate>
 				<div className={styles.grid}>
 					<Field
-						label="Other organization"
+						label={t("Other organization")}
 						htmlFor="deal-party"
-						hint="Their account address, from their Settings. ancora names come later."
+						hint={t("Their account address, from their Settings. ancora names come later.")}
 					>
 						<input
 							id="deal-party"
@@ -127,7 +134,7 @@ export function NewDealForm({
 							onChange={(e) => setCounterparty(e.target.value)}
 						/>
 					</Field>
-					<Field label="Paid in" htmlFor="deal-asset">
+					<Field label={t("Paid in")} htmlFor="deal-asset">
 						<select
 							id="deal-asset"
 							className={controlClass}
@@ -147,17 +154,23 @@ export function NewDealForm({
 						// Rows have no identity beyond their position while being typed.
 						// biome-ignore lint/suspicious/noArrayIndexKey: see above
 						<li key={index} className={styles.milestoneRow}>
-							<Field label={`Milestone ${index + 1}`} htmlFor={`deal-label-${index}`}>
+							<Field
+								label={t("Milestone {number}", { number: index + 1 })}
+								htmlFor={`deal-label-${index}`}
+							>
 								<input
 									id={`deal-label-${index}`}
 									className={controlClass}
 									maxLength={64}
-									placeholder="Design delivered"
+									placeholder={t("Design delivered")}
 									value={row.label}
 									onChange={(e) => update(index, { label: e.target.value })}
 								/>
 							</Field>
-							<Field label={`Amount (${currency})`} htmlFor={`deal-amount-${index}`}>
+							<Field
+								label={t("Amount ({currency})", { currency })}
+								htmlFor={`deal-amount-${index}`}
+							>
 								<input
 									id={`deal-amount-${index}`}
 									className={controlClass}
@@ -177,7 +190,7 @@ export function NewDealForm({
 						disabled={rows.length >= MAX_MILESTONES}
 						onClick={() => setRows([...rows, { label: "", amount: "" }])}
 					>
-						Add a milestone
+						{t("Add a milestone")}
 					</button>
 					{rows.length > 1 && (
 						<button
@@ -185,16 +198,20 @@ export function NewDealForm({
 							className={buttonClass("secondary")}
 							onClick={() => setRows(rows.slice(0, -1))}
 						>
-							Remove the last
+							{t("Remove the last")}
 						</button>
 					)}
-					<span className={styles.muted}>Total {formatMoney(total, currency)}</span>
+					<span className={styles.muted}>
+						{t("Total")} {formatMoney(total, currency)}
+					</span>
 				</div>
 				<div className={styles.grid}>
 					<Field
-						label="Days to object"
+						label={t("Days to object")}
 						htmlFor="deal-days"
-						hint="After the other side asks for a payout, you have this long to object; then it pays out automatically."
+						hint={t(
+							"After the other side asks for a payout, you have this long to object; then it pays out automatically.",
+						)}
 					>
 						<input
 							id="deal-days"
@@ -205,14 +222,16 @@ export function NewDealForm({
 						/>
 					</Field>
 					<Field
-						label="Arbiter (optional)"
+						label={t("Arbiter (optional)")}
 						htmlFor="deal-arbiter"
-						hint="Someone both sides trust to split what is left if you disagree. Without one, disputes aren't possible."
+						hint={t(
+							"Someone both sides trust to split what is left if you disagree. Without one, disputes aren't possible.",
+						)}
 					>
 						<input
 							id="deal-arbiter"
 							className={controlClass}
-							placeholder="C… or G…"
+							placeholder={t("C… or G…")}
 							spellCheck={false}
 							value={arbiter}
 							onChange={(e) => setArbiter(e.target.value)}
@@ -220,12 +239,12 @@ export function NewDealForm({
 					</Field>
 				</div>
 				<label className={styles.upload}>
-					<span className={styles.label}>Agreement</span>
+					<span className={styles.label}>{t("Agreement")}</span>
 					<input type="file" onChange={pickDocument} />
 					<span>
 						{document
 							? `${document.name} · fingerprint ${document.hash.slice(0, 16)}…`
-							: "Only the file's fingerprint is recorded; the file itself stays with you."}
+							: t("Only the file's fingerprint is recorded; the file itself stays with you.")}
 					</span>
 				</label>
 				{error && (
@@ -234,7 +253,7 @@ export function NewDealForm({
 					</p>
 				)}
 				<button type="submit" className={buttonClass()} disabled={busy}>
-					Propose the deal
+					{t("Propose the deal")}
 				</button>
 			</form>
 		</Card>

@@ -6,6 +6,7 @@ import { controlClass, Field } from "../../ui/Field.tsx";
 import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { InstallHint } from "../install/InstallHint.tsx";
 import { GuardianCard } from "../lifeline/GuardianCard.tsx";
 import { LifelineCard } from "../lifeline/LifelineCard.tsx";
@@ -27,24 +28,27 @@ import styles from "./ProfilePage.module.css";
  * how they sign in and recover, and the preferences of this device.
  */
 export function ProfilePage() {
+	const t = useT();
 	const { dataSource, me, myAccounts, workspace, preferences, updatePreferences } = useWorkspace();
 	const navigate = useNavigate();
 	const identity = dataSource.identity;
 	const lifeline = useLifeline();
 
 	return (
-		<Page title="You" lead="One pass for every organization you work with.">
+		<Page title={t("You")} lead={t("One pass for every organization you work with.")}>
 			<PassCard person={me} onchain={identity !== null} positions={myAccounts.length} />
 
 			{identity ? (
 				<EditProfileCard key={`${me.id}-${me.name}-${me.avatarUrl ?? ""}`} identity={identity} />
 			) : (
 				<div id="viewing-as">
-					<Card title="Viewing as" action={<SimulatedTag label="Demo" />}>
+					<Card title={t("Viewing as")} action={<SimulatedTag label={t("Demo")} />}>
 						<Field
-							label="Person"
+							label={t("Person")}
 							htmlFor="person"
-							hint="Switch people to see the demo from their side. Signatures are simulated on sample data."
+							hint={t(
+								"Switch people to see the demo from their side. Signatures are simulated on sample data.",
+							)}
 						>
 							<select
 								id="person"
@@ -63,11 +67,11 @@ export function ProfilePage() {
 				</div>
 			)}
 
-			<Card title="Your positions">
+			<Card title={t("Your positions")}>
 				{myAccounts.length === 0 ? (
 					<p className={styles.muted}>
-						No positions yet. <Link to="/app/new">Create an organization</Link> or share your ancora
-						ID with one that wants to invite you.
+						{t("No positions yet.")} <Link to="/app/new">{t("Create an organization")}</Link>{" "}
+						{t("or share your ancora ID with one that wants to invite you.")}
 					</p>
 				) : (
 					<ul className={styles.positions}>
@@ -80,7 +84,7 @@ export function ProfilePage() {
 										<span className={styles.positionOrg}>{account.org.name}</span>
 										<span className={styles.muted}>
 											{member ? roleLabel(account.org, member.roleId) : "Member"}
-											{account.org.founderId === me.id && " · founder"}
+											{account.org.founderId === me.id && t(" · founder")}
 										</span>
 									</span>
 									<button
@@ -91,7 +95,7 @@ export function ProfilePage() {
 											navigate("/app");
 										}}
 									>
-										Open
+										{t("Open")}
 									</button>
 								</li>
 							);
@@ -100,32 +104,35 @@ export function ProfilePage() {
 				)}
 			</Card>
 
-			<Card title="Sign-in and recovery">
+			<Card title={t("Sign-in and recovery")}>
 				{identity ? (
 					<>
 						<dl className={styles.facts}>
 							<div>
-								<dt>Login</dt>
+								<dt>{t("Login")}</dt>
 								<dd>
-									Your passkey on this device. It signs every approval through your own account on
-									Stellar; the private key never leaves the device.
+									{t(
+										"Your passkey on this device. It signs every approval through your own account on Stellar; the private key never leaves the device.",
+									)}
 								</dd>
 							</div>
 							<DevicesSection identity={identity} />
 							<div>
-								<dt>Recovery</dt>
+								<dt>{t("Recovery")}</dt>
 								<dd>
 									{lifeline.overview?.plan ? (
 										<>
-											<span className={styles.protected}>Protected by Lifeline</span>:{" "}
-											{lifeline.overview.plan.threshold} of{" "}
-											{lifeline.overview.plan.guardians.length} guardians can confirm a new pass for
-											you. Details below.
+											<span className={styles.protected}>{t("Protected by Lifeline")}</span>:{" "}
+											{lifeline.overview.plan.threshold} {t("of")}{" "}
+											{lifeline.overview.plan.guardians.length}{" "}
+											{t("guardians can confirm a new pass for you. Details below.")}
 										</>
 									) : (
 										<>
-											<span className={styles.warn}>Not protected yet</span>: this passkey is the
-											only key to your positions. Name guardians in Lifeline below.
+											<span className={styles.warn}>{t("Not protected yet")}</span>
+											{t(
+												": this passkey is the only key to your positions. Name guardians in Lifeline below.",
+											)}
 										</>
 									)}
 								</dd>
@@ -137,15 +144,18 @@ export function ProfilePage() {
 								className={buttonClass("secondary")}
 								onClick={() => void identity.signOut()}
 							>
-								Sign out
+								{t("Sign out")}
 							</button>
-							<span className={styles.muted}>Sign out to use another passkey on this device.</span>
+							<span className={styles.muted}>
+								{t("Sign out to use another passkey on this device.")}
+							</span>
 						</div>
 					</>
 				) : (
 					<p className={styles.muted}>
-						Sample data: signatures are simulated. Switch to the Stellar testnet below to sign in
-						with a real passkey.
+						{t(
+							"Sample data: signatures are simulated. Switch to the Stellar testnet below to sign in with a real passkey.",
+						)}
 					</p>
 				)}
 			</Card>
@@ -158,34 +168,37 @@ export function ProfilePage() {
 			<GuardianCard overview={lifeline.overview} onChanged={lifeline.reload} />
 			<RecoverPassCard />
 
-			<Card title="Appearance">
+			<Card title={t("Appearance")}>
 				<Segmented<ThemePreference>
-					label="Theme"
+					label={t("Theme")}
 					value={preferences.theme}
 					onChange={(theme) => updatePreferences({ theme })}
 					options={[
-						{ value: "system", label: "System" },
-						{ value: "light", label: "Light" },
-						{ value: "dark", label: "Dark" },
+						{ value: "system", label: t("System") },
+						{ value: "light", label: t("Light") },
+						{ value: "dark", label: t("Dark") },
 					]}
 				/>
 			</Card>
 
-			<Card title="Expert mode">
+			<Card title={t("Expert mode")}>
 				<label className={styles.toggle}>
 					<input
 						type="checkbox"
 						checked={preferences.expertMode}
 						onChange={(e) => updatePreferences({ expertMode: e.target.checked })}
 					/>
-					Show technical references (request IDs, rule tiers, on-chain links, the rules document).
+					{t(
+						"Show technical references (request IDs, rule tiers, on-chain links, the rules document).",
+					)}
 				</label>
 			</Card>
 
-			<Card title="Install the app">
+			<Card title={t("Install the app")}>
 				<p className={styles.muted}>
-					ancora works in any phone browser and can be added to your home screen. No app store
-					needed.
+					{t(
+						"ancora works in any phone browser and can be added to your home screen. No app store needed.",
+					)}
 				</p>
 				<InstallHint />
 			</Card>

@@ -12,6 +12,7 @@ import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatDateTime, formatMoney } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useCommand } from "../workspace/useCommand.ts";
@@ -19,10 +20,11 @@ import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./LinksPage.module.css";
 
 export function LinksPage() {
+	const t = useT();
 	return (
 		<Page
-			title="Payment links"
-			lead="Ask for money: invoices and membership fees anyone pays from their own wallet."
+			title={t("Payment links")}
+			lead={t("Ask for money: invoices and membership fees anyone pays from their own wallet.")}
 		>
 			<OrgRequired>{(account) => <Links key={account.org.id} account={account} />}</OrgRequired>
 		</Page>
@@ -35,6 +37,7 @@ export function linkUrl(account: OrgAccount, link: PaymentLink): string {
 }
 
 function Links({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource, me, personName, workspace } = useWorkspace();
 	const { run, busy } = useCommand();
 	const notify = useNotify();
@@ -49,10 +52,11 @@ function Links({ account }: { account: OrgAccount }) {
 
 	if (links === null) {
 		return (
-			<Card title="Payment links">
+			<Card title={t("Payment links")}>
 				<p className={styles.muted}>
-					This organization was created before payment links existed; organizations created from 28
-					Oct 2026 can ask for money with a link.
+					{t(
+						"This organization was created before payment links existed; organizations created from 28 Oct 2026 can ask for money with a link.",
+					)}
 				</p>
 			</Card>
 		);
@@ -66,23 +70,26 @@ function Links({ account }: { account: OrgAccount }) {
 		const amount = parseAmountInput(amountInput);
 		const maxPayments = mode === "once" ? 1 : Number(count);
 		if (amount === null || amount <= 0) {
-			setError("Enter an amount like 30 or 120.50.");
+			setError(t("Enter an amount like 30 or 120.50."));
 			return;
 		}
 		if (!Number.isInteger(maxPayments) || maxPayments < 1 || maxPayments > 500) {
-			setError("A link takes one to 500 payments.");
+			setError(t("A link takes one to 500 payments."));
 			return;
 		}
 		if (!note.trim()) {
-			setError("Say what it's for, like Membership 2027 or Invoice 14.");
+			setError(t("Say what it's for, like Membership 2027 or Invoice 14."));
 			return;
 		}
 		setError(null);
 		const result = await run(
 			() => dataSource.createLink(account.org.id, me.id, { token, amount, note, maxPayments }),
 			{
-				signature: { kind: "passkey", title: `Create a payment link: ${note.trim()}` },
-				success: "Payment link created. Copy it or show its QR code below.",
+				signature: {
+					kind: "passkey",
+					title: t("Create a payment link: {reference}", { reference: note.trim() }),
+				},
+				success: t("Payment link created. Copy it or show its QR code below."),
 			},
 		);
 		if (result?.ok) {
@@ -94,9 +101,9 @@ function Links({ account }: { account: OrgAccount }) {
 	const copy = async (link: PaymentLink) => {
 		try {
 			await navigator.clipboard.writeText(linkUrl(account, link));
-			notify({ tone: "success", text: "Link copied. Send it to whoever should pay." });
+			notify({ tone: "success", text: t("Link copied. Send it to whoever should pay.") });
 		} catch {
-			notify({ tone: "error", text: "Couldn't copy. Open the QR code and share that instead." });
+			notify({ tone: "error", text: t("Couldn't copy. Open the QR code and share that instead.") });
 		}
 	};
 
@@ -110,11 +117,11 @@ function Links({ account }: { account: OrgAccount }) {
 
 	return (
 		<>
-			<Card title="Ask for money">
+			<Card title={t("Ask for money")}>
 				<form className={styles.form} onSubmit={create} noValidate>
 					<div className={styles.row}>
 						{account.org.assets.length > 1 && (
-							<Field label="In" htmlFor="link-asset">
+							<Field label={t("In")} htmlFor="link-asset">
 								<select
 									id="link-asset"
 									className={controlClass}
@@ -129,7 +136,10 @@ function Links({ account }: { account: OrgAccount }) {
 								</select>
 							</Field>
 						)}
-						<Field label={`Amount (${currencyOf(account, token)})`} htmlFor="link-amount">
+						<Field
+							label={t("Amount ({currency})", { currency: currencyOf(account, token) })}
+							htmlFor="link-amount"
+						>
 							<input
 								id="link-amount"
 								className={controlClass}
@@ -140,31 +150,31 @@ function Links({ account }: { account: OrgAccount }) {
 								onChange={(e) => setAmountInput(e.target.value)}
 							/>
 						</Field>
-						<Field label="What it's for" htmlFor="link-note">
+						<Field label={t("What it's for")} htmlFor="link-note">
 							<input
 								id="link-note"
 								className={controlClass}
 								maxLength={140}
-								placeholder="Membership 2027"
+								placeholder={t("Membership 2027")}
 								value={note}
 								onChange={(e) => setNote(e.target.value)}
 							/>
 						</Field>
 					</div>
 					<Segmented<"once" | "many">
-						label="Paid by"
+						label={t("Paid by")}
 						value={mode}
 						onChange={setMode}
 						options={[
-							{ value: "once", label: "One payer (invoice)" },
-							{ value: "many", label: "Several people (fees)" },
+							{ value: "once", label: t("One payer (invoice)") },
+							{ value: "many", label: t("Several people (fees)") },
 						]}
 					/>
 					{mode === "many" && (
 						<Field
-							label="At most"
+							label={t("At most")}
 							htmlFor="link-count"
-							hint="Each wallet pays once; the link closes when this many have paid."
+							hint={t("Each wallet pays once; the link closes when this many have paid.")}
 						>
 							<input
 								id="link-count"
@@ -182,15 +192,15 @@ function Links({ account }: { account: OrgAccount }) {
 					)}
 					<div>
 						<button type="submit" className={buttonClass()} disabled={busy}>
-							Create link
+							{t("Create link")}
 						</button>
 					</div>
 				</form>
 			</Card>
 
-			<Card title="Links">
+			<Card title={t("Links")}>
 				{links.length === 0 ? (
-					<p className={styles.muted}>No payment links yet.</p>
+					<p className={styles.muted}>{t("No payment links yet.")}</p>
 				) : (
 					<ul className={styles.list}>
 						{links.map((link) => {
@@ -206,9 +216,9 @@ function Links({ account }: { account: OrgAccount }) {
 										</span>
 									</div>
 									<span className={styles.meta}>
-										Paid {link.payments.length} of {link.maxPayments} · total{" "}
-										{formatMoney(link.amount * link.payments.length, currency)} · created{" "}
-										{formatDateTime(link.createdAt)} by {personName(link.createdBy)}
+										{t("Paid")} {link.payments.length} {t("of")} {link.maxPayments} {t("· total")}{" "}
+										{formatMoney(link.amount * link.payments.length, currency)} {t("· created")}{" "}
+										{formatDateTime(link.createdAt)} {t("by")} {personName(link.createdBy)}
 									</span>
 									{link.payments.length > 0 && (
 										<ul className={styles.payers}>
@@ -226,14 +236,14 @@ function Links({ account }: { account: OrgAccount }) {
 												className={buttonClass("secondary")}
 												onClick={() => void copy(link)}
 											>
-												Copy link
+												{t("Copy link")}
 											</button>
 											<button
 												type="button"
 												className={buttonClass("secondary")}
 												onClick={() => void showQr(link)}
 											>
-												QR code
+												{t("QR code")}
 											</button>
 											{link.open && (
 												<button
@@ -242,25 +252,28 @@ function Links({ account }: { account: OrgAccount }) {
 													disabled={busy}
 													onClick={() =>
 														run(() => dataSource.closeLink(account.org.id, me.id, link.id), {
-															signature: { kind: "passkey", title: `Close the link ${link.memo}` },
-															success: "Link closed. It takes no more payments.",
+															signature: {
+																kind: "passkey",
+																title: t("Close the link {reference}", { reference: link.memo }),
+															},
+															success: t("Link closed. It takes no more payments."),
 														})
 													}
 												>
-													Close
+													{t("Close")}
 												</button>
 											)}
 										</div>
 									) : (
 										<p className={styles.muted}>
-											Sample data: payers open links of organizations on the Stellar testnet.
+											{t("Sample data: payers open links of organizations on the Stellar testnet.")}
 										</p>
 									)}
 									{qr?.id === link.id && (
 										<img
 											className={styles.qr}
 											src={qr.image}
-											alt={`QR code for the payment link ${link.memo}`}
+											alt={t("QR code for the payment link {reference}", { reference: link.memo })}
 										/>
 									)}
 								</li>
