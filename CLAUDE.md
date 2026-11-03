@@ -31,7 +31,7 @@
 - No dead code, commented-out code, `console.log`, or TODO without a `docs/ROADMAP.md`/issue reference. Delete mocks once real code replaces them (except the sample-data adapter).
 - Dependencies: minimal, exact versions (`.npmrc save-exact`). Remove unused ones immediately.
 - Rust: `cargo fmt`, `cargo clippy -- -D warnings`; no unwrap/expect in contract code; `#[contracterror]` errors; every public fn has a doc comment, an auth note, and tests incl. a strict-auth test without `mock_all_auths`.
-- Never guess APIs: check official docs/source (developers.stellar.org, OpenZeppelin/stellar-contracts, stellar/smart-account-kit, paltalabs/defindex, apidocs.bridge.xyz, vercel.com/docs). Pinned: smart-account-kit 0.8.x, @stellar/stellar-sdk 16.3.x (not 17), OZ stellar-contracts 0.8.0 → soroban-sdk 28.
+- Never guess APIs: check official docs/source (developers.stellar.org, OpenZeppelin/stellar-contracts, stellar/smart-account-kit, paltalabs/defindex, apidocs.bridge.xyz, vercel.com/docs). Pinned: smart-account-kit 0.8.x, @stellar/stellar-sdk 16.4.x (not 17; 16.4 reads protocol 30), OZ stellar-contracts 0.8.0 → soroban-sdk 28.
 - Default: no database. Anything stored off-chain needs a justification in `docs/DECISIONS.md`.
 
 ## Workflow
