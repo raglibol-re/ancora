@@ -68,7 +68,9 @@ export function OrgCodeCard({ account }: { account: OrgAccount }) {
 					<div>
 						<dt>{t("Runs")}</dt>
 						<dd>
-							{upToDate ? `ancora release ${release.version}, the latest` : "Code"}
+							{upToDate
+								? t("ancora release {version}, the latest", { version: release.version })
+								: t("Code")}
 							<code className={styles.code}>{status.running}</code>
 						</dd>
 					</div>

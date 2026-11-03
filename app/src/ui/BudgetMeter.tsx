@@ -3,6 +3,7 @@ import { describePeriod } from "../domain/budgets.ts";
 import type { Currency } from "../domain/money.ts";
 import styles from "./BudgetMeter.module.css";
 import { formatMoney } from "./format.ts";
+import { useT } from "./useLanguage.ts";
 
 type BudgetMeterProps = {
 	lines: readonly BudgetLine[];
@@ -14,7 +15,8 @@ type BudgetMeterProps = {
 
 /** Budgets as meters: spent of amount per period, what's left, hard or soft. */
 export function BudgetMeter({ lines, currency, onRemove, busy }: BudgetMeterProps) {
-	if (lines.length === 0) return <p className={styles.muted}>No budgets yet.</p>;
+	const t = useT();
+	if (lines.length === 0) return <p className={styles.muted}>{t("No budgets yet.")}</p>;
 	return (
 		<ul className={styles.list}>
 			{lines.map((line) => {
@@ -35,13 +37,19 @@ export function BudgetMeter({ lines, currency, onRemove, busy }: BudgetMeterProp
 							className={over ? `${styles.bar} ${styles.barOver}` : styles.bar}
 							max={line.amount}
 							value={Math.min(line.spent, line.amount)}
-							aria-label={`${line.category}: ${formatMoney(line.spent, currency)} of ${formatMoney(line.amount, currency)}`}
+							aria-label={`${line.category}: ${t("{spent} of {total}", { spent: formatMoney(line.spent, currency), total: formatMoney(line.amount, currency) })}`}
 						/>
 						<div className={styles.foot}>
 							<span className={over ? styles.over : styles.muted}>
 								{over
-									? `${formatMoney(-line.remaining, currency)} over budget${line.hard ? "" : "; further payments take the strictest tier"}`
-									: `${formatMoney(line.remaining, currency)} left this period`}
+									? line.hard
+										? t("{amount} over budget", { amount: formatMoney(-line.remaining, currency) })
+										: t("{amount} over budget; further payments take the strictest tier", {
+												amount: formatMoney(-line.remaining, currency),
+											})
+									: t("{amount} left this period", {
+											amount: formatMoney(line.remaining, currency),
+										})}
 							</span>
 							{onRemove && (
 								<button

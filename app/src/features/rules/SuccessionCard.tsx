@@ -108,8 +108,9 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 												type="button"
 												className={buttonClass("secondary")}
 												onClick={() =>
-													act(`Claim the position of ${personName(plan.personId)}`, () =>
-														support.claim(org.id, me.id, plan.personId),
+													act(
+														t("Claim the position of {name}", { name: personName(plan.personId) }),
+														() => support.claim(org.id, me.id, plan.personId),
 													)
 												}
 											>

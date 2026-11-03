@@ -325,7 +325,10 @@ function PayForm({ account }: { account: OrgAccount }) {
 								error={errors.account}
 								hint={
 									account.onchain
-										? `Starts with G or C. The payment goes out as ${asset?.symbol ?? t("the chosen asset")}; a G address must already hold a trustline for exactly that asset (testnet has several assets called USDC).`
+										? t(
+												"Starts with G or C. The payment goes out as {asset}; a G address must already hold a trustline for exactly that asset (testnet has several assets called USDC).",
+												{ asset: asset?.symbol ?? t("the chosen asset") },
+											)
 										: undefined
 								}
 							>

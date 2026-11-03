@@ -3,6 +3,7 @@ import { displayRate } from "../../domain/rules/controls.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatDateTime } from "../../ui/format.ts";
+import { currentLanguage, FORMAT_LOCALE } from "../../ui/i18n.ts";
 import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Controls.module.css";
@@ -26,9 +27,12 @@ export function ExchangeRatesCard({ account }: { account: OrgAccount }) {
 
 	const rateLine = (currency: (typeof others)[number]) => {
 		const rate = displayRate(org, currency, now);
-		if (rate === null) return `No current rate for ${currency}: strictest approvals.`;
+		if (rate === null)
+			return t("No current rate for {currency}: strictest approvals.", { currency });
 		const at = org.fx?.prices[currency]?.at;
-		const shown = rate.toLocaleString("en-IE", { maximumFractionDigits: 4 });
+		const shown = rate.toLocaleString(FORMAT_LOCALE[currentLanguage()], {
+			maximumFractionDigits: 4,
+		});
 		return `1 ${currency} = ${shown} ${org.baseCurrency}${at ? ` · ${formatDateTime(at)}` : ""}`;
 	};
 

@@ -1792,4 +1792,18 @@ export const de: Readonly<Record<string, string>> = {
 	"Last seen {date}.": "Zuletzt aktiv am {date}.",
 	"Names go into the registry's open channel ({channel}).":
 		"Namen kommen in den offenen Kanal der Registry ({channel}).",
+	"Starts with G or C. The payment goes out as {asset}; a G address must already hold a trustline for exactly that asset (testnet has several assets called USDC).":
+		"Beginnt mit G oder C. Die Zahlung geht als {asset} raus; eine G-Adresse braucht bereits eine Trustline für genau dieses Asset (im Testnetz heißen mehrere Assets USDC).",
+	"No current rate for {currency}: strictest approvals.":
+		"Kein aktueller Kurs für {currency}: strengste Freigaben.",
+	"Active: v{version} (matches the contract)": "Aktiv: v{version} (stimmt mit dem Vertrag überein)",
+	"ancora release {version}, the latest": "ancora-Version {version}, die neueste",
+	Code: "Code",
+	"Claim the position of {name}": "Position von {name} übernehmen",
+	"{spent} of {total}": "{spent} von {total}",
+	"{amount} over budget": "{amount} über dem Budget",
+	"{amount} over budget; further payments take the strictest tier":
+		"{amount} über dem Budget; weitere Zahlungen nehmen die strengste Stufe",
+	"{amount} left this period": "{amount} übrig in diesem Zeitraum",
+	"No budgets yet.": "Noch keine Budgets.",
 };

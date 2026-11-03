@@ -51,7 +51,7 @@ export function RulesHashCard({ account }: { account: OrgAccount }) {
 				verdict === null ? null : (
 					<span className={verdict.matches ? styles.ok : styles.bad}>
 						{verdict.matches
-							? `Active: v${verdict.version} (matches the contract)`
+							? t("Active: v{version} (matches the contract)", { version: verdict.version ?? "" })
 							: t("Does not match the contract")}
 					</span>
 				)
