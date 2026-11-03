@@ -140,7 +140,7 @@ export function PayLinkPage() {
 				)}
 				{problem && (
 					<p className={styles.error} role="alert">
-						{problem}
+						{t(problem)}
 					</p>
 				)}
 				<div ref={pickerHost} />

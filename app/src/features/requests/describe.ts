@@ -1,5 +1,4 @@
 import type { OrgAccount } from "../../domain/account.ts";
-import { describeDealAction } from "../../domain/deals.ts";
 import type { Currency } from "../../domain/money.ts";
 import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { periodLabel } from "../../domain/rules/limits.ts";
@@ -8,6 +7,7 @@ import type { ApprovalRequest, PotRequest, RequestStatus } from "../../domain/ru
 import { templates } from "../../domain/rules/templates.ts";
 import { formatMoney } from "../../ui/format.ts";
 import { currentLanguage, msg, t } from "../../ui/i18n.ts";
+import { describeDealAction } from "../deals/describeDealAction.ts";
 
 // Plain-language copy for rules and requests. No crypto jargon.
 

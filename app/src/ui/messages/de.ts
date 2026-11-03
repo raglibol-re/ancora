@@ -566,7 +566,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Your deals": "Ihre Vereinbarungen",
 	"Reading your deals…": "Ihre Vereinbarungen werden gelesen…",
 	"No deals yet. Propose one above.": "Noch keine Vereinbarungen. Schlagen Sie oben eine vor.",
-	"Deal #": "Vereinbarung #",
 	milestone: "Meilenstein",
 	"· since": "· seit",
 	"Enter the other organization's account address (starts with C or G).":
@@ -1379,4 +1378,371 @@ export const de: Readonly<Record<string, string>> = {
 	"Move {amount} into the confidential pot": "{amount} in die vertrauliche Kasse verschieben",
 	"Take {amount} out of the confidential pot": "{amount} aus der vertraulichen Kasse entnehmen",
 	"Confidential payment to {name}": "Vertrauliche Zahlung an {name}",
+	"Propose a deal of 1 milestone": "Vereinbarung mit 1 Meilenstein vorschlagen",
+	"Propose a deal of {count} milestones": "Vereinbarung mit {count} Meilensteinen vorschlagen",
+	"Accept the terms of deal #{deal}": "Bedingungen von Vereinbarung #{deal} annehmen",
+	"Deposit the amount for deal #{deal}": "Betrag für Vereinbarung #{deal} hinterlegen",
+	'Ask for the payout of "{milestone}"': "Auszahlung von „{milestone}“ anfordern",
+	'Approve the payout of "{milestone}"': "Auszahlung von „{milestone}“ freigeben",
+	'Object to the payout of "{milestone}"': "Der Auszahlung von „{milestone}“ widersprechen",
+	"Cancel deal #{deal}": "Vereinbarung #{deal} abbrechen",
+	"Ask the arbiter to decide deal #{deal}":
+		"Schlichter über Vereinbarung #{deal} entscheiden lassen",
+	'Pay out "{milestone}" now': "„{milestone}“ jetzt auszahlen",
+	"Deal #{deal} with {name}": "Vereinbarung #{deal} mit {name}",
+	"Deal #{deal} from {name}": "Vereinbarung #{deal} von {name}",
+	"1 milestone": "1 Meilenstein",
+	"{count} milestones": "{count} Meilensteine",
+	"Waiting for the other side to accept": "Wartet auf die Zustimmung der anderen Seite",
+	"Waiting for the deposit": "Wartet auf die Hinterlegung",
+	"Amount deposited": "Betrag hinterlegt",
+	"In progress": "Läuft",
+	Completed: "Abgeschlossen",
+	"With the arbiter": "Beim Schlichter",
+	"Decided by the arbiter": "Vom Schlichter entschieden",
+	"Not started": "Nicht begonnen",
+	"Payout requested": "Auszahlung angefordert",
+	Objected: "Widersprochen",
+	"This deal doesn't exist.": "Diese Vereinbarung gibt es nicht.",
+	"The deal has moved on, so this step no longer applies. Reload to see where it stands.":
+		"Die Vereinbarung ist weiter, dieser Schritt passt nicht mehr. Laden Sie neu, um den Stand zu sehen.",
+	"Only the parties of the deal can do this.": "Das können nur die Parteien der Vereinbarung.",
+	"The terms aren't valid: two different parties, one to twenty milestones above zero, an objection period from one minute to 90 days, and an arbiter who isn't a party.":
+		"Die Bedingungen sind ungültig: zwei verschiedene Parteien, ein bis zwanzig Meilensteine über null, eine Einspruchsfrist von einer Minute bis 90 Tagen und ein Schlichter, der keine Partei ist.",
+	"This milestone doesn't exist.": "Diesen Meilenstein gibt es nicht.",
+	"This milestone isn't in a state that allows this step.":
+		"Dieser Meilenstein lässt diesen Schritt gerade nicht zu.",
+	"The objection period is still running.": "Die Einspruchsfrist läuft noch.",
+	"The objection period is over.": "Die Einspruchsfrist ist vorbei.",
+	"This deal has no arbiter.": "Diese Vereinbarung hat keinen Schlichter.",
+	"The arbiter has to split exactly what is left between the two parties.":
+		"Der Schlichter muss genau den Restbetrag zwischen beiden Parteien aufteilen.",
+	"You already asked to cancel; the other side has to agree.":
+		"Sie haben den Abbruch schon beantragt; die andere Seite muss zustimmen.",
+	"A milestone name is too long (64 characters at most).":
+		"Ein Meilensteinname ist zu lang (höchstens 64 Zeichen).",
+	"The deal didn't accept this step.": "Die Vereinbarung hat diesen Schritt nicht angenommen.",
+	"The deal couldn't be read. Check the deal number and try again.":
+		"Die Vereinbarung ließ sich nicht lesen. Prüfen Sie die Nummer und versuchen Sie es erneut.",
+	"The deal didn't accept this step; it may have moved on. Reload to see where it stands.":
+		"Die Vereinbarung hat diesen Schritt nicht angenommen; sie ist vielleicht weiter. Laden Sie neu, um den Stand zu sehen.",
+	"This organization doesn't hold that asset.": "Diese Organisation führt diese Währung nicht.",
+	"There isn't enough money available on the main account. Enter a smaller amount or move money from the Reserve.":
+		"Auf dem Hauptkonto ist nicht genug Geld verfügbar. Geben Sie einen kleineren Betrag ein oder holen Sie Geld aus der Reserve.",
+	"The Reserve doesn't hold that much. Enter a smaller amount.":
+		"So viel liegt nicht in der Reserve. Geben Sie einen kleineren Betrag ein.",
+	"The file is empty.": "Die Datei ist leer.",
+	"The file has a header but no payments.": "Die Datei hat eine Kopfzeile, aber keine Zahlungen.",
+	"Write something first.": "Schreiben Sie zuerst etwas.",
+	"Name at least one guardian.": "Nennen Sie mindestens eine Vertrauensperson.",
+	"You can't be your own guardian.": "Sie können nicht Ihre eigene Vertrauensperson sein.",
+	"Each guardian once.": "Jede Vertrauensperson nur einmal.",
+	"The number of confirmations must be between 1 and the number of guardians.":
+		"Die Zahl der Bestätigungen muss zwischen 1 und der Zahl der Vertrauenspersonen liegen.",
+	"The waiting period is at least a minute.": "Die Wartezeit beträgt mindestens eine Minute.",
+	"Pick one of this template's roles for yourself.":
+		"Wählen Sie für sich eine der Rollen dieser Vorlage.",
+	"This change needs approval now that your organization has enough people. Create a request instead.":
+		"Diese Änderung braucht eine Freigabe, da Ihre Organisation jetzt genug Mitglieder hat. Erstellen Sie stattdessen eine Anfrage.",
+	"After this change, nobody could approve large payments or changes anymore. Add someone with the required role first.":
+		"Nach dieser Änderung könnte niemand mehr große Zahlungen oder Änderungen freigeben. Fügen Sie zuerst jemanden mit der nötigen Rolle hinzu.",
+	"This person isn't part of the organization.": "Diese Person gehört nicht zur Organisation.",
+	"Pick one of the organization's roles.": "Wählen Sie eine der Rollen der Organisation.",
+	"This person is already part of the organization.": "Diese Person gehört schon zur Organisation.",
+	"The organization already accepts this asset.": "Die Organisation nimmt diese Währung schon an.",
+	"An organization has to accept at least one asset.":
+		"Eine Organisation muss mindestens eine Währung annehmen.",
+	"An allowance needs an accepted asset or a budget category (a category only in the rules' currency), an amount above zero and a period.":
+		"Ein Kontingent braucht eine angenommene Währung oder eine Budgetkategorie (eine Kategorie nur in der Währung der Regeln), einen Betrag über null und einen Zeitraum.",
+	"An allowlist holds up to 100 different addresses.":
+		"Eine Freigabeliste fasst bis zu 100 verschiedene Adressen.",
+	"The last tier must have no upper limit, so every amount is covered.":
+		"Die letzte Stufe darf keine Obergrenze haben, damit jeder Betrag abgedeckt ist.",
+	"The security seal threshold must be an amount above zero.":
+		"Die Schwelle für das Sicherheitssiegel muss ein Betrag über null sein.",
+	"Up to 20 budgets.": "Bis zu 20 Budgets.",
+	"The rules mention a role that doesn't exist.":
+		"Die Regeln nennen eine Rolle, die es nicht gibt.",
+	"Each required approval needs a count of at least 1.":
+		"Jede nötige Freigabe braucht eine Anzahl von mindestens 1.",
+	"Every role needs its own name of letters or digits.":
+		"Jede Rolle braucht einen eigenen Namen aus Buchstaben oder Ziffern.",
+	"Someone still holds a role you're removing. Give them another role first.":
+		"Jemand hat noch eine Rolle, die Sie entfernen. Geben Sie der Person zuerst eine andere Rolle.",
+	"The approval rules still ask for a role you're removing. Change the tiers first.":
+		"Die Freigaberegeln verlangen noch eine Rolle, die Sie entfernen. Ändern Sie zuerst die Stufen.",
+	"You're not part of this organization, so you can't do this.":
+		"Sie gehören nicht zu dieser Organisation und können das daher nicht tun.",
+	"The organization only pays recipients on its allowlist. Ask for this recipient to be added on the Rules page.":
+		"Die Organisation zahlt nur an Empfänger auf ihrer Freigabeliste. Bitten Sie auf der Seite Regeln darum, diesen Empfänger aufzunehmen.",
+	"Every line needs an amount above zero.": "Jede Zeile braucht einen Betrag über null.",
+	"You created this request, so someone else has to approve it.":
+		"Sie haben diese Anfrage erstellt, daher muss jemand anderes sie freigeben.",
+	"You've already approved this request.": "Sie haben diese Anfrage schon freigegeben.",
+	"Your role can't approve this request.": "Ihre Rolle kann diese Anfrage nicht freigeben.",
+	"Your approval isn't needed: the remaining approvals must come from a higher role.":
+		"Ihre Freigabe wird nicht gebraucht: Die übrigen Freigaben müssen von einer höheren Rolle kommen.",
+	"This request doesn't need the security seal.": "Diese Anfrage braucht kein Sicherheitssiegel.",
+	"This request already has the security seal.": "Diese Anfrage hat das Sicherheitssiegel schon.",
+	"You created this request, so someone else has to seal it.":
+		"Sie haben diese Anfrage erstellt, daher muss jemand anderes sie versiegeln.",
+	"Your role can't seal this request.": "Ihre Rolle kann diese Anfrage nicht versiegeln.",
+	"This request is already decided and can't be declined.":
+		"Über diese Anfrage ist schon entschieden; sie kann nicht abgelehnt werden.",
+	"Your role can't decline this request.": "Ihre Rolle kann diese Anfrage nicht ablehnen.",
+	"This request can't be executed yet.": "Diese Anfrage kann noch nicht ausgeführt werden.",
+	"This payment isn't a held handover waiting for confirmations.":
+		"Diese Zahlung ist keine zurückgehaltene Übergabe, die auf Bestätigungen wartet.",
+	"Only the recipient, the requester or an eligible approver can confirm this handover.":
+		"Nur der Empfänger, die antragstellende Person oder eine berechtigte freigebende Person kann diese Übergabe bestätigen.",
+	"Only the requester or an eligible approver can cancel this handover.":
+		"Nur die antragstellende Person oder eine berechtigte freigebende Person kann diese Übergabe abbrechen.",
+	"This request is no longer waiting for approvals.":
+		"Diese Anfrage wartet nicht mehr auf Freigaben.",
+	"You're not part of this organization.": "Sie gehören nicht zu dieser Organisation.",
+	"These rules aren't valid.": "Diese Regeln sind ungültig.",
+	"This request can't be declined.": "Diese Anfrage kann nicht abgelehnt werden.",
+	"This change needs approval now that your organization has enough people.":
+		"Diese Änderung braucht eine Freigabe, da Ihre Organisation jetzt genug Mitglieder hat.",
+	"After this change, nobody could approve large payments or changes anymore.":
+		"Nach dieser Änderung könnte niemand mehr große Zahlungen oder Änderungen freigeben.",
+	"There isn't enough money available on the account.":
+		"Auf dem Konto ist nicht genug Geld verfügbar.",
+	"This request doesn't exist.": "Diese Anfrage gibt es nicht.",
+	"Only the founder can do this during setup.":
+		"Während der Einrichtung kann das nur die gründende Person.",
+	"Unknown template.": "Unbekannte Vorlage.",
+	"That text is too long.": "Dieser Text ist zu lang.",
+	"This asset still holds money or has open requests, so it can't be removed.":
+		"In dieser Währung liegt noch Geld oder es gibt offene Anfragen, daher kann sie nicht entfernt werden.",
+	"This asset has no Reserve yet.": "Diese Währung hat noch keine Reserve.",
+	"Your role can't move money between the account and the Reserve.":
+		"Ihre Rolle kann kein Geld zwischen Konto und Reserve bewegen.",
+	"A spending limit needs an amount above zero and a period.":
+		"Ein Ausgabelimit braucht einen Betrag über null und einen Zeitraum.",
+	"This goes beyond what is left of a hard budget this period, so it isn't accepted.":
+		"Das übersteigt den Rest eines festen Budgets in diesem Zeitraum und wird daher nicht angenommen.",
+	"The rules have no budget with that name.": "Die Regeln haben kein Budget mit diesem Namen.",
+	"Only the recipient, the requester or an eligible approver can act on this handover.":
+		"Nur der Empfänger, die antragstellende Person oder eine berechtigte freigebende Person kann bei dieser Übergabe handeln.",
+	"There is no standing order with this number.": "Es gibt keinen Dauerauftrag mit dieser Nummer.",
+	"This standing order isn't due yet.": "Dieser Dauerauftrag ist noch nicht fällig.",
+	"A standing order repeats at least every hour.":
+		"Ein Dauerauftrag wiederholt sich höchstens stündlich.",
+	"An organization has one to eight roles, each with its own name.":
+		"Eine Organisation hat ein bis acht Rollen mit jeweils eigenem Namen.",
+	"The address book is full (200 recipients). Remove someone you no longer pay.":
+		"Das Adressbuch ist voll (200 Empfänger). Entfernen Sie jemanden, den Sie nicht mehr bezahlen.",
+	"A batch has one to fifty payments.": "Eine Sammelzahlung hat ein bis fünfzig Zahlungen.",
+	"This payment link doesn't exist.": "Diesen Zahlungslink gibt es nicht.",
+	"This payment link is closed or fully paid.":
+		"Dieser Zahlungslink ist geschlossen oder vollständig bezahlt.",
+	"This wallet has already paid this link.": "Diese Wallet hat diesen Link schon bezahlt.",
+	"A newer ancora release was published after this upgrade was proposed. Propose the upgrade to the newest release.":
+		"Nach dem Vorschlag dieses Upgrades ist eine neuere ancora-Version erschienen. Schlagen Sie das Upgrade auf die neueste Version vor.",
+	"The Stellar Registry didn't confirm an ancora release. Try again in a moment.":
+		"Die Stellar Registry hat keine ancora-Version bestätigt. Versuchen Sie es gleich noch einmal.",
+	"That exchange-rate service didn't answer. Try again later.":
+		"Dieser Wechselkursdienst hat nicht geantwortet. Versuchen Sie es später erneut.",
+	"Only the successor named for this person can claim their position.":
+		"Nur die für diese Person benannte Nachfolge kann ihre Position übernehmen.",
+	"This person was active recently, so their position can't be claimed yet.":
+		"Diese Person war kürzlich aktiv, daher kann ihre Position noch nicht übernommen werden.",
+	"There is no open claim on this position (the person may have been active since).":
+		"Für diese Position gibt es keinen offenen Anspruch (die Person war vielleicht inzwischen aktiv).",
+	"The waiting period hasn't passed yet.": "Die Wartezeit ist noch nicht vorbei.",
+	"This organization seals with quantum-safe keys. Create your seal key on your pass first.":
+		"Diese Organisation versiegelt mit quantensicheren Schlüsseln. Erstellen Sie zuerst Ihren Siegelschlüssel in Ihrem Pass.",
+	"The quantum-safe signature didn't match your registered seal key. Seal from the device that holds your key.":
+		"Die quantensichere Signatur passt nicht zu Ihrem registrierten Siegelschlüssel. Versiegeln Sie auf dem Gerät mit Ihrem Schlüssel.",
+	"The change could not be applied.": "Die Änderung konnte nicht übernommen werden.",
+	"The confidential pot didn't accept this step.":
+		"Die vertrauliche Kasse hat diesen Schritt nicht angenommen.",
+	"The pot's auditor key isn't registered. Set the pot up again.":
+		"Der Prüferschlüssel der Kasse ist nicht registriert. Richten Sie die Kasse erneut ein.",
+	"This organization already has a pot account.": "Diese Organisation hat schon ein Kassenkonto.",
+	"The other side has no pot account yet. Ask them to open their confidential pot.":
+		"Die andere Seite hat noch kein Kassenkonto. Bitten Sie sie, ihre vertrauliche Kasse zu eröffnen.",
+	"The pot didn't accept the proof: the balance changed since the request was made. Make it again.":
+		"Die Kasse hat den Nachweis nicht angenommen: Der Saldo hat sich seit der Anfrage geändert. Stellen Sie sie erneut.",
+	"The pot couldn't read this request's proof. Make it again.":
+		"Die Kasse konnte den Nachweis dieser Anfrage nicht lesen. Stellen Sie sie erneut.",
+	"This organization's code predates the pot. Move to the latest release under Settings → Organization code.":
+		"Der Code dieser Organisation ist älter als die Kasse. Wechseln Sie unter Einstellungen → Code der Organisation auf die neueste Version.",
+	"Turn on private details first (Settings → Private details): the pot key travels the same way.":
+		"Schalten Sie zuerst vertrauliche Angaben ein (Einstellungen → Vertrauliche Angaben): Der Kassenschlüssel wird auf demselben Weg geteilt.",
+	"This device can't read the organization's private details yet. Set it up and ask a member to share access.":
+		"Dieses Gerät kann die vertraulichen Angaben der Organisation noch nicht lesen. Richten Sie es ein und bitten Sie ein Mitglied, den Zugang zu teilen.",
+	"The pot key isn't readable on this device.":
+		"Der Kassenschlüssel ist auf diesem Gerät nicht lesbar.",
+	"The pot key in the keyring doesn't match the pot account.":
+		"Der Kassenschlüssel im Schlüsselbund passt nicht zum Kassenkonto.",
+	"The pot isn't open and readable on this device.":
+		"Die Kasse ist auf diesem Gerät nicht eröffnet und lesbar.",
+	"The pot is already open.": "Die Kasse ist schon eröffnet.",
+	"This device can't read private details.": "Dieses Gerät kann keine vertraulichen Angaben lesen.",
+	"They have no pot account yet. Ask them to open their confidential pot.":
+		"Sie haben noch kein Kassenkonto. Bitten Sie sie, ihre vertrauliche Kasse zu eröffnen.",
+	"This device can't read the pot key.": "Dieses Gerät kann den Kassenschlüssel nicht lesen.",
+	"The pot's balance can't be spent right now. Merge the next payment it receives and try again.":
+		"Der Saldo der Kasse ist gerade nicht verfügbar. Führen Sie die nächste eingehende Zahlung zusammen und versuchen Sie es erneut.",
+	"The pot doesn't hold that much.": "So viel liegt nicht in der Kasse.",
+	"The pot's balance changed. Refresh and try again.":
+		"Der Saldo der Kasse hat sich geändert. Aktualisieren Sie und versuchen Sie es erneut.",
+	"Only the organization's highest role registers its name.":
+		"Nur die höchste Rolle der Organisation registriert ihren Namen.",
+	"That name is already taken on the registry.": "Dieser Name ist in der Registry schon vergeben.",
+	"You can't react to this entry.": "Auf diesen Eintrag können Sie nicht reagieren.",
+	"Only the requester marks questions on their request as answered.":
+		"Nur die antragstellende Person markiert Fragen zu ihrer Anfrage als beantwortet.",
+	"Only members can ask for money.": "Nur Mitglieder können Geld anfordern.",
+	"Only members can set standing orders.": "Nur Mitglieder können Daueraufträge einrichten.",
+	"Repeat at least every hour.": "Höchstens stündlich wiederholen.",
+	"Only members can edit the address book.": "Nur Mitglieder können das Adressbuch bearbeiten.",
+	"Enter the recipient's account.": "Geben Sie das Konto des Empfängers ein.",
+	"This standing order was already stopped.": "Dieser Dauerauftrag wurde schon beendet.",
+	"Only the person who set this standing order, or the top role, can stop it.":
+		"Nur die Person, die diesen Dauerauftrag eingerichtet hat, oder die höchste Rolle kann ihn beenden.",
+	"This standing order was stopped.": "Dieser Dauerauftrag wurde beendet.",
+	"There is no held handover with this reference. Check the link.":
+		"Zu dieser Referenz gibt es keine zurückgehaltene Übergabe. Prüfen Sie den Link.",
+	"Payments here go out automatically once they are fully approved.":
+		"Zahlungen gehen hier automatisch raus, sobald sie vollständig freigegeben sind.",
+	"Enter a token contract address (C…) or a classic asset as CODE:ISSUER.":
+		"Geben Sie eine Token-Vertragsadresse (C…) oder ein klassisches Asset als CODE:ISSUER ein.",
+	"There is no recovery plan to remove.": "Es gibt keinen Wiederherstellungsplan zum Entfernen.",
+	"The new pass must differ from the old one.": "Der neue Pass muss sich vom alten unterscheiden.",
+	"There is no open claim for this pass.": "Für diesen Pass gibt es keinen offenen Anspruch.",
+	"You already confirmed this claim.": "Sie haben diesen Anspruch schon bestätigt.",
+	"There is no open claim to cancel.": "Es gibt keinen offenen Anspruch zum Abbrechen.",
+	"There is no open recovery for this pass.": "Für diesen Pass läuft keine Wiederherstellung.",
+	"The waiting period isn't over yet.": "Die Wartezeit ist noch nicht vorbei.",
+	"This person has no recovery plan.": "Diese Person hat keinen Wiederherstellungsplan.",
+	"Only the guardians this person named can do that.":
+		"Das können nur die Vertrauenspersonen, die diese Person benannt hat.",
+	"Not enough confirmations yet, or the waiting period isn't over.":
+		"Noch nicht genug Bestätigungen, oder die Wartezeit ist nicht vorbei.",
+	"Only organizations known to the registry take part.":
+		"Nur Organisationen, die die Registry kennt, nehmen teil.",
+	"This organization or request doesn't exist anymore. Reload the page.":
+		"Diese Organisation oder Anfrage gibt es nicht mehr. Laden Sie die Seite neu.",
+	"This browser can't receive notifications. On an iPhone, add ancora to the home screen first.":
+		"Dieser Browser kann keine Benachrichtigungen empfangen. Fügen Sie ancora auf dem iPhone zuerst zum Home-Bildschirm hinzu.",
+	"Notifications are blocked for ancora. Allow them in the browser's site settings.":
+		"Benachrichtigungen für ancora sind blockiert. Erlauben Sie sie in den Website-Einstellungen des Browsers.",
+	"Notifications aren't set up on ancora's server yet.":
+		"Benachrichtigungen sind auf dem Server von ancora noch nicht eingerichtet.",
+	"The anchor sent no sign-in challenge.": "Der Anchor hat keine Anmeldeaufforderung gesendet.",
+	"The anchor's sign-in challenge is for another network.":
+		"Die Anmeldeaufforderung des Anchors gilt für ein anderes Netzwerk.",
+	"The anchor's sign-in challenge was for another account.":
+		"Die Anmeldeaufforderung des Anchors galt einem anderen Konto.",
+	"The anchor returned no session token.": "Der Anchor hat kein Sitzungstoken zurückgegeben.",
+	"The anchor answered in a way ancora doesn't understand.":
+		"Der Anchor hat auf eine Weise geantwortet, die ancora nicht versteht.",
+	"The anchor couldn't be reached.": "Der Anchor war nicht erreichbar.",
+	"The anchor session ended. Start again to sign in once more.":
+		"Die Sitzung beim Anchor ist beendet. Beginnen Sie erneut, um sich wieder anzumelden.",
+	"The anchor has no record of this transaction.": "Der Anchor kennt diese Transaktion nicht.",
+	"This organization seals with quantum-safe keys, and this device has none for you. Create one under Settings → Security seal, or seal from the device that has it.":
+		"Diese Organisation versiegelt mit quantensicheren Schlüsseln, und dieses Gerät hat keinen für Sie. Erstellen Sie einen unter Einstellungen → Sicherheitssiegel oder versiegeln Sie auf dem Gerät, das ihn hat.",
+	"This isn't an ancora backup code (it starts with ancora-keys-1.).":
+		"Das ist kein ancora-Sicherungscode (er beginnt mit ancora-keys-1.).",
+	"The backup code is damaged. Copy it again, in full.":
+		"Der Sicherungscode ist beschädigt. Kopieren Sie ihn erneut und vollständig.",
+	"This browser can't store keys (private window?).":
+		"Dieser Browser kann keine Schlüssel speichern (privates Fenster?).",
+	"The key store on this device didn't answer.":
+		"Der Schlüsselspeicher auf diesem Gerät hat nicht geantwortet.",
+	"This organization keeps details private, and this device can't write them yet. Set it up under Settings → Private details.":
+		"Diese Organisation hält Angaben vertraulich, und dieses Gerät kann sie noch nicht schreiben. Richten Sie es unter Einstellungen → Vertrauliche Angaben ein.",
+	"Set up private details on this device first.":
+		"Richten Sie zuerst vertrauliche Angaben auf diesem Gerät ein.",
+	"Private references are limited to about 70 characters. Shorten it.":
+		"Vertrauliche Verwendungszwecke sind auf etwa 70 Zeichen begrenzt. Kürzen Sie ihn.",
+	"This name and note are too long to keep private. Shorten them.":
+		"Name und Notiz sind zu lang, um vertraulich zu bleiben. Kürzen Sie sie.",
+	"This payment link is incomplete. Ask the organization to send it again.":
+		"Dieser Zahlungslink ist unvollständig. Bitten Sie die Organisation, ihn erneut zu senden.",
+	"This payment link doesn't exist, or the organization's account can't take payment links.":
+		"Diesen Zahlungslink gibt es nicht, oder das Konto der Organisation kann keine Zahlungslinks annehmen.",
+	"Stellar can't be reached right now. Try again in a moment.":
+		"Stellar ist gerade nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+	"Enter the recipient's Stellar address (starts with G or C).":
+		"Geben Sie die Stellar-Adresse des Empfängers ein (beginnt mit G oder C).",
+	"This Stellar address doesn't exist on testnet yet. The recipient has to fund it first (for example with Friendbot).":
+		"Diese Stellar-Adresse gibt es im Testnetz noch nicht. Der Empfänger muss sie zuerst aufladen (zum Beispiel mit Friendbot).",
+	"Enter a token contract address (C…) or a classic asset as CODE:ISSUER, like USDC:GBBD…":
+		"Geben Sie eine Token-Vertragsadresse (C…) oder ein klassisches Asset als CODE:ISSUER ein, etwa USDC:GBBD…",
+	"This contract doesn't describe itself as a token.":
+		"Dieser Vertrag weist sich nicht als Token aus.",
+	"Enter a name of up to 64 characters.": "Geben Sie einen Namen mit höchstens 64 Zeichen ein.",
+	"Creating your pass on Stellar… confirm with your passkey.":
+		"Ihr Pass wird auf Stellar erstellt … bestätigen Sie mit Ihrem Passkey.",
+	"No passkey was chosen.": "Es wurde kein Passkey gewählt.",
+	"Signing in didn't complete. Try again.":
+		"Die Anmeldung wurde nicht abgeschlossen. Versuchen Sie es erneut.",
+	"Sign in first.": "Melden Sie sich zuerst an.",
+	"The picture link isn't valid. Upload the picture again.":
+		"Der Bildlink ist ungültig. Laden Sie das Bild erneut hoch.",
+	"The picture couldn't be stored right now. Try again shortly.":
+		"Das Bild konnte gerade nicht gespeichert werden. Versuchen Sie es in Kürze erneut.",
+	"This organization doesn't exist anymore. Reload the page.":
+		"Diese Organisation gibt es nicht mehr. Laden Sie die Seite neu.",
+	"Enter the person's ancora ID (their account address, starts with C).":
+		"Geben Sie die ancora-ID der Person ein (ihre Kontoadresse, beginnt mit C).",
+	"Switching templates isn't available on Stellar yet.":
+		"Der Wechsel der Vorlage ist auf Stellar noch nicht verfügbar.",
+	"This request isn't a held handover. Check the link.":
+		"Diese Anfrage ist keine zurückgehaltene Übergabe. Prüfen Sie den Link.",
+	"This handover couldn't be read.": "Diese Übergabe ließ sich nicht lesen.",
+	"Your account has no signing rule.": "Ihr Konto hat keine Signaturregel.",
+	"Reconnecting your passkey…": "Ihr Passkey wird neu verbunden …",
+	"Lifeline couldn't be read right now.": "Lifeline ließ sich gerade nicht lesen.",
+	"Working…": "Wird ausgeführt …",
+	"Saving…": "Wird gespeichert …",
+	"Sending to Stellar…": "Wird an Stellar gesendet …",
+	"Sending to Stellar… confirm with your passkey if asked.":
+		"Wird an Stellar gesendet … bestätigen Sie mit Ihrem Passkey, falls gefragt.",
+	"Your passkey session on this device has ended, so nothing was done. Sign out and sign in again with your passkey.":
+		"Ihre Passkey-Sitzung auf diesem Gerät ist beendet, daher ist nichts passiert. Melden Sie sich ab und mit Ihrem Passkey wieder an.",
+	"ancora's server is unreachable right now. Try again shortly.":
+		"Der Server von ancora ist gerade nicht erreichbar. Versuchen Sie es in Kürze erneut.",
+	"No wallet was connected.": "Es wurde keine Wallet verbunden.",
+	"Your wallet account isn't active on testnet yet. Fund it with Friendbot first.":
+		"Ihr Wallet-Konto ist im Testnetz noch nicht aktiv. Laden Sie es zuerst mit Friendbot auf.",
+	"The payment couldn't be prepared.": "Die Zahlung konnte nicht vorbereitet werden.",
+	"Waiting for your wallet to sign…": "Warten auf die Signatur Ihrer Wallet …",
+	"The wallet didn't sign the payment.": "Die Wallet hat die Zahlung nicht signiert.",
+	"The network rejected the payment. Check the wallet's XLM balance and try again.":
+		"Das Netzwerk hat die Zahlung abgelehnt. Prüfen Sie das XLM-Guthaben der Wallet und versuchen Sie es erneut.",
+	"The payment failed on the network. Nothing left your wallet.":
+		"Die Zahlung ist im Netzwerk fehlgeschlagen. Nichts hat Ihre Wallet verlassen.",
+	"The payment is taking longer than usual. Check your wallet's history in a minute.":
+		"Die Zahlung dauert länger als üblich. Prüfen Sie den Verlauf Ihrer Wallet in einer Minute.",
+	"Your wallet has no trustline for this exact asset (testnet has several assets called USDC).":
+		"Ihre Wallet hat keine Trustline für genau dieses Asset (im Testnetz heißen mehrere Assets USDC).",
+	"Your wallet doesn't hold enough of this asset.": "Ihre Wallet hat nicht genug von diesem Asset.",
+	"Couldn't read the private details setup":
+		"Die Einrichtung vertraulicher Angaben ließ sich nicht lesen",
+	"Couldn't set up private details on this device":
+		"Vertrauliche Angaben ließen sich auf diesem Gerät nicht einrichten",
+	"Couldn't renew the organization's key":
+		"Der Schlüssel der Organisation ließ sich nicht erneuern",
+	"Couldn't share access": "Der Zugang ließ sich nicht teilen",
+	"Couldn't add the auditor": "Der Prüfer ließ sich nicht hinzufügen",
+	"Couldn't remove the auditor": "Der Prüfer ließ sich nicht entfernen",
+	"Couldn't open this organization": "Diese Organisation ließ sich nicht öffnen",
+	"Couldn't read the pot": "Die Kasse ließ sich nicht lesen",
+	"Couldn't open the pot": "Die Kasse konnte nicht eröffnet werden",
+	"Couldn't move money into the pot": "Geld ließ sich nicht in die Kasse verschieben",
+	"Couldn't make the pot's incoming money spendable":
+		"Eingegangenes Geld der Kasse ließ sich nicht verfügbar machen",
+	"Couldn't take money out of the pot": "Geld ließ sich nicht aus der Kasse entnehmen",
+	"Couldn't pay from the pot": "Aus der Kasse ließ sich nicht zahlen",
+	"Couldn't read the amount": "Der Betrag ließ sich nicht lesen",
+	"Nothing was changed": "Es wurde nichts geändert",
+	"Not a Stellar address.": "Keine Stellar-Adresse.",
+	"A successor is another member; the quiet period and the wait run from one minute to two years.":
+		"Die Nachfolge ist ein anderes Mitglied; die inaktive Zeit und die Wartezeit liegen zwischen einer Minute und zwei Jahren.",
 };

@@ -54,7 +54,7 @@ function Deals({ account }: { account: OrgAccount }) {
 		<>
 			<NewDealForm account={account} onCreated={reload} />
 			<Card title={t("Your deals")}>
-				{error && <p className={styles.error}>{error}</p>}
+				{error && <p className={styles.error}>{t(error)}</p>}
 				{deals === null ? (
 					<p className={styles.muted}>{t("Reading your deals…")}</p>
 				) : deals.length === 0 ? (
@@ -81,13 +81,16 @@ function DealRow({ account, deal }: { account: OrgAccount; deal: Deal }) {
 	return (
 		<li className={styles.row}>
 			<Link to={`/app/deals/${deal.id}`} className={styles.title}>
-				{t("Deal #")}
-				{deal.id} {side === "a" ? "with" : "from"} {otherName}
+				{side === "a"
+					? t("Deal #{deal} with {name}", { deal: deal.id, name: otherName })
+					: t("Deal #{deal} from {name}", { deal: deal.id, name: otherName })}
 			</Link>
 			<span className={styles.meta}>
-				{formatMoney(deal.total, currency)} · {deal.milestones.length} {t("milestone")}
-				{deal.milestones.length === 1 ? "" : "s"} · {DEAL_STATUS_LABELS[deal.status]} {t("· since")}{" "}
-				{formatDateTime(deal.createdAt)}
+				{formatMoney(deal.total, currency)} ·{" "}
+				{deal.milestones.length === 1
+					? t("1 milestone")
+					: t("{count} milestones", { count: deal.milestones.length })}{" "}
+				· {t(DEAL_STATUS_LABELS[deal.status])} {t("· since")} {formatDateTime(deal.createdAt)}
 			</span>
 		</li>
 	);

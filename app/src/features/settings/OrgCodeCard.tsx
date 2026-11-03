@@ -62,7 +62,7 @@ export function OrgCodeCard({ account }: { account: OrgAccount }) {
 					"ancora publishes every version of the organization's code on the Stellar Registry, where anyone can compare it with what this contract runs. Nobody can change the code for you: a move to a new release is a change the members approve under your rules.",
 				)}
 			</p>
-			{error && <p className={styles.warn}>{error}</p>}
+			{error && <p className={styles.warn}>{t(error)}</p>}
 			{status && (
 				<dl className={styles.facts}>
 					<div>

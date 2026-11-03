@@ -52,7 +52,7 @@ export function BatchImport({ payees, disabled, onImport }: Props) {
 			</label>
 			{error && (
 				<p className={styles.error} role="alert">
-					{error}
+					{t(error)}
 				</p>
 			)}
 		</div>

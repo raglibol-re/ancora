@@ -178,7 +178,7 @@ export function SuccessionCard({ account }: { account: OrgAccount }) {
 				</div>
 				{error && (
 					<p className={styles.error} role="alert">
-						{error}
+						{t(error)}
 					</p>
 				)}
 				<button type="submit" className={buttonClass("secondary")} disabled={busy}>

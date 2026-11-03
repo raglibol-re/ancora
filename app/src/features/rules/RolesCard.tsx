@@ -141,7 +141,7 @@ export function RolesCard({ account }: { account: OrgAccount }) {
 			</form>
 			{(error ?? (changed && !verdict.ok ? verdict.error.message : null)) && (
 				<p className={styles.error} role="alert">
-					{error ?? (!verdict.ok ? verdict.error.message : null)}
+					{t(error ?? (!verdict.ok ? verdict.error.message : ""))}
 				</p>
 			)}
 			{changed && (

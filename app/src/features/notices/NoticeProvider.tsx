@@ -1,4 +1,5 @@
 import { type ReactNode, useCallback, useState } from "react";
+import { useT } from "../../ui/useLanguage.ts";
 import { type Notice, NoticeContext } from "./NoticeContext.ts";
 import styles from "./NoticeProvider.module.css";
 
@@ -8,6 +9,7 @@ const VISIBLE_MS = 6_000;
 let nextId = 0;
 
 export function NoticeProvider({ children }: { children: ReactNode }) {
+	const t = useT();
 	const [notices, setNotices] = useState<ShownNotice[]>([]);
 
 	const notify = useCallback((notice: Notice) => {
@@ -26,7 +28,7 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
 						className={`${styles.notice} ${styles[notice.tone]}`}
 						role={notice.tone === "error" ? "alert" : "status"}
 					>
-						{notice.text}
+						{t(notice.text)}
 					</p>
 				))}
 			</div>

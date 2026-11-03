@@ -66,7 +66,7 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 						"If you lose this pass, the guardians you name here can confirm a new one. After the waiting period your positions in every organization move to it. Recovery never moves money, and while a claim waits you can cancel it from this pass.",
 					)}
 				</p>
-				{error && <p className={styles.error}>{error}</p>}
+				{error && <p className={styles.error}>{t(error)}</p>}
 				{overview && !claim && (
 					<p className={styles.status}>
 						{plan ? (
@@ -308,7 +308,7 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 			</div>
 			{problem && (
 				<p className={styles.error} role="alert">
-					{problem}
+					{t(problem)}
 				</p>
 			)}
 			<div className={styles.actions}>

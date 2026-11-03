@@ -250,7 +250,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 				</Field>
 				{error && (
 					<p className={styles.error} role="alert">
-						{error}
+						{t(error)}
 					</p>
 				)}
 				<button type="submit" className={buttonClass()} disabled={busy}>

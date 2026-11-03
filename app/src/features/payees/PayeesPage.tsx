@@ -199,7 +199,7 @@ function AddressBook({ account }: { account: OrgAccount }) {
 						</Field>
 						{error && (
 							<p className={styles.error} role="alert">
-								{error}
+								{t(error)}
 							</p>
 						)}
 						<div className={styles.buttons}>

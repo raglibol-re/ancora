@@ -100,6 +100,8 @@ One passkey, one person, any number of positions: the same address is a board me
 
 UI state lives in `features/workspace` (snapshot and identity via `useSyncExternalStore`, preferences, active org). `useCommand` gives every action the same UX: signature prompt (simulated only in sample mode and for the seal) → command → plain-language success or error. `features/profile` is the person's page, `features/settings` the organization's.
 
+Languages: English and German. The English text is the key; `t()` from `ui/i18n.ts` looks it up in `ui/messages/de.ts` where it is shown. The domain and the adapters stay English (no UI imports) and return English messages; the screens translate them where they display them (fields, notices, the working bar, request failures), and a failure reported as "what failed: why" is translated part by part. A test checks that every text passed to `t()`/`msg()` and every contract, deal and pot error has German.
+
 ## Auth flows
 
 - **Sign-up:** smart-account-kit creates a passkey (RP ID = the production hostname) and deploys the OZ smart account with that passkey as its WebAuthn signer; the address is derived from the credential id, so one passkey always maps to one account. The person then writes their profile to the registry (`set_profile`, signed with the passkey).

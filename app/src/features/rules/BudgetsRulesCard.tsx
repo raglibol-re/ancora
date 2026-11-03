@@ -131,7 +131,7 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 				/>
 				{error && (
 					<p className={styles.error} role="alert">
-						{error}
+						{t(error)}
 					</p>
 				)}
 				<div>

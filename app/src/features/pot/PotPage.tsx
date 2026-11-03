@@ -67,7 +67,7 @@ function Pot({ account }: { account: OrgAccount }) {
 			</p>
 			{error && (
 				<p className={styles.muted} role="alert">
-					{error}
+					{t(error)}
 				</p>
 			)}
 			{status ? (
@@ -127,7 +127,7 @@ function PotBody({ account, support, status, reading, onChanged }: BodyProps) {
 		return Boolean(result?.ok);
 	};
 
-	if (status.state === "unavailable") return <p className={styles.muted}>{status.reason}</p>;
+	if (status.state === "unavailable") return <p className={styles.muted}>{t(status.reason)}</p>;
 	if (!asset) {
 		return (
 			<p className={styles.muted}>

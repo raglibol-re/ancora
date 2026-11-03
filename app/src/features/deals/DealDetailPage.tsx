@@ -4,7 +4,6 @@ import { currencyOf, type OrgAccount, shortAddress } from "../../domain/account.
 import {
 	DEAL_STATUS_LABELS,
 	type DealStep,
-	describeDealAction,
 	MILESTONE_STATUS_LABELS,
 	payoutAt,
 	sideOf,
@@ -21,6 +20,7 @@ import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Deals.module.css";
+import { describeDealAction } from "./describeDealAction.ts";
 import { useDeals } from "./useDeals.ts";
 
 export function DealDetailPage() {
@@ -53,7 +53,7 @@ function Detail({ account, dealId }: { account: OrgAccount; dealId: number }) {
 	const now = useNow();
 	const deal = deals?.find((d) => d.id === dealId);
 	if (!support) return null;
-	if (error) return <p className={styles.error}>{error}</p>;
+	if (error) return <p className={styles.error}>{t(error)}</p>;
 	if (!deals) return <p className={styles.muted}>{t("Reading the deal…")}</p>;
 	if (!deal) {
 		return (
@@ -100,7 +100,7 @@ function Detail({ account, dealId }: { account: OrgAccount; dealId: number }) {
 
 	return (
 		<>
-			<Card title={DEAL_STATUS_LABELS[deal.status]}>
+			<Card title={t(DEAL_STATUS_LABELS[deal.status])}>
 				<dl className={styles.facts}>
 					<div>
 						<dt>{side === "a" ? t("You pay") : t("You are paid by")}</dt>
@@ -159,7 +159,7 @@ function Detail({ account, dealId }: { account: OrgAccount; dealId: number }) {
 									{m.label} · {formatMoney(m.amount, currency)}
 								</span>
 								<span className={styles.meta}>
-									{MILESTONE_STATUS_LABELS[m.status]}
+									{t(MILESTONE_STATUS_LABELS[m.status])}
 									{m.status === "requested" &&
 										due !== null &&
 										(due > now

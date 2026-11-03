@@ -58,10 +58,23 @@ export function onLanguageChange(listener: () => void): () => void {
  * English text as written; it is also the key the German catalog uses.
  */
 export function t(text: string, values: Readonly<Record<string, string | number>> = {}): string {
-	const translated = catalogs[current][text] ?? text;
+	const translated = catalogs[current][text] ?? byParts(text);
 	return translated.replace(/\{(\w+)\}/g, (whole, name: string) =>
 		name in values ? String(values[name]) : whole,
 	);
+}
+
+/**
+ * Adapters report a failure as "what failed: why" ("Couldn't open the pot: The pot key isn't
+ * readable on this device."); without an entry for the whole text, each part is translated on
+ * its own so the message reads in one language.
+ */
+function byParts(text: string): string {
+	const split = text.indexOf(": ");
+	if (split < 0) return text;
+	const what = text.slice(0, split);
+	const why = text.slice(split + 2);
+	return `${catalogs[current][what] ?? what}: ${catalogs[current][why] ?? byParts(why)}`;
 }
 
 /**

@@ -116,7 +116,7 @@ export function TiersCard({ account }: { account: OrgAccount }) {
 				)}
 				{error && (
 					<p className={styles.error} role="alert">
-						{error}
+						{t(error)}
 					</p>
 				)}
 				<button type="submit" className={buttonClass("secondary")} disabled={busy}>

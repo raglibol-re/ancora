@@ -40,7 +40,7 @@ export function PrivacyCard({ account }: { account: OrgAccount }) {
 					"Payment references and discussion entries can be stored on Stellar encrypted, so only your organization's members read them. Amounts and who you pay stay visible on the public network. Each person's key stays on their device; a new device gets access when another member shares it.",
 				)}
 			</p>
-			{error && <p className={styles.warn}>{error}</p>}
+			{error && <p className={styles.warn}>{t(error)}</p>}
 			{status && (
 				<dl className={styles.facts}>
 					<div>

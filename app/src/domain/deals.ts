@@ -124,33 +124,6 @@ export function stepsFor(deal: Deal, side: DealSide | null, now: number): DealSt
 	return steps;
 }
 
-/** Plain-language name of a deal step, as a request title or a button. */
-export function describeDealAction(
-	action: DealStep["action"],
-	milestoneLabel: (dealId: number, milestone: number) => string,
-): string {
-	switch (action.type) {
-		case "create":
-			return `Propose a deal of ${action.terms.milestones.length} milestone${action.terms.milestones.length === 1 ? "" : "s"}`;
-		case "accept":
-			return `Accept the terms of deal #${action.dealId}`;
-		case "fund":
-			return `Deposit the amount for deal #${action.dealId}`;
-		case "requestRelease":
-			return `Ask for the payout of "${milestoneLabel(action.dealId, action.milestone)}"`;
-		case "approveRelease":
-			return `Approve the payout of "${milestoneLabel(action.dealId, action.milestone)}"`;
-		case "object":
-			return `Object to the payout of "${milestoneLabel(action.dealId, action.milestone)}"`;
-		case "cancel":
-			return `Cancel deal #${action.dealId}`;
-		case "dispute":
-			return `Ask the arbiter to decide deal #${action.dealId}`;
-		case "releaseNow":
-			return `Pay out "${milestoneLabel(action.dealId, action.milestone)}" now`;
-	}
-}
-
 export const DEAL_STATUS_LABELS: Readonly<Record<DealStatus, string>> = {
 	draft: "Waiting for the other side to accept",
 	accepted: "Waiting for the deposit",

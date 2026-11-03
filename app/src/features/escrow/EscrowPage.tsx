@@ -59,7 +59,7 @@ export function EscrowPage() {
 		<Page title={t("Secure handover")}>
 			{error && (
 				<Card title={t("Not found")}>
-					<p>{error}</p>
+					<p>{t(error)}</p>
 					<Link to="/app">{t("Back to the overview")}</Link>
 				</Card>
 			)}

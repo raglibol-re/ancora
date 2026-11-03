@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import styles from "./Field.module.css";
+import { useT } from "./useLanguage.ts";
 
 type FieldProps = {
 	label: string;
@@ -11,6 +12,7 @@ type FieldProps = {
 
 /** Label, control, hint and error in one accessible block. Style inputs via the `.control` class. */
 export function Field({ label, htmlFor, hint, error, children }: FieldProps) {
+	const t = useT();
 	return (
 		<div className={styles.field}>
 			<label htmlFor={htmlFor} className={styles.label}>
@@ -20,7 +22,7 @@ export function Field({ label, htmlFor, hint, error, children }: FieldProps) {
 			{hint && !error && <p className={styles.hint}>{hint}</p>}
 			{error && (
 				<p className={styles.error} role="alert">
-					{error}
+					{t(error)}
 				</p>
 			)}
 		</div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Deal, describeDealAction, payoutAt, sideOf, stepsFor } from "./deals.ts";
+import { type Deal, payoutAt, sideOf, stepsFor } from "./deals.ts";
 
 const HOUR = 3_600_000;
 
@@ -68,15 +68,5 @@ describe("deal steps", () => {
 		expect(sideOf(d, "CX")).toBeNull();
 		const milestone = { label: "Hull", amount: 1, status: "requested" as const, requestedAt: HOUR };
 		expect(payoutAt(d, milestone)).toBe(HOUR + 3 * 86_400_000);
-	});
-
-	it("describe steps in plain language", () => {
-		const label = () => "Hull";
-		expect(describeDealAction({ type: "fund", dealId: 7 }, label)).toBe(
-			"Deposit the amount for deal #7",
-		);
-		expect(describeDealAction({ type: "object", dealId: 7, milestone: 0 }, label)).toBe(
-			'Object to the payout of "Hull"',
-		);
 	});
 });

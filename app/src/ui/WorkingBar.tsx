@@ -1,4 +1,5 @@
 import { usePendingCommand } from "../features/workspace/pendingCommands.ts";
+import { useT } from "./useLanguage.ts";
 import styles from "./WorkingBar.module.css";
 
 /**
@@ -8,13 +9,14 @@ import styles from "./WorkingBar.module.css";
  */
 export function WorkingBar() {
 	const label = usePendingCommand();
+	const t = useT();
 	return (
 		<div className={`${styles.bar} ${label ? styles.active : ""}`} role="status" aria-live="polite">
 			<span className={styles.line} aria-hidden="true" />
 			{label && (
 				<span className={styles.status}>
 					<span className={styles.dot} aria-hidden="true" />
-					{label}
+					{t(label)}
 				</span>
 			)}
 		</div>

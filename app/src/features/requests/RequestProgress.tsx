@@ -56,7 +56,7 @@ export function RequestProgress({
 				</li>
 			)}
 			{request.status === "failed" && request.failure && (
-				<li className={styles.failed}>{request.failure.message}</li>
+				<li className={styles.failed}>{t(request.failure.message)}</li>
 			)}
 			{request.status === "declined" && request.declinedBy && (
 				<li className={styles.failed}>

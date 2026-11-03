@@ -72,7 +72,7 @@ export function SignInPage({ identity, onUseSampleData }: SignInPageProps) {
 				</button>
 				{error && (
 					<p className={styles.error} role="alert">
-						{error}
+						{t(error)}
 					</p>
 				)}
 				<p className={styles.note}>

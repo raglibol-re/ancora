@@ -249,7 +249,7 @@ export function NewDealForm({
 				</label>
 				{error && (
 					<p className={styles.error} role="alert">
-						{error}
+						{t(error)}
 					</p>
 				)}
 				<button type="submit" className={buttonClass()} disabled={busy}>
