@@ -1323,4 +1323,60 @@ export const de: Readonly<Record<string, string>> = {
 	"Board members": "Vorstandsmitglieder",
 	Member: "Mitglied",
 	Members: "Mitglieder",
+	"{list} and {last}": "{list} und {last}",
+	"no approval": "keine Freigabe",
+	"Within the requester's spending limit. No approval needed, it goes out right away.":
+		"Innerhalb des Ausgabelimits der antragstellenden Person. Keine Freigabe nötig, die Zahlung geht sofort raus.",
+	"Over its budget for this period, so the strictest tier applies.":
+		"Das Budget für diesen Zeitraum ist überschritten, daher gilt die strengste Stufe.",
+	"No approval needed. It goes out right away.":
+		"Keine Freigabe nötig. Die Zahlung geht sofort raus.",
+	"No approval needed, then a {hours}-hour objection window.":
+		"Keine Freigabe nötig, danach eine Einspruchsfrist von {hours} Stunden.",
+	"Needs {approvals}, then a {hours}-hour objection window.":
+		"Benötigt {approvals}, danach eine Einspruchsfrist von {hours} Stunden.",
+	"Needs {approvals}.": "Benötigt {approvals}.",
+	"The security seal is required.": "Das Sicherheitssiegel ist erforderlich.",
+	"Add {name} as {role}": "{name} als {role} hinzufügen",
+	"Make {name} {role}": "{name} zu {role} machen",
+	"Update the approval rules": "Freigaberegeln ändern",
+	"Switch to the {template} template": "Zur Vorlage „{template}“ wechseln",
+	"Accept {asset}": "{asset} annehmen",
+	"Stop accepting {asset}": "{asset} nicht mehr annehmen",
+	"Set the roles to {roles}": "Rollen festlegen: {roles}",
+	"Move to ancora release {version}": "Auf ancora-Version {version} wechseln",
+	"in {asset}": "in {asset}",
+	"for #{category}": "für #{category}",
+	"Remove the allowance of {name} {scope}": "Kontingent von {name} {scope} entfernen",
+	"Let {name} pay {amount} per {period} {scope} without approvals":
+		"{name} darf {amount} pro {period} {scope} ohne Freigabe zahlen",
+	"Pay any recipient under the normal rules": "An alle Empfänger nach den normalen Regeln zahlen",
+	"Pay only the 1 allowed recipient": "Nur an den 1 zugelassenen Empfänger zahlen",
+	"Pay only the {count} allowed recipients": "Nur an die {count} zugelassenen Empfänger zahlen",
+	"Send payments outside the 1 allowed recipient to the strictest approvals":
+		"Zahlungen außerhalb des 1 zugelassenen Empfängers brauchen die strengsten Freigaben",
+	"Send payments outside the {count} allowed recipients to the strictest approvals":
+		"Zahlungen außerhalb der {count} zugelassenen Empfänger brauchen die strengsten Freigaben",
+	"Remove the successor of {name}": "Nachfolge für {name} entfernen",
+	"Let {successor} take over from {name} after {days} quiet days":
+		"{successor} übernimmt für {name} nach {days} inaktiven Tagen",
+	"Seal large payments with quantum-safe keys":
+		"Große Zahlungen mit quantensicheren Schlüsseln versiegeln",
+	"Seal large payments with passkeys only": "Große Zahlungen nur mit Passkeys versiegeln",
+	"Use live exchange rates for payments in other currencies":
+		"Aktuelle Wechselkurse für Zahlungen in anderen Währungen verwenden",
+	"Stop using exchange rates; other currencies take the strictest approvals":
+		"Keine Wechselkurse mehr verwenden; andere Währungen brauchen die strengsten Freigaben",
+	"Remove the spending limit of {name}": "Ausgabelimit von {name} entfernen",
+	"Give {name} a spending limit of {amount} per {period}":
+		"{name} ein Ausgabelimit von {amount} pro {period} geben",
+	"milestone {number}": "Meilenstein {number}",
+	"{amount} to 1 recipient": "{amount} an 1 Empfänger",
+	"{amount} to {count} recipients": "{amount} an {count} Empfänger",
+	"{amount} to {recipient}": "{amount} an {recipient}",
+	"a recipient": "einen Empfänger",
+	"Open the confidential pot": "Vertrauliche Kasse eröffnen",
+	"Move {amount} into the confidential pot": "{amount} in die vertrauliche Kasse verschieben",
+	"Take {amount} out of the confidential pot": "{amount} aus der vertraulichen Kasse entnehmen",
+	"Confidential payment to {name}": "Vertrauliche Zahlung an {name}",
 };

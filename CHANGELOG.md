@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: German request titles and rule previews: payments, batches, rule and role changes, deals, the confidential pot and the "Needs 2 board members, then a 48-hour objection window" preview.
 - 2026-11-03: The landing page reads like a product site: the feature cards drop their prototype status labels and add private details and deals, a full footer (product, open source, roadmap, legal note) replaces the hackathon line, and the copy says ancora runs on the test network ahead of mainnet. The operator page is the operator console. No hackathon references remain in the app or the README.
 - 2026-11-03: German role and template names (Kassenwart, Vorstandsmitglied, Geschäftsführung …) and periods; custom roles keep the names the organization gave them.
 - 2026-11-03: German for the rest of the screens: rules, budgets and people, settings, deals, the confidential pot, private details and auditors, your pass and its keys, Lifeline and succession, the address book, payment links, discussions, secure handover, a new organization and the audit page.

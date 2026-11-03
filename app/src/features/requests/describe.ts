@@ -7,7 +7,7 @@ import type { Asset, Evaluation, Requirement, Role, RoleId } from "../../domain/
 import type { ApprovalRequest, PotRequest, RequestStatus } from "../../domain/rules/requests.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { formatMoney } from "../../ui/format.ts";
-import { msg, t } from "../../ui/i18n.ts";
+import { currentLanguage, msg, t } from "../../ui/i18n.ts";
 
 // Plain-language copy for rules and requests. No crypto jargon.
 
@@ -24,11 +24,11 @@ export function roleLabel(org: HasRoles, roleId: RoleId, count = 1): string {
 
 function joinWithAnd(parts: string[]): string {
 	if (parts.length <= 1) return parts.join("");
-	return `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+	return t("{list} and {last}", { list: parts.slice(0, -1).join(", "), last: parts.at(-1) ?? "" });
 }
 
 export function describeRequirements(org: HasRoles, requirements: readonly Requirement[]): string {
-	if (requirements.length === 0) return "no approval";
+	if (requirements.length === 0) return t("no approval");
 	return joinWithAnd(requirements.map((r) => `${r.count} ${roleLabel(org, r.roleId, r.count)}`));
 }
 
@@ -36,87 +36,133 @@ export function describeRequirements(org: HasRoles, requirements: readonly Requi
 export function describeEvaluation(org: HasRoles, evaluation: Evaluation): string {
 	const { approvals, objectionWindowHours, sealRequired } = evaluation;
 	if (evaluation.withinLimit) {
-		return "Within the requester's spending limit. No approval needed, it goes out right away.";
+		return t("Within the requester's spending limit. No approval needed, it goes out right away.");
 	}
 	const sentences: string[] = [];
 	if (evaluation.overBudget) {
-		sentences.push("Over its budget for this period, so the strictest tier applies.");
+		sentences.push(t("Over its budget for this period, so the strictest tier applies."));
 	}
 	if (approvals.length === 0 && objectionWindowHours === 0) {
-		sentences.push("No approval needed. It goes out right away.");
+		sentences.push(t("No approval needed. It goes out right away."));
+	} else if (approvals.length === 0) {
+		sentences.push(
+			t("No approval needed, then a {hours}-hour objection window.", {
+				hours: objectionWindowHours,
+			}),
+		);
 	} else {
-		const needs =
-			approvals.length === 0
-				? "No approval needed"
-				: `Needs ${describeRequirements(org, approvals)}`;
+		const needs = describeRequirements(org, approvals);
 		sentences.push(
 			objectionWindowHours > 0
-				? `${needs}, then a ${objectionWindowHours}-hour objection window.`
-				: `${needs}.`,
+				? t("Needs {approvals}, then a {hours}-hour objection window.", {
+						approvals: needs,
+						hours: objectionWindowHours,
+					})
+				: t("Needs {approvals}.", { approvals: needs }),
 		);
 	}
-	if (sealRequired) sentences.push("The security seal is required.");
+	if (sealRequired) sentences.push(t("The security seal is required."));
 	return sentences.join(" ");
 }
 
 export function describeChange(org: HasRoles, change: GovernanceChange, nameOf: NameOf): string {
 	switch (change.type) {
 		case "addMember":
-			return `Add ${nameOf(change.personId)} as ${roleLabel(org, change.roleId)}`;
+			return t("Add {name} as {role}", {
+				name: nameOf(change.personId),
+				role: roleLabel(org, change.roleId),
+			});
 		case "removeMember":
-			return `Remove ${nameOf(change.personId)}`;
+			return t("Remove {name}", { name: nameOf(change.personId) });
 		case "changeRole":
-			return `Make ${nameOf(change.personId)} ${roleLabel(org, change.roleId)}`;
+			return t("Make {name} {role}", {
+				name: nameOf(change.personId),
+				role: roleLabel(org, change.roleId),
+			});
 		case "updatePolicy":
-			return "Update the approval rules";
+			return t("Update the approval rules");
 		case "switchTemplate":
-			return `Switch to the ${templates[change.templateId].label.toLowerCase()} template`;
+			return t("Switch to the {template} template", {
+				// English writes the template name in lower case mid-sentence; German keeps its nouns capitalised.
+				template:
+					currentLanguage() === "en"
+						? templates[change.templateId].label.toLowerCase()
+						: t(templates[change.templateId].label),
+			});
 		case "addAsset":
-			return `Accept ${change.asset.symbol}`;
+			return t("Accept {asset}", { asset: change.asset.symbol });
 		case "removeAsset":
-			return `Stop accepting ${org.assets?.find((a) => a.token === change.token)?.symbol ?? "an asset"}`;
+			return t("Stop accepting {asset}", {
+				asset: org.assets?.find((a) => a.token === change.token)?.symbol ?? t("an asset"),
+			});
 		case "setRoles":
-			return `Set the roles to ${change.roles
-				.map((role) => org.roles.find((r) => r.id === role.id)?.name ?? role.name)
-				.join(", ")}`;
+			return t("Set the roles to {roles}", {
+				roles: change.roles
+					.map((role) => t(org.roles.find((r) => r.id === role.id)?.name ?? role.name))
+					.join(", "),
+			});
 		case "upgrade":
-			return `Move to ancora release ${change.version ?? change.wasmHash.slice(0, 12)}`;
+			return t("Move to ancora release {version}", {
+				version: change.version ?? change.wasmHash.slice(0, 12),
+			});
 		case "setAllowance": {
 			const asset = org.assets?.find((a) => a.token === change.token);
 			const scope = [
-				asset ? `in ${asset.symbol}` : null,
-				change.category ? `for #${change.category}` : null,
+				asset ? t("in {asset}", { asset: asset.symbol }) : null,
+				change.category ? t("for #{category}", { category: change.category }) : null,
 			]
 				.filter(Boolean)
 				.join(" ");
 			return change.amount === 0
-				? `Remove the allowance of ${nameOf(change.personId)} ${scope}`
-				: `Let ${nameOf(change.personId)} pay ${formatMoney(change.amount, asset?.currency ?? org.baseCurrency ?? "EUR")} per ${periodLabel(change.periodSeconds)} ${scope} without approvals`;
+				? t("Remove the allowance of {name} {scope}", {
+						name: nameOf(change.personId),
+						scope,
+					})
+				: t("Let {name} pay {amount} per {period} {scope} without approvals", {
+						name: nameOf(change.personId),
+						amount: formatMoney(change.amount, asset?.currency ?? org.baseCurrency ?? "EUR"),
+						period: t(periodLabel(change.periodSeconds)),
+						scope,
+					});
 		}
 		case "setRecipients": {
 			const count = change.rule.allowed.length;
-			const list = `${count} allowed recipient${count === 1 ? "" : "s"}`;
-			if (change.rule.mode === "open") return "Pay any recipient under the normal rules";
-			return change.rule.mode === "only"
-				? `Pay only the ${list}`
-				: `Send payments outside the ${list} to the strictest approvals`;
+			if (change.rule.mode === "open") return t("Pay any recipient under the normal rules");
+			if (change.rule.mode === "only") {
+				return count === 1
+					? t("Pay only the 1 allowed recipient")
+					: t("Pay only the {count} allowed recipients", { count });
+			}
+			return count === 1
+				? t("Send payments outside the 1 allowed recipient to the strictest approvals")
+				: t("Send payments outside the {count} allowed recipients to the strictest approvals", {
+						count,
+					});
 		}
 		case "setSuccessor":
 			return change.successorId === null
-				? `Remove the successor of ${nameOf(change.personId)}`
-				: `Let ${nameOf(change.successorId)} take over from ${nameOf(change.personId)} after ${Math.round(change.inactiveSeconds / 86_400)} quiet days`;
+				? t("Remove the successor of {name}", { name: nameOf(change.personId) })
+				: t("Let {successor} take over from {name} after {days} quiet days", {
+						successor: nameOf(change.successorId),
+						name: nameOf(change.personId),
+						days: Math.round(change.inactiveSeconds / 86_400),
+					});
 		case "setSealVerifier":
 			return change.verifier
-				? "Seal large payments with quantum-safe keys"
-				: "Seal large payments with passkeys only";
+				? t("Seal large payments with quantum-safe keys")
+				: t("Seal large payments with passkeys only");
 		case "setFxOracle":
 			return change.oracle
-				? "Use live exchange rates for payments in other currencies"
-				: "Stop using exchange rates; other currencies take the strictest approvals";
+				? t("Use live exchange rates for payments in other currencies")
+				: t("Stop using exchange rates; other currencies take the strictest approvals");
 		case "setSpendingLimit":
 			return change.amount === 0
-				? `Remove the spending limit of ${nameOf(change.personId)}`
-				: `Give ${nameOf(change.personId)} a spending limit of ${formatMoney(change.amount, org.baseCurrency ?? "EUR")} per ${periodLabel(change.periodSeconds)}`;
+				? t("Remove the spending limit of {name}", { name: nameOf(change.personId) })
+				: t("Give {name} a spending limit of {amount} per {period}", {
+						name: nameOf(change.personId),
+						amount: formatMoney(change.amount, org.baseCurrency ?? "EUR"),
+						period: t(periodLabel(change.periodSeconds)),
+					});
 	}
 }
 
@@ -127,9 +173,8 @@ export function requestTitle(
 ): string {
 	if (request.kind === "governance") return describeChange(account.org, request.change, nameOf);
 	if (request.kind === "deal") {
-		const title = describeDealAction(
-			request.action,
-			(_, milestone) => `milestone ${milestone + 1}`,
+		const title = describeDealAction(request.action, (_, milestone) =>
+			t("milestone {number}", { number: milestone + 1 }),
 		);
 		const currency = account.org.assets.find((a) => a.token === request.reservedToken)?.currency;
 		return request.reserved > 0 && currency
@@ -139,10 +184,18 @@ export function requestTitle(
 	if (request.kind === "pot") return describePotRequest(request, nameOf);
 	if (request.kind === "batch") {
 		const count = request.lines.length;
-		return `${formatMoney(request.amount, request.currency)} to ${count} ${count === 1 ? "recipient" : "recipients"}${request.note ? ` · ${request.note}` : ""}`;
+		const amount = formatMoney(request.amount, request.currency);
+		const title =
+			count === 1
+				? t("{amount} to 1 recipient", { amount })
+				: t("{amount} to {count} recipients", { amount, count });
+		return request.note ? `${title} · ${request.note}` : title;
 	}
 	const payee = account.payees.find((p) => p.id === request.recipientId);
-	return `${formatMoney(request.amount, request.currency)} to ${payee?.name ?? "a recipient"}`;
+	return t("{amount} to {recipient}", {
+		amount: formatMoney(request.amount, request.currency),
+		recipient: payee?.name ?? t("a recipient"),
+	});
 }
 
 /** A confidential pot step in a line; a payment's amount stays private on the network. */
@@ -150,13 +203,17 @@ function describePotRequest(request: PotRequest, nameOf: NameOf): string {
 	const { action } = request;
 	switch (action.type) {
 		case "register":
-			return "Open the confidential pot";
+			return t("Open the confidential pot");
 		case "deposit":
-			return `Move ${formatMoney(action.amount, request.currency)} into the confidential pot`;
+			return t("Move {amount} into the confidential pot", {
+				amount: formatMoney(action.amount, request.currency),
+			});
 		case "withdraw":
-			return `Take ${formatMoney(action.amount, request.currency)} out of the confidential pot`;
+			return t("Take {amount} out of the confidential pot", {
+				amount: formatMoney(action.amount, request.currency),
+			});
 		case "pay":
-			return `Confidential payment to ${nameOf(action.to)}`;
+			return t("Confidential payment to {name}", { name: nameOf(action.to) });
 	}
 }
 
