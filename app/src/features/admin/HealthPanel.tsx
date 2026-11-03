@@ -71,6 +71,12 @@ export function HealthPanel({ health, busy, passphrase, onRefresh }: HealthPanel
 						<dd>{rpc.protocol ?? "—"}</dd>
 						<dt>Latency</dt>
 						<dd>{rpc.latencyMs} ms</dd>
+						{rpc.error && (
+							<>
+								<dt>Error</dt>
+								<dd>{rpc.error}</dd>
+							</>
+						)}
 					</dl>
 				</Card>
 

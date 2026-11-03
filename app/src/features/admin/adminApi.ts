@@ -3,7 +3,13 @@ import type { DemoMode } from "../workspace/resolveDataSource.ts";
 
 export type AdminHealth = {
 	demo: { mode: DemoMode; updatedAt: string | null };
-	rpc: { ok: boolean; ledger: number | null; protocol: string | null; latencyMs: number };
+	rpc: {
+		ok: boolean;
+		ledger: number | null;
+		protocol: string | null;
+		latencyMs: number;
+		error?: string;
+	};
 	rent: { stateBytes: number; targetBytes: number; ratePerKb: number; escalated: boolean } | null;
 	contracts: { label: string; id: string; ok: boolean }[];
 	operator: {

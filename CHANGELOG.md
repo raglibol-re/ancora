@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: The operator console's Stellar RPC card shows why a health check failed (for example an XDR error after a protocol upgrade) instead of only "down".
 - 2026-11-03: Fixed for the Stellar testnet's move to protocol 30: the Stellar SDK goes from 16.3.1 to 16.4.1, which reads the new ledger headers. Before, every step that read the latest ledger failed with an XDR error, so payments, pots and deals could stall and the server's health check reported Stellar as down.
 - 2026-11-03: An eighth nightly end-to-end run, in German: a German-speaking browser gets the landing page, the pass, a new organization, test money and a payment in German (request title included), and the language switch turns it back to English.
 - 2026-11-03: The rest of the screens in whole German sentences: Send (rule preview, budgets, allowances, batches, standing orders), request cards and progress, bank in and out, payment links and the public pay page, rules (assets, exchange rates, spending limits, succession), your pass, the confidential pot and notifications; a few texts that were still English everywhere ("View on Stellar", tier names, the limit editor) now translate too.

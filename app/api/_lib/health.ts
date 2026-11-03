@@ -10,6 +10,8 @@ export type RpcHealth = {
 	ledger: number | null;
 	protocol: string | null;
 	latencyMs: number;
+	/** Why the check failed, e.g. an XDR error after a protocol upgrade the SDK can't read yet. */
+	error?: string;
 };
 
 export async function rpcHealth(config: ServerConfig): Promise<RpcHealth> {
@@ -22,8 +24,14 @@ export async function rpcHealth(config: ServerConfig): Promise<RpcHealth> {
 			protocol: latest.protocolVersion,
 			latencyMs: Date.now() - started,
 		};
-	} catch {
-		return { ok: false, ledger: null, protocol: null, latencyMs: Date.now() - started };
+	} catch (error) {
+		return {
+			ok: false,
+			ledger: null,
+			protocol: null,
+			latencyMs: Date.now() - started,
+			error: error instanceof Error ? error.message : String(error),
+		};
 	}
 }
 
