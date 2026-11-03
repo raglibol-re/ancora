@@ -41,12 +41,21 @@ export default apiHandler("POST", async (request) => {
 	}
 	if (!looksLikeImage(bytes, type)) throw new RequestError("That file isn't a valid image.");
 	const hash = createHash("sha256").update(bytes).digest("hex");
-	const blob = await put(`images/${hash}.${extension}`, bytes, {
-		access: "public",
-		contentType: type,
-		addRandomSuffix: false,
-		allowOverwrite: true,
-		cacheControlMaxAge: 365 * 24 * 3600,
-	});
-	return { url: blob.url };
+	try {
+		const blob = await put(`images/${hash}.${extension}`, bytes, {
+			access: "public",
+			contentType: type,
+			addRandomSuffix: false,
+			allowOverwrite: true,
+			cacheControlMaxAge: 365 * 24 * 3600,
+		});
+		return { url: blob.url };
+	} catch (error) {
+		// The store refused (quota used up, outage): say so instead of a generic server error.
+		console.error(`[upload image] ${error instanceof Error ? error.message : String(error)}`);
+		throw new RequestError(
+			"Pictures can't be stored right now: ancora's picture storage is unavailable. Nothing was changed; try again later.",
+			503,
+		);
+	}
 });

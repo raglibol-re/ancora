@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 import styles from "./Avatar.module.css";
 import { initials } from "./format.ts";
 
@@ -16,11 +16,15 @@ function hueOf(seed: string): number {
 	return hash % 360;
 }
 
-/** Organization logo (square) or person picture (circle), falling back to initials. */
+/**
+ * Organization logo (square) or person picture (circle), falling back to initials, also when the
+ * picture can't be loaded (its store unreachable, the file gone).
+ */
 export function Avatar({ name, imageUrl, size = "md", shape = "square" }: AvatarProps) {
 	const className = `${styles.avatar} ${styles[size]} ${styles[shape]}`;
-	if (imageUrl) {
-		return <img className={className} src={imageUrl} alt="" />;
+	const [broken, setBroken] = useState<string | null>(null);
+	if (imageUrl && broken !== imageUrl) {
+		return <img className={className} src={imageUrl} alt="" onError={() => setBroken(imageUrl)} />;
 	}
 	const style = shape === "circle" ? ({ "--avatar-hue": hueOf(name) } as CSSProperties) : undefined;
 	return (

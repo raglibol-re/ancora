@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: Pictures that can't be loaded show initials instead of a broken image, and a picture upload that the storage refuses says so instead of a generic server error.
 - 2026-11-02: A seventh nightly end-to-end run: a weekly standing order pays its first run and is stopped, and money moves into the Reserve (DeFindex vault) and back.
 - 2026-11-02: A standing order to a new recipient saves them in the address book when asked, as a one-off payment does; the order then shows their name instead of the address.
 - 2026-11-02: Far fewer Vercel Blob operations: the server keeps the demo setting and discussion threads for a moment instead of reading them on every visit, and organizations are announced to the scheduler once per device and written only when new. When the demo setting can't be read, visitors now get the testnet instead of sample data.
