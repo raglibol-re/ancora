@@ -60,12 +60,14 @@ function Statement({ account }: { account: OrgAccount }) {
 				<header className={styles.head}>
 					<div>
 						<p className={styles.kicker}>
-							{t("Statement ·")} {monthLabel(month)}
+							{t("Statement · {month}", { month: monthLabel(month) })}
 						</p>
 						<h1 className={styles.org}>{account.org.name}</h1>
 						<p className={styles.small}>
 							{account.onchain
-								? `Account on Stellar testnet: ${account.onchain.contractId}`
+								? t("Account on Stellar testnet: {address}", {
+										address: account.onchain.contractId,
+									})
 								: t("Sample data, not on Stellar.")}
 							{!account.onchain && (
 								<>
@@ -76,7 +78,7 @@ function Statement({ account }: { account: OrgAccount }) {
 						</p>
 					</div>
 					<p className={styles.small}>
-						{t("Created")} {formatDateTime(Date.now())} {t("by ancora")}
+						{t("Created {date} by ancora", { date: formatDateTime(Date.now()) })}
 					</p>
 				</header>
 
@@ -108,7 +110,7 @@ function Statement({ account }: { account: OrgAccount }) {
 							</dl>
 							{rows.length === 0 ? (
 								<p className={styles.small}>
-									{t("No movements in")} {monthLabel(month)}.
+									{t("No movements in {month}.", { month: monthLabel(month) })}
 								</p>
 							) : (
 								<table className={styles.table}>

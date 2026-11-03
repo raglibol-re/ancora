@@ -67,9 +67,10 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 					</div>
 					{foreign && (
 						<p className={styles.muted}>
-							{t("The rules are written in")} {account.org.baseCurrency}
-							{t("; payments in")} {asset.symbol}{" "}
-							{t("take the strictest tier until a live exchange rate is connected.")}
+							{t(
+								"The rules are written in {currency}; payments in {asset} take the strictest tier until a live exchange rate is connected.",
+								{ currency: account.org.baseCurrency, asset: asset.symbol },
+							)}
 						</p>
 					)}
 					<div className={styles.actions}>
@@ -78,7 +79,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 							className={buttonClass()}
 							onClick={onClose}
 						>
-							{t("Send")} {asset.symbol}
+							{t("Send {asset}", { asset: asset.symbol })}
 						</Link>
 						{sample ? (
 							<button
@@ -97,7 +98,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 								className={buttonClass("secondary")}
 								onClick={() => setAdding(true)}
 							>
-								{t("Add")} {asset.symbol}
+								{t("Add {asset}", { asset: asset.symbol })}
 							</button>
 						)}
 						{dataSource.ramps && (

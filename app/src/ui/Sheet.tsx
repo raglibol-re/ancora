@@ -1,5 +1,6 @@
 import { type MouseEvent, type ReactNode, useEffect, useId, useRef } from "react";
 import styles from "./Sheet.module.css";
+import { useT } from "./useLanguage.ts";
 import { WorkingInline } from "./WorkingInline.tsx";
 
 type SheetProps = {
@@ -15,6 +16,7 @@ type SheetProps = {
  * Escape key). Bottom sheet on phones, centered dialog on larger screens.
  */
 export function Sheet({ open, title, onClose, children }: SheetProps) {
+	const t = useT();
 	const ref = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
 	// Set while the sheet closes because its parent said so (`open` became false): that close
@@ -68,7 +70,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
 				<h2 id={titleId} className={styles.title}>
 					{title}
 				</h2>
-				<button type="button" className={styles.close} onClick={close} aria-label="Close">
+				<button type="button" className={styles.close} onClick={close} aria-label={t("Close")}>
 					<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
 						<path
 							d="M5 5l10 10M15 5L5 15"

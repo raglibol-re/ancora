@@ -55,14 +55,6 @@ export const WAIT_OPTIONS: readonly { seconds: number; label: string }[] = [
 	{ seconds: 30 * 86_400, label: "30 days" },
 ];
 
-export function describeWait(seconds: number): string {
-	const option = WAIT_OPTIONS.find((o) => o.seconds === seconds);
-	if (option) return option.label.replace(" (demo)", "");
-	if (seconds % 86_400 === 0) return `${seconds / 86_400} days`;
-	if (seconds % 3_600 === 0) return `${seconds / 3_600} hours`;
-	return `${Math.round(seconds / 60)} minutes`;
-}
-
 export type PlanProblem = "no-guardians" | "too-many" | "self" | "duplicate" | "threshold" | "wait";
 
 /** The same checks the contract makes, so the form can explain before signing. */
@@ -114,14 +106,4 @@ export function claimProgress(
 		waitLeftMs,
 		ready: confirmed >= plan.threshold && waitLeftMs === 0,
 	};
-}
-
-/** "in 1 h 58 min", "in 3 days", "now". */
-export function describeTimeLeft(ms: number): string {
-	if (ms <= 0) return "now";
-	const minutes = Math.ceil(ms / 60_000);
-	if (minutes < 60) return `in ${minutes} min`;
-	const hours = Math.floor(minutes / 60);
-	if (hours < 48) return `in ${hours} h ${minutes % 60} min`;
-	return `in ${Math.ceil(hours / 24)} days`;
 }

@@ -3,8 +3,6 @@ import { shortAddress } from "../../domain/account.ts";
 import {
 	claimProgress,
 	describePlanProblem,
-	describeTimeLeft,
-	describeWait,
 	type LifelineOverview,
 	MAX_GUARDIANS,
 	type RecoveryPlan,
@@ -20,6 +18,7 @@ import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Lifeline.module.css";
+import { describeTimeLeft, describeWait } from "./lifelineTime.ts";
 
 type LifelineCardProps = {
 	overview: LifelineOverview | null;
@@ -73,9 +72,16 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 							<>
 								<span className={styles.protected}>{t("Protected")}</span>
 								<span className={styles.muted}>
-									{plan.threshold} {t("of")} {plan.guardians.length} {t("guardian")}
-									{plan.guardians.length === 1 ? "" : "s"} {t("confirm ·")}{" "}
-									{describeWait(plan.waitSeconds)} {t("waiting period")}
+									{plan.guardians.length === 1
+										? t("{needed} of 1 guardian confirm · {wait} waiting period", {
+												needed: plan.threshold,
+												wait: describeWait(plan.waitSeconds),
+											})
+										: t("{needed} of {total} guardians confirm · {wait} waiting period", {
+												needed: plan.threshold,
+												total: plan.guardians.length,
+												wait: describeWait(plan.waitSeconds),
+											})}
 								</span>
 							</>
 						) : (
@@ -92,11 +98,15 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 					<div className={styles.alert} role="alert">
 						<strong>{t("Someone is recovering your pass.")}</strong>
 						<span>
-							{t("New pass")} {shortAddress(claim.successor)}
-							{t(", confirmed by")} {claimProgress(plan, claim, Date.now()).confirmed} {t("of")}{" "}
-							{plan.threshold} {t("guardians; can finish")}{" "}
-							{describeTimeLeft(claim.readyAt - Date.now())}
-							{t(". If this is not you, cancel it now: your current pass keeps everything.")}
+							{t(
+								"New pass {pass}, confirmed by {confirmed} of {needed} guardians; can finish {when}. If this is not you, cancel it now: your current pass keeps everything.",
+								{
+									pass: shortAddress(claim.successor),
+									confirmed: claimProgress(plan, claim, Date.now()).confirmed,
+									needed: plan.threshold,
+									when: describeTimeLeft(claim.readyAt - Date.now()),
+								},
+							)}
 						</span>
 						<div>
 							<button type="button" className={buttonClass()} disabled={busy} onClick={cancel}>
@@ -123,8 +133,10 @@ export function LifelineCard({ overview, error, onChanged }: LifelineCardProps) 
 				)}
 				{legacy.length > 0 && (
 					<p className={styles.muted}>
-						{t("Positions in")} {legacy.map((a) => a.org.name).join(", ")}{" "}
-						{t("were created before Lifeline and can't be handed over; new organizations can.")}
+						{t(
+							"Positions in {organizations} were created before Lifeline and can't be handed over; new organizations can.",
+							{ organizations: legacy.map((a) => a.org.name).join(", ") },
+						)}
 					</p>
 				)}
 				{overview && !editing && (
@@ -213,9 +225,7 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 	return (
 		<form className={styles.form} onSubmit={submit}>
 			<fieldset className={styles.form}>
-				<legend>
-					{t("Guardians (up to")} {MAX_GUARDIANS})
-				</legend>
+				<legend>{t("Guardians (up to {count})", { count: MAX_GUARDIANS })}</legend>
 				{people.length > 0 && (
 					<ul className={styles.guardians}>
 						{people.map((person) => (
@@ -282,7 +292,7 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 					>
 						{Array.from({ length: Math.max(1, guardians.length) }, (_, i) => i + 1).map((n) => (
 							<option key={n} value={n}>
-								{n} {t("of")} {Math.max(1, guardians.length)}
+								{t("{needed} of {total}", { needed: n, total: Math.max(1, guardians.length) })}
 							</option>
 						))}
 					</select>

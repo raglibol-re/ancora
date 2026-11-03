@@ -202,7 +202,7 @@ export function NewDealForm({
 						</button>
 					)}
 					<span className={styles.muted}>
-						{t("Total")} {formatMoney(total, currency)}
+						{t("Total {amount}", { amount: formatMoney(total, currency) })}
 					</span>
 				</div>
 				<div className={styles.grid}>

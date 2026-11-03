@@ -198,16 +198,16 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 				<section className={styles.section}>
 					<h3>{t("Test money")}</h3>
 					<p className={styles.muted}>
-						{t("ancora's demo operator sends test")} {asset.symbol}{" "}
-						{t("from its float. Not real money.")}
+						{t("ancora's demo operator sends test {asset} from its float. Not real money.", {
+							asset: asset.symbol,
+						})}
 					</p>
 					{floatEmpty ? (
 						<p className={styles.warning}>
-							{t("The operator's float of")} {asset.symbol}{" "}
 							{t(
-								"is empty right now: the issuer's testnet faucet isn't handing any out. Pick another asset for test money, or send",
-							)}{" "}
-							{asset.symbol} {t("from your own wallet.")}
+								"The operator's float of {asset} is empty right now: the issuer's testnet faucet isn't handing any out. Pick another asset for test money, or send {asset} from your own wallet.",
+								{ asset: asset.symbol },
+							)}
 						</p>
 					) : (
 						<button
@@ -216,7 +216,7 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 							disabled={busy}
 							onClick={testMoney}
 						>
-							{t("Add test")} {asset.symbol}
+							{t("Add test {asset}", { asset: asset.symbol })}
 						</button>
 					)}
 				</section>
@@ -224,10 +224,16 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 				<section className={styles.section}>
 					<h3>{t("From any other wallet")}</h3>
 					<p className={styles.muted}>
-						{t("Send")} {asset.symbol}
-						{issuer ? ` (issuer ${shortAddress(issuer)})` : ""}{" "}
 						{t(
-							"to the organization's address with a wallet that can pay contract addresses (Freighter can; a plain Stellar payment from Hana or Lobstr can't reach a C… address).",
+							"Send {asset} to the organization's address with a wallet that can pay contract addresses (Freighter can; a plain Stellar payment from Hana or Lobstr can't reach a C… address).",
+							{
+								asset: issuer
+									? t("{asset} (issuer {issuer})", {
+											asset: asset.symbol,
+											issuer: shortAddress(issuer),
+										})
+									: asset.symbol,
+							},
 						)}
 					</p>
 					<code className={styles.code}>{orgAddress}</code>

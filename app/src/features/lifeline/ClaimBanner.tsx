@@ -1,10 +1,10 @@
 import { Link } from "react-router";
 import { shortAddress } from "../../domain/account.ts";
-import { describeTimeLeft } from "../../domain/lifeline.ts";
 import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Lifeline.module.css";
+import { describeTimeLeft } from "./lifelineTime.ts";
 import { useLifeline } from "./useLifeline.ts";
 
 /** Shown everywhere in the app while someone claims to hold my new pass: the cancel window. */
@@ -26,10 +26,11 @@ export function ClaimBanner() {
 	return (
 		<p className={styles.banner} role="alert">
 			<span>
-				<strong>{t("Recovery of your pass started")}</strong> {t("for new pass")}{" "}
-				{shortAddress(claim.successor)}
-				{t(". It can finish")} {describeTimeLeft(claim.readyAt - Date.now())}
-				{t(". Not you?")}
+				<strong>{t("Recovery of your pass started")}</strong>{" "}
+				{t("for new pass {pass}. It can finish {when}. Not you?", {
+					pass: shortAddress(claim.successor),
+					when: describeTimeLeft(claim.readyAt - Date.now()),
+				})}
 			</span>
 			<button type="button" className={styles.bannerButton} disabled={busy} onClick={cancel}>
 				{t("Cancel it")}

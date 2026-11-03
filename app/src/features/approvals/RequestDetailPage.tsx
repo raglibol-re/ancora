@@ -42,7 +42,7 @@ export function RequestDetailPage() {
 					<ul>
 						{request.approvals.map((a) => (
 							<li key={a.personId}>
-								{t("Approved by")} {personName(a.personId)} · {formatDateTime(a.at)}
+								{t("Approved by {name}", { name: personName(a.personId) })} · {formatDateTime(a.at)}
 							</li>
 						))}
 					</ul>

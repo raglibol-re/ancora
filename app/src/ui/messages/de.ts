@@ -142,7 +142,6 @@ export const de: Readonly<Record<string, string>> = {
 	Direction: "Richtung",
 	"in {in} · out {out} · net {net}": "Eingang {in} · Ausgang {out} · netto {net}",
 	"Download these as CSV": "Als CSV herunterladen",
-	"Statement for": "Auszug für",
 	"1 movement": "1 Bewegung",
 	"{count} movements": "{count} Bewegungen",
 	"No movements yet. Deposits, payments and Reserve moves appear here.":
@@ -155,15 +154,11 @@ export const de: Readonly<Record<string, string>> = {
 	"Back to activity": "Zurück zur Aktivität",
 	"Print or save as PDF": "Drucken oder als PDF speichern",
 	"Statement for {month}": "Auszug für {month}",
-	"Statement ·": "Auszug ·",
 	"Sample data, not on Stellar.": "Beispieldaten, nicht auf Stellar.",
-	Created: "Erstellt",
-	"by ancora": "von ancora",
 	"Money in": "Eingänge",
 	"Money out": "Ausgänge",
 	"Net this month": "Netto in diesem Monat",
 	"Balance today": "Saldo heute",
-	"No movements in": "Keine Bewegungen im",
 	Date: "Datum",
 	Description: "Beschreibung",
 	Reference: "Verwendungszweck",
@@ -202,7 +197,6 @@ export const de: Readonly<Record<string, string>> = {
 	"The rules were fixed when the request was created on":
 		"Die Regeln wurden beim Erstellen der Anfrage festgelegt am",
 	History: "Verlauf",
-	"Approved by": "Freigegeben von",
 	"Requests across all your organizations that are waiting for your approval.":
 		"Anfragen aus all Ihren Organisationen, die auf Ihre Freigabe warten.",
 	"You're all caught up. Nothing is waiting for you.": "Alles erledigt. Nichts wartet auf Sie.",
@@ -249,22 +243,9 @@ export const de: Readonly<Record<string, string>> = {
 	"Waiting for your wallet…": "Warte auf Ihre Wallet…",
 	"Connect wallet": "Wallet verbinden",
 	"Test money": "Testgeld",
-	"ancora's demo operator sends test": "Der Demo-Betreiber von ancora sendet Test-",
-	"from its float. Not real money.": "aus seinem Bestand. Kein echtes Geld.",
-	"The operator's float of": "Der Bestand des Betreibers an",
-	"is empty right now: the issuer's testnet faucet isn't handing any out. Pick another asset for test money, or send":
-		"ist gerade leer: Die Testnet-Ausgabe des Herausgebers gibt nichts aus. Wählen Sie eine andere Währung für Testgeld oder senden Sie",
-	"from your own wallet.": "aus Ihrer eigenen Wallet.",
-	"Add test": "Test-Guthaben hinzufügen:",
 	"From any other wallet": "Aus jeder anderen Wallet",
-	"to the organization's address with a wallet that can pay contract addresses (Freighter can; a plain Stellar payment from Hana or Lobstr can't reach a C… address).":
-		"an die Adresse der Organisation, mit einer Wallet, die Vertragsadressen bezahlen kann (Freighter kann es; eine einfache Stellar-Zahlung aus Hana oder Lobstr erreicht keine C…-Adresse).",
 	"Copy address": "Adresse kopieren",
 	"All of it available": "Alles verfügbar",
-	"The rules are written in": "Die Regeln gelten in",
-	"; payments in": "; Zahlungen in",
-	"take the strictest tier until a live exchange rate is connected.":
-		"nehmen die strengste Stufe, bis ein aktueller Wechselkurs verbunden ist.",
 	"Add money": "Geld hinzufügen",
 	Add: "Hinzufügen",
 	"To a bank account": "Auf ein Bankkonto",
@@ -506,12 +487,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Sample data, not on the Stellar testnet": "Beispieldaten, nicht im Stellar-Testnet",
 	"Download statement (CSV)": "Auszug herunterladen (CSV)",
 	Requests: "Anfragen",
-	"Confidential pot:": "Vertrauliche Kasse:",
-	private: "vertrauliche",
-	"payment is": "Zahlung ist",
-	"payments are": "Zahlungen sind",
-	"in the statement, read with the pot key shared with you.":
-		"im Auszug, gelesen mit dem Kassenschlüssel, der mit Ihnen geteilt wurde.",
 	"Audits run on the Stellar testnet. Sign in with your pass there.":
 		"Prüfungen laufen im Stellar-Testnet. Melden Sie sich dort mit Ihrem Pass an.",
 	"Enter the organization's account address (starts with C).":
@@ -566,7 +541,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Your deals": "Ihre Vereinbarungen",
 	"Reading your deals…": "Ihre Vereinbarungen werden gelesen…",
 	"No deals yet. Propose one above.": "Noch keine Vereinbarungen. Schlagen Sie oben eine vor.",
-	milestone: "Meilenstein",
 	"· since": "· seit",
 	"Enter the other organization's account address (starts with C or G).":
 		"Geben Sie die Kontoadresse der anderen Organisation ein (beginnt mit C oder G).",
@@ -628,9 +602,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Not found": "Nicht gefunden",
 	"Back to the overview": "Zurück zur Übersicht",
 	"{amount} from {organization}": "{amount} von {organization}",
-	"approved this payment on": "hat diese Zahlung freigegeben am",
-	"and set the money aside. It is paid out once both sides confirm: you, the recipient, and the organization.":
-		"und das Geld zurückgelegt. Es wird ausgezahlt, sobald beide Seiten bestätigen: Sie als Empfänger und die Organisation.",
 	"Recipient confirmed": "Empfänger hat bestätigt",
 	"Not yet": "Noch nicht",
 	"Organization confirmed": "Organisation hat bestätigt",
@@ -649,9 +620,6 @@ export const de: Readonly<Record<string, string>> = {
 	"The claim is cancelled. Your pass stays as it is.":
 		"Der Anspruch ist zurückgezogen. Ihr Pass bleibt, wie er ist.",
 	"Recovery of your pass started": "Wiederherstellung Ihres Passes begonnen",
-	"for new pass": "für den neuen Pass",
-	". It can finish": ". Sie kann abgeschlossen werden",
-	". Not you?": ". Nicht Sie?",
 	"Cancel it": "Abbrechen",
 	Details: "Details",
 	"People you protect": "Personen, die Sie schützen",
@@ -660,10 +628,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Recovery of {name}'s pass started; your confirmation counts.":
 		"Wiederherstellung des Passes von {name} begonnen; Ihre Bestätigung zählt.",
 	"You confirmed {name}'s new pass.": "Sie haben den neuen Pass von {name} bestätigt.",
-	"confirm ·": "bestätigen ·",
-	"Recovery in progress: new pass": "Wiederherstellung läuft: neuer Pass",
-	", confirmed by": ", bestätigt von",
-	". Ready: the new pass can complete it.": ". Bereit: Der neue Pass kann sie abschließen.",
 	"Confirm this new pass": "Diesen neuen Pass bestätigen",
 	"{name}'s new ancora ID": "Neue ancora-ID von {name}",
 	"Ask them to read it from their new pass (starts with C). Check it's really them.":
@@ -675,25 +639,15 @@ export const de: Readonly<Record<string, string>> = {
 	"If you lose this pass, the guardians you name here can confirm a new one. After the waiting period your positions in every organization move to it. Recovery never moves money, and while a claim waits you can cancel it from this pass.":
 		"Wenn Sie diesen Pass verlieren, können die hier benannten Vertrauenspersonen einen neuen bestätigen. Nach der Wartezeit gehen Ihre Positionen in jeder Organisation auf ihn über. Eine Wiederherstellung bewegt nie Geld, und solange ein Anspruch wartet, können Sie ihn von diesem Pass aus abbrechen.",
 	Protected: "Geschützt",
-	guardian: "Vertrauensperson",
-	"waiting period": "Wartezeit",
 	"Not protected yet": "Noch nicht geschützt",
 	"This pass is the only key to your positions. Name guardians.":
 		"Dieser Pass ist der einzige Schlüssel zu Ihren Positionen. Benennen Sie Vertrauenspersonen.",
 	"Someone is recovering your pass.": "Jemand stellt Ihren Pass wieder her.",
-	"New pass": "Neuer Pass",
-	"guardians; can finish": "Vertrauenspersonen; kann abgeschlossen werden",
-	". If this is not you, cancel it now: your current pass keeps everything.":
-		". Wenn das nicht Sie sind, brechen Sie jetzt ab: Ihr jetziger Pass behält alles.",
 	"Cancel this claim": "Diesen Anspruch abbrechen",
-	"Positions in": "Positionen in",
-	"were created before Lifeline and can't be handed over; new organizations can.":
-		"wurden vor Lifeline angelegt und können nicht übergeben werden; neue Organisationen können es.",
 	"Change plan": "Plan ändern",
 	"Set up Lifeline": "Lifeline einrichten",
 	"Remove plan": "Plan entfernen",
 	"Your recovery plan is saved.": "Ihr Wiederherstellungsplan ist gespeichert.",
-	"Guardians (up to": "Vertrauenspersonen (bis zu",
 	Remove: "Entfernen",
 	"Add a guardian by ancora ID": "Vertrauensperson per ancora-ID hinzufügen",
 	"Anyone with an ancora pass, also outside your organizations.":
@@ -711,16 +665,6 @@ export const de: Readonly<Record<string, string>> = {
 		"). Sobald genug bestätigt haben und die Wartezeit vorbei ist, schließen Sie die Wiederherstellung hier ab: Ihre Positionen in jeder Organisation gehen auf diesen Pass über.",
 	"Old ancora ID": "Alte ancora-ID",
 	"Check status": "Status prüfen",
-	"This pass was already recovered to": "Dieser Pass wurde bereits wiederhergestellt auf",
-	"never set up Lifeline, so this pass can't be recovered. Ask the organizations to invite your new pass instead.":
-		"hat Lifeline nie eingerichtet, daher kann dieser Pass nicht wiederhergestellt werden. Bitten Sie die Organisationen, stattdessen Ihren neuen Pass einzuladen.",
-	"No recovery started yet. One of the": "Noch keine Wiederherstellung begonnen. Eine der",
-	"guardians has to start it with your new ID.":
-		"Vertrauenspersonen muss sie mit Ihrer neuen ID beginnen.",
-	"Claim for": "Anspruch für",
-	" (this pass)": " (dieser Pass)",
-	" (not this pass)": " (nicht dieser Pass)",
-	"guardians confirmed": "Vertrauenspersonen haben bestätigt",
 	"Hand over remaining positions": "Restliche Positionen übergeben",
 	"Complete recovery": "Wiederherstellung abschließen",
 	"Handed over in": "Übergeben in",
@@ -1746,4 +1690,64 @@ export const de: Readonly<Record<string, string>> = {
 	"A successor is another member; the quiet period and the wait run from one minute to two years.":
 		"Die Nachfolge ist ein anderes Mitglied; die inaktive Zeit und die Wartezeit liegen zwischen einer Minute und zwei Jahren.",
 	"Pay with ancora": "Mit ancora bezahlen",
+	"The rules are written in {currency}; payments in {asset} take the strictest tier until a live exchange rate is connected.":
+		"Die Regeln sind in {currency} geschrieben; Zahlungen in {asset} nehmen die strengste Stufe, bis ein aktueller Wechselkurs verbunden ist.",
+	"Send {asset}": "{asset} senden",
+	"ancora's demo operator sends test {asset} from its float. Not real money.":
+		"Der Demo-Betreiber von ancora sendet Test-{asset} aus seinem Bestand. Kein echtes Geld.",
+	"The operator's float of {asset} is empty right now: the issuer's testnet faucet isn't handing any out. Pick another asset for test money, or send {asset} from your own wallet.":
+		"Der Bestand des Betreibers an {asset} ist gerade leer: Die Testnetz-Quelle des Ausgebers gibt nichts aus. Wählen Sie eine andere Währung für Testgeld oder senden Sie {asset} aus Ihrer eigenen Wallet.",
+	"Add test {asset}": "Test-{asset} hinzufügen",
+	"Send {asset} to the organization's address with a wallet that can pay contract addresses (Freighter can; a plain Stellar payment from Hana or Lobstr can't reach a C… address).":
+		"Senden Sie {asset} an die Adresse der Organisation, mit einer Wallet, die Vertragsadressen bezahlen kann (Freighter kann das; eine einfache Stellar-Zahlung aus Hana oder Lobstr erreicht keine C…-Adresse).",
+	"{asset} (issuer {issuer})": "{asset} (Ausgeber {issuer})",
+	"Statement · {month}": "Kontoauszug · {month}",
+	"Account on Stellar testnet: {address}": "Konto im Stellar-Testnetz: {address}",
+	"Created {date} by ancora": "Erstellt am {date} von ancora",
+	"No movements in {month}.": "Keine Bewegungen im {month}.",
+	"Approved by {name}": "Freigegeben von {name}",
+	"Confidential pot: 1 private payment is in the statement, read with the pot key shared with you.":
+		"Vertrauliche Kasse: 1 vertrauliche Zahlung steht im Kontoauszug, gelesen mit dem mit Ihnen geteilten Kassenschlüssel.",
+	"Confidential pot: {count} private payments are in the statement, read with the pot key shared with you.":
+		"Vertrauliche Kasse: {count} vertrauliche Zahlungen stehen im Kontoauszug, gelesen mit dem mit Ihnen geteilten Kassenschlüssel.",
+	"Total {amount}": "Gesamt {amount}",
+	"{organization} approved this payment on {date} and set the money aside. It is paid out once both sides confirm: you, the recipient, and the organization.":
+		"{organization} hat diese Zahlung am {date} freigegeben und das Geld zurückgelegt. Es wird ausgezahlt, sobald beide Seiten bestätigen: Sie als Empfänger und die Organisation.",
+	"{count} days": "{count} Tage",
+	"{count} hours": "{count} Stunden",
+	"{count} minutes": "{count} Minuten",
+	"2 minutes": "2 Minuten",
+	now: "jetzt",
+	"in {minutes} min": "in {minutes} Min.",
+	"in {hours} h {minutes} min": "in {hours} Std. {minutes} Min.",
+	"in {days} days": "in {days} Tagen",
+	"for new pass {pass}. It can finish {when}. Not you?":
+		"für den neuen Pass {pass}. Sie kann {when} abgeschlossen werden. Nicht Sie?",
+	"{needed} of {total} confirm · {wait}": "{needed} von {total} bestätigen · {wait}",
+	"Recovery in progress: new pass {pass}, confirmed by {confirmed} of {needed}.":
+		"Wiederherstellung läuft: neuer Pass {pass}, bestätigt von {confirmed} von {needed}.",
+	"Ready: the new pass can complete it.": "Bereit: Der neue Pass kann sie abschließen.",
+	"The waiting period ends {when}.": "Die Wartezeit endet {when}.",
+	"{needed} of 1 guardian confirm · {wait} waiting period":
+		"{needed} von 1 Vertrauensperson bestätigt · {wait} Wartezeit",
+	"{needed} of {total} guardians confirm · {wait} waiting period":
+		"{needed} von {total} Vertrauenspersonen bestätigen · {wait} Wartezeit",
+	"New pass {pass}, confirmed by {confirmed} of {needed} guardians; can finish {when}. If this is not you, cancel it now: your current pass keeps everything.":
+		"Neuer Pass {pass}, bestätigt von {confirmed} von {needed} Vertrauenspersonen; kann {when} abgeschlossen werden. Wenn Sie das nicht sind, brechen Sie jetzt ab: Ihr aktueller Pass behält alles.",
+	"Positions in {organizations} were created before Lifeline and can't be handed over; new organizations can.":
+		"Positionen in {organizations} entstanden vor Lifeline und können nicht übergeben werden; neue Organisationen können das.",
+	"Guardians (up to {count})": "Vertrauenspersonen (bis zu {count})",
+	"{needed} of {total}": "{needed} von {total}",
+	"This pass was already recovered to {pass} (you).":
+		"Dieser Pass wurde bereits auf {pass} (Sie) wiederhergestellt.",
+	"This pass was already recovered to {pass}.":
+		"Dieser Pass wurde bereits auf {pass} wiederhergestellt.",
+	"{name} never set up Lifeline, so this pass can't be recovered. Ask the organizations to invite your new pass instead.":
+		"{name} hat Lifeline nie eingerichtet, daher kann dieser Pass nicht wiederhergestellt werden. Bitten Sie die Organisationen stattdessen, Ihren neuen Pass einzuladen.",
+	"No recovery started yet. One of the {count} guardians has to start it with your new ID.":
+		"Noch keine Wiederherstellung begonnen. Eine der {count} Vertrauenspersonen muss sie mit Ihrer neuen ID starten.",
+	"Claim for {pass} (this pass): {confirmed} of {needed} guardians confirmed.":
+		"Anspruch für {pass} (dieser Pass): {confirmed} von {needed} Vertrauenspersonen haben bestätigt.",
+	"Claim for {pass} (not this pass): {confirmed} of {needed} guardians confirmed.":
+		"Anspruch für {pass} (nicht dieser Pass): {confirmed} von {needed} Vertrauenspersonen haben bestätigt.",
 };

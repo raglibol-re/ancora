@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { shortAddress } from "../../domain/account.ts";
-import { type ClaimStatus, claimProgress, describeTimeLeft } from "../../domain/lifeline.ts";
+import { type ClaimStatus, claimProgress } from "../../domain/lifeline.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
@@ -8,6 +8,7 @@ import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Lifeline.module.css";
+import { describeTimeLeft } from "./lifelineTime.ts";
 
 /**
  * From a new pass: follow the recovery of the old one and complete it once the guardians have
@@ -87,33 +88,46 @@ export function RecoverPassCard() {
 				<div className={styles.form} aria-live="polite">
 					{status.recoveredTo && (
 						<p className={styles.muted}>
-							{t("This pass was already recovered to")} {shortAddress(status.recoveredTo)}
-							{status.recoveredTo === me.id ? " (you)" : ""}.
+							{status.recoveredTo === me.id
+								? t("This pass was already recovered to {pass} (you).", {
+										pass: shortAddress(status.recoveredTo),
+									})
+								: t("This pass was already recovered to {pass}.", {
+										pass: shortAddress(status.recoveredTo),
+									})}
 						</p>
 					)}
 					{!status.recoveredTo && !plan && (
 						<p className={styles.muted}>
-							{personName(checked)}{" "}
 							{t(
-								"never set up Lifeline, so this pass can't be recovered. Ask the organizations to invite your new pass instead.",
+								"{name} never set up Lifeline, so this pass can't be recovered. Ask the organizations to invite your new pass instead.",
+								{ name: personName(checked) },
 							)}
 						</p>
 					)}
 					{!status.recoveredTo && plan && !claim && (
 						<p className={styles.muted}>
-							{t("No recovery started yet. One of the")} {plan.guardians.length}{" "}
-							{t("guardians has to start it with your new ID.")}
+							{t(
+								"No recovery started yet. One of the {count} guardians has to start it with your new ID.",
+								{ count: plan.guardians.length },
+							)}
 						</p>
 					)}
 					{!status.recoveredTo && plan && claim && progress && (
 						<p className={styles.muted}>
-							{t("Claim for")} {shortAddress(claim.successor)}
-							{forMe ? t(" (this pass)") : t(" (not this pass)")}: {progress.confirmed} {t("of")}{" "}
-							{progress.needed} {t("guardians confirmed")}
+							{t(
+								forMe
+									? "Claim for {pass} (this pass): {confirmed} of {needed} guardians confirmed."
+									: "Claim for {pass} (not this pass): {confirmed} of {needed} guardians confirmed.",
+								{
+									pass: shortAddress(claim.successor),
+									confirmed: progress.confirmed,
+									needed: progress.needed,
+								},
+							)}
 							{progress.confirmed >= progress.needed && !progress.ready
-								? `; waiting period ends ${describeTimeLeft(progress.waitLeftMs)}`
+								? ` ${t("The waiting period ends {when}.", { when: describeTimeLeft(progress.waitLeftMs) })}`
 								: ""}
-							.
 						</p>
 					)}
 					{(status.recoveredTo === me.id || (progress?.ready && forMe)) && (

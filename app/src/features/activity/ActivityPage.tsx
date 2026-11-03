@@ -158,7 +158,7 @@ function Activity({ account }: { account: OrgAccount }) {
 						to={`/app/statement?month=${statementMonth}${token ? `&token=${token}` : ""}`}
 						className={buttonClass("secondary")}
 					>
-						{t("Statement for")} {monthLabel(statementMonth)}
+						{t("Statement for {month}", { month: monthLabel(statementMonth) })}
 					</Link>
 				</div>
 			</Card>

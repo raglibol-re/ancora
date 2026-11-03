@@ -64,9 +64,14 @@ export function AuditedOrganization({ account }: { account: OrgAccount }) {
 			</ul>
 			{pot.length > 0 && (
 				<p className={styles.muted}>
-					{t("Confidential pot:")} {pot.length} {t("private")}{" "}
-					{pot.length === 1 ? t("payment is") : t("payments are")}{" "}
-					{t("in the statement, read with the pot key shared with you.")}
+					{pot.length === 1
+						? t(
+								"Confidential pot: 1 private payment is in the statement, read with the pot key shared with you.",
+							)
+						: t(
+								"Confidential pot: {count} private payments are in the statement, read with the pot key shared with you.",
+								{ count: pot.length },
+							)}
 				</p>
 			)}
 		</Card>

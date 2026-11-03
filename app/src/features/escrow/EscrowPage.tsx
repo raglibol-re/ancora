@@ -72,9 +72,9 @@ export function EscrowPage() {
 					action={dataSource.kind === "sample" ? <SimulatedTag /> : null}
 				>
 					<p className={styles.muted}>
-						{view.orgName} {t("approved this payment on")} {formatDateTime(request.createdAt)}{" "}
 						{t(
-							"and set the money aside. It is paid out once both sides confirm: you, the recipient, and the organization.",
+							"{organization} approved this payment on {date} and set the money aside. It is paid out once both sides confirm: you, the recipient, and the organization.",
+							{ organization: view.orgName, date: formatDateTime(request.createdAt) },
 						)}
 					</p>
 					{request.note && <p className={styles.note}>“{request.note}”</p>}

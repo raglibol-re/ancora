@@ -1,12 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { shortAddress } from "../../domain/account.ts";
-import {
-	claimProgress,
-	describeTimeLeft,
-	describeWait,
-	type LifelineOverview,
-	type Protected,
-} from "../../domain/lifeline.ts";
+import { claimProgress, type LifelineOverview, type Protected } from "../../domain/lifeline.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
@@ -15,6 +9,7 @@ import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./Lifeline.module.css";
+import { describeTimeLeft, describeWait } from "./lifelineTime.ts";
 
 type GuardianCardProps = {
 	overview: LifelineOverview | null;
@@ -84,21 +79,30 @@ function WardRow({ ward, onChanged }: { ward: Protected; onChanged: () => void }
 					<strong>{person.name}</strong>
 					<span className={styles.muted}>
 						{" "}
-						· {ward.plan.threshold} {t("of")} {ward.plan.guardians.length} {t("confirm ·")}{" "}
-						{describeWait(ward.plan.waitSeconds)}
+						·{" "}
+						{t("{needed} of {total} confirm · {wait}", {
+							needed: ward.plan.threshold,
+							total: ward.plan.guardians.length,
+							wait: describeWait(ward.plan.waitSeconds),
+						})}
 					</span>
 				</span>
 			</div>
 			{claim && progress ? (
 				<>
 					<p className={styles.muted}>
-						{t("Recovery in progress: new pass")} {shortAddress(claim.successor)}
-						{t(", confirmed by")} {progress.confirmed} {t("of")} {progress.needed}
+						{t("Recovery in progress: new pass {pass}, confirmed by {confirmed} of {needed}.", {
+							pass: shortAddress(claim.successor),
+							confirmed: progress.confirmed,
+							needed: progress.needed,
+						})}{" "}
 						{progress.ready
-							? t(". Ready: the new pass can complete it.")
+							? t("Ready: the new pass can complete it.")
 							: progress.confirmed >= progress.needed
-								? `. Waiting period ends ${describeTimeLeft(progress.waitLeftMs)}.`
-								: "."}
+								? t("The waiting period ends {when}.", {
+										when: describeTimeLeft(progress.waitLeftMs),
+									})
+								: ""}
 					</p>
 					{!confirmedByMe && (
 						<div>
