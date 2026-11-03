@@ -18,7 +18,6 @@
   <a href="https://github.com/raglibol-re/ancora/actions/workflows/ci.yml"><img src="https://github.com/raglibol-re/ancora/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Stellar-testnet-0B1730?style=flat-square&logo=stellar&logoColor=white" alt="Stellar testnet" />
   <img src="https://img.shields.io/badge/Soroban%20SDK-28-C9A24D?style=flat-square" alt="Soroban SDK 28" />
-  <img src="https://img.shields.io/badge/HackMeridian-2026-C9A24D?style=flat-square" alt="HackMeridian 2026" />
 </p>
 
 <p align="center">
@@ -30,7 +29,7 @@
 </p>
 
 <p align="center">
-  <strong>Live:</strong> <a href="https://ancora-gray.vercel.app">ancora-gray.vercel.app</a> &nbsp;·&nbsp; <strong>Built for</strong> HackMeridian 2026, Lisbon &nbsp;·&nbsp; <strong>Next:</strong> Stellar Community Fund #46
+  <strong>Live:</strong> <a href="https://ancora-gray.vercel.app">ancora-gray.vercel.app</a> &nbsp;·&nbsp; <strong>Next:</strong> Stellar Community Fund #46
 </p>
 
 > ancora is not a bank. Balances are not deposit-insured and nothing here is a savings account. This project runs on the Stellar **testnet** only; no real money is involved.
@@ -215,7 +214,7 @@ Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it (the WebAu
 
 ## Demo admin
 
-`/admin` is an operator tool for the hackathon demo, not an end-user feature. It is gated by the `ADMIN_PASSPHRASE` environment variable (`scripts/setup-testnet.sh --sync-vercel` generates one and saves it to `app/.env.local`, gitignored). It can:
+`/admin` is the operator console for the test network, not an end-user feature. It is gated by the `ADMIN_PASSPHRASE` environment variable (`scripts/setup-testnet.sh --sync-vercel` generates one and saves it to `app/.env.local`, gitignored). It can:
 
 - switch the **site-wide default** between sample data and the Stellar testnet (the testnet falls back to sample data automatically when the RPC or ancora's server doesn't answer, and people can still choose on their pass);
 - show **health**: RPC (ledger, protocol, latency), testnet rent, whether every contract this build uses exists, the operator's XLM and stablecoin floats, relayer origins;
@@ -243,7 +242,7 @@ The operator cannot create, approve or alter requests, and cannot move organizat
 
 ## Roadmap
 
-Built for HackMeridian 2026; continuing through the Stellar Community Fund #46 in three milestones: proven on testnet (every flow end-to-end every night, reproducible attested builds, monitoring, a durable event archive), privacy and keys beyond preview (the confidential pot out of preview, approval tiers proven over hidden amounts, Lifeline reminders, the native ML-DSA host function), and ready for mainnet (external security review, licensed euro ramp, pilot organizations). Deliverables and acceptance checks are in [docs/ROADMAP.md](docs/ROADMAP.md#scf-46-milestones); the demo walk-through is [docs/DEMO.md](docs/DEMO.md).
+The next stages follow the Stellar Community Fund #46 plan in three milestones: proven on testnet (every flow end-to-end every night, reproducible attested builds, monitoring, a durable event archive), privacy and keys beyond preview (the confidential pot out of preview, approval tiers proven over hidden amounts, Lifeline reminders, the native ML-DSA host function), and ready for mainnet (external security review, licensed euro ramp, pilot organizations). Deliverables and acceptance checks are in [docs/ROADMAP.md](docs/ROADMAP.md#scf-46-milestones); the demo walk-through is [docs/DEMO.md](docs/DEMO.md).
 
 ## Built with
 

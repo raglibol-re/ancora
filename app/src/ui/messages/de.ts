@@ -22,7 +22,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Your passkey is your account": "Ihr Passkey ist Ihr Konto",
 	"Face ID or a fingerprint creates your own account on Stellar. Its address is your ancora ID: one identity for every organization you belong to, no seed phrase to lose.":
 		"Face ID oder ein Fingerabdruck legt Ihr eigenes Konto auf Stellar an. Seine Adresse ist Ihre ancora-ID: eine Identität für jede Organisation, zu der Sie gehören, ohne Seed-Phrase, die verloren gehen kann.",
-	"Real on testnet": "Echt im Testnet",
 	"Rules the organization enforces itself": "Regeln, die die Organisation selbst durchsetzt",
 	"Each organization is its own contract. Approval tiers, four-eyes, objection windows and new-recipient checks run on-chain, and the rules are one readable document whose fingerprint the contract stores.":
 		"Jede Organisation ist ein eigener Vertrag. Freigabestufen, Vier-Augen-Prinzip, Einspruchsfristen und Prüfungen neuer Empfänger laufen on-chain, und die Regeln sind ein lesbares Dokument, dessen Fingerabdruck der Vertrag speichert.",
@@ -32,15 +31,12 @@ export const de: Readonly<Record<string, string>> = {
 	"A Reserve, not a savings account": "Eine Reserve, kein Sparkonto",
 	"Idle money goes into a DeFindex vault on Stellar with one tap and comes back whenever you need it. Earnings are variable and come from Blend lending, not from the stablecoin itself. Not a bank deposit, not insured.":
 		"Ungenutztes Geld fließt mit einem Tippen in einen DeFindex-Tresor auf Stellar und kommt zurück, wann immer Sie es brauchen. Die Erträge sind variabel und stammen aus Blend-Krediten, nicht aus dem Stablecoin selbst. Keine Bankeinlage, nicht versichert.",
-	"Real on testnet (BlendUSDC)": "Echt im Testnet (BlendUSDC)",
 	"A security seal for large payments": "Ein Sicherheitssiegel für große Zahlungen",
 	"Above a threshold the organization sets, a payment needs an extra seal from an approver. Organizations can require it to be signed with a quantum-safe ML-DSA key that never leaves the approving device; the organization checks it on Stellar before the money moves.":
 		"Ab einer Schwelle, die die Organisation festlegt, braucht eine Zahlung ein zusätzliches Siegel einer freigebenden Person. Organisationen können verlangen, dass es mit einem quantensicheren ML-DSA-Schlüssel signiert wird, der das freigebende Gerät nie verlässt; die Organisation prüft es auf Stellar, bevor Geld fließt.",
-	"Real on testnet (opt-in per organization)": "Echt im Testnet (pro Organisation wählbar)",
 	"Decide together": "Gemeinsam entscheiden",
 	"Reasons for and against, questions and comments on every request, with thumbs up and down. Approvers see what the group thinks before they sign.":
 		"Gründe dafür und dagegen, Fragen und Kommentare zu jeder Anfrage, mit Daumen hoch und runter. Wer freigibt, sieht vor der Unterschrift, was die Gruppe denkt.",
-	Real: "Echt",
 	"Create your passkey": "Passkey erstellen",
 	"Thirty seconds, no app store, no seed phrase. Your pass shows your ancora ID and a QR code others use to invite you.":
 		"Dreißig Sekunden, kein App Store, keine Seed-Phrase. Ihr Pass zeigt Ihre ancora-ID und einen QR-Code, mit dem andere Sie einladen.",
@@ -60,7 +56,6 @@ export const de: Readonly<Record<string, string>> = {
 	Features: "Funktionen",
 	"How it works": "So funktioniert es",
 	Security: "Sicherheit",
-	"Roadmap (GitHub)": "Roadmap (GitHub)",
 	"Sign in": "Anmelden",
 	"Get started": "Loslegen",
 	"Programmable business account on Stellar": "Programmierbares Geschäftskonto auf Stellar",
@@ -80,11 +75,6 @@ export const de: Readonly<Record<string, string>> = {
 	"Verifiable rules": "Überprüfbare Regeln",
 	"Approval rules are a canonical document. The organization contract stores its SHA-256, so anyone can check that what you read is what it enforces.":
 		"Freigaberegeln sind ein kanonisches Dokument. Der Vertrag der Organisation speichert seinen SHA-256-Wert, sodass jede Person prüfen kann, dass das, was Sie lesen, auch durchgesetzt wird.",
-	"Non-custodial, labeled honestly": "Ohne Verwahrung, ehrlich gekennzeichnet",
-	"Nobody but the organization controls its money. Everything simulated is labeled as such; this demo runs on the Stellar testnet with test money.":
-		"Niemand außer der Organisation verfügt über ihr Geld. Alles Simulierte ist als solches gekennzeichnet; diese Demo läuft im Stellar-Testnet mit Testgeld.",
-	"ancora is not a bank. Balances are not deposit-insured. Built for HackMeridian 2026 on the Stellar testnet.":
-		"ancora ist keine Bank. Guthaben unterliegen keiner Einlagensicherung. Entwickelt für HackMeridian 2026 im Stellar-Testnet.",
 	"Open menu": "Menü öffnen",
 	"Your pass": "Ihr Pass",
 	Menu: "Menü",
@@ -1311,4 +1301,26 @@ export const de: Readonly<Record<string, string>> = {
 	"team lead": "Teamleitung",
 	"team leads": "Teamleitungen",
 	"unknown role": "unbekannte Rolle",
+	"Private where it matters": "Vertraulich, wo es zählt",
+	"Payment references, recipients and discussions are stored encrypted, so only your members and the auditors you choose can read them. Amounts stay verifiable on the ledger.":
+		"Verwendungszwecke, Empfänger und Diskussionen werden verschlüsselt gespeichert, sodass nur Ihre Mitglieder und die von Ihnen gewählten Prüfer sie lesen. Beträge bleiben im Ledger überprüfbar.",
+	"Work with other organizations": "Mit anderen Organisationen arbeiten",
+	"Agree milestones with a supplier or partner, deposit up front and release each payment when the work is delivered. Both sides decide under their own approval rules.":
+		"Vereinbaren Sie Meilensteine mit einem Lieferanten oder Partner, hinterlegen Sie den Betrag vorab und geben Sie jede Zahlung frei, wenn die Arbeit geliefert ist. Beide Seiten entscheiden nach ihren eigenen Freigaberegeln.",
+	"Open source": "Open Source",
+	"Nobody but the organization controls its money: ancora holds no key to any account. ancora runs on the Stellar test network today; mainnet follows an external security review.":
+		"Niemand außer der Organisation verfügt über ihr Geld: ancora hat keinen Schlüssel zu irgendeinem Konto. ancora läuft heute im Stellar-Testnetz; das Hauptnetz folgt nach einer externen Sicherheitsprüfung.",
+	"The business account your organization controls.":
+		"Das Geschäftskonto, das Ihre Organisation selbst steuert.",
+	Footer: "Fußzeile",
+	Product: "Produkt",
+	Roadmap: "Roadmap",
+	"© 2026 ancora. ancora is not a bank; balances are not deposit-insured. Currently on the Stellar test network with test money. Licensed payment partners handle bank transfers.":
+		"© 2026 ancora. ancora ist keine Bank; Guthaben unterliegen keiner Einlagensicherung. Derzeit im Stellar-Testnetz mit Testgeld. Banküberweisungen übernehmen lizenzierte Zahlungspartner.",
+	"Non-custodial by design": "Ohne Verwahrung, von Grund auf",
+	Treasurer: "Kassenwart",
+	"Board member": "Vorstandsmitglied",
+	"Board members": "Vorstandsmitglieder",
+	Member: "Mitglied",
+	Members: "Mitglieder",
 };

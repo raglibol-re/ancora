@@ -31,7 +31,7 @@ function storePassphrase(value: string): void {
 }
 
 /**
- * Operator tool for the hackathon demo (testnet only), behind the ADMIN_PASSPHRASE env var.
+ * Operator console (testnet only), behind the ADMIN_PASSPHRASE env var.
  * The operator key pays fees and sends test money; it is not a signer on any organization
  * account and can neither move org funds nor change org rules.
  */
@@ -69,8 +69,8 @@ export function AdminPage() {
 
 	return (
 		<Page
-			title="Demo admin"
-			lead="Operator tools for the testnet demo. Not an end-user feature. The operator key is not a signer on any organization account."
+			title="Operator console"
+			lead="Operator tools for the test network. Not an end-user feature. The operator key is not a signer on any organization account."
 		>
 			<DemoModeCard
 				passphrase={passphrase}
@@ -125,8 +125,8 @@ function PassphraseGate({ busy, error, onSubmit }: GateProps) {
 		<main className={styles.gate}>
 			<BrandMark size={40} />
 			<form className={styles.gateForm} onSubmit={submit}>
-				<h1>Demo admin</h1>
-				<p>Operator access for the testnet demo. Not for end users.</p>
+				<h1>Operator console</h1>
+				<p>Operator access for the test network. Not for end users.</p>
 				<Field label="Operator passphrase" htmlFor="admin-passphrase" error={error}>
 					<input
 						id="admin-passphrase"

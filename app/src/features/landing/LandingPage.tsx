@@ -13,42 +13,48 @@ const features = [
 		body: msg(
 			"Face ID or a fingerprint creates your own account on Stellar. Its address is your ancora ID: one identity for every organization you belong to, no seed phrase to lose.",
 		),
-		status: msg("Real on testnet"),
 	},
 	{
 		title: msg("Rules the organization enforces itself"),
 		body: msg(
 			"Each organization is its own contract. Approval tiers, four-eyes, objection windows and new-recipient checks run on-chain, and the rules are one readable document whose fingerprint the contract stores.",
 		),
-		status: msg("Real on testnet"),
 	},
 	{
 		title: msg("Several stablecoins, one account"),
 		body: msg(
 			"EURC, USDC and more side by side, each with its own balance. Rules are written in your home currency; adding a stablecoin is a decision the organization takes together.",
 		),
-		status: msg("Real on testnet"),
 	},
 	{
 		title: msg("A Reserve, not a savings account"),
 		body: msg(
 			"Idle money goes into a DeFindex vault on Stellar with one tap and comes back whenever you need it. Earnings are variable and come from Blend lending, not from the stablecoin itself. Not a bank deposit, not insured.",
 		),
-		status: msg("Real on testnet (BlendUSDC)"),
 	},
 	{
 		title: msg("A security seal for large payments"),
 		body: msg(
 			"Above a threshold the organization sets, a payment needs an extra seal from an approver. Organizations can require it to be signed with a quantum-safe ML-DSA key that never leaves the approving device; the organization checks it on Stellar before the money moves.",
 		),
-		status: msg("Real on testnet (opt-in per organization)"),
+	},
+	{
+		title: msg("Private where it matters"),
+		body: msg(
+			"Payment references, recipients and discussions are stored encrypted, so only your members and the auditors you choose can read them. Amounts stay verifiable on the ledger.",
+		),
+	},
+	{
+		title: msg("Work with other organizations"),
+		body: msg(
+			"Agree milestones with a supplier or partner, deposit up front and release each payment when the work is delivered. Both sides decide under their own approval rules.",
+		),
 	},
 	{
 		title: msg("Decide together"),
 		body: msg(
 			"Reasons for and against, questions and comments on every request, with thumbs up and down. Approvers see what the group thinks before they sign.",
 		),
-		status: msg("Real"),
 	},
 ];
 
@@ -125,7 +131,7 @@ export function LandingPage() {
 						<a href="#how">{t("How it works")}</a>
 						<a href="#security">{t("Security")}</a>
 						<a href="https://github.com/raglibol-re/ancora" target="_blank" rel="noreferrer">
-							{t("Roadmap (GitHub)")}
+							{t("Open source")}
 						</a>
 					</nav>
 					<div className={styles.navActions}>
@@ -183,7 +189,6 @@ export function LandingPage() {
 					<div className={styles.grid}>
 						{features.map((feature) => (
 							<article key={feature.title} className={styles.card}>
-								<span className={styles.status}>{t(feature.status)}</span>
 								<h3>{t(feature.title)}</h3>
 								<p>{t(feature.body)}</p>
 							</article>
@@ -230,10 +235,10 @@ export function LandingPage() {
 							</p>
 						</article>
 						<article className={styles.card}>
-							<h3>{t("Non-custodial, labeled honestly")}</h3>
+							<h3>{t("Non-custodial by design")}</h3>
 							<p>
 								{t(
-									"Nobody but the organization controls its money. Everything simulated is labeled as such; this demo runs on the Stellar testnet with test money.",
+									"Nobody but the organization controls its money: ancora holds no key to any account. ancora runs on the Stellar test network today; mainnet follows an external security review.",
 								)}
 							</p>
 						</article>
@@ -242,10 +247,35 @@ export function LandingPage() {
 			</main>
 
 			<footer className={styles.footer}>
-				<BrandMark size={28} />
-				<p>
+				<div className={styles.footerBrand}>
+					<BrandMark size={28} />
+					<p>{t("The business account your organization controls.")}</p>
+				</div>
+				<nav className={styles.footerLinks} aria-label={t("Footer")}>
+					<div>
+						<h3>{t("Product")}</h3>
+						<a href="#features">{t("Features")}</a>
+						<a href="#how">{t("How it works")}</a>
+						<a href="#security">{t("Security")}</a>
+					</div>
+					<div>
+						<h3>{t("Company")}</h3>
+						<a href="https://github.com/raglibol-re/ancora" target="_blank" rel="noreferrer">
+							{t("Open source")}
+						</a>
+						<a
+							href="https://github.com/raglibol-re/ancora/blob/main/docs/ROADMAP.md"
+							target="_blank"
+							rel="noreferrer"
+						>
+							{t("Roadmap")}
+						</a>
+						<Link to="/app">{t("Sign in")}</Link>
+					</div>
+				</nav>
+				<p className={styles.legal}>
 					{t(
-						"ancora is not a bank. Balances are not deposit-insured. Built for HackMeridian 2026 on the Stellar testnet.",
+						"© 2026 ancora. ancora is not a bank; balances are not deposit-insured. Currently on the Stellar test network with test money. Licensed payment partners handle bank transfers.",
 					)}
 				</p>
 			</footer>
