@@ -1,5 +1,12 @@
 import { createHash } from "node:crypto";
-import { type Account, Keypair, Operation, rpc, TransactionBuilder } from "@stellar/stellar-sdk";
+import {
+	type Account,
+	Keypair,
+	Operation,
+	type rpc,
+	TransactionBuilder,
+} from "@stellar/stellar-sdk";
+import { rpcServer } from "../../shared/rpcServer.js";
 import type { ServerConfig } from "./serverConfig.js";
 
 // Channel accounts let server transactions run side by side. Stellar Core keeps one pending
@@ -32,7 +39,7 @@ export function channelKeypair(operator: Keypair, index: number): Keypair {
 
 /** How many channels exist on the network now (the admin health panel shows it). */
 export async function readyChannels(config: ServerConfig, operator: Keypair): Promise<number> {
-	const server = new rpc.Server(config.rpcUrl);
+	const server = rpcServer(config.rpcUrl);
 	const found = await Promise.all(
 		Array.from({ length: CHANNEL_COUNT }, (_, index) =>
 			server.getAccount(channelKeypair(operator, index).publicKey()).then(
@@ -49,7 +56,7 @@ export async function pickChannel(
 	config: ServerConfig,
 	operator: Keypair,
 ): Promise<{ keypair: Keypair; account: Account }> {
-	const server = new rpc.Server(config.rpcUrl);
+	const server = rpcServer(config.rpcUrl);
 	const keypair = channelKeypair(operator, Math.floor(Math.random() * CHANNEL_COUNT));
 	const existing = await server.getAccount(keypair.publicKey()).catch(() => null);
 	if (existing) return { keypair, account: existing };

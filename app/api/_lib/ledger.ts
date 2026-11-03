@@ -6,6 +6,7 @@ import {
 	TransactionBuilder,
 	xdr,
 } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../shared/rpcServer.js";
 import { SIMULATION_SOURCE } from "../../shared/tokenBalance.js";
 import { pickChannel } from "./channels.js";
 import { RequestError } from "./http.js";
@@ -24,7 +25,7 @@ export async function simulatedResourceFee(
 		.addOperation(Operation.invokeHostFunction({ func, auth }))
 		.setTimeout(30)
 		.build();
-	const simulation = await new rpc.Server(config.rpcUrl).simulateTransaction(tx);
+	const simulation = await rpcServer(config.rpcUrl).simulateTransaction(tx);
 	if (!rpc.Api.isSimulationSuccess(simulation) || rpc.Api.isSimulationRestore(simulation)) {
 		throw new RequestError("The transaction would fail on the network, so it was not sent.");
 	}
@@ -59,7 +60,7 @@ export async function invokeAsServer(
 	signer: Keypair,
 	operation: xdr.Operation,
 ): Promise<string> {
-	const server = new rpc.Server(config.rpcUrl);
+	const server = rpcServer(config.rpcUrl);
 	const operatorOperation = withSource(operation, signer);
 	let refused = 0;
 	for (let attempt = 1; ; attempt++) {

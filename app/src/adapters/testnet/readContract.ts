@@ -6,6 +6,7 @@ import {
 	TransactionBuilder,
 	type xdr,
 } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../../shared/rpcServer.ts";
 import { SIMULATION_SOURCE } from "../../../shared/tokenBalance.ts";
 
 export type Network = { rpcUrl: string; networkPassphrase: string };
@@ -27,7 +28,7 @@ export async function readContract(
 		.addOperation(new Contract(contractId).call(fn, ...args))
 		.setTimeout(30)
 		.build();
-	const simulation = await new rpc.Server(network.rpcUrl).simulateTransaction(tx);
+	const simulation = await rpcServer(network.rpcUrl).simulateTransaction(tx);
 	if (!rpc.Api.isSimulationSuccess(simulation) || !simulation.result) {
 		const detail = rpc.Api.isSimulationError(simulation) ? simulation.error : "no result";
 		throw new ContractReadError(

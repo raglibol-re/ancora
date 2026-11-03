@@ -1,5 +1,6 @@
-import { Address, rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
+import { Address, type rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
 import { Buffer } from "buffer";
+import { rpcServer } from "../../../../shared/rpcServer.ts";
 import { scanEvents } from "../eventScan.ts";
 import { ContractReadError, type Network, readContract } from "../readContract.ts";
 import { address, struct, u32 } from "../scv.ts";
@@ -88,7 +89,7 @@ export async function readPotEvents(
 	account: string,
 	after: number | null = null,
 ): Promise<{ events: PotEvent[]; toLedger: number }> {
-	const server = new rpc.Server(network.rpcUrl);
+	const server = rpcServer(network.rpcUrl);
 	const health = await server.getHealth();
 	const me = new Address(account).toScVal().toXDR("base64");
 	const filters: rpc.Api.EventFilter[] = [

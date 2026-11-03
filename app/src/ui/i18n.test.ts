@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CONTRACT_ERROR_MESSAGES } from "../adapters/testnet/mapOrganization.ts";
+import { RPC_TIMED_OUT } from "../adapters/testnet/passkeyKit.ts";
 import { POT_ERROR_MESSAGES } from "../adapters/testnet/pot/potErrors.ts";
 import {
 	DEAL_ERROR_MESSAGES,
@@ -61,7 +62,9 @@ describe("engine and contract messages", () => {
 			DEAL_STATUS_LABELS,
 			MILESTONE_STATUS_LABELS,
 		];
-		const missing = tables.flatMap((table) => Object.values(table)).filter((text) => !(text in de));
+		const missing = [...tables.flatMap((table) => Object.values(table)), RPC_TIMED_OUT].filter(
+			(text) => !(text in de),
+		);
 		expect(missing).toEqual([]);
 	});
 

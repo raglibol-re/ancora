@@ -1,4 +1,5 @@
 import { Contract, rpc, TransactionBuilder, type xdr } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../../shared/rpcServer.ts";
 import { tokenBalance } from "../../../shared/tokenBalance.ts";
 import { shortAddress } from "../../domain/account.ts";
 import type { ConnectedWallet } from "../../domain/dataSource.ts";
@@ -135,7 +136,9 @@ async function checkWallet(
 	from: string,
 	stroops: bigint,
 ): Promise<Result<void, RuleError>> {
-	const account = await new rpc.Server(network.rpcUrl).getAccount(from).catch(() => null);
+	const account = await rpcServer(network.rpcUrl)
+		.getAccount(from)
+		.catch(() => null);
 	if (!account) {
 		return failed("Your wallet account isn't active on testnet yet. Fund it with Friendbot first.");
 	}
@@ -157,7 +160,7 @@ async function submitWithWallet(
 	from: string,
 	operation: xdr.Operation,
 ): Promise<Result<string, RuleError>> {
-	const server = new rpc.Server(network.rpcUrl);
+	const server = rpcServer(network.rpcUrl);
 	const account = await server.getAccount(from);
 	const tx = new TransactionBuilder(account, {
 		fee: BASE_FEE,

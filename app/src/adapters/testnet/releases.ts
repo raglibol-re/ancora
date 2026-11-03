@@ -1,4 +1,5 @@
 import { rpc, xdr } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../../shared/rpcServer.ts";
 import type { Release } from "../../domain/dataSource.ts";
 import { ContractReadError, type Network, readContract } from "./readContract.ts";
 import { text } from "./scv.ts";
@@ -24,7 +25,7 @@ export async function latestRelease(network: Network, registry: string): Promise
 
 /** The Wasm hash a contract runs, read from its instance entry on the ledger. */
 export async function contractCodeHash(network: Network, contractId: string): Promise<string> {
-	const entry = await new rpc.Server(network.rpcUrl).getContractData(
+	const entry = await rpcServer(network.rpcUrl).getContractData(
 		contractId,
 		xdr.ScVal.scvLedgerKeyContractInstance(),
 		rpc.Durability.Persistent,

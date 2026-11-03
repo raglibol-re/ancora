@@ -1,4 +1,4 @@
-import { rpc } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../../../shared/rpcServer.js";
 import { serverConfig } from "../../../_lib/serverConfig.js";
 import { findWalletBirth } from "../../../_lib/walletBirth.js";
 import {
@@ -34,7 +34,7 @@ export default {
 			);
 		}
 		const settings = serverConfig();
-		const server = new rpc.Server(settings.rpcUrl);
+		const server = rpcServer(settings.rpcUrl);
 		const upstream = UPSTREAM_INDEXERS[settings.networkPassphrase];
 		const [candidates, latest] = await Promise.all([
 			upstream ? upstreamCandidates(`${upstream}/api/lookup/${credentialId}`) : [],

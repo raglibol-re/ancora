@@ -1,4 +1,5 @@
-import { Address, rpc, scValToNative, type xdr } from "@stellar/stellar-sdk";
+import { Address, type rpc, scValToNative, type xdr } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../../shared/rpcServer.ts";
 import { CHUNK_LEDGERS, scanEvents } from "./eventScan.ts";
 import type { Network } from "./readContract.ts";
 
@@ -48,7 +49,7 @@ export async function readTransfers(
 	tokens: readonly string[],
 	known: HistoryPage | null,
 ): Promise<HistoryPage> {
-	const server = new rpc.Server(network.rpcUrl);
+	const server = rpcServer(network.rpcUrl);
 	const health = await server.getHealth();
 	const latest = health.latestLedger;
 	const windowStart = Math.max(health.oldestLedger, latest - LOOKBACK_LEDGERS);
@@ -71,7 +72,7 @@ export async function backfillTransfers(
 	tokens: readonly string[],
 	known: HistoryPage,
 ): Promise<HistoryPage | null> {
-	const server = new rpc.Server(network.rpcUrl);
+	const server = rpcServer(network.rpcUrl);
 	const health = await server.getHealth();
 	const windowStart = Math.max(health.oldestLedger, health.latestLedger - LOOKBACK_LEDGERS);
 	if (known.fromLedger <= windowStart) return null;

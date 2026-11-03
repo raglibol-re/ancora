@@ -1,4 +1,5 @@
-import { Keypair, Operation, rpc, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Keypair, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import { rpcServer } from "../shared/rpcServer.js";
 import { tokenBalance } from "../shared/tokenBalance.js";
 import { requireAdmin } from "./_lib/adminAuth.js";
 import { readDemoState, writeDemoState } from "./_lib/demoState.js";
@@ -19,7 +20,7 @@ export const config = { maxDuration: 60 };
  */
 async function refillXlmFromFriendbot(settings: ReturnType<typeof serverConfig>): Promise<string> {
 	const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
-	const server = new rpc.Server(settings.rpcUrl);
+	const server = rpcServer(settings.rpcUrl);
 	const { friendbotUrl } = await server.getNetwork();
 	if (!friendbotUrl) throw new RequestError("This network has no Friendbot.", 400);
 	const helper = Keypair.random();

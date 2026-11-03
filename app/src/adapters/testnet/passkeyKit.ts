@@ -1,5 +1,6 @@
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { IndexedDBStorage, SmartAccountErrorCode, SmartAccountKit } from "smart-account-kit";
+import { withRpcTimeout } from "../../../shared/rpcServer.ts";
 import type { TestnetConfig } from "./testnetConfig.ts";
 
 let kit: SmartAccountKit | null = null;
@@ -35,6 +36,7 @@ export function passkeyKit(config: TestnetConfig): SmartAccountKit {
 			startAuthentication,
 		},
 	});
+	withRpcTimeout(kit.rpc);
 	return kit;
 }
 
@@ -47,8 +49,18 @@ export function describeKitError(error: unknown, action: string): string {
 	if (isKitError(error, SmartAccountErrorCode.WALLET_PROVENANCE_UNVERIFIED)) {
 		return `This passkey's account on Stellar couldn't be confirmed yet, so nothing was ${action}. Wait a minute and try again; if it keeps failing, the account wasn't created with ancora.`;
 	}
+	if (isTimeout(error)) return RPC_TIMED_OUT;
 	const detail = error instanceof Error ? error.message : String(error);
 	return `Nothing was ${action}: ${detail}`;
+}
+
+/** A timeout may hit after the transaction was sent, so this doesn't claim nothing happened. */
+export const RPC_TIMED_OUT =
+	"Stellar's network didn't answer in time, so this may not have gone through. Reload in a moment and check before you try again.";
+
+/** An RPC request that ran past its timeout (shared/rpcServer.ts); axios marks it ECONNABORTED. */
+function isTimeout(error: unknown): boolean {
+	return error instanceof Error && (error as { code?: unknown }).code === "ECONNABORTED";
 }
 
 function isKitError(error: unknown, code: SmartAccountErrorCode): boolean {

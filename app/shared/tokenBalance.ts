@@ -1,4 +1,5 @@
 import { Account, Address, Contract, rpc, TransactionBuilder } from "@stellar/stellar-sdk";
+import { rpcServer } from "./rpcServer.js";
 
 // Used by the browser (testnet adapter) and the Vercel Functions alike.
 
@@ -18,7 +19,7 @@ export async function tokenBalance(
 		.addOperation(new Contract(token).call("balance", new Address(holder).toScVal()))
 		.setTimeout(30)
 		.build();
-	const simulation = await new rpc.Server(network.rpcUrl).simulateTransaction(tx);
+	const simulation = await rpcServer(network.rpcUrl).simulateTransaction(tx);
 	if (!rpc.Api.isSimulationSuccess(simulation) || !simulation.result) return 0n;
 	const value = simulation.result.retval;
 	if (value.switch().name !== "scvI128") return 0n;

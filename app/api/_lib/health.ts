@@ -1,4 +1,5 @@
-import { Contract, Keypair, rpc, xdr } from "@stellar/stellar-sdk";
+import { Contract, Keypair, xdr } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../shared/rpcServer.js";
 import { tokenBalance } from "../../shared/tokenBalance.js";
 import { CHANNEL_COUNT, readyChannels } from "./channels.js";
 import { required, type ServerConfig } from "./serverConfig.js";
@@ -17,7 +18,7 @@ export type RpcHealth = {
 export async function rpcHealth(config: ServerConfig): Promise<RpcHealth> {
 	const started = Date.now();
 	try {
-		const latest = await new rpc.Server(config.rpcUrl).getLatestLedger();
+		const latest = await rpcServer(config.rpcUrl).getLatestLedger();
 		return {
 			ok: true,
 			ledger: latest.sequence,
@@ -53,7 +54,7 @@ export async function rentHealth(config: ServerConfig): Promise<RentHealth | nul
 				new xdr.LedgerKeyConfigSetting({ configSettingId: xdr.ConfigSettingId[name]() }),
 			);
 		const entries = (
-			await new rpc.Server(config.rpcUrl).getLedgerEntries(
+			await rpcServer(config.rpcUrl).getLedgerEntries(
 				key("configSettingContractLedgerCostV0"),
 				key("configSettingLiveSorobanStateSizeWindow"),
 			)
@@ -92,7 +93,7 @@ export async function contractsHealth(
 	config: ServerConfig,
 	contracts: readonly { label: string; id: string }[],
 ): Promise<ContractCheck[]> {
-	const server = new rpc.Server(config.rpcUrl);
+	const server = rpcServer(config.rpcUrl);
 	return Promise.all(
 		contracts.map(async ({ label, id }) => {
 			try {

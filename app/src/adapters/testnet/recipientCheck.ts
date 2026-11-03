@@ -1,4 +1,5 @@
-import { Asset, Keypair, rpc, StrKey, xdr } from "@stellar/stellar-sdk";
+import { Asset, Keypair, StrKey, xdr } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../../shared/rpcServer.ts";
 import { shortAddress } from "../../domain/account.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
 import { type RuleError, ruleError } from "../../domain/rules/model.ts";
@@ -47,7 +48,7 @@ export async function checkRecipient(
 	if (!StrKey.isValidEd25519PublicKey(to)) {
 		return refuse("Enter the recipient's Stellar address (starts with G or C).");
 	}
-	const server = new rpc.Server(network.rpcUrl);
+	const server = rpcServer(network.rpcUrl);
 	const exists = await server.getAccount(to).then(
 		() => true,
 		() => false,

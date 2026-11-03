@@ -9,6 +9,7 @@ import {
 	TransactionBuilder,
 	xdr,
 } from "@stellar/stellar-sdk";
+import { rpcServer } from "../../shared/rpcServer.js";
 import { SIMULATION_SOURCE } from "../../shared/tokenBalance.js";
 import { RequestError } from "./http.js";
 import type { ServerConfig } from "./serverConfig.js";
@@ -27,7 +28,7 @@ export async function readView(
 		.addOperation(new Contract(contractId).call(fn, ...args))
 		.setTimeout(30)
 		.build();
-	const simulation = await new rpc.Server(config.rpcUrl).simulateTransaction(tx);
+	const simulation = await rpcServer(config.rpcUrl).simulateTransaction(tx);
 	if (!rpc.Api.isSimulationSuccess(simulation) || !simulation.result) {
 		const detail = rpc.Api.isSimulationError(simulation) ? simulation.error : "";
 		// The organization contract's NotFound (18): the request id doesn't exist.
@@ -45,7 +46,7 @@ export async function contractWasmHash(
 	contractId: string,
 ): Promise<string | null> {
 	try {
-		const response = await new rpc.Server(config.rpcUrl).getLedgerEntries(
+		const response = await rpcServer(config.rpcUrl).getLedgerEntries(
 			new Contract(contractId).getFootprint(),
 		);
 		const entry = response.entries[0];

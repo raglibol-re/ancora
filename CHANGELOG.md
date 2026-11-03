@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: Fixed: a request the public Stellar testnet RPC never answered could leave a step on "Sending to Stellar…" for good (seen when making details private, sealing and approving a deal payout). Every RPC request, in the browser, the passkey kit and the server, now gives up after 30 seconds, and the person reads that Stellar didn't answer in time and should check before retrying (in English and German).
 - 2026-11-03: The operator console's Stellar RPC card shows why a health check failed (for example an XDR error after a protocol upgrade) instead of only "down".
 - 2026-11-03: Fixed for the Stellar testnet's move to protocol 30: the Stellar SDK goes from 16.3.1 to 16.4.1, which reads the new ledger headers. Before, every step that read the latest ledger failed with an XDR error, so payments, pots and deals could stall and the server's health check reported Stellar as down.
 - 2026-11-03: An eighth nightly end-to-end run, in German: a German-speaking browser gets the landing page, the pass, a new organization, test money and a payment in German (request title included), and the language switch turns it back to English.

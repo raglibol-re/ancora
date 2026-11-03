@@ -1625,6 +1625,8 @@ export const de: Readonly<Record<string, string>> = {
 	"Couldn't pay from the pot": "Aus der Kasse ließ sich nicht zahlen",
 	"Couldn't read the amount": "Der Betrag ließ sich nicht lesen",
 	"Nothing was changed": "Es wurde nichts geändert",
+	"Stellar's network didn't answer in time, so this may not have gone through. Reload in a moment and check before you try again.":
+		"Das Stellar-Netzwerk hat nicht rechtzeitig geantwortet, daher ist dies möglicherweise nicht durchgegangen. Laden Sie die Seite gleich neu und prüfen Sie, bevor Sie es erneut versuchen.",
 	"Not a Stellar address.": "Keine Stellar-Adresse.",
 	"A successor is another member; the quiet period and the wait run from one minute to two years.":
 		"Die Nachfolge ist ein anderes Mitglied; die inaktive Zeit und die Wartezeit liegen zwischen einer Minute und zwei Jahren.",
