@@ -14,6 +14,7 @@ import { Card } from "../../ui/Card.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { ChevronDownIcon } from "../../ui/icons.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -32,6 +33,7 @@ export function OverviewPage() {
 }
 
 function Overview({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { workspace, me, dataSource } = useWorkspace();
 	const [open, setOpen] = useState<Asset | null>(null);
 	const waiting = inboxFor(workspace, me.id).filter(
@@ -55,7 +57,7 @@ function Overview({ account }: { account: OrgAccount }) {
 
 			<MoneyHeadline account={account} onAdd={leadAsset ? () => setOpen(leadAsset) : null} />
 
-			<Card title="Accounts" action={sample ? <SimulatedTag /> : null}>
+			<Card title={t("Accounts")} action={sample ? <SimulatedTag /> : null}>
 				<ul className={styles.assetList}>
 					{assets.map((asset) => {
 						const { balance, reserve } = balanceOf(account, asset.token);
@@ -78,12 +80,12 @@ function Overview({ account }: { account: OrgAccount }) {
 											{formatMoney(available, asset.currency)}
 										</span>
 										<span className={styles.sub}>
-											available
+											{t("available")}
 											{hasReserve(asset) && reserve > 0
 												? ` · Reserve ${formatMoney(reserve, asset.currency)}`
 												: ""}
 											{balance !== available || reserve > 0
-												? ` · total ${formatMoney(balance + reserve, asset.currency)}`
+												? ` · ${t("total {amount}", { amount: formatMoney(balance + reserve, asset.currency) })}`
 												: ""}
 										</span>
 									</span>
@@ -96,10 +98,10 @@ function Overview({ account }: { account: OrgAccount }) {
 					})}
 				</ul>
 				<p className={styles.sub}>
-					Rules are written in {base}
+					{t("Rules are written in")} {base}
 					{assets.some((a) => isForeign(account.org, a.token)) &&
-						"; payments in another currency take the strictest tier"}
-					. Tap an account for its Reserve and the ways to add money.
+						t("; payments in another currency take the strictest tier")}
+					{t(". Tap an account for its Reserve and the ways to add money.")}
 				</p>
 			</Card>
 
@@ -107,7 +109,7 @@ function Overview({ account }: { account: OrgAccount }) {
 
 			{waiting.length > 0 && (
 				<section className={styles.section}>
-					<h2>Waiting for you</h2>
+					<h2>{t("Waiting for you")}</h2>
 					{waiting.map((item) => (
 						<RequestCard key={item.request.id} account={account} request={item.request} />
 					))}

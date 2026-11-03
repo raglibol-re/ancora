@@ -4,6 +4,7 @@ import type { Cents } from "../../domain/money.ts";
 import { evaluateProposal } from "../../domain/rules/controls.ts";
 import { periodLabel, remainingAllowance } from "../../domain/rules/limits.ts";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { describeEvaluation } from "../requests/describe.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./RulePreview.module.css";
@@ -27,11 +28,12 @@ export function RulePreview({
 	recipients,
 	category,
 }: RulePreviewProps) {
+	const t = useT();
 	const { me } = useWorkspace();
 	if (amount === null) {
 		return (
 			<p className={styles.preview} aria-live="polite">
-				Enter an amount to see what your rules require.
+				{t("Enter an amount to see what your rules require.")}
 			</p>
 		);
 	}
@@ -51,8 +53,9 @@ export function RulePreview({
 		return (
 			<div className={styles.preview} aria-live="polite">
 				<p className={styles.warning}>
-					Your organization only pays recipients on its allowlist, and this one isn't on it. Ask for
-					them to be added on the Rules page.
+					{t(
+						"Your organization only pays recipients on its allowlist, and this one isn't on it. Ask for them to be added on the Rules page.",
+					)}
 				</p>
 			</div>
 		);
@@ -65,42 +68,42 @@ export function RulePreview({
 		<div className={styles.preview} aria-live="polite">
 			{budget.kind === "refused" ? (
 				<p className={styles.warning}>
-					Beyond what is left of the #{budget.line.category} budget this{" "}
-					{describePeriod(budget.line.periodSeconds)} (
-					{formatMoney(Math.max(0, budget.line.remaining), currency)}). It is a hard budget, so this
-					payment won't be accepted.
+					{t("Beyond what is left of the #")}
+					{budget.line.category} {t("budget this")} {describePeriod(budget.line.periodSeconds)} (
+					{formatMoney(Math.max(0, budget.line.remaining), currency)}
+					{t("). It is a hard budget, so this payment won't be accepted.")}
 				</p>
 			) : (
 				<p className={styles.rule}>{describeEvaluation(account.org, evaluation)}</p>
 			)}
 			{(budget.kind === "within" || budget.kind === "over") && (
 				<p className={styles.detail}>
-					#{budget.line.category}: {formatMoney(Math.max(0, budget.line.remaining), currency)} of{" "}
-					{formatMoney(budget.line.amount, currency)} left this{" "}
+					#{budget.line.category}: {formatMoney(Math.max(0, budget.line.remaining), currency)}{" "}
+					{t("of")} {formatMoney(budget.line.amount, currency)} {t("left this")}{" "}
 					{describePeriod(budget.line.periodSeconds)}
-					{budget.kind === "over" ? "; this payment goes beyond it." : "."}
+					{budget.kind === "over" ? t("; this payment goes beyond it.") : "."}
 				</p>
 			)}
 			{allowance && (
 				<p className={styles.detail}>
-					Inside your allowance
+					{t("Inside your allowance")}
 					{allowance.category ? ` for #${allowance.category}` : ""}:{" "}
-					{formatMoney(remainingAllowance(allowance, now), currency)} of{" "}
-					{formatMoney(allowance.amount, currency)} left this {periodLabel(allowance.periodSeconds)}
-					.
+					{formatMoney(remainingAllowance(allowance, now), currency)} {t("of")}{" "}
+					{formatMoney(allowance.amount, currency)} {t("left this")}{" "}
+					{periodLabel(allowance.periodSeconds)}.
 				</p>
 			)}
 			{outsideAllowlist && (
 				<p className={styles.detail}>
-					This recipient isn't on your allowlist, so the strictest approvals apply.
+					{t("This recipient isn't on your allowlist, so the strictest approvals apply.")}
 				</p>
 			)}
 			{member?.limit && !foreignCurrency && !allowance && (
 				<p className={styles.detail}>
-					Your spending limit: {formatMoney(remainingAllowance(member.limit, now), currency)} of{" "}
-					{formatMoney(member.limit.amount, currency)} left this{" "}
+					{t("Your spending limit:")} {formatMoney(remainingAllowance(member.limit, now), currency)}{" "}
+					{t("of")} {formatMoney(member.limit.amount, currency)} {t("left this")}{" "}
 					{periodLabel(member.limit.periodSeconds)}
-					{withinLimit ? "." : "; this payment goes through the normal rules."}
+					{withinLimit ? "." : t("; this payment goes through the normal rules.")}
 				</p>
 			)}
 			{foreignCurrency && !withinLimit && (
@@ -112,12 +115,12 @@ export function RulePreview({
 			)}
 			{!withinLimit && recipientIsNew && account.org.policy.newRecipientApprovals.length > 0 && (
 				<p className={styles.detail}>
-					Includes the extra check for a first payment to a new recipient.
+					{t("Includes the extra check for a first payment to a new recipient.")}
 				</p>
 			)}
 			{amount > available && (
 				<p className={styles.warning}>
-					Only {formatMoney(available, currency)} is available on the main account.
+					{t("Only")} {formatMoney(available, currency)} {t("is available on the main account.")}
 				</p>
 			)}
 		</div>

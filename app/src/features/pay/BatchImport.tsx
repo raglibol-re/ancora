@@ -1,6 +1,7 @@
 import { type ChangeEvent, useState } from "react";
 import type { Payee } from "../../domain/account.ts";
 import { type BatchLineInput, parseBatchCsv } from "../../domain/batchImport.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import styles from "./BatchImport.module.css";
 
@@ -12,6 +13,7 @@ type Props = {
 
 /** Fills the batch from a spreadsheet export; the lines stay editable before the request. */
 export function BatchImport({ payees, disabled, onImport }: Props) {
+	const t = useT();
 	const notify = useNotify();
 	const [error, setError] = useState<string | null>(null);
 
@@ -30,19 +32,22 @@ export function BatchImport({ payees, disabled, onImport }: Props) {
 		onImport(result.value);
 		notify({
 			tone: "success",
-			text: `${result.value.length} payments from ${file.name}. Check them, then request the batch.`,
+			text: t("{count} payments from {file}. Check them, then request the batch.", {
+				count: result.value.length,
+				file: file.name,
+			}),
 		});
 	};
 
 	return (
 		<div className={styles.import}>
 			<label className={styles.upload}>
-				<span className={styles.label}>Import from a spreadsheet (CSV)</span>
+				<span className={styles.label}>{t("Import from a spreadsheet (CSV)")}</span>
 				<input type="file" accept=".csv,.tsv,.txt,text/csv" onChange={load} disabled={disabled} />
 				<span>
-					One payment per row: recipient (address or a saved name), amount, reference. A header row
-					is fine. Amounts with a decimal comma need semicolons between the columns, as European
-					spreadsheets export them.
+					{t(
+						"One payment per row: recipient (address or a saved name), amount, reference. A header row is fine. Amounts with a decimal comma need semicolons between the columns, as European spreadsheets export them.",
+					)}
 				</span>
 			</label>
 			{error && (

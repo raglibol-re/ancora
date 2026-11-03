@@ -15,6 +15,7 @@ import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -36,18 +37,22 @@ export function PayPage() {
 
 /** One payment, or several as one batch when the organization's contract takes batches. */
 function SendMoney({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const [mode, setMode] = useState<"one" | "several">("one");
 	const batches = !account.onchain || account.onchain.batches;
 	return (
-		<Page title="Send money" lead={`From the account of ${account.org.name}.`}>
+		<Page
+			title={t("Send money")}
+			lead={t("From the account of {organization}.", { organization: account.org.name })}
+		>
 			{batches && (
 				<Segmented<"one" | "several">
-					label="Recipients"
+					label={t("Recipients")}
 					value={mode}
 					onChange={setMode}
 					options={[
-						{ value: "one", label: "One recipient" },
-						{ value: "several", label: "Several (batch)" },
+						{ value: "one", label: t("One recipient") },
+						{ value: "several", label: t("Several (batch)") },
 					]}
 				/>
 			)}
@@ -57,6 +62,7 @@ function SendMoney({ account }: { account: OrgAccount }) {
 }
 
 function PayForm({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource, me, workspace } = useWorkspace();
 	const privateEpoch = usePrivateEpoch(account.org.id);
 	const { run, busy } = useCommand();
@@ -151,8 +157,8 @@ function PayForm({ account }: { account: OrgAccount }) {
 		if (isNew && !newName.trim()) found.name = "Enter the recipient's name.";
 		if (isNew && !newAccount.trim()) {
 			found.account = account.onchain
-				? "Enter the recipient's Stellar address."
-				: "Enter the recipient's IBAN.";
+				? t("Enter the recipient's Stellar address.")
+				: t("Enter the recipient's IBAN.");
 		}
 		setErrors(found);
 		if (amount === null || Object.keys(found).length > 0) return;
@@ -168,8 +174,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 						note: "",
 					}),
 				{
-					signature: { kind: "passkey", title: `Save ${newName.trim()} in the address book` },
-					success: `${newName.trim()} is in the address book.`,
+					signature: {
+						kind: "passkey",
+						title: t("Save {name} in the address book", { name: newName.trim() }),
+					},
+					success: t("{name} is in the address book.", { name: newName.trim() }),
 				},
 			);
 		};
@@ -195,9 +204,13 @@ function PayForm({ account }: { account: OrgAccount }) {
 				{
 					signature: {
 						kind: "passkey",
-						title: `Pay ${formatMoney(amount, currency)} to ${recipientName} ${repeatOption.label}`,
+						title: t("Pay {amount} to {recipient} {interval}", {
+							amount: formatMoney(amount, currency),
+							recipient: recipientName ?? "",
+							interval: t(repeatOption.label),
+						}),
 					},
-					success: "Standing order set. The first payment runs now, under the rules.",
+					success: t("Standing order set. The first payment runs now, under the rules."),
 				},
 			);
 			if (set?.ok) {
@@ -226,7 +239,10 @@ function PayForm({ account }: { account: OrgAccount }) {
 			{
 				signature: {
 					kind: "passkey",
-					title: `Send ${formatMoney(amount, currency)} to ${recipientName}`,
+					title: t("Send {amount} to {recipient}", {
+						amount: formatMoney(amount, currency),
+						recipient: recipientName ?? "",
+					}),
 				},
 			},
 		);
@@ -240,9 +256,12 @@ function PayForm({ account }: { account: OrgAccount }) {
 				<form className={styles.form} onSubmit={submit} noValidate>
 					{account.org.assets.length > 1 && (
 						<Field
-							label="Pay with"
+							label={t("Pay with")}
 							htmlFor="asset"
-							hint={`The rules are written in ${account.org.baseCurrency}; a payment in another currency takes the strictest tier.`}
+							hint={t(
+								"The rules are written in {currency}; a payment in another currency takes the strictest tier.",
+								{ currency: account.org.baseCurrency },
+							)}
 						>
 							<select
 								id="asset"
@@ -255,11 +274,13 @@ function PayForm({ account }: { account: OrgAccount }) {
 									return (
 										<option key={a.token} value={a.token}>
 											{a.symbol} ({a.currency}) ·{" "}
-											{free > 0 ? `${formatMoney(free, a.currency)} available` : "no balance"}
+											{free > 0
+												? t("{amount} available", { amount: formatMoney(free, a.currency) })
+												: t("no balance")}
 											{reachable[a.token] === null
-												? " · recipient can receive it"
+												? t(" · recipient can receive it")
 												: reachable[a.token]
-													? " · recipient can't receive it"
+													? t(" · recipient can't receive it")
 													: ""}
 										</option>
 									);
@@ -267,7 +288,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 							</select>
 						</Field>
 					)}
-					<Field label="Recipient" htmlFor="payee">
+					<Field label={t("Recipient")} htmlFor="payee">
 						<select
 							id="payee"
 							className={controlClass}
@@ -281,15 +302,15 @@ function PayForm({ account }: { account: OrgAccount }) {
 							))}
 							{otherOrgs.map((other) => (
 								<option key={other.org.id} value={`${ORG_PREFIX}${other.org.id}`}>
-									{other.org.name} (organization on ancora)
+									{other.org.name} {t("(organization on ancora)")}
 								</option>
 							))}
-							<option value={NEW_RECIPIENT}>New recipient…</option>
+							<option value={NEW_RECIPIENT}>{t("New recipient…")}</option>
 						</select>
 					</Field>
 					{isNew && (
 						<div className={styles.row}>
-							<Field label="Name" htmlFor="payee-name" error={errors.name}>
+							<Field label={t("Name")} htmlFor="payee-name" error={errors.name}>
 								<input
 									id="payee-name"
 									className={controlClass}
@@ -299,12 +320,12 @@ function PayForm({ account }: { account: OrgAccount }) {
 								/>
 							</Field>
 							<Field
-								label={account.onchain ? "Stellar address" : "IBAN"}
+								label={account.onchain ? t("Stellar address") : "IBAN"}
 								htmlFor="payee-account"
 								error={errors.account}
 								hint={
 									account.onchain
-										? `Starts with G or C. The payment goes out as ${asset?.symbol ?? "the chosen asset"}; a G address must already hold a trustline for exactly that asset (testnet has several assets called USDC).`
+										? `Starts with G or C. The payment goes out as ${asset?.symbol ?? t("the chosen asset")}; a G address must already hold a trustline for exactly that asset (testnet has several assets called USDC).`
 										: undefined
 								}
 							>
@@ -324,14 +345,18 @@ function PayForm({ account }: { account: OrgAccount }) {
 										onChange={(e) => setSaveNew(e.target.checked)}
 									/>
 									<span>
-										<strong>Save to the address book.</strong> Everyone in {account.org.name} then
-										sees this name for the address.
+										<strong>{t("Save to the address book.")}</strong> {t("Everyone in")}{" "}
+										{account.org.name} {t("then sees this name for the address.")}
 									</span>
 								</label>
 							)}
 						</div>
 					)}
-					<Field label={`Amount (${currency})`} htmlFor="amount" error={errors.amount}>
+					<Field
+						label={t("Amount ({currency})", { currency })}
+						htmlFor="amount"
+						error={errors.amount}
+					>
 						<input
 							id="amount"
 							className={`${controlClass} ${styles.amount}`}
@@ -349,7 +374,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 					)}
 					{unreachable === null && isNew && (
 						<p className={styles.recipientOk} role="status">
-							This address can receive {asset?.symbol ?? "the chosen asset"}.
+							{t("This address can receive")} {asset?.symbol ?? t("the chosen asset")}.
 						</p>
 					)}
 					<RulePreview
@@ -366,9 +391,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 					/>
 					{account.org.policy.budgets.length > 0 && (
 						<Field
-							label="Budget category"
+							label={t("Budget category")}
 							htmlFor="category"
-							hint="Optional. The payment counts against this budget; beyond it the rules escalate or refuse."
+							hint={t(
+								"Optional. The payment counts against this budget; beyond it the rules escalate or refuse.",
+							)}
 						>
 							<select
 								id="category"
@@ -376,7 +403,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 								value={category}
 								onChange={(e) => setCategory(e.target.value)}
 							>
-								<option value="">None</option>
+								<option value="">{t("None")}</option>
 								{account.org.policy.budgets.map((budget) => (
 									<option key={budget.category} value={budget.category}>
 										#{budget.category}
@@ -387,9 +414,11 @@ function PayForm({ account }: { account: OrgAccount }) {
 					)}
 					{account.standingOrders !== null && (
 						<Field
-							label="Repeat"
+							label={t("Repeat")}
 							htmlFor="repeat"
-							hint="A standing order pays again on schedule; every run follows the rules like a one-off payment."
+							hint={t(
+								"A standing order pays again on schedule; every run follows the rules like a one-off payment.",
+							)}
 						>
 							<select
 								id="repeat"
@@ -397,10 +426,10 @@ function PayForm({ account }: { account: OrgAccount }) {
 								value={repeat}
 								onChange={(e) => setRepeat(e.target.value as "once" | RepeatValue)}
 							>
-								<option value="once">Once</option>
+								<option value="once">{t("Once")}</option>
 								{REPEAT_OPTIONS.map((option) => (
 									<option key={option.value} value={option.value}>
-										{option.title}
+										{t(option.title)}
 									</option>
 								))}
 							</select>
@@ -414,23 +443,25 @@ function PayForm({ account }: { account: OrgAccount }) {
 								onChange={(e) => setEscrow(e.target.checked)}
 							/>
 							<span>
-								<strong>Secure handover.</strong> After approval the money is set aside and only
-								paid out once the recipient and {account.org.name} both confirm. You get a link to
-								send the recipient.
+								<strong>{t("Secure handover.")}</strong>{" "}
+								{t(
+									"After approval the money is set aside and only paid out once the recipient and",
+								)}{" "}
+								{account.org.name} {t("both confirm. You get a link to send the recipient.")}
 							</span>
 						</label>
 					)}
 					<Field
-						label="Reference"
+						label={t("Reference")}
 						htmlFor="note"
 						hint={
 							privateEpoch > 0
-								? "Private: only your organization reads it (about 70 characters)."
-								: "Shown to approvers and on the statement."
+								? t("Private: only your organization reads it (about 70 characters).")
+								: t("Shown to approvers and on the statement.")
 						}
 						error={
 							privateEpoch > 0 && !fitsPrivately(note.trim(), privateEpoch)
-								? "Too long to keep private; shorten it."
+								? t("Too long to keep private; shorten it.")
 								: null
 						}
 					>
@@ -442,7 +473,7 @@ function PayForm({ account }: { account: OrgAccount }) {
 						/>
 					</Field>
 					<button type="submit" className={buttonClass()} disabled={busy}>
-						{repeat === "once" ? "Continue" : "Set standing order"}
+						{repeat === "once" ? t("Continue") : t("Set standing order")}
 					</button>
 				</form>
 			</Card>

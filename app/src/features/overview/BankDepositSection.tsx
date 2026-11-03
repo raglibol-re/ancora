@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AnchorInfo, AnchorSession, ConnectedWallet } from "../../domain/dataSource.ts";
 import type { Asset } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AddMoneySheet.module.css";
@@ -32,6 +33,7 @@ export function BankDepositSection({
 	onConnect,
 	onArrived,
 }: BankDepositSectionProps) {
+	const t = useT();
 	const { dataSource } = useWorkspace();
 	const ramps = dataSource.ramps;
 	const { run, busy: starting } = useCommand();
@@ -66,15 +68,17 @@ export function BankDepositSection({
 
 	return (
 		<section className={styles.section}>
-			<h3>From a bank account</h3>
+			<h3>{t("From a bank account")}</h3>
 			<p className={styles.muted}>
-				Through the Stellar anchor {info.homeDomain} (testnet: a test bank, no real money). Your
-				wallet signs in, the anchor's form takes the bank details, the {asset.symbol} arrives in
-				your wallet, and from there it goes to the organization.
+				{t("Through the Stellar anchor")} {info.homeDomain}{" "}
+				{t(
+					"(testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the bank details, the",
+				)}{" "}
+				{asset.symbol} {t("arrives in your wallet, and from there it goes to the organization.")}
 			</p>
 			{!wallet ? (
 				<button type="button" className={buttonClass()} disabled={busy} onClick={onConnect}>
-					Connect wallet
+					{t("Connect wallet")}
 				</button>
 			) : session ? (
 				<>
@@ -85,16 +89,16 @@ export function BankDepositSection({
 							target="_blank"
 							rel="noopener noreferrer"
 						>
-							Open the anchor's form
+							{t("Open the anchor's form")}
 						</a>
 					</div>
 					<p className={styles.muted} aria-live="polite">
 						{error ??
-							(record ? describeAnchorStatus(record, asset.symbol) : "Waiting for the anchor…")}
+							(record ? describeAnchorStatus(record, asset.symbol) : t("Waiting for the anchor…"))}
 					</p>
 					{record && FINAL_ANCHOR_STATUSES.has(record.status) && (
 						<button type="button" className={styles.linkButton} onClick={() => setSession(null)}>
-							Start another deposit
+							{t("Start another deposit")}
 						</button>
 					)}
 				</>
@@ -105,7 +109,7 @@ export function BankDepositSection({
 					disabled={busy || starting}
 					onClick={start}
 				>
-					{starting ? "Signing in with the anchor…" : "Start a bank deposit"}
+					{starting ? t("Signing in with the anchor…") : t("Start a bank deposit")}
 				</button>
 			)}
 		</section>

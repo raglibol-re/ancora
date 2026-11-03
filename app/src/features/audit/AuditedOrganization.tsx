@@ -3,6 +3,7 @@ import { type OrgAccount, shortAddress } from "../../domain/account.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatDateTime } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { statementNames } from "../activity/statementNames.ts";
 import { downloadStatement } from "../overview/downloadStatement.ts";
 import { usePotItems } from "../pot/usePotItems.ts";
@@ -15,6 +16,7 @@ import styles from "./AuditPage.module.css";
  * the confidential pot's private payments when access to the pot key was shared.
  */
 export function AuditedOrganization({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { personName } = useWorkspace();
 	const names = useMemo(() => statementNames(account, personName), [account, personName]);
 	const pot = usePotItems(account, names.payee);
@@ -40,7 +42,7 @@ export function AuditedOrganization({ account }: { account: OrgAccount }) {
 					<li key={request.id} className={styles.row}>
 						<span className={styles.title}>{requestTitle(account, request, nameOf)}</span>
 						<span className={styles.meta}>
-							{formatDateTime(request.createdAt)} · {statusLabels[request.status]}
+							{formatDateTime(request.createdAt)} · {t(statusLabels[request.status])}
 							{(request.kind === "payment" || request.kind === "batch") && request.note
 								? ` · ${request.note}`
 								: ""}

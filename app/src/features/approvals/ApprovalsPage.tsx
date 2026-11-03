@@ -8,6 +8,7 @@ import { Card } from "../../ui/Card.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { describeEvaluation } from "../requests/describe.ts";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
@@ -26,28 +27,33 @@ export function ApprovalsPage() {
 }
 
 function Approvals({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const [filter, setFilter] = useState<Filter>("open");
 	const count = (f: Filter) =>
 		account.requests.filter((r) => statusesFor[f].includes(r.status)).length;
 	const shown = account.requests.filter((r) => statusesFor[filter].includes(r.status));
 
 	return (
-		<Page title="Approvals" lead={`Payments and changes in ${account.org.name}.`}>
+		<Page
+			title={t("Approvals")}
+			lead={t("Payments and changes in {organization}.", { organization: account.org.name })}
+		>
 			<Segmented
-				label="Show requests"
+				label={t("Show requests")}
 				value={filter}
 				onChange={setFilter}
 				options={[
-					{ value: "open", label: "Open", count: count("open") },
-					{ value: "scheduled", label: "Objection window", count: count("scheduled") },
-					{ value: "done", label: "Done", count: count("done") },
+					{ value: "open", label: t("Open"), count: count("open") },
+					{ value: "scheduled", label: t("Objection window"), count: count("scheduled") },
+					{ value: "done", label: t("Done"), count: count("done") },
 				]}
 			/>
 			{shown.length === 0 ? (
-				<Card title={filter === "open" ? "Nothing waits for approval" : "Nothing here yet"}>
+				<Card title={filter === "open" ? t("Nothing waits for approval") : t("Nothing here yet")}>
 					<p>
-						Every payment and every change to people or rules becomes a request here. Your rules
-						decide who approves what:
+						{t(
+							"Every payment and every change to people or rules becomes a request here. Your rules decide who approves what:",
+						)}
 					</p>
 					<ul>
 						{account.org.policy.tiers.map((tier, index) => {
@@ -69,10 +75,10 @@ function Approvals({ account }: { account: OrgAccount }) {
 					</ul>
 					<div className={styles.emptyActions}>
 						<Link to="/app/pay" className={buttonClass()}>
-							Send a payment
+							{t("Send a payment")}
 						</Link>
 						<Link to="/app/rules#people" className={buttonClass("secondary")}>
-							Invite a member
+							{t("Invite a member")}
 						</Link>
 					</div>
 				</Card>

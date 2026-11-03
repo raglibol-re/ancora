@@ -10,6 +10,7 @@ import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatDateTime, formatMoney, formatSignedMoney } from "../../ui/format.ts";
 import { ReceiveIcon, ReserveIcon, RulesIcon, SendIcon, SettingsIcon } from "../../ui/icons.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ActivityList.module.css";
 import { describeActivity } from "./describeActivity.ts";
@@ -34,25 +35,26 @@ function dayLabel(at: number, now: number): string {
 }
 
 export function ActivityList({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { personName } = useWorkspace();
 	const entries = account.activity.slice(0, 12);
 	const now = Date.now();
 
 	return (
 		<Card
-			title="Activity"
+			title={t("Activity")}
 			action={
 				account.activity.length > 0 && (
 					<span className={styles.headerActions}>
 						<Link to="/app/activity" className={styles.export}>
-							See all and search
+							{t("See all and search")}
 						</Link>
 						<button
 							type="button"
 							className={styles.export}
 							onClick={() => downloadStatement(account, personName)}
 						>
-							CSV
+							{t("CSV")}
 						</button>
 					</span>
 				)
@@ -60,8 +62,9 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 		>
 			{entries.length === 0 ? (
 				<p className={styles.empty}>
-					No movements yet. Add money to the account to see the first deposit here; payments,
-					Reserve moves and approved changes follow, each with its transaction on Stellar.
+					{t(
+						"No movements yet. Add money to the account to see the first deposit here; payments, Reserve moves and approved changes follow, each with its transaction on Stellar.",
+					)}
 				</p>
 			) : (
 				<ul className={styles.list}>
@@ -87,7 +90,7 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 										{entry.actorId && ` · ${personName(entry.actorId)}`}
 									</span>
 									{"txHash" in entry && entry.txHash && (
-										<ExplorerLink target={entry.txHash}>View transaction</ExplorerLink>
+										<ExplorerLink target={entry.txHash}>{t("View transaction")}</ExplorerLink>
 									)}
 								</span>
 								{amount !== 0 && (
@@ -104,8 +107,9 @@ export function ActivityList({ account }: { account: OrgAccount }) {
 			)}
 			{account.onchain && (
 				<p className={styles.note}>
-					Movements come from the Stellar ledger: about the last week is read, and what this device
-					has read stays listed. Older ones are on the explorer.
+					{t(
+						"Movements come from the Stellar ledger: about the last week is read, and what this device has read stays listed. Older ones are on the explorer.",
+					)}
 				</p>
 			)}
 		</Card>

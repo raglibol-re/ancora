@@ -5,6 +5,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { Sheet } from "../../ui/Sheet.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ReserveSheet.module.css";
@@ -20,6 +21,7 @@ type ReserveSheetProps = {
 
 /** One-tap move between the main account and the Reserve. */
 export function ReserveSheet({ account, token, direction, onClose }: ReserveSheetProps) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const [input, setInput] = useState("");
@@ -32,7 +34,7 @@ export function ReserveSheet({ account, token, direction, onClose }: ReserveShee
 		event.preventDefault();
 		const amount = parseAmountInput(input);
 		if (amount === null) {
-			setError("Enter an amount like 500 or 1,250.50.");
+			setError(t("Enter an amount like 500 or 1,250.50."));
 			return;
 		}
 		const orgId = account.org.id;
@@ -44,9 +46,11 @@ export function ReserveSheet({ account, token, direction, onClose }: ReserveShee
 			{
 				signature: {
 					kind: "passkey",
-					title: `Move ${formatMoney(amount, currency)} ${toReserve ? "to the Reserve" : "to the main account"}`,
+					title: toReserve
+						? t("Move {amount} to the Reserve", { amount: formatMoney(amount, currency) })
+						: t("Move {amount} to the main account", { amount: formatMoney(amount, currency) }),
 				},
-				success: "Done. The balances are updated.",
+				success: t("Done. The balances are updated."),
 			},
 		);
 		if (result?.ok) {
@@ -59,12 +63,12 @@ export function ReserveSheet({ account, token, direction, onClose }: ReserveShee
 	return (
 		<Sheet
 			open={direction !== null}
-			title={toReserve ? "Move to the Reserve" : "Move to the main account"}
+			title={toReserve ? t("Move to the Reserve") : t("Move to the main account")}
 			onClose={onClose}
 		>
 			<form className={styles.form} onSubmit={submit}>
 				<Field
-					label="Amount"
+					label={t("Amount")}
 					htmlFor="reserve-amount"
 					hint={`Up to ${formatMoney(max, currency)}`}
 					error={error}
@@ -81,10 +85,10 @@ export function ReserveSheet({ account, token, direction, onClose }: ReserveShee
 				</Field>
 				<div className={styles.actions}>
 					<button type="button" className={buttonClass("secondary")} onClick={onClose}>
-						Cancel
+						{t("Cancel")}
 					</button>
 					<button type="submit" className={buttonClass()} disabled={busy}>
-						Move
+						{t("Move")}
 					</button>
 				</div>
 			</form>

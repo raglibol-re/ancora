@@ -1,11 +1,12 @@
 import { type Quote, RATE_SCALE, type RateSource } from "../../domain/fx.ts";
 import type { Currency } from "../../domain/money.ts";
+import { msg } from "../../ui/i18n.ts";
 
 // Reference rates from the ECB through the Frankfurter API (no key, CORS enabled). The base URL
 // comes from config so another provider or a self-hosted mirror is one setting away.
 
 const CACHE_MS = 10 * 60_000;
-const LABEL = "ECB reference rate";
+const LABEL = msg("ECB reference rate");
 
 export function frankfurterRates(baseUrl: string): RateSource {
 	const cache = new Map<string, { quote: Quote; at: number }>();

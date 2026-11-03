@@ -6,6 +6,7 @@ import { Avatar } from "../../ui/Avatar.tsx";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { formatMoney, formatRelative } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { PotPaymentAmount } from "../pot/PotPaymentAmount.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -23,6 +24,7 @@ type RequestCardProps = {
 };
 
 export function RequestCard({ account, request, showOrg = false }: RequestCardProps) {
+	const t = useT();
 	const { personName, me, dataSource } = useWorkspace();
 	const notify = useNotify();
 	const {
@@ -40,9 +42,9 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 	const copyEscrowLink = async () => {
 		try {
 			await navigator.clipboard.writeText(escrowLink);
-			notify({ tone: "success", text: "Link copied. Send it to the recipient to confirm." });
+			notify({ tone: "success", text: t("Link copied. Send it to the recipient to confirm.") });
 		} catch {
-			notify({ tone: "error", text: `Couldn't copy. The link is ${escrowLink}` });
+			notify({ tone: "error", text: t("Couldn't copy. The link is {link}", { link: escrowLink }) });
 		}
 	};
 	const title = requestTitle(account, request, personName);
@@ -59,10 +61,10 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 						{title}
 					</Link>
 					<span className={styles.meta}>
-						Requested by {requester} · {formatRelative(request.createdAt, Date.now())}
+						{t("Requested by")} {requester} · {formatRelative(request.createdAt, Date.now())}
 						{(request.kind === "payment" || request.kind === "batch") &&
 							request.recipientIsNew &&
-							" · new recipient"}
+							t(" · new recipient")}
 					</span>
 				</div>
 				<StatusPill status={request.status} />
@@ -72,7 +74,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 					<p className={styles.note}>
 						{request.note}
 						{request.category && `${request.note ? " · " : ""}#${request.category}`}
-						{request.evaluation.overBudget && " · over budget"}
+						{request.evaluation.overBudget && t(" · over budget")}
 					</p>
 				)}
 			{request.kind === "pot" && <PotPaymentAmount account={account} request={request} />}
@@ -94,15 +96,15 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 			)}
 			{discussion && (
 				<Link to={`/app/approvals/${request.id}`} className={styles.meta}>
-					Discussion: {discussion}
+					{t("Discussion:")} {discussion}
 				</Link>
 			)}
 			<RequestProgress account={account} request={request} />
 			{request.kind === "payment" && request.escrow && (
 				<p className={styles.meta}>
-					Secure handover: approved and set aside, paid out once both sides confirm.
+					{t("Secure handover: approved and set aside, paid out once both sides confirm.")}
 					{request.escrowConfirmed &&
-						` Recipient ${request.escrowConfirmed.recipient ? "confirmed" : "not yet"} · ${account.org.name} ${request.escrowConfirmed.sender ? "confirmed" : "not yet"}.`}
+						` Recipient ${request.escrowConfirmed.recipient ? "confirmed" : t("not yet")} · ${account.org.name} ${request.escrowConfirmed.sender ? "confirmed" : t("not yet")}.`}
 				</p>
 			)}
 			{request.executionRef && <ExplorerLink target={request.executionRef} />}
@@ -110,11 +112,11 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 				<div className={styles.actions}>
 					{allowed.confirmEscrow && (
 						<button type="button" className={buttonClass()} onClick={confirmEscrow} disabled={busy}>
-							Confirm release
+							{t("Confirm release")}
 						</button>
 					)}
 					<button type="button" className={buttonClass("secondary")} onClick={copyEscrowLink}>
-						Copy link for the recipient
+						{t("Copy link for the recipient")}
 					</button>
 					{dataSource.kind === "sample" && !request.escrowConfirmed?.recipient && (
 						<button
@@ -123,7 +125,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 							onClick={simulateRecipient}
 							disabled={busy}
 						>
-							Simulate recipient confirmation
+							{t("Simulate recipient confirmation")}
 						</button>
 					)}
 					{allowed.cancelEscrow && (
@@ -133,7 +135,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 							onClick={cancelEscrow}
 							disabled={busy}
 						>
-							Cancel handover
+							{t("Cancel handover")}
 						</button>
 					)}
 				</div>
@@ -142,17 +144,17 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 				<div className={styles.actions}>
 					{allowed.send && (
 						<button type="button" className={buttonClass()} onClick={send} disabled={busy}>
-							{request.kind === "governance" ? "Apply now" : "Send now"}
+							{request.kind === "governance" ? t("Apply now") : t("Send now")}
 						</button>
 					)}
 					{allowed.approve && (
 						<button type="button" className={buttonClass()} onClick={approve} disabled={busy}>
-							Approve
+							{t("Approve")}
 						</button>
 					)}
 					{allowed.seal && (
 						<button type="button" className={buttonClass()} onClick={seal} disabled={busy}>
-							Add security seal
+							{t("Add security seal")}
 						</button>
 					)}
 					{allowed.decline && (
@@ -163,7 +165,7 @@ export function RequestCard({ account, request, showOrg = false }: RequestCardPr
 							disabled={busy}
 						>
 							{request.requesterId === me.id
-								? "Cancel"
+								? t("Cancel")
 								: request.status === "scheduled"
 									? "Object"
 									: "Decline"}

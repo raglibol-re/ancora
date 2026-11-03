@@ -3,6 +3,7 @@ import type { ApprovalRequest } from "../../domain/rules/requests.ts";
 import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ExpertDetails.module.css";
 
@@ -14,36 +15,37 @@ export function ExpertDetails({
 	account: OrgAccount;
 	request: ApprovalRequest;
 }) {
+	const t = useT();
 	const { dataSource } = useWorkspace();
 	const sample = dataSource.kind === "sample";
 
 	return (
-		<Card title="Expert details" action={sample ? <SimulatedTag /> : null}>
+		<Card title={t("Expert details")} action={sample ? <SimulatedTag /> : null}>
 			<dl className={styles.list}>
-				<dt>Request ID</dt>
+				<dt>{t("Request ID")}</dt>
 				<dd>{request.id}</dd>
-				<dt>Organization ID</dt>
+				<dt>{t("Organization ID")}</dt>
 				<dd>{account.org.id}</dd>
-				<dt>Rule tier</dt>
+				<dt>{t("Rule tier")}</dt>
 				<dd>
 					{request.evaluation.withinLimit
-						? "Within the requester's spending limit (no tier)"
+						? t("Within the requester's spending limit (no tier)")
 						: request.evaluation.tierIndex === null
-							? "Strictest tier (membership or rule change)"
+							? t("Strictest tier (membership or rule change)")
 							: `Tier ${request.evaluation.tierIndex + 1} of ${account.org.policy.tiers.length}`}
 				</dd>
 				{request.kind === "payment" && (
 					<>
-						<dt>Budget</dt>
+						<dt>{t("Budget")}</dt>
 						<dd>
-							{request.category ? `#${request.category}` : "No category"}
-							{request.evaluation.overBudget ? " · over budget (strictest tier)" : ""}
+							{request.category ? `#${request.category}` : t("No category")}
+							{request.evaluation.overBudget ? t(" · over budget (strictest tier)") : ""}
 						</dd>
 					</>
 				)}
 				{account.onchain && (
 					<>
-						<dt>Smart account</dt>
+						<dt>{t("Smart account")}</dt>
 						<dd>
 							<ExplorerLink target={account.onchain.contractId}>
 								{account.onchain.contractId}
@@ -51,7 +53,7 @@ export function ExpertDetails({
 						</dd>
 					</>
 				)}
-				<dt>On-chain reference</dt>
+				<dt>{t("On-chain reference")}</dt>
 				<dd>
 					{request.executionRef ? (
 						<ExplorerLink target={request.executionRef}>{request.executionRef}</ExplorerLink>

@@ -2,6 +2,7 @@ import type { OrgAccount } from "../../domain/account.ts";
 import { approvalProgress } from "../../domain/rules/approvals.ts";
 import type { ApprovalRequest } from "../../domain/rules/requests.ts";
 import { formatRelative } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { roleLabel } from "./describe.ts";
 import styles from "./RequestProgress.module.css";
@@ -14,6 +15,7 @@ export function RequestProgress({
 	account: OrgAccount;
 	request: ApprovalRequest;
 }) {
+	const t = useT();
 	const { personName } = useWorkspace();
 	const { org } = account;
 	const progress = approvalProgress(
@@ -43,14 +45,14 @@ export function RequestProgress({
 			{request.evaluation.sealRequired && (
 				<li className={request.sealedBy ? styles.done : ""}>
 					<span className={styles.count}>{request.sealedBy ? "✓" : "–"}</span>
-					Security seal
+					{t("Security seal")}
 					{request.sealedBy && <span className={styles.who}>{personName(request.sealedBy)}</span>}
 				</li>
 			)}
 			{request.status === "scheduled" && request.executeAfter !== null && (
 				<li>
 					<span className={styles.count}>⏱</span>
-					Goes out {formatRelative(request.executeAfter, now)} unless someone objects
+					{t("Goes out")} {formatRelative(request.executeAfter, now)} {t("unless someone objects")}
 				</li>
 			)}
 			{request.status === "failed" && request.failure && (
@@ -58,7 +60,7 @@ export function RequestProgress({
 			)}
 			{request.status === "declined" && request.declinedBy && (
 				<li className={styles.failed}>
-					{request.declinedBy === request.requesterId ? "Cancelled" : "Declined"} by{" "}
+					{request.declinedBy === request.requesterId ? t("Cancelled") : t("Declined")} {t("by")}{" "}
 					{personName(request.declinedBy)}
 				</li>
 			)}

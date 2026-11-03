@@ -3,18 +3,20 @@ import type { OrgAccount } from "../../domain/account.ts";
 import { budgetLines } from "../../domain/budgets.ts";
 import { BudgetMeter } from "../../ui/BudgetMeter.tsx";
 import { Card } from "../../ui/Card.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import styles from "./OverviewPage.module.css";
 
 /** This period's budgets against what the contract booked; edited on the Rules page. */
 export function BudgetsCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const lines = budgetLines(account, Date.now());
 	if (lines.length === 0) return null;
 	return (
 		<Card
-			title="Budgets"
+			title={t("Budgets")}
 			action={
 				<Link to="/app/rules" className={styles.sub}>
-					Edit in Rules
+					{t("Edit in Rules")}
 				</Link>
 			}
 		>

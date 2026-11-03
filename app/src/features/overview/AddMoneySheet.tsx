@@ -8,6 +8,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
 import { Sheet } from "../../ui/Sheet.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useNotify } from "../notices/NoticeContext.ts";
 import { browserStorage } from "../workspace/preferences.ts";
 import { useCommand } from "../workspace/useCommand.ts";
@@ -28,6 +29,7 @@ type AddMoneySheetProps = {
  * sending to the organization's address from a wallet that can pay contract addresses.
  */
 export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetProps) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const { run, busy } = useCommand();
 	const notify = useNotify();
@@ -80,14 +82,17 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 		event.preventDefault();
 		if (!funding || !wallet) return;
 		if (amount === null) {
-			setError("Enter an amount like 25 or 100.50.");
+			setError(t("Enter an amount like 25 or 100.50."));
 			return;
 		}
 		setError(null);
 		const result = await run(
 			() => funding.depositFromWallet(account.org.id, asset.token, wallet.address, amount),
 			{
-				success: `${formatMoney(amount, asset.currency)} ${asset.symbol} arrived from your wallet.`,
+				success: t("{amount} {asset} arrived from your wallet.", {
+					amount: formatMoney(amount, asset.currency),
+					asset: asset.symbol,
+				}),
 			},
 		);
 		if (result?.ok) {
@@ -98,15 +103,15 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 
 	const testMoney = () =>
 		run(() => dataSource.addTestMoney(account.org.id, me.id, asset.token), {
-			success: `Test ${asset.symbol} arrived on the account.`,
+			success: t("Test {asset} arrived on the account.", { asset: asset.symbol }),
 		});
 
 	const copyAddress = async () => {
 		try {
 			await navigator.clipboard.writeText(orgAddress);
-			notify({ tone: "success", text: "Organization address copied." });
+			notify({ tone: "success", text: t("Organization address copied.") });
 		} catch {
-			notify({ tone: "error", text: "Couldn't copy. Select the address and copy it by hand." });
+			notify({ tone: "error", text: t("Couldn't copy. Select the address and copy it by hand.") });
 		}
 	};
 
@@ -117,14 +122,15 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 		health !== null && health !== "unreachable" && health.testMoney?.[asset.token] === false;
 
 	return (
-		<Sheet open={open} title={`Add ${asset.symbol}`} onClose={onClose}>
+		<Sheet open={open} title={t("Add {asset}", { asset: asset.symbol })} onClose={onClose}>
 			<div className={styles.sections}>
 				{funding && (
 					<section className={styles.section}>
-						<h3>From your wallet</h3>
+						<h3>{t("From your wallet")}</h3>
 						<p className={styles.muted}>
-							Freighter, Hana, xBull or Albedo on testnet. ancora prepares the transfer to the
-							organization's contract; your wallet only signs it.
+							{t(
+								"Freighter, Hana, xBull or Albedo on testnet. ancora prepares the transfer to the organization's contract; your wallet only signs it.",
+							)}
 						</p>
 						{wallet ? (
 							<form className={styles.form} onSubmit={deposit}>
@@ -132,17 +138,21 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 									<strong>{wallet.walletName}</strong> · {shortAddress(wallet.address)}
 									{held !== null && ` · holds ${formatMoney(held, asset.currency)} ${asset.symbol}`}
 									<button type="button" className={styles.linkButton} onClick={disconnect}>
-										Disconnect
+										{t("Disconnect")}
 									</button>
 								</p>
 								{held === 0 && (
 									<p className={styles.warning}>
-										This wallet holds none of this asset. It needs a trustline for exactly{" "}
+										{t("This wallet holds none of this asset. It needs a trustline for exactly")}{" "}
 										{assetName ?? asset.symbol}
-										{issuer ? ` (issuer ${shortAddress(issuer)})` : ""} and some balance.
+										{issuer ? ` (issuer ${shortAddress(issuer)})` : ""} {t("and some balance.")}
 									</p>
 								)}
-								<Field label={`Amount (${asset.currency})`} htmlFor="deposit-amount" error={error}>
+								<Field
+									label={t("Amount ({currency})", { currency: asset.currency })}
+									htmlFor="deposit-amount"
+									error={error}
+								>
 									<input
 										id="deposit-amount"
 										className={controlClass}
@@ -159,13 +169,13 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 									disabled={busy || amount === null || (held !== null && amount > held)}
 								>
 									{busy
-										? "Waiting for your wallet…"
+										? t("Waiting for your wallet…")
 										: `Send ${asset.symbol} to ${account.org.name}`}
 								</button>
 							</form>
 						) : (
 							<button type="button" className={buttonClass()} disabled={busy} onClick={connect}>
-								Connect wallet
+								{t("Connect wallet")}
 							</button>
 						)}
 						<div ref={pickerHost} className={styles.pickerHost} />
@@ -186,15 +196,18 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 				)}
 
 				<section className={styles.section}>
-					<h3>Test money</h3>
+					<h3>{t("Test money")}</h3>
 					<p className={styles.muted}>
-						ancora's demo operator sends test {asset.symbol} from its float. Not real money.
+						{t("ancora's demo operator sends test")} {asset.symbol}{" "}
+						{t("from its float. Not real money.")}
 					</p>
 					{floatEmpty ? (
 						<p className={styles.warning}>
-							The operator's float of {asset.symbol} is empty right now: the issuer's testnet faucet
-							isn't handing any out. Pick another asset for test money, or send {asset.symbol} from
-							your own wallet.
+							{t("The operator's float of")} {asset.symbol}{" "}
+							{t(
+								"is empty right now: the issuer's testnet faucet isn't handing any out. Pick another asset for test money, or send",
+							)}{" "}
+							{asset.symbol} {t("from your own wallet.")}
 						</p>
 					) : (
 						<button
@@ -203,23 +216,24 @@ export function AddMoneySheet({ account, asset, open, onClose }: AddMoneySheetPr
 							disabled={busy}
 							onClick={testMoney}
 						>
-							Add test {asset.symbol}
+							{t("Add test")} {asset.symbol}
 						</button>
 					)}
 				</section>
 
 				<section className={styles.section}>
-					<h3>From any other wallet</h3>
+					<h3>{t("From any other wallet")}</h3>
 					<p className={styles.muted}>
-						Send {asset.symbol}
-						{issuer ? ` (issuer ${shortAddress(issuer)})` : ""} to the organization's address with a
-						wallet that can pay contract addresses (Freighter can; a plain Stellar payment from Hana
-						or Lobstr can't reach a C… address).
+						{t("Send")} {asset.symbol}
+						{issuer ? ` (issuer ${shortAddress(issuer)})` : ""}{" "}
+						{t(
+							"to the organization's address with a wallet that can pay contract addresses (Freighter can; a plain Stellar payment from Hana or Lobstr can't reach a C… address).",
+						)}
 					</p>
 					<code className={styles.code}>{orgAddress}</code>
 					<div>
 						<button type="button" className={buttonClass("secondary")} onClick={copyAddress}>
-							Copy address
+							{t("Copy address")}
 						</button>
 					</div>
 				</section>

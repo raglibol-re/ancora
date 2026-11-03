@@ -14,6 +14,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { DefindexBadge } from "../../ui/DefindexBadge.tsx";
 import { formatMoney, formatRate, formatSignedMoney } from "../../ui/format.ts";
 import { Sheet } from "../../ui/Sheet.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { AddMoneySheet } from "./AddMoneySheet.tsx";
 import styles from "./AssetSheet.module.css";
@@ -29,6 +30,7 @@ type AssetSheetProps = {
 
 /** One stablecoin of the organization: balance, what's free, its Reserve, and the ways in and out. */
 export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
+	const t = useT();
 	const { me, dataSource } = useWorkspace();
 	const [adding, setAdding] = useState(false);
 	const [reserve, setReserve] = useState<ReserveDirection | null>(null);
@@ -55,15 +57,19 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 							<p className={styles.balance}>{formatMoney(balance, asset.currency)}</p>
 							<p className={styles.muted}>
 								{committed > 0
-									? `${formatMoney(available, asset.currency)} available · ${formatMoney(committed, asset.currency)} waiting in requests`
-									: "All of it available"}
+									? t("{available} available · {waiting} waiting in requests", {
+											available: formatMoney(available, asset.currency),
+											waiting: formatMoney(committed, asset.currency),
+										})
+									: t("All of it available")}
 							</p>
 						</div>
 					</div>
 					{foreign && (
 						<p className={styles.muted}>
-							The rules are written in {account.org.baseCurrency}; payments in {asset.symbol} take
-							the strictest tier until a live exchange rate is connected.
+							{t("The rules are written in")} {account.org.baseCurrency}
+							{t("; payments in")} {asset.symbol}{" "}
+							{t("take the strictest tier until a live exchange rate is connected.")}
 						</p>
 					)}
 					<div className={styles.actions}>
@@ -72,7 +78,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 							className={buttonClass()}
 							onClick={onClose}
 						>
-							Send {asset.symbol}
+							{t("Send")} {asset.symbol}
 						</Link>
 						{sample ? (
 							<button
@@ -83,7 +89,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 									document.getElementById("account-number")?.scrollIntoView({ behavior: "smooth" });
 								}}
 							>
-								Add money
+								{t("Add money")}
 							</button>
 						) : (
 							<button
@@ -91,7 +97,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 								className={buttonClass("secondary")}
 								onClick={() => setAdding(true)}
 							>
-								Add {asset.symbol}
+								{t("Add")} {asset.symbol}
 							</button>
 						)}
 						{dataSource.ramps && (
@@ -100,14 +106,14 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 								className={buttonClass("secondary")}
 								onClick={() => setToBank(true)}
 							>
-								To a bank account
+								{t("To a bank account")}
 							</button>
 						)}
 					</div>
 
 					<section className={styles.reserve}>
 						<div className={styles.reserveHead}>
-							<h3>Reserve</h3>
+							<h3>{t("Reserve")}</h3>
 							<DefindexBadge compact />
 						</div>
 						{hasReserve(asset) ? (
@@ -118,7 +124,9 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 										? `Earnings, variable: ${formatRate(account.reserveRateBps)} a year right now, about ${formatMoney(estimatedDailyEarnings(account, asset.token), asset.currency)} a day.`
 										: earnings !== undefined && inReserve > 0
 											? `${formatSignedMoney(earnings, asset.currency)} earned so far in the DeFindex vault (Blend lending, variable).`
-											: "Earns in a DeFindex vault on Stellar testnet (Blend lending, variable)."}
+											: t(
+													"Earns in a DeFindex vault on Stellar testnet (Blend lending, variable).",
+												)}
 								</p>
 								{mayMove && (
 									<div className={styles.actions}>
@@ -127,7 +135,7 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 											className={buttonClass("secondary")}
 											onClick={() => setReserve("in")}
 										>
-											Move to Reserve
+											{t("Move to Reserve")}
 										</button>
 										<button
 											type="button"
@@ -135,13 +143,15 @@ export function AssetSheet({ account, asset, onClose }: AssetSheetProps) {
 											disabled={inReserve === 0}
 											onClick={() => setReserve("out")}
 										>
-											Move to account
+											{t("Move to account")}
 										</button>
 									</div>
 								)}
 							</>
 						) : (
-							<p className={styles.muted}>No Reserve for {asset.symbol} yet.</p>
+							<p className={styles.muted}>
+								{t("No Reserve for")} {asset.symbol} {t("yet.")}
+							</p>
 						)}
 					</section>
 				</div>

@@ -7,6 +7,7 @@ import type { Asset, Evaluation, Requirement, Role, RoleId } from "../../domain/
 import type { ApprovalRequest, PotRequest, RequestStatus } from "../../domain/rules/requests.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { formatMoney } from "../../ui/format.ts";
+import { msg } from "../../ui/i18n.ts";
 
 // Plain-language copy for rules and requests. No crypto jargon.
 
@@ -160,11 +161,11 @@ function describePotRequest(request: PotRequest, nameOf: NameOf): string {
 }
 
 export const statusLabels: Readonly<Record<RequestStatus, string>> = {
-	pending: "Waiting for approval",
-	scheduled: "Objection window",
-	ready: "Ready to go out",
-	executed: "Done",
-	declined: "Declined",
-	failed: "Failed",
-	escrowed: "Held until both confirm",
+	pending: msg("Waiting for approval"),
+	scheduled: msg("Objection window"),
+	ready: msg("Ready to go out"),
+	executed: msg("Done"),
+	declined: msg("Declined"),
+	failed: msg("Failed"),
+	escrowed: msg("Held until both confirm"),
 };

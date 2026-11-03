@@ -1,4 +1,5 @@
 import { type ActivityEntry, type OrgAccount, shortAddress } from "../../domain/account.ts";
+import { t } from "../../ui/i18n.ts";
 import { describeChange } from "../requests/describe.ts";
 
 export function describeActivity(
@@ -11,18 +12,18 @@ export function describeActivity(
 			return `Payment to ${account.payees.find((p) => p.id === entry.payeeId)?.name ?? label(account, entry.payeeId)}`;
 		case "deposit":
 			return entry.from === entry.token
-				? "Received from the issuer"
+				? t("Received from the issuer")
 				: `Received from ${label(account, entry.from)}`;
 		case "reserve-in":
-			return "Moved to the Reserve";
+			return t("Moved to the Reserve");
 		case "reserve-out":
-			return "Moved from the Reserve";
+			return t("Moved from the Reserve");
 		case "earnings":
-			return "Reserve earnings (variable)";
+			return t("Reserve earnings (variable)");
 		case "governance":
 			return `${describeChange(account.org, entry.change, nameOf)}${entry.viaRequest ? " (approved)" : " (setup)"}`;
 		case "logo":
-			return "Logo updated";
+			return t("Logo updated");
 	}
 }
 

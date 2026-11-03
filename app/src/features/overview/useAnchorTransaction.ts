@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AnchorTransaction } from "../../domain/dataSource.ts";
+import { t } from "../../ui/i18n.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 
 const POLL_MS = 4_000;
@@ -66,33 +67,33 @@ export function describeAnchorStatus(transaction: AnchorTransaction, symbol: str
 	const deposit = transaction.kind === "deposit";
 	switch (transaction.status) {
 		case "incomplete":
-			return "Finish the anchor's form in the window that opened.";
+			return t("Finish the anchor's form in the window that opened.");
 		case "pending_user_transfer_start":
 			return deposit
-				? "The anchor is waiting for your bank transfer."
-				: "The anchor is ready: it now expects the organization's payment.";
+				? t("The anchor is waiting for your bank transfer.")
+				: t("The anchor is ready: it now expects the organization's payment.");
 		case "pending_user_transfer_complete":
-			return "The anchor received the money and is finishing up.";
+			return t("The anchor received the money and is finishing up.");
 		case "pending_anchor":
 		case "pending_external":
 		case "pending_stellar":
 			return deposit
 				? `The anchor is sending ${symbol} to your wallet.`
-				: "The anchor is paying out to the bank account.";
+				: t("The anchor is paying out to the bank account.");
 		case "pending_trust":
 			return `Your wallet needs a trustline for ${symbol} before the anchor can send it. Add it in your wallet; the anchor continues on its own.`;
 		case "completed":
 			return deposit
 				? `Done: ${transaction.amountOut ? `${transaction.amountOut} ` : ""}${symbol} arrived in your wallet.`
-				: "Done: the anchor paid the bank account.";
+				: t("Done: the anchor paid the bank account.");
 		case "refunded":
-			return "The anchor refunded this transaction.";
+			return t("The anchor refunded this transaction.");
 		case "expired":
-			return "This transaction expired at the anchor. Start again.";
+			return t("This transaction expired at the anchor. Start again.");
 		case "error":
 			return transaction.message
 				? `The anchor reported an error: ${transaction.message}`
-				: "The anchor reported an error.";
+				: t("The anchor reported an error.");
 		default:
 			return (
 				transaction.message ?? `Status at the anchor: ${transaction.status.replaceAll("_", " ")}.`

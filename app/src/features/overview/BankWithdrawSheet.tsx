@@ -7,6 +7,7 @@ import type { Asset } from "../../domain/rules/model.ts";
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { formatMoney } from "../../ui/format.ts";
 import { Sheet } from "../../ui/Sheet.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./AddMoneySheet.module.css";
@@ -25,6 +26,7 @@ type BankWithdrawSheetProps = {
  * (account and reference) into an ordinary payment request that follows the organization's rules.
  */
 export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdrawSheetProps) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const navigate = useNavigate();
 	const { run, busy } = useCommand();
@@ -75,7 +77,11 @@ export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdra
 					amount,
 					note: instructions.memo,
 				}),
-			{ success: "Payment request to the anchor created. It follows your rules like any payment." },
+			{
+				success: t(
+					"Payment request to the anchor created. It follows your rules like any payment.",
+				),
+			},
 		);
 		if (result?.ok) {
 			onClose();
@@ -84,22 +90,26 @@ export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdra
 	};
 
 	return (
-		<Sheet open={open} title={`${asset.symbol} to a bank account`} onClose={onClose}>
+		<Sheet
+			open={open}
+			title={t("{asset} to a bank account", { asset: asset.symbol })}
+			onClose={onClose}
+		>
 			<div className={styles.sections}>
 				<section className={styles.section}>
 					<p className={styles.muted}>
 						{info
 							? `Through the Stellar anchor ${info.homeDomain} (testnet: a test bank, no real money). Your wallet signs in, the anchor's form takes the amount and the bank details, then ancora creates a payment request from ${account.org.name} to the anchor with the anchor's reference. It needs the same approvals as any payment of that size. Settlement by the test anchor after the organization pays is still being tested.`
-							: "Reaching the anchor…"}
+							: t("Reaching the anchor…")}
 					</p>
 					{info && !supported && (
 						<p className={styles.warning}>
-							{info.homeDomain} doesn't pay out {asset.symbol}.
+							{info.homeDomain} {t("doesn't pay out")} {asset.symbol}.
 						</p>
 					)}
 					{supported && !wallet && (
 						<button type="button" className={buttonClass()} disabled={busy} onClick={connect}>
-							Connect wallet
+							{t("Connect wallet")}
 						</button>
 					)}
 					{supported && wallet && !session && (
@@ -108,7 +118,7 @@ export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdra
 								<strong>{wallet.walletName}</strong> · {shortAddress(wallet.address)}
 							</p>
 							<button type="button" className={buttonClass()} disabled={busy} onClick={start}>
-								{busy ? "Signing in with the anchor…" : "Start a bank withdrawal"}
+								{busy ? t("Signing in with the anchor…") : t("Start a bank withdrawal")}
 							</button>
 						</>
 					)}
@@ -121,24 +131,28 @@ export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdra
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									Open the anchor's form
+									{t("Open the anchor's form")}
 								</a>
 							</div>
 							<p className={styles.muted} aria-live="polite">
 								{error ??
-									(record ? describeAnchorStatus(record, asset.symbol) : "Waiting for the anchor…")}
+									(record
+										? describeAnchorStatus(record, asset.symbol)
+										: t("Waiting for the anchor…"))}
 							</p>
 						</>
 					)}
 					{instructions && amount !== null && (
 						<>
 							<p className={styles.muted}>
-								The anchor asks for {formatMoney(amount, asset.currency)} {asset.symbol} to{" "}
-								{shortAddress(instructions.account)} with reference “{instructions.memo}”.
+								{t("The anchor asks for")} {formatMoney(amount, asset.currency)} {asset.symbol}{" "}
+								{t("to")} {shortAddress(instructions.account)} {t("with reference “")}
+								{instructions.memo}”.
 							</p>
 							{amount > available && (
 								<p className={styles.warning}>
-									Only {formatMoney(available, asset.currency)} is available on the main account.
+									{t("Only")} {formatMoney(available, asset.currency)}{" "}
+									{t("is available on the main account.")}
 								</p>
 							)}
 							<button
@@ -147,7 +161,7 @@ export function BankWithdrawSheet({ account, asset, open, onClose }: BankWithdra
 								disabled={busy || amount > available}
 								onClick={pay}
 							>
-								Create the payment request
+								{t("Create the payment request")}
 							</button>
 						</>
 					)}

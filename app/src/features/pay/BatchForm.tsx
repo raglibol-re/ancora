@@ -14,6 +14,7 @@ import { buttonClass } from "../../ui/buttonClass.ts";
 import { Card } from "../../ui/Card.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./BatchForm.module.css";
@@ -29,6 +30,7 @@ const emptyLine = (): Line => ({ to: "", amount: "", note: "" });
  * total, it is approved once, and every line is paid out together, or none.
  */
 export function BatchForm({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { dataSource, me } = useWorkspace();
 	const privateEpoch = usePrivateEpoch(account.org.id);
 	const { run, busy } = useCommand();
@@ -55,7 +57,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 		event.preventDefault();
 		const filled = lines.filter((line) => line.to.trim() || line.amount.trim());
 		if (filled.length === 0) {
-			setError("Add at least one payment.");
+			setError(t("Add at least one payment."));
 			return;
 		}
 		const broken = filled.findIndex((line) => {
@@ -63,7 +65,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 			return !line.to.trim() || cents === null || cents <= 0;
 		});
 		if (broken >= 0) {
-			setError(`Line ${broken + 1} needs a recipient and an amount above zero.`);
+			setError(t("Line {line} needs a recipient and an amount above zero.", { line: broken + 1 }));
 			return;
 		}
 		setError(null);
@@ -85,7 +87,10 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 			{
 				signature: {
 					kind: "passkey",
-					title: `Send ${formatMoney(total, currency)} to ${filled.length} recipients`,
+					title: t("Send {amount} to {count} recipients", {
+						amount: formatMoney(total, currency),
+						count: filled.length,
+					}),
 				},
 			},
 		);
@@ -96,7 +101,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 		<Card>
 			<form className={styles.form} onSubmit={submit} noValidate>
 				{account.org.assets.length > 1 && (
-					<Field label="Pay with" htmlFor="batch-asset">
+					<Field label={t("Pay with")} htmlFor="batch-asset">
 						<select
 							id="batch-asset"
 							className={controlClass}
@@ -106,7 +111,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 							{account.org.assets.map((a) => (
 								<option key={a.token} value={a.token}>
 									{a.symbol} ({a.currency}) ·{" "}
-									{formatMoney(availableBalance(account, a.token), a.currency)} available
+									{formatMoney(availableBalance(account, a.token), a.currency)} {t("available")}
 								</option>
 							))}
 						</select>
@@ -128,7 +133,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 							// biome-ignore lint/suspicious/noArrayIndexKey: see above
 							<li key={index} className={styles.line}>
 								<Field
-									label={`Recipient ${index + 1}`}
+									label={t("Recipient {number}", { number: index + 1 })}
 									htmlFor={`batch-to-${index}`}
 									hint={known ? known.name : undefined}
 								>
@@ -138,13 +143,16 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 										list="batch-payees"
 										autoComplete="off"
 										placeholder={
-											account.onchain ? "G… or C… or a saved name" : "IBAN or a saved name"
+											account.onchain ? t("G… or C… or a saved name") : t("IBAN or a saved name")
 										}
 										value={line.to}
 										onChange={(e) => update(index, { to: e.target.value })}
 									/>
 								</Field>
-								<Field label={`Amount (${currency})`} htmlFor={`batch-amount-${index}`}>
+								<Field
+									label={t("Amount ({currency})", { currency })}
+									htmlFor={`batch-amount-${index}`}
+								>
 									<input
 										id={`batch-amount-${index}`}
 										className={controlClass}
@@ -155,7 +163,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 										onChange={(e) => update(index, { amount: e.target.value })}
 									/>
 								</Field>
-								<Field label="Reference" htmlFor={`batch-note-${index}`}>
+								<Field label={t("Reference")} htmlFor={`batch-note-${index}`}>
 									<input
 										id={`batch-note-${index}`}
 										className={controlClass}
@@ -167,7 +175,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 								<button
 									type="button"
 									className={styles.remove}
-									aria-label={`Remove line ${index + 1}`}
+									aria-label={t("Remove line {number}", { number: index + 1 })}
 									disabled={lines.length === 1}
 									onClick={() => setLines(lines.filter((_, i) => i !== index))}
 								>
@@ -183,11 +191,11 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 					disabled={lines.length >= MAX_BATCH_LINES}
 					onClick={() => setLines([...lines, emptyLine()])}
 				>
-					Add a line
+					{t("Add a line")}
 				</button>
 				<p className={styles.total}>
-					Total {formatMoney(total, currency)} to {lines.filter((l) => l.to.trim()).length}{" "}
-					recipients
+					{t("Total")} {formatMoney(total, currency)} {t("to")}{" "}
+					{lines.filter((l) => l.to.trim()).length} {t("recipients")}
 				</p>
 				<RulePreview
 					account={account}
@@ -200,14 +208,14 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 					category={category || null}
 				/>
 				{account.org.policy.budgets.length > 0 && (
-					<Field label="Budget category" htmlFor="batch-category">
+					<Field label={t("Budget category")} htmlFor="batch-category">
 						<select
 							id="batch-category"
 							className={controlClass}
 							value={category}
 							onChange={(e) => setCategory(e.target.value)}
 						>
-							<option value="">None</option>
+							<option value="">{t("None")}</option>
 							{account.org.policy.budgets.map((budget) => (
 								<option key={budget.category} value={budget.category}>
 									#{budget.category}
@@ -217,23 +225,25 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 					</Field>
 				)}
 				<Field
-					label="Reference for the whole batch"
+					label={t("Reference for the whole batch")}
 					htmlFor="batch-note"
 					hint={
 						privateEpoch > 0
-							? "Private, like every line's reference: only your organization reads them (about 70 characters each)."
-							: "Shown to approvers."
+							? t(
+									"Private, like every line's reference: only your organization reads them (about 70 characters each).",
+								)
+							: t("Shown to approvers.")
 					}
 					error={
 						privateEpoch > 0 && !fitsPrivately(note.trim(), privateEpoch)
-							? "Too long to keep private; shorten it."
+							? t("Too long to keep private; shorten it.")
 							: null
 					}
 				>
 					<input
 						id="batch-note"
 						className={controlClass}
-						placeholder="Coaches, October"
+						placeholder={t("Coaches, October")}
 						value={note}
 						onChange={(e) => setNote(e.target.value)}
 					/>
@@ -244,7 +254,7 @@ export function BatchForm({ account }: { account: OrgAccount }) {
 					</p>
 				)}
 				<button type="submit" className={buttonClass()} disabled={busy}>
-					Request the batch
+					{t("Request the batch")}
 				</button>
 			</form>
 		</Card>

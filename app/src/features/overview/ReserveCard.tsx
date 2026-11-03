@@ -11,6 +11,7 @@ import { Card } from "../../ui/Card.tsx";
 import { DefindexBadge } from "../../ui/DefindexBadge.tsx";
 import { formatMoney, formatRate, formatSignedMoney } from "../../ui/format.ts";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ReserveCard.module.css";
 import { type ReserveDirection, ReserveSheet } from "./ReserveSheet.tsx";
@@ -21,6 +22,7 @@ import { TokenBadge } from "./TokenBadge.tsx";
  * has earned, and the one-tap moves for people with treasury rights.
  */
 export function ReserveCard({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { me, dataSource } = useWorkspace();
 	const [move, setMove] = useState<{ token: string; direction: ReserveDirection } | null>(null);
 	const sample = dataSource.kind === "sample";
@@ -30,7 +32,7 @@ export function ReserveCard({ account }: { account: OrgAccount }) {
 	return (
 		<div id="reserve">
 			<Card
-				title="Reserve"
+				title={t("Reserve")}
 				action={
 					<span className={styles.actions}>
 						{sample && <SimulatedTag />}
@@ -39,13 +41,15 @@ export function ReserveCard({ account }: { account: OrgAccount }) {
 				}
 			>
 				<p className={styles.muted}>
-					Money the organization doesn't need right now earns in a DeFindex vault on Stellar.
-					Earnings are variable, moves are one tap and need no approval because the money never
-					leaves the organization. Not a bank deposit; not insured.
+					{t(
+						"Money the organization doesn't need right now earns in a DeFindex vault on Stellar. Earnings are variable, moves are one tap and need no approval because the money never leaves the organization. Not a bank deposit; not insured.",
+					)}
 				</p>
 				{withVault.length === 0 ? (
 					<p className={styles.muted}>
-						None of the accepted assets has a DeFindex vault on testnet yet; BlendUSDC has one.
+						{t(
+							"None of the accepted assets has a DeFindex vault on testnet yet; BlendUSDC has one.",
+						)}
 					</p>
 				) : (
 					<ul className={styles.list}>
@@ -61,7 +65,7 @@ export function ReserveCard({ account }: { account: OrgAccount }) {
 												? `${formatRate(account.reserveRateBps)} a year right now · about ${formatMoney(estimatedDailyEarnings(account, asset.token), asset.currency)} a day`
 												: earnings !== undefined && reserve > 0
 													? `${formatSignedMoney(earnings, asset.currency)} earned so far · Blend lending, variable`
-													: "Blend lending on testnet, variable"}
+													: t("Blend lending on testnet, variable")}
 										</span>
 									</span>
 									{mayMove && (
@@ -71,7 +75,7 @@ export function ReserveCard({ account }: { account: OrgAccount }) {
 												className={buttonClass("secondary")}
 												onClick={() => setMove({ token: asset.token, direction: "in" })}
 											>
-												Move in
+												{t("Move in")}
 											</button>
 											<button
 												type="button"
@@ -79,7 +83,7 @@ export function ReserveCard({ account }: { account: OrgAccount }) {
 												disabled={reserve === 0}
 												onClick={() => setMove({ token: asset.token, direction: "out" })}
 											>
-												Move out
+												{t("Move out")}
 											</button>
 										</span>
 									)}

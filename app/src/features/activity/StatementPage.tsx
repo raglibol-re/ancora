@@ -5,6 +5,7 @@ import { filterItems, monthOf, statementItems, totalsByAsset } from "../../domai
 import { buttonClass } from "../../ui/buttonClass.ts";
 import { formatDateTime, formatMoney, formatSignedMoney } from "../../ui/format.ts";
 import { SimulatedTag } from "../../ui/SimulatedTag.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./StatementPage.module.css";
@@ -22,6 +23,7 @@ export function StatementPage() {
 }
 
 function Statement({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { personName } = useWorkspace();
 	const [params] = useSearchParams();
 	const month = /^\d{4}-\d{2}$/.test(params.get("month") ?? "")
@@ -45,21 +47,26 @@ function Statement({ account }: { account: OrgAccount }) {
 		<div className={styles.page}>
 			<div className={styles.toolbar}>
 				<Link to="/app/activity" className={buttonClass("secondary")}>
-					Back to activity
+					{t("Back to activity")}
 				</Link>
 				<button type="button" className={buttonClass()} onClick={() => window.print()}>
-					Print or save as PDF
+					{t("Print or save as PDF")}
 				</button>
 			</div>
-			<article className={styles.document} aria-label={`Statement for ${monthLabel(month)}`}>
+			<article
+				className={styles.document}
+				aria-label={t("Statement for {month}", { month: monthLabel(month) })}
+			>
 				<header className={styles.head}>
 					<div>
-						<p className={styles.kicker}>Statement · {monthLabel(month)}</p>
+						<p className={styles.kicker}>
+							{t("Statement ·")} {monthLabel(month)}
+						</p>
 						<h1 className={styles.org}>{account.org.name}</h1>
 						<p className={styles.small}>
 							{account.onchain
 								? `Account on Stellar testnet: ${account.onchain.contractId}`
-								: "Sample data, not on Stellar."}
+								: t("Sample data, not on Stellar.")}
 							{!account.onchain && (
 								<>
 									{" "}
@@ -68,7 +75,9 @@ function Statement({ account }: { account: OrgAccount }) {
 							)}
 						</p>
 					</div>
-					<p className={styles.small}>Created {formatDateTime(Date.now())} by ancora</p>
+					<p className={styles.small}>
+						{t("Created")} {formatDateTime(Date.now())} {t("by ancora")}
+					</p>
 				</header>
 
 				{assets.map((asset) => {
@@ -81,33 +90,35 @@ function Statement({ account }: { account: OrgAccount }) {
 							<h2>{asset.symbol}</h2>
 							<dl className={styles.summary}>
 								<div>
-									<dt>Money in</dt>
+									<dt>{t("Money in")}</dt>
 									<dd>{formatMoney(total?.moneyIn ?? 0, currency)}</dd>
 								</div>
 								<div>
-									<dt>Money out</dt>
+									<dt>{t("Money out")}</dt>
 									<dd>{formatMoney(total?.moneyOut ?? 0, currency)}</dd>
 								</div>
 								<div>
-									<dt>Net this month</dt>
+									<dt>{t("Net this month")}</dt>
 									<dd>{formatSignedMoney(total?.net ?? 0, currency)}</dd>
 								</div>
 								<div>
-									<dt>Balance today</dt>
+									<dt>{t("Balance today")}</dt>
 									<dd>{formatMoney(balance.balance + balance.reserve, currency)}</dd>
 								</div>
 							</dl>
 							{rows.length === 0 ? (
-								<p className={styles.small}>No movements in {monthLabel(month)}.</p>
+								<p className={styles.small}>
+									{t("No movements in")} {monthLabel(month)}.
+								</p>
 							) : (
 								<table className={styles.table}>
 									<thead>
 										<tr>
-											<th scope="col">Date</th>
-											<th scope="col">Description</th>
-											<th scope="col">Reference</th>
+											<th scope="col">{t("Date")}</th>
+											<th scope="col">{t("Description")}</th>
+											<th scope="col">{t("Reference")}</th>
 											<th scope="col" className={styles.right}>
-												Amount
+												{t("Amount")}
 											</th>
 										</tr>
 									</thead>
@@ -137,10 +148,13 @@ function Statement({ account }: { account: OrgAccount }) {
 				})}
 
 				<footer className={styles.foot}>
-					ancora is not a bank; balances are not deposit-insured. Amounts are in each asset's own
-					currency. Reserve moves stay inside the organization and count in neither direction.
+					{t(
+						"ancora is not a bank; balances are not deposit-insured. Amounts are in each asset's own currency. Reserve moves stay inside the organization and count in neither direction.",
+					)}
 					{account.onchain &&
-						" Payments come from the organization's contract, deposits from the Stellar ledger as far back as this device has read them; every transaction is on stellar.expert."}
+						t(
+							" Payments come from the organization's contract, deposits from the Stellar ledger as far back as this device has read them; every transaction is on stellar.expert.",
+						)}
 				</footer>
 			</article>
 		</div>

@@ -4,6 +4,7 @@ import type { Cents } from "../../domain/money.ts";
 import type { Asset } from "../../domain/rules/model.ts";
 import { Card } from "../../ui/Card.tsx";
 import { formatMoney } from "../../ui/format.ts";
+import { useT } from "../../ui/useLanguage.ts";
 import styles from "./MoneyHeadline.module.css";
 import { QuickActions } from "./QuickActions.tsx";
 import { useFxRates } from "./useFxRates.ts";
@@ -20,6 +21,7 @@ type Converted = { asset: Asset; amount: Cents; inBase: Cents; quote: Quote };
  * and the Reserve, with other currencies converted at an indicative rate for the headline only.
  */
 export function MoneyHeadline({ account, onAdd }: MoneyHeadlineProps) {
+	const t = useT();
 	const base = account.org.baseCurrency;
 	const quotes = useFxRates(
 		account.org.assets.map((a) => a.currency),
@@ -61,31 +63,45 @@ export function MoneyHeadline({ account, onAdd }: MoneyHeadlineProps) {
 
 	return (
 		<Card tone="deep">
-			<p className={styles.eyebrow}>Total · {base}</p>
+			<p className={styles.eyebrow}>
+				{t("Total ·")} {base}
+			</p>
 			<p className={styles.balance}>{formatMoney(total, base)}</p>
 			{converted.length > 0 && (
 				<p className={styles.sub}>
-					Includes{" "}
+					{t("Includes")}{" "}
 					{converted
-						.map(
-							(c) =>
-								`${formatMoney(c.amount, c.asset.currency)} ${c.asset.symbol} ≈ ${formatMoney(c.inBase, base)} at ${formatRate(c.quote.microRate)}`,
+						.map((c) =>
+							t("{amount} {asset} ≈ {converted} at {rate}", {
+								amount: formatMoney(c.amount, c.asset.currency),
+								asset: c.asset.symbol,
+								converted: formatMoney(c.inBase, base),
+								rate: formatRate(c.quote.microRate),
+							}),
 						)
-						.join(" and ")}{" "}
-					({converted[0]?.quote.label}
-					{simulatedRate ? ", Simulated" : ""}). Rates are for this view only; the rules don't use
-					them.
+						.join(t(" and "))}{" "}
+					({t(converted[0]?.quote.label ?? "")}
+					{simulatedRate ? t(", Simulated") : ""}
+					{t("). Rates are for this view only; the rules don't use them.")}
 				</p>
 			)}
 			{unpriced.length > 0 && (
 				<p className={styles.sub}>
-					{unpriced.map((a) => a.symbol).join(", ")} not included: no rate available right now.
+					{unpriced.map((a) => a.symbol).join(", ")}{" "}
+					{t("not included: no rate available right now.")}
 				</p>
 			)}
 			<div
 				className={styles.bar}
 				role="img"
-				aria-label={`${formatMoney(available, base)} available, ${formatMoney(waiting, base)} waiting in requests, ${formatMoney(reserve, base)} in the Reserve`}
+				aria-label={t(
+					"{available} available, {waiting} waiting in requests, {reserve} in the Reserve",
+					{
+						available: formatMoney(available, base),
+						waiting: formatMoney(waiting, base),
+						reserve: formatMoney(reserve, base),
+					},
+				)}
 			>
 				<span className={styles.segmentAvailable} style={{ width: share(available) }} />
 				<span className={styles.segmentWaiting} style={{ width: share(waiting) }} />
@@ -94,17 +110,17 @@ export function MoneyHeadline({ account, onAdd }: MoneyHeadlineProps) {
 			<ul className={styles.legend}>
 				<li>
 					<span className={`${styles.dot} ${styles.dotAvailable}`} />
-					<span className={styles.legendLabel}>Available now</span>
+					<span className={styles.legendLabel}>{t("Available now")}</span>
 					<strong>{formatMoney(available, base)}</strong>
 				</li>
 				<li>
 					<span className={`${styles.dot} ${styles.dotWaiting}`} />
-					<span className={styles.legendLabel}>Waiting in requests</span>
+					<span className={styles.legendLabel}>{t("Waiting in requests")}</span>
 					<strong>{formatMoney(waiting, base)}</strong>
 				</li>
 				<li>
 					<span className={`${styles.dot} ${styles.dotReserve}`} />
-					<span className={styles.legendLabel}>In the Reserve · DeFindex</span>
+					<span className={styles.legendLabel}>{t("In the Reserve · DeFindex")}</span>
 					<strong>{formatMoney(reserve, base)}</strong>
 				</li>
 			</ul>

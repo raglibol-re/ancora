@@ -15,8 +15,10 @@ import { Card } from "../../ui/Card.tsx";
 import { ExplorerLink } from "../../ui/ExplorerLink.tsx";
 import { controlClass, Field } from "../../ui/Field.tsx";
 import { formatDateTime, formatMoney, formatSignedMoney } from "../../ui/format.ts";
+import { msg } from "../../ui/i18n.ts";
 import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { saveCsv } from "../overview/downloadStatement.ts";
 import { POT_LABEL, usePotItems } from "../pot/usePotItems.ts";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
@@ -25,21 +27,23 @@ import styles from "./ActivityPage.module.css";
 import { asCurrency, displayParty, monthLabel, statementNames } from "./statementNames.ts";
 
 export function ActivityPage() {
+	const t = useT();
 	return (
-		<Page title="Activity" lead="Every movement of the organization's money, searchable.">
+		<Page title={t("Activity")} lead={t("Every movement of the organization's money, searchable.")}>
 			<OrgRequired>{(account) => <Activity key={account.org.id} account={account} />}</OrgRequired>
 		</Page>
 	);
 }
 
 const DIRECTIONS: { value: Direction; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "in", label: "In" },
-	{ value: "out", label: "Out" },
-	{ value: "reserve", label: "Reserve" },
+	{ value: "all", label: msg("All") },
+	{ value: "in", label: msg("In") },
+	{ value: "out", label: msg("Out") },
+	{ value: "reserve", label: msg("Reserve") },
 ];
 
 function Activity({ account }: { account: OrgAccount }) {
+	const t = useT();
 	const { personName } = useWorkspace();
 	const names = useMemo(() => statementNames(account, personName), [account, personName]);
 	const pot = usePotItems(account, names.payee);
@@ -60,32 +64,33 @@ function Activity({ account }: { account: OrgAccount }) {
 		month: month || null,
 	});
 	const totals = totalsByAsset(filtered);
-	const symbolOf = (t: string) =>
-		account.org.assets.find((a) => a.token === t)?.symbol ?? (t === pot[0]?.token ? POT_LABEL : t);
+	const symbolOf = (token: string) =>
+		account.org.assets.find((a) => a.token === token)?.symbol ??
+		(token === pot[0]?.token ? POT_LABEL : token);
 	const statementMonth = month || monthOf(Date.now());
 
 	return (
 		<>
-			<Card title="Find">
+			<Card title={t("Find")}>
 				<div className={styles.filters}>
-					<Field label="Search" htmlFor="activity-search">
+					<Field label={t("Search")} htmlFor="activity-search">
 						<input
 							id="activity-search"
 							type="search"
 							className={controlClass}
 							value={query}
-							placeholder="Name, reference, category or amount"
+							placeholder={t("Name, reference, category or amount")}
 							onChange={(e) => setQuery(e.target.value)}
 						/>
 					</Field>
-					<Field label="Asset" htmlFor="activity-asset">
+					<Field label={t("Asset")} htmlFor="activity-asset">
 						<select
 							id="activity-asset"
 							className={controlClass}
 							value={token}
 							onChange={(e) => setToken(e.target.value)}
 						>
-							<option value="">All assets</option>
+							<option value="">{t("All assets")}</option>
 							{account.org.assets.map((asset) => (
 								<option key={asset.token} value={asset.token}>
 									{asset.symbol}
@@ -93,14 +98,14 @@ function Activity({ account }: { account: OrgAccount }) {
 							))}
 						</select>
 					</Field>
-					<Field label="Month" htmlFor="activity-month">
+					<Field label={t("Month")} htmlFor="activity-month">
 						<select
 							id="activity-month"
 							className={controlClass}
 							value={month}
 							onChange={(e) => setMonth(e.target.value)}
 						>
-							<option value="">All months</option>
+							<option value="">{t("All months")}</option>
 							{months.map((m) => (
 								<option key={m} value={m}>
 									{monthLabel(m)}
@@ -110,21 +115,25 @@ function Activity({ account }: { account: OrgAccount }) {
 					</Field>
 				</div>
 				<Segmented<Direction>
-					label="Direction"
+					label={t("Direction")}
 					value={direction}
 					onChange={setDirection}
-					options={DIRECTIONS}
+					options={DIRECTIONS.map((d) => ({ ...d, label: t(d.label) }))}
 				/>
 				{totals.length > 0 && (
 					<ul className={styles.totals}>
-						{totals.map((t) => {
+						{totals.map((total) => {
 							const currency = asCurrency(
-								filtered.find((i) => i.token === t.token)?.row.currency ?? "EUR",
+								filtered.find((i) => i.token === total.token)?.row.currency ?? "EUR",
 							);
 							return (
-								<li key={t.token}>
-									<strong>{symbolOf(t.token)}</strong> in {formatMoney(t.moneyIn, currency)} · out{" "}
-									{formatMoney(t.moneyOut, currency)} · net {formatSignedMoney(t.net, currency)}
+								<li key={total.token}>
+									<strong>{symbolOf(total.token)}</strong>{" "}
+									{t("in {in} · out {out} · net {net}", {
+										in: formatMoney(total.moneyIn, currency),
+										out: formatMoney(total.moneyOut, currency),
+										net: formatSignedMoney(total.net, currency),
+									})}
 								</li>
 							);
 						})}
@@ -143,23 +152,29 @@ function Activity({ account }: { account: OrgAccount }) {
 							)
 						}
 					>
-						Download these as CSV
+						{t("Download these as CSV")}
 					</button>
 					<Link
 						to={`/app/statement?month=${statementMonth}${token ? `&token=${token}` : ""}`}
 						className={buttonClass("secondary")}
 					>
-						Statement for {monthLabel(statementMonth)}
+						{t("Statement for")} {monthLabel(statementMonth)}
 					</Link>
 				</div>
 			</Card>
 
-			<Card title={`${filtered.length} ${filtered.length === 1 ? "movement" : "movements"}`}>
+			<Card
+				title={
+					filtered.length === 1
+						? t("1 movement")
+						: t("{count} movements", { count: filtered.length })
+				}
+			>
 				{filtered.length === 0 ? (
 					<p className={styles.muted}>
 						{items.length === 0
-							? "No movements yet. Deposits, payments and Reserve moves appear here."
-							: "Nothing matches. Clear the search or pick another month."}
+							? t("No movements yet. Deposits, payments and Reserve moves appear here.")
+							: t("Nothing matches. Clear the search or pick another month.")}
 					</p>
 				) : (
 					<ul className={styles.list}>
@@ -182,7 +197,9 @@ function Activity({ account }: { account: OrgAccount }) {
 											{item.row.by && ` · ${item.row.by}`}
 										</span>
 										{item.row.transaction && (
-											<ExplorerLink target={item.row.transaction}>View transaction</ExplorerLink>
+											<ExplorerLink target={item.row.transaction}>
+												{t("View transaction")}
+											</ExplorerLink>
 										)}
 									</span>
 									<span className={item.cents > 0 ? styles.positive : styles.amount}>
@@ -195,8 +212,9 @@ function Activity({ account }: { account: OrgAccount }) {
 				)}
 				{account.onchain && (
 					<p className={styles.note}>
-						Payments come from the organization's contract; deposits and Reserve moves from the
-						Stellar ledger, about the last week plus what this device has read before.
+						{t(
+							"Payments come from the organization's contract; deposits and Reserve moves from the Stellar ledger, about the last week plus what this device has read before.",
+						)}
 					</p>
 				)}
 			</Card>
