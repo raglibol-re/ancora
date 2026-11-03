@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { useT } from "../../ui/useLanguage.ts";
 import { useLifeline } from "../lifeline/useLifeline.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./ProtectionBanner.module.css";
@@ -11,6 +12,7 @@ const REMIND_AGAIN_MS = 7 * 86_400_000;
  * Lifeline plan. Shown on testnet until either exists, or until dismissed for a week.
  */
 export function ProtectionBanner() {
+	const t = useT();
 	const { dataSource, preferences, updatePreferences } = useWorkspace();
 	const identity = dataSource.identity;
 	const { overview } = useLifeline();
@@ -37,16 +39,18 @@ export function ProtectionBanner() {
 	return (
 		<p className={styles.banner}>
 			<span>
-				<strong>Not protected yet.</strong> This passkey is the only key to your positions. Add a
-				second passkey or name guardians.
+				<strong>{t("Not protected yet.")}</strong>{" "}
+				{t(
+					"This passkey is the only key to your positions. Add a second passkey or name guardians.",
+				)}
 			</span>
-			<Link to="/app/me#lifeline">Protect my pass</Link>
+			<Link to="/app/me#lifeline">{t("Protect my pass")}</Link>
 			<button
 				type="button"
 				className={styles.dismiss}
 				onClick={() => updatePreferences({ protectionReminderDismissedAt: Date.now() })}
 			>
-				Remind me in a week
+				{t("Remind me in a week")}
 			</button>
 		</p>
 	);

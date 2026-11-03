@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: English and German. A language switch on the landing page, the sign-in screen and at the bottom of the side panel; ancora starts in the browser's language and remembers the choice; money and dates follow it. Translated so far: the landing page, sign-in, the menus and the banners; the other screens follow screen by screen.
 - 2026-11-03: Pictures that can't be loaded show initials instead of a broken image, and a picture upload that the storage refuses says so instead of a generic server error.
 - 2026-11-02: A seventh nightly end-to-end run: a weekly standing order pays its first run and is stopped, and money moves into the Reserve (DeFindex vault) and back.
 - 2026-11-02: A standing order to a new recipient saves them in the address book when asked, as a one-off payment does; the order then shows their name instead of the address.

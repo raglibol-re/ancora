@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from "react";
 import { Link } from "react-router";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./DataSourceBanner.module.css";
 
 /** Always visible in the app, so nobody mistakes sample data or test money for the real thing. */
 export function DataSourceBanner() {
+	const t = useT();
 	const { dataSource, me, sourceStatus } = useWorkspace();
 	const syncing = useSyncExternalStore(
 		dataSource.subscribe,
@@ -14,10 +16,11 @@ export function DataSourceBanner() {
 		return (
 			<p className={styles.banner}>
 				<span>
-					<strong>Sample data:</strong> {sourceStatus.fallbackReason} Showing sample data instead.
+					<strong>{t("Sample data:")}</strong> {sourceStatus.fallbackReason}{" "}
+					{t("Showing sample data instead.")}
 				</span>
 				<button type="button" className={styles.retry} onClick={sourceStatus.retry}>
-					Retry
+					{t("Retry")}
 				</button>
 			</p>
 		);
@@ -26,19 +29,24 @@ export function DataSourceBanner() {
 		return (
 			<p className={`${styles.banner} ${styles.testnet}`}>
 				<span>
-					<strong>Stellar testnet:</strong> real transactions with test money; the rules run in your
-					organization's contract. Signed in as {me.name}.{syncing ? " Updating from Stellar…" : ""}
+					<strong>{t("Stellar testnet:")}</strong>{" "}
+					{t(
+						"real transactions with test money; the rules run in your organization's contract. Signed in as {name}.",
+						{ name: me.name },
+					)}
+					{syncing ? ` ${t("Updating from Stellar…")}` : ""}
 				</span>
-				<Link to="/app/me#data-source">Change</Link>
+				<Link to="/app/me#data-source">{t("Change")}</Link>
 			</p>
 		);
 	}
 	return (
 		<p className={styles.banner}>
 			<span>
-				<strong>Simulated:</strong> sample data, not on the Stellar testnet. Viewing as {me.name}.
+				<strong>{t("Simulated:")}</strong>{" "}
+				{t("sample data, not on the Stellar testnet. Viewing as {name}.", { name: me.name })}
 			</span>
-			<Link to="/app/me#viewing-as">Switch person</Link>
+			<Link to="/app/me#viewing-as">{t("Switch person")}</Link>
 		</p>
 	);
 }

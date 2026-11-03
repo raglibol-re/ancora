@@ -3,12 +3,14 @@ import { Link } from "react-router";
 import { inboxFor } from "../../domain/inbox.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { ChevronDownIcon, PlusIcon, SettingsIcon } from "../../ui/icons.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { roleLabel } from "../requests/describe.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./OrgSwitcher.module.css";
 
 /** Switch between the organizations this person belongs to; each shows their role and open items. */
 export function OrgSwitcher() {
+	const t = useT();
 	const { workspace, me, myAccounts, active, updatePreferences } = useWorkspace();
 	const details = useRef<HTMLDetailsElement>(null);
 	const waiting = inboxFor(workspace, me.id);
@@ -31,7 +33,7 @@ export function OrgSwitcher() {
 						</span>
 					</>
 				) : (
-					<span className={styles.name}>No organization yet</span>
+					<span className={styles.name}>{t("No organization yet")}</span>
 				)}
 				<ChevronDownIcon />
 			</summary>
@@ -63,12 +65,12 @@ export function OrgSwitcher() {
 				</ul>
 				<Link to="/app/new" className={styles.option} onClick={close}>
 					<PlusIcon />
-					New organization
+					{t("New organization")}
 				</Link>
 				{active && (
 					<Link to="/app/settings" className={styles.option} onClick={close}>
 						<SettingsIcon />
-						Organization settings
+						{t("Organization settings")}
 					</Link>
 				)}
 			</div>

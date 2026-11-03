@@ -1,16 +1,30 @@
 import type { Cents, Currency } from "../domain/money.ts";
+import { currentLanguage, FORMAT_LOCALE } from "./i18n.ts";
 
 // Formatting lives at the UI edge only; the domain works in integer cents and epoch milliseconds.
+// Numbers, money and dates follow the language the person picked (i18n.ts).
 
-const LOCALE = "en-IE";
+const locale = () => FORMAT_LOCALE[currentLanguage()];
 
-const formatters = {
-	EUR: new Intl.NumberFormat(LOCALE, { style: "currency", currency: "EUR" }),
-	USD: new Intl.NumberFormat(LOCALE, { style: "currency", currency: "USD" }),
-};
+/** One formatter per locale and kind, made on first use. */
+const cache = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat | Intl.RelativeTimeFormat>();
+function cached<T extends Intl.NumberFormat | Intl.DateTimeFormat | Intl.RelativeTimeFormat>(
+	kind: string,
+	make: (locale: string) => T,
+): T {
+	const key = `${locale()}:${kind}`;
+	let formatter = cache.get(key) as T | undefined;
+	if (!formatter) {
+		formatter = make(locale());
+		cache.set(key, formatter);
+	}
+	return formatter;
+}
 
 export function formatMoney(cents: Cents, currency: Currency = "EUR"): string {
-	return formatters[currency].format(cents / 100);
+	return cached(currency, (l) => new Intl.NumberFormat(l, { style: "currency", currency })).format(
+		cents / 100,
+	);
 }
 
 /** "+€24.00" / "−€180.00" for signed amounts in lists. */
@@ -23,7 +37,7 @@ export function formatSignedMoney(cents: Cents, currency: Currency = "EUR"): str
 export function formatStroops(stroops: string, symbol: string): string {
 	const whole = Number(BigInt(stroops) / 10_000_000n);
 	const fraction = Number((BigInt(stroops) % 10_000_000n) / 100_000n);
-	return `${whole.toLocaleString(LOCALE)}.${String(fraction).padStart(2, "0")} ${symbol}`;
+	return `${whole.toLocaleString(locale())}.${String(fraction).padStart(2, "0")} ${symbol}`;
 }
 
 /** "€" / "$" for input labels. */
@@ -32,18 +46,18 @@ export function currencySymbol(currency: Currency): string {
 }
 
 export function formatRate(basisPoints: number): string {
-	return `${(basisPoints / 100).toLocaleString(LOCALE, { minimumFractionDigits: 2 })}%`;
+	return `${(basisPoints / 100).toLocaleString(locale(), { minimumFractionDigits: 2 })}%`;
 }
-
-const dateTime = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyle: "short" });
 
 export function formatDateTime(timestamp: number): string {
-	return dateTime.format(timestamp);
+	return cached(
+		"dateTime",
+		(l) => new Intl.DateTimeFormat(l, { dateStyle: "medium", timeStyle: "short" }),
+	).format(timestamp);
 }
 
-const relative = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
-
 export function formatRelative(timestamp: number, now: number): string {
+	const relative = cached("relative", (l) => new Intl.RelativeTimeFormat(l, { numeric: "auto" }));
 	const minutes = Math.round((timestamp - now) / 60_000);
 	if (Math.abs(minutes) < 60) return relative.format(minutes, "minute");
 	const hours = Math.round(minutes / 60);

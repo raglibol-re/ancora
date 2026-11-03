@@ -6,7 +6,7 @@
 - HackMeridian 2026, Genesis path, both tracks. **Hard deadline: Mon 26 Oct 2026, 12:00 Lisbon (UTC+0).** Then SCF #46 (8 Nov 2026), so code and docs must be build-on-able.
 - Testnet only. Non-custodial: neither the platform nor the demo admin ever controls org funds. Fiat/KYB is the licensed partner's job.
 - Legal wording: not a bank; no "interest" / "savings account"; balances not deposit-insured. Use "account", "Reserve", "earnings, variable".
-- Everything simulated is labeled "Simulated" in UI and README. UI copy in English, plain language, no crypto jargon (expert mode shows on-chain refs).
+- Everything simulated is labeled "Simulated" in UI and README. UI copy in English and German (`t()` from `ui/i18n.ts`, English text as the key, German in `ui/messages/de.ts` with the formal "Sie"; new text ships with its German), plain language, no crypto jargon (expert mode shows on-chain refs).
 - Accessible: keyboard focus, contrast, `prefers-reduced-motion`.
 
 ## Layout

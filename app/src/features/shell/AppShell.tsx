@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router";
 import { inboxFor } from "../../domain/inbox.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { CloseIcon, MenuIcon } from "../../ui/icons.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { WorkingBar } from "../../ui/WorkingBar.tsx";
 import { ClaimBanner } from "../lifeline/ClaimBanner.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
@@ -22,6 +23,7 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
  * bottom tab bar for the everyday items.
  */
 export function AppShell() {
+	const t = useT();
 	const { workspace, me } = useWorkspace();
 	const location = useLocation();
 	const waiting = inboxFor(workspace, me.id).length;
@@ -74,13 +76,13 @@ export function AppShell() {
 					<button
 						type="button"
 						className={styles.iconButton}
-						aria-label="Open menu"
+						aria-label={t("Open menu")}
 						onClick={() => setDrawerOpen(true)}
 					>
 						<MenuIcon />
 					</button>
 					<OrgSwitcher />
-					<NavLink to="/app/me" className={styles.iconLink} aria-label="Your pass">
+					<NavLink to="/app/me" className={styles.iconLink} aria-label={t("Your pass")}>
 						<Avatar name={me.name} imageUrl={me.avatarUrl} size="md" shape="circle" />
 					</NavLink>
 				</header>
@@ -88,13 +90,13 @@ export function AppShell() {
 				<dialog
 					ref={drawer}
 					className={styles.drawer}
-					aria-label="Menu"
+					aria-label={t("Menu")}
 					onClose={() => setDrawerOpen(false)}
 				>
 					<button
 						type="button"
 						className={styles.drawerClose}
-						aria-label="Close menu"
+						aria-label={t("Close menu")}
 						onClick={() => setDrawerOpen(false)}
 					>
 						<CloseIcon />
@@ -106,12 +108,12 @@ export function AppShell() {
 					<Outlet />
 				</main>
 
-				<nav className={styles.tabBar} aria-label="Main">
+				<nav className={styles.tabBar} aria-label={t("Main")}>
 					{tabBarItems.map((item) => (
 						<NavLink key={item.to} to={item.to} end={item.to === "/app"} className={tabClass}>
 							{item.icon}
 							<span className={styles.tabText}>
-								{item.label}
+								{t(item.label)}
 								{item.to === "/app/inbox" && waiting > 0 && (
 									<span className={styles.badge}>{waiting}</span>
 								)}

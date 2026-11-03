@@ -4,6 +4,8 @@ import { inboxFor } from "../../domain/inbox.ts";
 import { Avatar } from "../../ui/Avatar.tsx";
 import { BrandMark } from "../../ui/BrandMark.tsx";
 import { ChevronDownIcon } from "../../ui/icons.tsx";
+import { LanguageSwitch } from "../../ui/LanguageSwitch.tsx";
+import { useT } from "../../ui/useLanguage.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import { organizationGroup, primaryItems, utilityItems } from "./navigation.tsx";
 import { OrgSwitcher } from "./OrgSwitcher.tsx";
@@ -23,6 +25,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
  * sidebar on wide screens and inside the drawer on phones.
  */
 export function SideNav({ onNavigate }: SideNavProps) {
+	const t = useT();
 	const { workspace, me } = useWorkspace();
 	const location = useLocation();
 	const waiting = inboxFor(workspace, me.id).length;
@@ -44,7 +47,7 @@ export function SideNav({ onNavigate }: SideNavProps) {
 			<div className={styles.body}>
 				<OrgSwitcher />
 
-				<nav aria-label="Main" className={styles.nav}>
+				<nav aria-label={t("Main")} className={styles.nav}>
 					{primaryItems.map((item) => (
 						<NavLink
 							key={item.to}
@@ -54,7 +57,7 @@ export function SideNav({ onNavigate }: SideNavProps) {
 							onClick={onNavigate}
 						>
 							{item.icon}
-							<span className={styles.label}>{item.label}</span>
+							<span className={styles.label}>{t(item.label)}</span>
 							{item.to === "/app/inbox" && waiting > 0 && (
 								<span className={styles.badge}>{waiting}</span>
 							)}
@@ -69,7 +72,7 @@ export function SideNav({ onNavigate }: SideNavProps) {
 						onClick={() => setExpanded((value) => !value)}
 					>
 						{organizationGroup.icon}
-						<span className={styles.label}>{organizationGroup.label}</span>
+						<span className={styles.label}>{t(organizationGroup.label)}</span>
 						<span className={open ? `${styles.chevron} ${styles.chevronUp}` : styles.chevron}>
 							<ChevronDownIcon />
 						</span>
@@ -89,7 +92,7 @@ export function SideNav({ onNavigate }: SideNavProps) {
 											aria-current={isCurrent ? "page" : undefined}
 											onClick={onNavigate}
 										>
-											{child.label}
+											{t(child.label)}
 										</Link>
 									</li>
 								);
@@ -98,7 +101,7 @@ export function SideNav({ onNavigate }: SideNavProps) {
 					)}
 				</nav>
 
-				<nav aria-label="More" className={`${styles.nav} ${styles.utility}`}>
+				<nav aria-label={t("More")} className={`${styles.nav} ${styles.utility}`}>
 					{utilityItems.map((item) => (
 						<NavLink key={item.to} to={item.to} end className={linkClass} onClick={onNavigate}>
 							{item.to === "/app/me" ? (
@@ -106,10 +109,15 @@ export function SideNav({ onNavigate }: SideNavProps) {
 							) : (
 								item.icon
 							)}
-							<span className={styles.label}>{item.to === "/app/me" ? me.name : item.label}</span>
+							<span className={styles.label}>
+								{item.to === "/app/me" ? me.name : t(item.label)}
+							</span>
 						</NavLink>
 					))}
 				</nav>
+				<div className={styles.language}>
+					<LanguageSwitch />
+				</div>
 			</div>
 		</div>
 	);
