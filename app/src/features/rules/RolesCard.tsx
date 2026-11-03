@@ -26,7 +26,7 @@ export function RolesCard({ account }: { account: OrgAccount }) {
 		return (
 			<Card title={t("Roles")}>
 				<p className={styles.muted}>
-					{org.roles.map((role) => role.name).join(", ")}
+					{org.roles.map((role) => t(role.name)).join(", ")}
 					{t(
 						". This organization was created before custom roles existed; organizations created from 28 Oct 2026 can add, reorder and remove their own roles.",
 					)}
@@ -85,7 +85,7 @@ export function RolesCard({ account }: { account: OrgAccount }) {
 						<li key={role.id} className={styles.role}>
 							<span className={styles.rank}>{index + 1}</span>
 							<span className={styles.name}>
-								{role.name}
+								{t(role.name)}
 								<span className={styles.meta}>
 									{count === 0 ? t("nobody yet") : `${count} ${count === 1 ? "person" : "people"}`}
 								</span>

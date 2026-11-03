@@ -97,7 +97,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 									currencyFor(row.allowance.token),
 								)}{" "}
 								{t("of")} {formatMoney(row.allowance.amount, currencyFor(row.allowance.token))}{" "}
-								{t("left this")} {periodLabel(row.allowance.periodSeconds)}
+								{t("left this")} {t(periodLabel(row.allowance.periodSeconds))}
 							</span>
 							<button
 								type="button"
@@ -183,7 +183,7 @@ export function AllowancesCard({ account }: { account: OrgAccount }) {
 						>
 							{LIMIT_PERIODS.map((p) => (
 								<option key={p.seconds} value={p.seconds}>
-									{p.label}
+									{t(p.label)}
 								</option>
 							))}
 						</select>

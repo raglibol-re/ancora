@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-03: German role and template names (Kassenwart, Vorstandsmitglied, Geschäftsführung …) and periods; custom roles keep the names the organization gave them.
 - 2026-11-03: German for the rest of the screens: rules, budgets and people, settings, deals, the confidential pot, private details and auditors, your pass and its keys, Lifeline and succession, the address book, payment links, discussions, secure handover, a new organization and the audit page.
 - 2026-11-03: German for the everyday screens: overview (balances, accounts, Reserve, adding money, bank in and out), send (single, batch, spreadsheet import, standing orders, rule preview), approvals, inbox, request cards and statuses, activity and the monthly statement.
 - 2026-11-03: English and German. A language switch on the landing page, the sign-in screen and at the bottom of the side panel; ancora starts in the browser's language and remembers the choice; money and dates follow it. Translated so far: the landing page, sign-in, the menus and the banners; the other screens follow screen by screen.

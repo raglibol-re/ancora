@@ -54,7 +54,7 @@ export function PeopleCard({ account }: { account: OrgAccount }) {
 
 	const roleOptions = org.roles.map((role) => (
 		<option key={role.id} value={role.id}>
-			{role.name}
+			{t(role.name)}
 		</option>
 	));
 
@@ -238,7 +238,7 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 					>
 						{LIMIT_PERIODS.map((p) => (
 							<option key={p.seconds} value={p.seconds}>
-								{p.label}
+								{t(p.label)}
 							</option>
 						))}
 					</select>
@@ -267,7 +267,7 @@ function LimitRow({ account, member, editing, busy, onEdit, onDone, propose }: L
 			{member.limit ? (
 				<>
 					{t("Spending limit")} {formatMoney(member.limit.amount, currency)} {t("per")}{" "}
-					{periodLabel(member.limit.periodSeconds)} ·{" "}
+					{t(periodLabel(member.limit.periodSeconds))} ·{" "}
 					{formatMoney(remainingAllowance(member.limit, Date.now()), currency)}{" "}
 					{t("left; payments inside it need no approval.")}
 				</>

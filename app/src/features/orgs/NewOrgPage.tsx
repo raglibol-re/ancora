@@ -110,9 +110,9 @@ export function NewOrgPage() {
 								checked={template.id === templateId}
 								onChange={() => chooseTemplate(template.id)}
 							/>
-							<span className={styles.templateName}>{template.label}</span>
+							<span className={styles.templateName}>{t(template.label)}</span>
 							<span className={styles.templateRoles}>
-								{template.roles.map((r) => r.name).join(" · ")}
+								{template.roles.map((r) => t(r.name)).join(" · ")}
 							</span>
 							<ul className={styles.tiers}>
 								{template.policy.tiers.map((tier) => (
@@ -175,7 +175,7 @@ export function NewOrgPage() {
 						>
 							{template.roles.map((role) => (
 								<option key={role.id} value={role.id}>
-									{role.name}
+									{t(role.name)}
 								</option>
 							))}
 						</select>

@@ -7,7 +7,7 @@ import type { Asset, Evaluation, Requirement, Role, RoleId } from "../../domain/
 import type { ApprovalRequest, PotRequest, RequestStatus } from "../../domain/rules/requests.ts";
 import { templates } from "../../domain/rules/templates.ts";
 import { formatMoney } from "../../ui/format.ts";
-import { msg } from "../../ui/i18n.ts";
+import { msg, t } from "../../ui/i18n.ts";
 
 // Plain-language copy for rules and requests. No crypto jargon.
 
@@ -18,8 +18,8 @@ type HasRoles = { roles: readonly Role[]; assets?: readonly Asset[]; baseCurrenc
 
 export function roleLabel(org: HasRoles, roleId: RoleId, count = 1): string {
 	const role = org.roles.find((r) => r.id === roleId);
-	if (!role) return "unknown role";
-	return count === 1 ? role.name : role.plural;
+	if (!role) return t("unknown role");
+	return count === 1 ? t(role.name) : t(role.plural);
 }
 
 function joinWithAnd(parts: string[]): string {

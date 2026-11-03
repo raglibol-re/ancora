@@ -54,5 +54,7 @@ export default defineConfig({
 	},
 	test: {
 		include: ["src/**/*.test.ts", "api/**/*.test.ts"],
+		// Tests read English whatever the machine's language is.
+		setupFiles: ["src/testSetup.ts"],
 	},
 });

@@ -69,7 +69,7 @@ export function RulePreview({
 			{budget.kind === "refused" ? (
 				<p className={styles.warning}>
 					{t("Beyond what is left of the #")}
-					{budget.line.category} {t("budget this")} {describePeriod(budget.line.periodSeconds)} (
+					{budget.line.category} {t("budget this")} {t(describePeriod(budget.line.periodSeconds))} (
 					{formatMoney(Math.max(0, budget.line.remaining), currency)}
 					{t("). It is a hard budget, so this payment won't be accepted.")}
 				</p>
@@ -80,7 +80,7 @@ export function RulePreview({
 				<p className={styles.detail}>
 					#{budget.line.category}: {formatMoney(Math.max(0, budget.line.remaining), currency)}{" "}
 					{t("of")} {formatMoney(budget.line.amount, currency)} {t("left this")}{" "}
-					{describePeriod(budget.line.periodSeconds)}
+					{t(describePeriod(budget.line.periodSeconds))}
 					{budget.kind === "over" ? t("; this payment goes beyond it.") : "."}
 				</p>
 			)}
@@ -90,7 +90,7 @@ export function RulePreview({
 					{allowance.category ? ` for #${allowance.category}` : ""}:{" "}
 					{formatMoney(remainingAllowance(allowance, now), currency)} {t("of")}{" "}
 					{formatMoney(allowance.amount, currency)} {t("left this")}{" "}
-					{periodLabel(allowance.periodSeconds)}.
+					{t(periodLabel(allowance.periodSeconds))}.
 				</p>
 			)}
 			{outsideAllowlist && (
@@ -102,7 +102,7 @@ export function RulePreview({
 				<p className={styles.detail}>
 					{t("Your spending limit:")} {formatMoney(remainingAllowance(member.limit, now), currency)}{" "}
 					{t("of")} {formatMoney(member.limit.amount, currency)} {t("left this")}{" "}
-					{periodLabel(member.limit.periodSeconds)}
+					{t(periodLabel(member.limit.periodSeconds))}
 					{withinLimit ? "." : t("; this payment goes through the normal rules.")}
 				</p>
 			)}

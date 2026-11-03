@@ -114,7 +114,7 @@ export function BudgetsRulesCard({ account }: { account: OrgAccount }) {
 						>
 							{BUDGET_PERIODS.map((p) => (
 								<option key={p.seconds} value={p.seconds}>
-									{p.label}
+									{t(p.label)}
 								</option>
 							))}
 						</select>

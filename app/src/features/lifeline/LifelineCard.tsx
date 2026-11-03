@@ -300,7 +300,7 @@ function PlanForm({ initial, people, allowTyping, busy, onCancel, onSave }: Plan
 					>
 						{WAIT_OPTIONS.map((option) => (
 							<option key={option.seconds} value={option.seconds}>
-								{option.label}
+								{t(option.label)}
 							</option>
 						))}
 					</select>
