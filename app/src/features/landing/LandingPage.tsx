@@ -5,79 +5,11 @@ import { msg } from "../../ui/i18n.ts";
 import { LanguageSwitch } from "../../ui/LanguageSwitch.tsx";
 import { useLanguage, useT } from "../../ui/useLanguage.ts";
 import { InstallHint } from "../install/InstallHint.tsx";
+import { AboutSection, CaseStudiesSection } from "./CompanySections.tsx";
 import styles from "./LandingPage.module.css";
-
-const features = [
-	{
-		title: msg("Your passkey is your account"),
-		body: msg(
-			"Face ID or a fingerprint creates your own account on Stellar. Its address is your ancora ID: one identity for every organization you belong to, no seed phrase to lose.",
-		),
-	},
-	{
-		title: msg("Rules the organization enforces itself"),
-		body: msg(
-			"Each organization is its own contract. Approval tiers, four-eyes, objection windows and new-recipient checks run on-chain, and the rules are one readable document whose fingerprint the contract stores.",
-		),
-	},
-	{
-		title: msg("Several stablecoins, one account"),
-		body: msg(
-			"EURC, USDC and more side by side, each with its own balance. Rules are written in your home currency; adding a stablecoin is a decision the organization takes together.",
-		),
-	},
-	{
-		title: msg("A Reserve, not a savings account"),
-		body: msg(
-			"Idle money goes into a DeFindex vault on Stellar with one tap and comes back whenever you need it. Earnings are variable and come from Blend lending, not from the stablecoin itself. Not a bank deposit, not insured.",
-		),
-	},
-	{
-		title: msg("A security seal for large payments"),
-		body: msg(
-			"Above a threshold the organization sets, a payment needs an extra seal from an approver. Organizations can require it to be signed with a quantum-safe ML-DSA key that never leaves the approving device; the organization checks it on Stellar before the money moves.",
-		),
-	},
-	{
-		title: msg("Private where it matters"),
-		body: msg(
-			"Payment references, recipients and discussions are stored encrypted, so only your members and the auditors you choose can read them. Amounts stay verifiable on the ledger.",
-		),
-	},
-	{
-		title: msg("Work with other organizations"),
-		body: msg(
-			"Agree milestones with a supplier or partner, deposit up front and release each payment when the work is delivered. Both sides decide under their own approval rules.",
-		),
-	},
-	{
-		title: msg("Decide together"),
-		body: msg(
-			"Reasons for and against, questions and comments on every request, with thumbs up and down. Approvers see what the group thinks before they sign.",
-		),
-	},
-];
-
-const steps = [
-	{
-		title: msg("Create your passkey"),
-		body: msg(
-			"Thirty seconds, no app store, no seed phrase. Your pass shows your ancora ID and a QR code others use to invite you.",
-		),
-	},
-	{
-		title: msg("Create or join an organization"),
-		body: msg(
-			"Pick a template (club, company, team), the currency of the rules and the stablecoins you accept. Invite people by their ancora ID.",
-		),
-	},
-	{
-		title: msg("Pay, approve, earn"),
-		body: msg(
-			"Send money from your wallet or any Stellar wallet, approve on the go, keep the rest in the Reserve. Fees are sponsored.",
-		),
-	},
-];
+import sections from "./LandingSections.module.css";
+import { FaqSection, LaunchPathSection, PilotSection } from "./LaunchSections.tsx";
+import { features, REPOSITORY, steps } from "./landingContent.ts";
 
 const chips = [
 	{ label: msg("€ EURC"), className: styles.chipOne },
@@ -122,17 +54,25 @@ export function LandingPage() {
 					<div className={styles.veil} />
 				</div>
 
+				<p className={sections.previewBar}>
+					<span className={sections.previewTag}>{t("Preview")}</span>
+					<span>
+						{t(
+							"ancora runs on the Stellar test network with test money while we prepare for launch.",
+						)}
+					</span>
+					<a href="#launch">{t("Path to launch")}</a>
+				</p>
+
 				<header className={styles.nav}>
 					<Link to="/" className={styles.brand}>
 						<BrandMark size={36} />
 					</Link>
 					<nav className={styles.navLinks} aria-label={t("Sections")}>
-						<a href="#features">{t("Features")}</a>
-						<a href="#how">{t("How it works")}</a>
-						<a href="#security">{t("Security")}</a>
-						<a href="https://github.com/raglibol-re/ancora" target="_blank" rel="noreferrer">
-							{t("Open source")}
-						</a>
+						<a href="#features">{t("Product")}</a>
+						<a href="#cases">{t("Use cases")}</a>
+						<a href="#about">{t("Company")}</a>
+						<a href="#launch">{t("Roadmap")}</a>
 					</nav>
 					<div className={styles.navActions}>
 						<div className={styles.language}>
@@ -196,6 +136,8 @@ export function LandingPage() {
 					</div>
 				</section>
 
+				<CaseStudiesSection />
+
 				<section id="how" className={styles.section}>
 					<h2>{t("How it works")}</h2>
 					<ol className={styles.steps}>
@@ -244,6 +186,11 @@ export function LandingPage() {
 						</article>
 					</div>
 				</section>
+
+				<AboutSection />
+				<LaunchPathSection />
+				<PilotSection />
+				<FaqSection />
 			</main>
 
 			<footer className={styles.footer}>
@@ -257,20 +204,17 @@ export function LandingPage() {
 						<a href="#features">{t("Features")}</a>
 						<a href="#how">{t("How it works")}</a>
 						<a href="#security">{t("Security")}</a>
+						<a href="#cases">{t("Use cases")}</a>
 					</div>
 					<div>
 						<h3>{t("Company")}</h3>
-						<a href="https://github.com/raglibol-re/ancora" target="_blank" rel="noreferrer">
+						<a href="#about">{t("Mission and vision")}</a>
+						<a href="#launch">{t("Roadmap")}</a>
+						<a href="#pilot">{t("Pilot program")}</a>
+						<a href="#faq">{t("Questions")}</a>
+						<a href={REPOSITORY} target="_blank" rel="noreferrer">
 							{t("Open source")}
 						</a>
-						<a
-							href="https://github.com/raglibol-re/ancora/blob/main/docs/ROADMAP.md"
-							target="_blank"
-							rel="noreferrer"
-						>
-							{t("Roadmap")}
-						</a>
-						<Link to="/app">{t("Sign in")}</Link>
 					</div>
 				</nav>
 				<p className={styles.legal}>

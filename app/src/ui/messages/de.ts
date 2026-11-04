@@ -1808,4 +1808,93 @@ export const de: Readonly<Record<string, string>> = {
 		"{amount} über dem Budget; weitere Zahlungen nehmen die strengste Stufe",
 	"{amount} left this period": "{amount} übrig in diesem Zeitraum",
 	"No budgets yet.": "Noch keine Budgets.",
+	"Our mission": "Unsere Mission",
+	"Give every organization one shared account where the rules its members agree on are the rules its money follows.":
+		"Jeder Organisation ein gemeinsames Konto geben, bei dem die Regeln, auf die sich ihre Mitglieder einigen, die Regeln sind, denen ihr Geld folgt.",
+	"Our vision": "Unsere Vision",
+	"A rowing club, a design studio and an aid group run their money with the controls of a large company: without a back office, and without handing it to anyone.":
+		"Ein Ruderclub, ein Designstudio und eine Hilfsorganisation führen ihr Geld mit den Kontrollen eines großen Unternehmens: ohne Backoffice und ohne es jemandem zu überlassen.",
+	"What we hold ourselves to": "Woran wir uns halten",
+	"Use cases": "Anwendungsfälle",
+	"How organizations run on ancora": "Wie Organisationen mit ancora arbeiten",
+	"Illustrative scenarios with fictional organizations. ancora is in preview, so these show how the account is designed to work, not results from customers.":
+		"Beispielszenarien mit fiktiven Organisationen. ancora ist in der Vorschau; sie zeigen also, wie das Konto arbeiten soll, nicht Ergebnisse von Kunden.",
+	Illustrative: "Beispiel",
+	"The challenge": "Die Herausforderung",
+	"With ancora": "Mit ancora",
+	"What changes": "Was sich ändert",
+	"Non-custodial": "Ohne Verwahrung",
+	"We never hold an organization's money or a key to it. The organization does.":
+		"Wir halten nie das Geld einer Organisation oder einen Schlüssel dazu. Das tut die Organisation.",
+	"Rules you can read": "Regeln, die Sie lesen können",
+	"Every rule is written in plain language, and anyone can check it is the one the account enforces.":
+		"Jede Regel ist in verständlicher Sprache geschrieben, und jeder kann prüfen, dass es die ist, die das Konto durchsetzt.",
+	"Honest about money": "Ehrlich beim Geld",
+	"ancora is not a bank. We say what is insured (nothing), what earnings depend on, and what is still a preview.":
+		"ancora ist keine Bank. Wir sagen, was versichert ist (nichts), wovon Erträge abhängen und was noch eine Vorschau ist.",
+	"Open by default": "Grundsätzlich offen",
+	"The code is open source under Apache-2.0, so any organization or reviewer can see how it works.":
+		"Der Code ist Open Source unter Apache-2.0, sodass jede Organisation und jeder Prüfer sehen kann, wie er funktioniert.",
+	"Sports club": "Sportverein",
+	"The treasurer pays from a personal card and the board approves in a group chat. When the treasurer is away, nothing gets paid, and members can't see where their fees go.":
+		"Der Kassenwart zahlt mit einer privaten Karte, und der Vorstand gibt im Gruppenchat frei. Ist der Kassenwart weg, wird nichts bezahlt, und die Mitglieder sehen nicht, wohin ihre Beiträge gehen.",
+	"Payments above €500 need two board members. The boathouse shop has a small weekly allowance, equipment has its own budget, and members see the reasons for and against each larger request.":
+		"Zahlungen über 500 € brauchen zwei Vorstandsmitglieder. Der Bootshaus-Shop hat ein kleines Wochenlimit, die Ausrüstung ein eigenes Budget, und die Mitglieder sehen die Gründe für und gegen jede größere Anfrage.",
+	"No single person holds the club's money, routine buys don't wait for the board, and the yearly report comes from the ledger.":
+		"Keine einzelne Person hält das Geld des Vereins, Routinekäufe warten nicht auf den Vorstand, und der Jahresbericht kommt aus dem Ledger.",
+	"A twelve-person design studio pays freelancers in several countries. The founders sign off on every invoice, and new bank details arrive by email.":
+		"Ein Designstudio mit zwölf Personen bezahlt Freelancer in mehreren Ländern. Die Gründer zeichnen jede Rechnung ab, und neue Bankdaten kommen per E-Mail.",
+	"Small invoices go out on a team lead's approval, larger ones need a director, and a new recipient waits out an objection window. Supplier work runs as a deal paid milestone by milestone; idle cash sits in the Reserve.":
+		"Kleine Rechnungen gehen mit der Freigabe einer Teamleitung raus, größere brauchen die Geschäftsführung, und ein neuer Empfänger wartet eine Einspruchsfrist ab. Lieferantenarbeit läuft als Vereinbarung, bezahlt Meilenstein für Meilenstein; ungenutztes Geld liegt in der Reserve.",
+	"Founders approve only what matters, a forged invoice can't be paid in a hurry, and suppliers are paid the moment their work is accepted.":
+		"Die Gründer geben nur frei, was zählt, eine gefälschte Rechnung kann nicht in Eile bezahlt werden, und Lieferanten werden bezahlt, sobald ihre Arbeit abgenommen ist.",
+	NGO: "NGO",
+	"Field teams need to spend quickly, while donors want proof that each grant is used as agreed. The reports are pieced together from receipts months later.":
+		"Teams vor Ort müssen schnell ausgeben, während Geldgeber Nachweise wollen, dass jede Förderung wie vereinbart verwendet wird. Die Berichte werden Monate später aus Belegen zusammengesetzt.",
+	"Each field coordinator has a spending limit, each programme a hard budget. Payment details are encrypted, and the donor's auditor gets read access to exactly what they review.":
+		"Jede Koordination vor Ort hat ein Ausgabenlimit, jedes Programm ein festes Budget. Zahlungsdetails sind verschlüsselt, und die Prüfer des Geldgebers erhalten Lesezugriff auf genau das, was sie prüfen.",
+	"Money moves fast within limits the board set, and donors check the spending themselves instead of waiting for a report.":
+		"Geld bewegt sich schnell innerhalb der Grenzen, die der Vorstand gesetzt hat, und Geldgeber prüfen die Ausgaben selbst, statt auf einen Bericht zu warten.",
+	"Live on testnet": "Live im Testnetz",
+	"Every feature works on the Stellar test network with test money. Eight end-to-end flows run against the live site every night.":
+		"Jede Funktion läuft im Stellar-Testnetz mit Testgeld. Acht End-to-End-Abläufe laufen jede Nacht gegen die Live-Seite.",
+	Next: "Als Nächstes",
+	"Proven on testnet": "Im Testnetz bewährt",
+	"Reproducible, attested releases, monitoring with alerts, and full account history beyond the network's one-week window.":
+		"Reproduzierbare, beglaubigte Releases, Überwachung mit Alarmen und der vollständige Kontoverlauf über das Wochenfenster des Netzwerks hinaus.",
+	Planned: "Geplant",
+	"Privacy and keys": "Privatsphäre und Schlüssel",
+	"The confidential pot leaves preview, approval tiers work for hidden amounts, and succession sends reminders before anyone can claim.":
+		"Der vertrauliche Topf verlässt die Vorschau, Freigabestufen funktionieren für verborgene Beträge, und die Nachfolge erinnert, bevor jemand einen Anspruch stellen kann.",
+	"Ready for mainnet": "Bereit für das Mainnet",
+	"An external security review of every contract, a licensed partner for euro bank transfers, and the first pilot organizations with real money.":
+		"Eine externe Sicherheitsprüfung jedes Vertrags, ein lizenzierter Partner für Euro-Banküberweisungen und die ersten Pilotorganisationen mit echtem Geld.",
+	"Can my organization use ancora today?": "Kann meine Organisation ancora heute nutzen?",
+	"You can try every feature now on the Stellar test network. Its money is test money with no value. Real money comes with mainnet, after the external security review.":
+		"Sie können jede Funktion jetzt im Stellar-Testnetz ausprobieren. Das Geld dort ist Testgeld ohne Wert. Echtes Geld kommt mit dem Mainnet, nach der externen Sicherheitsprüfung.",
+	"Is ancora a bank?": "Ist ancora eine Bank?",
+	"No. ancora is software for an account your organization controls on Stellar. Balances are not deposit-insured. Bank transfers and business verification are handled by licensed payment partners.":
+		"Nein. ancora ist Software für ein Konto, das Ihre Organisation auf Stellar kontrolliert. Guthaben sind nicht durch eine Einlagensicherung geschützt. Banküberweisungen und Unternehmensprüfung übernehmen lizenzierte Zahlungspartner.",
+	"Who can move our money?": "Wer kann unser Geld bewegen?",
+	"Only your organization, under its own rules. ancora holds no key to any organization's account, and the operator that pays network fees has no role in it.":
+		"Nur Ihre Organisation, nach ihren eigenen Regeln. ancora hält keinen Schlüssel zum Konto einer Organisation, und der Betreiber, der die Netzwerkgebühren zahlt, hat darin keine Rolle.",
+	"What does it cost?": "Was kostet es?",
+	"Nothing during the preview, and network fees are sponsored. Pricing will be published before the mainnet launch.":
+		"Während der Vorschau nichts, und die Netzwerkgebühren werden übernommen. Die Preise veröffentlichen wir vor dem Start im Mainnet.",
+	"How do we join the pilot?": "Wie nehmen wir am Pilotprogramm teil?",
+	"Tell us about your organization on GitHub. We are looking for clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens.":
+		"Erzählen Sie uns auf GitHub von Ihrer Organisation. Wir suchen Vereine, NGOs und kleine Unternehmen, die echte Zahlungen nach ihren eigenen Regeln abwickeln möchten, sobald das Mainnet startet.",
+	"ancora runs on the Stellar test network with test money while we prepare for launch.":
+		"ancora läuft im Stellar-Testnetz mit Testgeld, während wir den Start vorbereiten.",
+	"Path to launch": "Weg zum Start",
+	"Mission and vision": "Mission und Vision",
+	"Pilot program": "Pilotprogramm",
+	Questions: "Fragen",
+	"The path to launch": "Der Weg zum Start",
+	"Read the full roadmap →": "Die ganze Roadmap lesen →",
+	"Become a pilot organization": "Werden Sie Pilotorganisation",
+	"We are preparing the first mainnet pilots with clubs, NGOs and small companies. Pilots shape the product, get help moving their rules over, and are first to use real money once the security review is done.":
+		"Wir bereiten die ersten Mainnet-Piloten mit Vereinen, NGOs und kleinen Unternehmen vor. Piloten gestalten das Produkt mit, erhalten Hilfe beim Übertragen ihrer Regeln und nutzen als Erste echtes Geld, sobald die Sicherheitsprüfung abgeschlossen ist.",
+	"Apply for the pilot": "Für das Pilotprogramm bewerben",
+	"Try the preview": "Vorschau ausprobieren",
 };
