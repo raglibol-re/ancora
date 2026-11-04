@@ -1,7 +1,9 @@
 import type { SiteHealth } from "../../features/workspace/resolveDataSource.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
 
-const TIMEOUT_MS = 4_000;
+// The public testnet RPC sometimes takes several seconds per call (about 5 s on 4 Nov 2026); a
+// shorter wait sent visitors to sample data although the testnet was working.
+const TIMEOUT_MS = 12_000;
 const HEALTH_KEY = "ancora.health.v1";
 
 /** The last health answer this device saw, so the app can start without waiting for the server. */
