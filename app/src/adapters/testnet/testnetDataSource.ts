@@ -405,7 +405,14 @@ export class TestnetDataSource implements DataSource {
 	getSnapshot = () => this.snapshot;
 
 	/** This pass's device keys derived from its passkey (PRF), or null when it can't. */
-	private readonly passkeyKeys = () => passkeyKeys(this.kit.credentialId);
+	/**
+	 * Waits for the kit's reconnect first: without its credential id the browser is asked for any
+	 * passkey of the site, which can be the wrong one, or none that answers.
+	 */
+	private readonly passkeyKeys = async () => {
+		await this.ensureConnected();
+		return passkeyKeys(this.kit.credentialId);
+	};
 
 	private get kit() {
 		return passkeyKit(this.config);
