@@ -395,8 +395,8 @@ export function seedWorkspace(now: number): Workspace {
 	);
 
 	const team = account(
-		"meridian-team",
-		"Meridian Hack Team",
+		"ponte-team",
+		"Ponte Product Team",
 		"team",
 		[
 			["lea", "lead"],
@@ -427,7 +427,7 @@ export function seedWorkspace(now: number): Workspace {
 					amount: euros(600),
 					recipientId: "hw-shop",
 					recipientIsNew: false,
-					note: "Demo hardware",
+					note: "Test devices",
 				}),
 			],
 			activity: [
@@ -438,7 +438,7 @@ export function seedWorkspace(now: number): Workspace {
 					kind: "deposit",
 					token: EURC,
 					amount: euros(2_000),
-					from: "Sponsor grant",
+					from: "Project grant",
 					txHash: null,
 				}),
 				entry({

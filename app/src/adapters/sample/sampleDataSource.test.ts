@@ -73,7 +73,7 @@ describe("SampleDataSource", () => {
 		const request = accountOf(ds, "mare-labs").requests[0];
 		expect(request?.evaluation.approvals).toEqual([{ roleId: "director", count: 1 }]);
 
-		const tooMuch = await ds.requestPayment("meridian-team", "noah", {
+		const tooMuch = await ds.requestPayment("ponte-team", "noah", {
 			payee: { id: "hw-shop" },
 			token: "eurc",
 			amount: euros(5_000),
