@@ -8,13 +8,15 @@ import { required, type ServerConfig } from "./serverConfig.js";
 
 export const STROOPS_PER_UNIT = 10_000_000n;
 const FULL_GRANT = 100n * STROOPS_PER_UNIT;
+/** Below this float grants shrink (grantFor), so the float refills itself where it can. */
+export const REFILL_BELOW = 5n * FULL_GRANT;
 
 /**
  * 100 units while the float is comfortable; a tenth of what is left when it runs low, so a
  * hand-filled float serves many demos instead of one.
  */
 export function grantFor(float: bigint): bigint {
-	if (float >= 5n * FULL_GRANT) return FULL_GRANT;
+	if (float >= REFILL_BELOW) return FULL_GRANT;
 	return float / 10n;
 }
 

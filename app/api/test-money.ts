@@ -1,10 +1,12 @@
 import { Address, Contract, Keypair, nativeToScVal, StrKey } from "@stellar/stellar-sdk";
+import { waitUntil } from "@vercel/functions";
 import { tokenBalance } from "../shared/tokenBalance.js";
+import { refillFromBlendFaucet } from "./_lib/blendFaucet.js";
 import { isOrganization } from "./_lib/contracts.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer } from "./_lib/ledger.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
-import { grantFor, STROOPS_PER_UNIT } from "./_lib/testMoney.js";
+import { grantFor, REFILL_BELOW, STROOPS_PER_UNIT } from "./_lib/testMoney.js";
 
 // Testnet only: the demo operator sends test money in one of the accepted stablecoins from its
 // float to an ancora organization. The operator holds no role in any organization; it can only
@@ -29,7 +31,8 @@ export default apiHandler("POST", async (request) => {
 		throw new RequestError(`This organization already has plenty of test ${asset.symbol}.`, 429);
 	}
 	const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
-	const grant = grantFor(await tokenBalance(settings, asset.token, operator.publicKey()));
+	const float = await tokenBalance(settings, asset.token, operator.publicKey());
+	const grant = grantFor(float);
 	if (grant < STROOPS_PER_UNIT) {
 		throw new RequestError(
 			`ancora's test float of ${asset.symbol} is empty right now. Try another asset or later.`,
@@ -46,5 +49,13 @@ export default apiHandler("POST", async (request) => {
 			nativeToScVal(grant, { type: "i128" }),
 		),
 	);
+	// Only BlendUSDC has a faucet a server can claim; Circle's is captcha-gated.
+	if (asset.symbol === "BlendUSDC" && float - grant < REFILL_BELOW) {
+		waitUntil(
+			refillFromBlendFaucet(settings, asset.token, operator.publicKey()).catch((error: unknown) =>
+				console.error("[test-money] refill", error instanceof Error ? error.message : error),
+			),
+		);
+	}
 	return { hash, amountStroops: grant.toString(), symbol: asset.symbol };
 });
