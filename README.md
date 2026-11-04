@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://ancora-gray.vercel.app"><img src="https://img.shields.io/badge/live%20demo-ancora--gray.vercel.app-0B1730?style=flat-square" alt="Live demo" /></a>
+  <a href="https://ancora-gray.vercel.app"><img src="https://img.shields.io/badge/preview-ancora--gray.vercel.app-0B1730?style=flat-square" alt="Public preview" /></a>
   <a href="https://github.com/raglibol-re/ancora/actions/workflows/ci.yml"><img src="https://github.com/raglibol-re/ancora/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Stellar-testnet-0B1730?style=flat-square&logo=stellar&logoColor=white" alt="Stellar testnet" />
   <img src="https://img.shields.io/badge/Soroban%20SDK-28-C9A24D?style=flat-square" alt="Soroban SDK 28" />
@@ -29,12 +29,27 @@
 </p>
 
 <p align="center">
-  <strong>Live:</strong> <a href="https://ancora-gray.vercel.app">ancora-gray.vercel.app</a> &nbsp;·&nbsp; <strong>Next:</strong> Stellar Community Fund #46
+  <strong>Public preview:</strong> <a href="https://ancora-gray.vercel.app">ancora-gray.vercel.app</a> &nbsp;·&nbsp; <strong>Status:</strong> on the Stellar testnet, heading for mainnet &nbsp;·&nbsp; <a href="docs/ROADMAP.md">Roadmap</a>
 </p>
 
-> ancora is not a bank. Balances are not deposit-insured and nothing here is a savings account. This project runs on the Stellar **testnet** only; no real money is involved.
+> ancora is not a bank. Balances are not deposit-insured and nothing here is a savings account. ancora runs on the Stellar **testnet** while it is prepared for production; no real money is involved yet.
 
-## Try it in two minutes
+## Mission
+
+Give every organization one shared account where the rules its members agree on are the rules its money follows. A rowing club, a design studio and an aid group should be able to run their money with the controls of a large company, without a back office and without handing it to anyone.
+
+## Where ancora stands
+
+ancora is an open-source product in active development, built in the open towards a mainnet launch with pilot organizations.
+
+- **Today: public preview on the testnet.** Every feature below works against real contracts with test money, and eight end-to-end flows run against the live site every night.
+- **Next: proven on testnet.** Reproducible, attested releases, monitoring with alerts, and account history beyond the RPC's one-week window.
+- **Then: privacy and keys.** The confidential pot out of preview, approval tiers over hidden amounts, succession reminders.
+- **Then: mainnet.** An external security review of every contract, a licensed partner for euro bank transfers (KYB and fiat stay with the licensed partner), and the first pilot organizations with real money.
+
+Deliverables and acceptance checks for each stage are in [docs/ROADMAP.md](docs/ROADMAP.md#scf-46-milestones).
+
+## Try the preview
 
 1. Open **[ancora-gray.vercel.app](https://ancora-gray.vercel.app)** and tap **Get started**. Your passkey (Face ID, fingerprint or device PIN) creates your pass: your own account on Stellar, no seed phrase, no XLM to buy.
 2. **Create an organization** from a template (club, company or team). It is deployed as its own contract with you as founder.
@@ -100,10 +115,10 @@ Everything above runs on the Stellar testnet with real contracts. If the testnet
 | Custom roles | The organization's own roles, highest first: add a role ("Coach", "Project lead"), reorder, remove roles nobody holds. A higher role approves wherever a lower one is asked for. Saved as one rule change (directly in the setup phase, otherwise a request under the strictest tier); refused if someone still holds a removed role or the tiers still ask for it | **Real on testnet** (`SetRoles` in the organization contract, interface `version()` 3; organizations created before 28 Oct 2026 show their roles read-only) |
 | Standing orders | A payment repeated weekly, fortnightly or monthly, set from the Send page. Every run goes through the organization's rules like a one-off payment: inside the spending limit it pays out at once, otherwise it waits for approvals. Due orders run every day by ancora's scheduler, when the organization is opened, or with "Run now"; the person who set it or the top role stops it | **Real on testnet** (organization contract; a Vercel cron calls `/api/due` daily; organizations created before 26 Oct 2026 12:00 don't have it) |
 | Activity | Movements of the organization's money read from the ledger's events (deposits, payments, Reserve moves, each with its transaction on the explorer), plus approved changes from the request list; CSV statement | **Real on testnet**: Soroban RPC keeps about a week of events, read in chunks and kept on the device so the list outlives the week |
-| Add money from your wallet | Connect Freighter, Hana, xBull or Albedo (Stellar Wallets Kit); ancora builds the token transfer to the organization's contract and the wallet signs it; test money per asset from the operator's float; the organization's address for wallets that can pay contracts | **Real on testnet** (BlendUSDC test money today: Circle's testnet faucet is down, so the USDC and EURC floats are empty and the sheet says so) |
+| Add money from your wallet | Connect Freighter, Hana, xBull or Albedo (Stellar Wallets Kit); ancora builds the token transfer to the organization's contract and the wallet signs it; test money per asset from the operator's float; the organization's address for wallets that can pay contracts | **Real on testnet** (BlendUSDC test money refills itself; Circle's faucet needs a captcha, so the USDC and EURC floats are often empty and the sheet says so) |
 | Multi-asset treasury | Balances per accepted stablecoin, payments in each, home currency (EUR or USD) for the rules with the strictest tier for other currencies. Accept any Stellar asset from the Rules page by contract address or CODE:ISSUER: the token describes itself, the contract verifies it when the change is applied, an optional DeFindex vault gives it a Reserve | **Real on testnet** (BlendUSDC, Circle USDC, Circle EURC preset; any SEP-41 token by reference) |
 | Reserve on DeFindex | Per-asset Reserve in a DeFindex vault: one-tap moves by the top role or any strictest-tier approver, value and earnings read from the vault | **Real on testnet** for BlendUSDC (the DeFindex testnet vault); **Simulated** in sample data |
-| Security seal (ML-DSA) | Payments above the seal threshold need an extra seal; ancora's `ancora_seal_verifier` contract checks ML-DSA-44 (FIPS 204) signatures on Stellar | **Verifier real on testnet** (tested on-chain with a shared vector); the seal step in the app is signed by an approver's passkey until the ML-DSA key lives on the approving device (roadmap) |
+| Security seal (ML-DSA) | Payments above the seal threshold need an extra seal; ancora's `ancora_seal_verifier` contract checks ML-DSA-44 (FIPS 204) signatures on Stellar | **Real on testnet**: the verifier is tested on-chain with a shared vector; organizations on release 0.9.0 can require a seal signed with an ML-DSA key created on the approving device (see Succession and quantum-safe seals) |
 | Crew / agent keys | A spending limit per member (amount per day, week or 30 days in the rules' currency): payments inside it go out without approvals, beyond it the normal rules apply; an agent is simply a member whose key has a limit | **Real on testnet** (organization contract) |
 | Bank in/out (SEP-24) | Deposits and withdrawals through a Stellar anchor: the wallet signs in (SEP-10), the anchor's own form takes the bank details, deposits land in the wallet and move on to the organization, a withdrawal becomes a payment request to the anchor with its reference | **Real on testnet** with the SDF test anchor (protocol verified end-to-end; the hosted form was not clicked through in a browser yet); euro IBAN card in sample data **Simulated** |
 | Budgets and bookkeeping | Budgets are rules: an envelope per category and rolling period in the home currency, enforced by the organization contract. A payment tagged with a category counts against it; beyond what is left a soft budget escalates to the strictest tier and flags the request, a hard budget refuses it. Edited on the Rules page like any rule change; statement export as CSV | **Real on testnet** (organization contract; sample data mirrors it) |
@@ -118,7 +133,7 @@ Everything above runs on the Stellar testnet with real contracts. If the testnet
 | Organization code and upgrades | Settings shows the code the organization's contract runs next to the latest `ancora-organization` release on the Stellar Registry; moving to a new release is a change the members approve under their rules, and the contract only accepts the release the registry names | **Real on testnet** for organizations created from 1 Nov 2026 (release 0.7.0); older organizations show their code and stay on it |
 | Name on the Stellar Registry | The highest role registers the organization's treasury contract under a name in the Stellar Registry's open channel (`register_contract`, signed by their pass); the app checks availability, remembers the name and verifies it resolves to the contract | **Real on testnet** (registry root `CAAXJE…HI4M`, open channel `CDBL7M…HY4S`; not yet clicked through with a passkey) |
 | Discussions on requests | Pro and contra reasons, questions (the requester marks them answered) and comments with thumbs up/down, one reaction per person; summary on every request card | **Real** (off-chain in Vercel Blob, membership checked against the contract; entries aren't passkey-signed yet) |
-| Demo admin | `/admin` (passphrase): site-wide demo mode with automatic fallback, health panel (RPC, testnet rent, contracts, operator floats), recent errors, sample reset | Real (operator tool, testnet only) |
+| Operator console | `/admin` (passphrase): site-wide default data source with automatic fallback, health panel (RPC, testnet rent, contracts, operator floats), recent errors, sample reset | Real (operator tool, testnet only) |
 | Landing page | Product, use cases (illustrative, fictional organizations), mission and vision, the path to launch, pilot invitation, questions; a Preview bar says ancora runs on the test network | Real (public site); the use cases are labelled as illustrative, not customers |
 | English and German | A language switch on the landing page, sign-in and the side panel; money and dates follow the language | **Real**: every screen and the built-in role names in German; the contracts' error messages and request descriptions still in English |
 | Confidential pot | Part of the money in a pot whose balance, and the amounts paid between pots, are hidden on the network (OpenZeppelin's confidential token: Pedersen commitments, zero-knowledge proofs made in the browser); members read them with the organization's pot key, kept like private details; moving in or out and who pays whom stay public | **Preview on testnet** (Confidential pot in the side panel; `contracts/pot`, `pot_verifier`, `pot_auditors`; `app/src/adapters/testnet/pot`); every step is a request under the rules, a payment takes the strictest tier; private payments appear in Activity and in the statement CSV, the auditor's included, marked as private; not audited, OZ's proving recipe is provisional; a device that read the pot keeps an encrypted snapshot, so it reads on past the week of history the RPC keeps (a new device needs a payment in that week); not in sample data |
@@ -167,7 +182,7 @@ Verified and written to `app/.env.testnet` by `scripts/setup-testnet.sh`, which 
 | Ed25519 verifier | [`CAAVTM…HKN4`](https://stellar.expert/explorer/testnet/contract/CAAVTMCBXEIBPR64EAASKFXERVPYFZA2JYP5A3BG6PESWEFUJX5IHKN4) | smart-account-kit |
 | Threshold policy | [`CB3FAT…BCEG`](https://stellar.expert/explorer/testnet/contract/CB3FATQKCIRIQOCYRUPCQ2KREQ7T4RPKS7EAEOZWPEPUKWEDRVROBCEG) | smart-account-kit |
 | Spending-limit policy | [`CABXBY…IP5G`](https://stellar.expert/explorer/testnet/contract/CABXBYJNZ7IUW4G3D6BND5YCAQF3ASSDMDAOKQQ63UYFSO7WUU2TIP5G) | smart-account-kit |
-| Demo operator account (not a signer on any organization) | [`GC2BKJ…YJE3`](https://stellar.expert/explorer/testnet/account/GC2BKJOG56UXZQKMV475BNHMEHUA54GPGY6W2FILRB4DHCOJFJXOYJE3) | `ancora-deployer` key |
+| Operator account (deploys, sponsors fees; not a signer on any organization) | [`GC2BKJ…YJE3`](https://stellar.expert/explorer/testnet/account/GC2BKJOG56UXZQKMV475BNHMEHUA54GPGY6W2FILRB4DHCOJFJXOYJE3) | `ancora-deployer` key |
 
 In the app: your pass → Expert mode, then Organization settings → *Testnet deployments* lists the same IDs with explorer links; each organization's own contract is on its settings page.
 
@@ -213,13 +228,13 @@ The relayer (`/api/relay`) sponsors fees for smart-account-kit submissions after
 
 Production domain: `ancora-gray.vercel.app`. Passkeys are bound to it (the WebAuthn RP ID), so passkeys created on preview URLs or localhost will not work in production.
 
-## Demo admin
+## Operator console
 
 `/admin` is the operator console for the test network, not an end-user feature. It is gated by the `ADMIN_PASSPHRASE` environment variable (`scripts/setup-testnet.sh --sync-vercel` generates one and saves it to `app/.env.local`, gitignored). It can:
 
 - switch the **site-wide default** between sample data and the Stellar testnet (the testnet falls back to sample data automatically when the RPC or ancora's server doesn't answer, and people can still choose on their pass);
 - show **health**: RPC (ledger, protocol, latency), testnet rent, whether every contract this build uses exists, the operator's XLM and stablecoin floats, relayer origins;
-- **top up the operator's XLM** from Friendbot so sponsored fees never run dry during a demo;
+- **top up the operator's XLM** from Friendbot so sponsored fees never run dry;
 - list **recent errors** recorded in that browser, and reset the **sample data** in that browser.
 
 The operator cannot create, approve or alter requests, and cannot move organization funds.
@@ -229,21 +244,25 @@ The operator cannot create, approve or alter requests, and cannot move organizat
 - **Testnet only.** Nothing here holds real money.
 - **Sample data** (purple banner, every card tagged *Simulated*) is the automatic backup when the testnet or ancora's server doesn't answer, and can be chosen on your pass. The account-number card is always simulated (there is no real IBAN), and exchange rates fall back to a labeled indicative table when the ECB feed is unreachable.
 - Use **https://ancora-gray.vercel.app**; passkeys are bound to that hostname.
-- **Test money** comes from the operator's float. Circle's testnet faucet is currently down, so only BlendUSDC is available; the add-money sheet says so per asset.
+- **Test money** comes from the operator's float. The BlendUSDC float refills itself from Blend's testnet faucet; Circle's testnet faucet needs a captcha, so the USDC and EURC floats are topped up by hand and are often empty. The add-money sheet says so per asset.
 - **Standing orders and requests past their objection window** are run by a daily cron (07:00 UTC), when a member opens the organization, or with "Run now" / "Send now". Missed runs are skipped, never caught up. Organizations created before 26 Oct 2026 12:00 run older contract code without standing orders.
-- **Lifeline** hands over positions, not the person's smart account itself; the inactivity path and succession plans are on the roadmap. Organizations created before 26 Oct 2026 can't hand over positions and are listed as such.
+- **Lifeline** hands over positions, not the person's smart account itself; succession after a quiet period works for organizations on release 0.9.0, reminders before a claim are on the roadmap. Organizations created before 26 Oct 2026 can't hand over positions and are listed as such.
 - A **secure handover** needs a recipient who can sign against the organization's contract with their own pass; the sender shares a link. Classic wallets can't confirm yet.
 - Profile pictures and logos are public files in Vercel Blob (content-addressed, max 300 KB); only the URL is on-chain.
 - A plain Stellar payment from a wallet can't reach an organization, because organizations are contract addresses (C…). Use "Add money → From your wallet", or a wallet that can pay contracts directly. Paying a classic address (G…) needs a trustline for the exact asset; the app checks before it asks for the payment.
-- Payments in an asset whose currency differs from the rules' take the strictest tier and the seal; a live rate from an oracle (Reflector) is on the roadmap.
+- Payments in an asset whose currency differs from the rules' take the strictest tier and the seal, unless the organization (release 0.8.0 or later) uses live Reflector exchange rates.
 - Discussion entries are off-chain (Vercel Blob), checked against the member list, not yet passkey-signed.
-- The seal is enforced by the organization contract, but today an eligible approver adds it with their passkey; the device-held ML-DSA key is next.
+- The seal is enforced by the organization contract. Organizations on release 0.9.0 can require the device-held ML-DSA key; older ones take the seal from an approver's passkey. Moving the ML-DSA key to a new device is on the roadmap.
 - The Reserve exists for BlendUSDC only (the one DeFindex vault on testnet). Its "earned so far" is the vault value above what was moved in.
 - **Testnet fees are unusually high right now** (deploying an account 22 XLM, a passkey-signed payment 46 XLM on 25 Oct 2026), because testnet's Soroban state is above its rent target. The relayer sponsors them from a Friendbot-funded key; the same operations cost well under 1 XLM at mainnet rent. Details in [docs/DECISIONS.md](docs/DECISIONS.md).
 
-## Roadmap
+## Get involved
 
-The next stages follow the Stellar Community Fund #46 plan in three milestones: proven on testnet (every flow end-to-end every night, reproducible attested builds, monitoring, a durable event archive), privacy and keys beyond preview (the confidential pot out of preview, approval tiers proven over hidden amounts, Lifeline reminders, the native ML-DSA host function), and ready for mainnet (external security review, licensed euro ramp, pilot organizations). Deliverables and acceptance checks are in [docs/ROADMAP.md](docs/ROADMAP.md#scf-46-milestones); the demo walk-through is [docs/DEMO.md](docs/DEMO.md).
+- **Pilot organizations.** Clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens: [open a pilot request](https://github.com/raglibol-re/ancora/issues/new?title=Pilot%20request%3A%20). Pilots shape the product and get help moving their rules over.
+- **Issues and ideas.** Bugs, questions and proposals are welcome as [GitHub issues](https://github.com/raglibol-re/ancora/issues).
+- **Code.** Read [CLAUDE.md](CLAUDE.md) for the working rules (layering, money in minor units, English and German copy) and run `pnpm verify` (and the contract checks) before a pull request.
+
+The roadmap with what was built and what comes next is in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Built with
 
