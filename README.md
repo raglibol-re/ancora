@@ -160,7 +160,7 @@ A person signs with their passkey through their own account; the organization co
 - **Contracts**: a Rust workspace (`soroban-sdk` 28, OpenZeppelin `stellar-access` 0.8) with one crate per contract and shared test vectors, so the TypeScript engine and the contract agree on every rule.
 - **Functions**: `/api/relay` (fail-closed fee sponsorship), `/api/create-organization`, `/api/due` (requests past their objection window, standing orders, the daily scheduler, the organization index), `/api/notifications` (web-push subscriptions), `/api/test-money`, `/api/finish-recovery`, `/api/wallet-index` (the smart-account index the passkey kit verifies wallets with), `/api/registry-name`, `/api/discussions`, `/api/upload-image`, `/api/health`, `/api/admin`.
 
-Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Why things are the way they are: [docs/DECISIONS.md](docs/DECISIONS.md) · [CHANGELOG.md](CHANGELOG.md)
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Why things are the way they are: [docs/DECISIONS.md](docs/DECISIONS.md) · [CHANGELOG.md](CHANGELOG.md) · Current state and open work: [docs/HANDOFF.md](docs/HANDOFF.md)
 
 ## Testnet contracts
 
