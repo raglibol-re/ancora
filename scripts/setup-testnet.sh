@@ -466,7 +466,7 @@ sync_vercel() {
 		vercel_env DEAL_CONTRACT "$DEAL_CONTRACT"
 		vercel_env KEYRING_CONTRACT "$KEYRING_CONTRACT"
 		vercel_env POT_AUDITORS "$POT_AUDITORS"
-		# What visitors get when the demo setting in Blob can't be read.
+		# The site-wide default data source (visitors can still pick one in Settings).
 		vercel_env DEFAULT_DATA_SOURCE testnet
 		vercel_env RECOVERY_CONTRACT "$RECOVERY_CONTRACT"
 		vercel_env STELLAR_REGISTRY_CONTRACT "$STELLAR_REGISTRY_CONTRACT"

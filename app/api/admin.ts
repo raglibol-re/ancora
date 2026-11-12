@@ -2,14 +2,14 @@ import { Keypair, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { rpcServer } from "../shared/rpcServer.js";
 import { tokenBalance } from "../shared/tokenBalance.js";
 import { requireAdmin } from "./_lib/adminAuth.js";
-import { readDemoState, writeDemoState } from "./_lib/demoState.js";
 import { runDueOrders, runDueRequests } from "./_lib/dueOrders.js";
 import { contractsHealth, operatorHealth, rentHealth, rpcHealth } from "./_lib/health.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
+import { siteMode } from "./_lib/siteMode.js";
 
-// Demo admin (operator tool, testnet only). Everything here is read-only except the demo-mode
-// switch and the XLM top-up of the operator's own fee float. The operator key is not a signer
+// Demo admin (operator tool, testnet only). Everything here is read-only except running what is
+// due and the XLM top-up of the operator's own fee float. The operator key is not a signer
 // on any organization account: it cannot move org funds or change org rules.
 
 export const config = { maxDuration: 60 };
@@ -62,15 +62,14 @@ export default apiHandler("POST", async (request) => {
 	switch (body.action) {
 		case "health": {
 			const nativeToken = typeof body.nativeToken === "string" ? body.nativeToken : null;
-			const [demo, rpc, rent, contracts, operator] = await Promise.all([
-				readDemoState(),
+			const [rpc, rent, contracts, operator] = await Promise.all([
 				rpcHealth(settings),
 				rentHealth(settings),
 				contractsHealth(settings, contractList(body.contracts)),
 				nativeToken ? operatorHealth(settings, nativeToken) : null,
 			]);
 			return {
-				demo,
+				demo: { mode: siteMode() },
 				rpc,
 				rent,
 				contracts,
@@ -91,12 +90,6 @@ export default apiHandler("POST", async (request) => {
 			const operator = Keypair.fromSecret(required("DEPLOYER_SECRET"));
 			const orders = await runDueOrders(settings, operator);
 			return { ...orders, requests: await runDueRequests(settings, operator) };
-		}
-		case "set-mode": {
-			if (body.mode !== "sample" && body.mode !== "testnet") {
-				throw new RequestError("Mode must be 'sample' or 'testnet'.");
-			}
-			return { demo: await writeDemoState(body.mode) };
 		}
 		default:
 			throw new RequestError("Unknown action.");

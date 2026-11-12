@@ -185,6 +185,14 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 Milestone escrow (`contracts/deal`, no admin): create, accept, fund, request a payout, approve or object, automatic payout after the objection period, cancel (both sides once funded), dispute and arbiter ruling. Each organization takes every step through its own rules (`DealCall` requests). Next: counterparties by ancora name, netting, delivery versus payment, shared pots (see contracts/deal/README.md).
 
+### Blob usage
+
+The Vercel Blob store went over the Hobby quota in early November and was blocked. Done 12 Nov: discussions are one file per organization and load only where requests are shown; the site-wide default is an env var (see DECISIONS, 2026-11-12). Still open:
+
+- the scheduler's organization list from the on-chain registry instead of one Blob marker per organization, and dropping the Blob copy of registry names (the registry is the source);
+- registry names and the organization index answer "unknown" instead of an error when Blob can't be read;
+- remove the reader for the old per-entry discussion layout (`readLegacyThreads` in `app/api/_lib/discussionStore.ts`) once no organization relies on it.
+
 ### D. Platform
 
 20. **Releases through the Stellar Registry**: every contract version published and named (done 1 Nov), organizations move to new releases through their rules (done 1 Nov), organizations deployed by name, attested builds.

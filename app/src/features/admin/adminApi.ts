@@ -2,7 +2,7 @@ import { listDeployments, testnetConfig } from "../../adapters/testnet/testnetCo
 import type { DemoMode } from "../workspace/resolveDataSource.ts";
 
 export type AdminHealth = {
-	demo: { mode: DemoMode; updatedAt: string | null };
+	demo: { mode: DemoMode };
 	rpc: {
 		ok: boolean;
 		ledger: number | null;
@@ -82,11 +82,4 @@ export function refillXlm(
 		action: "refill-xlm",
 		nativeToken: testnetConfig?.nativeToken ?? null,
 	});
-}
-
-export function setDemoMode(
-	passphrase: string,
-	mode: DemoMode,
-): Promise<{ demo: AdminHealth["demo"] }> {
-	return adminRequest(passphrase, { action: "set-mode", mode });
 }

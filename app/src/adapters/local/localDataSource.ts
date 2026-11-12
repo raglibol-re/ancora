@@ -124,6 +124,8 @@ export class LocalDataSource implements DataSource {
 		},
 	};
 	readonly discussions: DiscussionSupport = {
+		// Everything this source knows is in the workspace already.
+		load: async () => ok(undefined),
 		post: (orgId, requestId, actorId, entry) =>
 			this.mutateThread(orgId, requestId, (account, thread) => {
 				if (!canPost(account.org, actorId)) {

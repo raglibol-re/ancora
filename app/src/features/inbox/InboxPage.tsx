@@ -2,6 +2,7 @@ import { inboxFor } from "../../domain/inbox.ts";
 import { Card } from "../../ui/Card.tsx";
 import { Page } from "../../ui/Page.tsx";
 import { useT } from "../../ui/useLanguage.ts";
+import { useDiscussions } from "../discussion/useDiscussions.ts";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 
@@ -10,6 +11,8 @@ export function InboxPage() {
 	const t = useT();
 	const { workspace, me } = useWorkspace();
 	const items = inboxFor(workspace, me.id);
+	// The request cards say how their discussion stands.
+	useDiscussions(items.map((item) => item.account));
 
 	return (
 		<Page

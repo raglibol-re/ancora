@@ -72,11 +72,7 @@ export function AdminPage() {
 			title="Operator console"
 			lead="Operator tools for the test network. Not an end-user feature. The operator key is not a signer on any organization account."
 		>
-			<DemoModeCard
-				passphrase={passphrase}
-				demo={health.demo}
-				onChange={(demo) => setHealth({ ...health, demo })}
-			/>
+			<DemoModeCard demo={health.demo} />
 			<HealthPanel
 				health={health}
 				busy={busy}

@@ -7,7 +7,7 @@
 //
 // Fails on: the app or /api/health not answering, the testnet RPC unreachable, BlendUSDC test
 // money empty (the stablecoin every demo starts with), the operator's XLM for sponsored fees
-// below MIN_XLM. Warns only on: sample-data mode set in /admin (a deliberate choice), Circle
+// below MIN_XLM. Warns only on: sample-data mode (the deployment's DEFAULT_DATA_SOURCE), Circle
 // USDC and EURC floats empty (refilled by hand at faucet.circle.com, see docs/ROADMAP.md).
 
 const BASE_URL = process.env.ANCORA_URL ?? "https://ancora-gray.vercel.app";
@@ -39,11 +39,8 @@ async function checkHealth() {
 		return;
 	}
 	const { mode, rpc, testMoney } = health.data;
-	if (mode !== "testnet" && !health.data.updatedAt) {
-		// Sample mode without a time was never chosen: the setting couldn't be read (Vercel Blob).
-		problems.push("The site fell back to sample data: its demo setting couldn't be read from Vercel Blob.");
-	} else if (mode !== "testnet") {
-		warnings.push(`The site is in "${mode}" mode (set in /admin).`);
+	if (mode !== "testnet") {
+		warnings.push(`The site is in "${mode}" mode (DEFAULT_DATA_SOURCE of the deployment).`);
 	}
 	if (!rpc?.ok) problems.push(`The testnet RPC doesn't answer: ${rpc?.error ?? "no detail"}.`);
 	for (const asset of testMoney ?? []) {

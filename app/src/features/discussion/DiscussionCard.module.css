@@ -3,6 +3,11 @@
 	color: var(--color-text-muted);
 }
 
+.failed {
+	font-size: var(--text-sm);
+	color: var(--color-negative);
+}
+
 .summary {
 	font-family: var(--font-ui);
 	font-size: var(--text-xs);

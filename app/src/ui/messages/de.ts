@@ -542,6 +542,10 @@ export const de: Readonly<Record<string, string>> = {
 	"Propose the deal": "Vereinbarung vorschlagen",
 	"Question posted.": "Frage gestellt.",
 	"Marked as answered.": "Als beantwortet markiert.",
+	"Loading the discussion…": "Die Diskussion wird geladen …",
+	"Try again": "Erneut versuchen",
+	"The discussion couldn't be loaded, so newer entries may be missing. Check your connection.":
+		"Die Diskussion konnte nicht geladen werden, neuere Beiträge fehlen möglicherweise. Prüfen Sie Ihre Verbindung.",
 	Discussion: "Diskussion",
 	"Reasons for and against, questions and comments help approvers decide. Taking part here doesn't count as an approval.":
 		"Gründe dafür und dagegen, Fragen und Kommentare helfen bei der Entscheidung. Hier mitzureden zählt nicht als Freigabe.",

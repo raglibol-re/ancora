@@ -196,6 +196,7 @@ export class TestnetDataSource implements DataSource {
 		},
 	};
 	readonly discussions: DiscussionSupport = {
+		load: (orgIds) => this.loadDiscussions(orgIds),
 		post: async (orgId, requestId, actorId, entry) => {
 			const text = await this.protectNote(orgId, actorId, entry.text, false);
 			if (!text.ok) return text;
@@ -231,6 +232,11 @@ export class TestnetDataSource implements DataSource {
 	/** Organizations already reported to the server's index this visit. */
 	/** Organizations this device already announced to the scheduler's index (kept across visits). */
 	private readonly indexed = new Set<string>(readIndexed());
+	/**
+	 * Discussion threads read so far, per organization. They are read when a screen that shows
+	 * requests opens (`discussions.load`), not with every refresh: they live on ancora's server.
+	 */
+	private readonly threads = new Map<string, { at: number; byRequest: Threads }>();
 	/** Standing orders already tried this visit, so a refused run isn't retried on every refresh. */
 	private readonly attemptedOrders = new Set<string>();
 	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
@@ -247,6 +253,10 @@ export class TestnetDataSource implements DataSource {
 			this.me = cached.me;
 			// The cache holds private notes encrypted; they show as private until decrypted again.
 			this.raw = [...cached.workspace.accounts];
+			// Last visit's discussions show until a screen reads them again.
+			for (const account of this.raw) {
+				this.threads.set(account.org.id, { at: 0, byRequest: account.discussions ?? {} });
+			}
 			this.snapshot = {
 				...cached.workspace,
 				accounts: this.raw.map((account) => this.reveal(account)),
@@ -502,18 +512,17 @@ export class TestnetDataSource implements DataSource {
 		this.notify();
 		try {
 			const orgIds = await readOrganizationsOf(this.config, this.config.registryContract, me);
-			const [snapshots, threads] = await Promise.all([
-				Promise.all(orgIds.map((id) => readOrganization(this.config, id, this.history))),
-				Promise.all(orgIds.map((id) => this.loadDiscussions(id))),
-			]);
+			const snapshots = await Promise.all(
+				orgIds.map((id) => readOrganization(this.config, id, this.history)),
+			);
 			const everyone = new Set<string>([me]);
 			for (const snapshot of snapshots) {
 				for (const member of snapshot.members) everyone.add(String(member.address));
 			}
 			this.profiles = await readProfiles(this.config, this.config.registryContract, [...everyone]);
-			this.publish(me, snapshots, threads, everyone);
+			this.publish(me, snapshots, everyone);
 			void this.revealPrivateNotes(me);
-			void this.backfillHistory(me, snapshots, threads, everyone);
+			void this.backfillHistory(me, snapshots, everyone);
 			void this.runDueOrders(me);
 			void this.indexOrganizations(orgIds);
 		} catch (error) {
@@ -584,12 +593,11 @@ export class TestnetDataSource implements DataSource {
 	private publish(
 		me: string,
 		snapshots: readonly OnchainSnapshot[],
-		threads: readonly OrgAccount["discussions"][],
 		everyone: ReadonlySet<string>,
 	): void {
 		const orgNames = new Map(snapshots.map((s) => [s.contractId, String(s.info.name)]));
 		const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
-		const accounts: OrgAccount[] = snapshots.map((snapshot, index) => ({
+		const accounts: OrgAccount[] = snapshots.map((snapshot) => ({
 			...mapOrganization(
 				snapshot,
 				(who) => orgNames.get(who) ?? this.profiles.get(who)?.name ?? undefined,
@@ -597,7 +605,7 @@ export class TestnetDataSource implements DataSource {
 				(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
 				this.pot?.asset() ?? null,
 			),
-			discussions: threads[index] ?? {},
+			discussions: this.threads.get(snapshot.contractId)?.byRequest ?? {},
 		}));
 		this.raw = accounts;
 		const people: Person[] = [...everyone].map((id) => ({
@@ -626,7 +634,6 @@ export class TestnetDataSource implements DataSource {
 	private async backfillHistory(
 		me: string,
 		snapshots: readonly OnchainSnapshot[],
-		threads: readonly OrgAccount["discussions"][],
 		everyone: ReadonlySet<string>,
 	): Promise<void> {
 		const filled: OnchainSnapshot[] = [];
@@ -648,7 +655,7 @@ export class TestnetDataSource implements DataSource {
 		if (this.me?.id !== me || filled.every((snapshot, index) => snapshot === snapshots[index])) {
 			return;
 		}
-		this.publish(me, filled, threads, everyone);
+		this.publish(me, filled, everyone);
 		this.notify();
 	}
 
@@ -1142,22 +1149,50 @@ export class TestnetDataSource implements DataSource {
 		return ok(undefined);
 	}
 
-	/** The organization's discussion threads from ancora's server, grouped by request. */
-	private async loadDiscussions(orgId: string): Promise<Record<string, DiscussionEntry[]>> {
-		const response = await fetch(`/api/discussions?org=${encodeURIComponent(orgId)}`).catch(
-			() => null,
+	/**
+	 * Reads the discussions of the organizations that have requests (a discussion hangs on one)
+	 * and weren't read in the last half minute, from ancora's server.
+	 */
+	private async loadDiscussions(orgIds: readonly string[]): Promise<Result<void, RuleError>> {
+		const now = Date.now();
+		const wanted = orgIds.filter((orgId) => {
+			const account = this.raw.find((a) => a.org.id === orgId);
+			if (!account || account.requests.length === 0) return false;
+			return now - (this.threads.get(orgId)?.at ?? 0) > DISCUSSIONS_FRESH_MS;
+		});
+		const read = await Promise.all(
+			wanted.map(async (orgId) => {
+				const response = await fetch(`/api/discussions?org=${encodeURIComponent(orgId)}`).catch(
+					() => null,
+				);
+				const payload = (await response?.json().catch(() => null)) as {
+					success?: boolean;
+					data?: { entries?: DiscussionEntry[] };
+				} | null;
+				if (!payload?.success || !payload.data?.entries) return false;
+				this.threads.set(orgId, { at: Date.now(), byRequest: byRequest(payload.data.entries) });
+				return true;
+			}),
 		);
-		const payload = (await response?.json().catch(() => null)) as {
-			success?: boolean;
-			data?: { entries?: DiscussionEntry[] };
-		} | null;
-		const threads: Record<string, DiscussionEntry[]> = {};
-		for (const entry of payload?.data?.entries ?? []) {
-			const thread = threads[entry.requestId] ?? [];
-			thread.push(entry);
-			threads[entry.requestId] = thread;
-		}
-		return threads;
+		if (read.some(Boolean)) this.showThreads();
+		return read.every(Boolean)
+			? ok(undefined)
+			: failed("The discussion couldn't be loaded from ancora's server. Try again shortly.");
+	}
+
+	/** Puts the threads read so far into the workspace on screen. */
+	private showThreads(): void {
+		this.raw = this.raw.map((account) => ({
+			...account,
+			discussions: this.threads.get(account.org.id)?.byRequest ?? account.discussions,
+		}));
+		this.snapshot = {
+			...this.snapshot,
+			accounts: this.raw.map((account) => this.reveal(account)),
+		};
+		this.notify();
+		// Entries of organizations with private details arrive encrypted.
+		if (this.me) void this.revealPrivateNotes(this.me.id);
 	}
 
 	/** The name ancora remembered for the organization, from its server. */
@@ -1171,10 +1206,14 @@ export class TestnetDataSource implements DataSource {
 		return typeof payload?.data?.name === "string" ? payload.data.name : null;
 	}
 
-	private async discuss(body: Record<string, unknown>): Promise<Result<void, RuleError>> {
-		const response = await this.post("/api/discussions", body);
+	/** A change to a discussion; the server answers with the organization's threads afterwards. */
+	private async discuss(
+		body: Record<string, unknown> & { org: string },
+	): Promise<Result<void, RuleError>> {
+		const response = await this.post<{ entries: DiscussionEntry[] }>("/api/discussions", body);
 		if (!response.ok) return response;
-		await this.refresh();
+		this.threads.set(body.org, { at: Date.now(), byRequest: byRequest(response.value.entries) });
+		this.showThreads();
 		return ok(undefined);
 	}
 
@@ -1305,6 +1344,21 @@ const SESSION_ENDED =
 /** Shown on the working bar while the passkey signs and the transaction travels to Stellar. */
 const SIGNING = "Sending to Stellar… confirm with your passkey if asked.";
 const OFF_CHAIN_ROUTES = new Set(["/api/discussions", "/api/registry-name"]);
+
+type Threads = Readonly<Record<string, readonly DiscussionEntry[]>>;
+
+/** Discussions read this recently aren't read again when another screen opens. */
+const DISCUSSIONS_FRESH_MS = 30_000;
+
+function byRequest(entries: readonly DiscussionEntry[]): Threads {
+	const threads: Record<string, DiscussionEntry[]> = {};
+	for (const entry of entries) {
+		const thread = threads[entry.requestId] ?? [];
+		thread.push(entry);
+		threads[entry.requestId] = thread;
+	}
+	return threads;
+}
 
 /** Turns the kit's "Error(Contract, #6)" into the organization contract's plain-language text. */
 function contractMessage(message: string): string {

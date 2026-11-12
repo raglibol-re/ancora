@@ -26,6 +26,7 @@ import { useT } from "../../ui/useLanguage.ts";
 import { useCommand } from "../workspace/useCommand.ts";
 import { useWorkspace } from "../workspace/WorkspaceContext.ts";
 import styles from "./DiscussionCard.module.css";
+import { useDiscussions } from "./useDiscussions.ts";
 
 /**
  * Reasons for and against, questions and comments on a request, with thumbs up or down.
@@ -41,6 +42,7 @@ export function DiscussionCard({
 	const t = useT();
 	const { dataSource, me, personOf } = useWorkspace();
 	const { run, busy } = useCommand();
+	const { status, retry } = useDiscussions([account]);
 	const entries = discussionOf(account, request.id);
 	const summary = describeSummary(summarize(entries));
 	const [kind, setKind] = useState<EntryKind>("pro");
@@ -84,6 +86,21 @@ export function DiscussionCard({
 					"Reasons for and against, questions and comments help approvers decide. Taking part here doesn't count as an approval.",
 				)}
 			</p>
+			{status === "loading" && entries.length === 0 && (
+				<p className={styles.muted} role="status">
+					{t("Loading the discussion…")}
+				</p>
+			)}
+			{status === "failed" && (
+				<p className={styles.failed} role="alert">
+					{t(
+						"The discussion couldn't be loaded, so newer entries may be missing. Check your connection.",
+					)}{" "}
+					<button type="button" className={styles.linkButton} onClick={retry}>
+						{t("Try again")}
+					</button>
+				</p>
+			)}
 			{entries.length > 0 && (
 				<ul className={styles.list}>
 					{entries.map((entry) => {

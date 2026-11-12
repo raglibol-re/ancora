@@ -337,8 +337,16 @@ export interface LifelineSupport {
 	): Promise<Result<{ successor: PersonId; recovered: string[]; skipped: string[] }, RuleError>>;
 }
 
-/** Discussion on approval requests; the entries themselves arrive with the workspace snapshot. */
+/**
+ * Discussion on approval requests. The entries are part of the workspace snapshot, but only
+ * for organizations a screen asked for with `load`: they live off-chain and are read on demand.
+ */
 export interface DiscussionSupport {
+	/**
+	 * Reads the discussions of these organizations into the workspace, unless they were read a
+	 * moment ago. Screens that show requests call it when they open.
+	 */
+	load(orgIds: readonly string[]): Promise<Result<void, RuleError>>;
 	post(
 		orgId: string,
 		requestId: string,

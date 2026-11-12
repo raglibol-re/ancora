@@ -9,6 +9,7 @@ import { formatMoney } from "../../ui/format.ts";
 import { Page } from "../../ui/Page.tsx";
 import { Segmented } from "../../ui/Segmented.tsx";
 import { useT } from "../../ui/useLanguage.ts";
+import { useDiscussions } from "../discussion/useDiscussions.ts";
 import { describeEvaluation } from "../requests/describe.ts";
 import { RequestCard } from "../requests/RequestCard.tsx";
 import { OrgRequired } from "../shell/OrgRequired.tsx";
@@ -29,6 +30,8 @@ export function ApprovalsPage() {
 function Approvals({ account }: { account: OrgAccount }) {
 	const t = useT();
 	const [filter, setFilter] = useState<Filter>("open");
+	// The request cards say how their discussion stands.
+	useDiscussions([account]);
 	const count = (f: Filter) =>
 		account.requests.filter((r) => statusesFor[f].includes(r.status)).length;
 	const shown = account.requests.filter((r) => statusesFor[filter].includes(r.status));
