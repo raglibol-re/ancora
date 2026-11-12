@@ -5,6 +5,27 @@ import type { TestnetConfig } from "./testnetConfig.ts";
 
 let kit: SmartAccountKit | null = null;
 
+const NOT_FOUND_RETRIES = 4;
+const NOT_FOUND_WAIT_MS = 750;
+
+/**
+ * The kit asks the RPC for a transaction once, right after the relayer reported it confirmed.
+ * The public RPC's nodes aren't all at the same ledger, so one may not know it yet, and the kit
+ * then reported "The confirmed deployment transaction is unavailable" although the pass existed
+ * (E2E runs, 5–12 Nov 2026). "Not found" is asked again for a few seconds before it counts.
+ */
+function askAgainForFreshTransactions(server: SmartAccountKit["rpc"]): void {
+	const ask = server.getTransaction.bind(server);
+	server.getTransaction = async (hash) => {
+		let response = await ask(hash);
+		for (let retry = 0; retry < NOT_FOUND_RETRIES && response.status === "NOT_FOUND"; retry++) {
+			await new Promise((resolve) => setTimeout(resolve, NOT_FOUND_WAIT_MS));
+			response = await ask(hash);
+		}
+		return response;
+	};
+}
+
 // The WebAuthn PRF extension; @simplewebauthn's extension type predates it, the browser reads it.
 const ASK_PRF = { prf: {} };
 
@@ -36,7 +57,7 @@ export function passkeyKit(config: TestnetConfig): SmartAccountKit {
 			startAuthentication,
 		},
 	});
-	withRpcTimeout(kit.rpc);
+	askAgainForFreshTransactions(withRpcTimeout(kit.rpc));
 	return kit;
 }
 
