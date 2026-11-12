@@ -1,5 +1,4 @@
 import type { xdr } from "@stellar/stellar-sdk";
-import { StrKey } from "@stellar/stellar-sdk";
 import {
 	type OrgAccount,
 	type Person,
@@ -7,29 +6,23 @@ import {
 	type Workspace,
 } from "../../domain/account.ts";
 import type {
-	BatchInput,
-	ChangeOutcome,
 	ContinuitySupport,
 	DataSource,
 	DealSupport,
 	DeviceKeySupport,
 	DiscussionSupport,
-	EscrowView,
 	FundingSupport,
 	Identity,
 	IdentitySupport,
 	LifelineSupport,
-	PaymentInput,
 	PotSupport,
 	PrivacySupport,
 	ProfileInput,
 	RampSupport,
 	RegistryNameSupport,
 	ReleaseSupport,
-	StandingOrderInput,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
-import type { Cents } from "../../domain/money.ts";
 import { withWork } from "../../domain/pendingWork.ts";
 import {
 	type PayeeLabel,
@@ -39,27 +32,24 @@ import {
 	revealPayees,
 } from "../../domain/privateNote.ts";
 import { err, ok, type Result } from "../../domain/result.ts";
-import type { GovernanceChange } from "../../domain/rules/governance.ts";
 import { type PersonId, type RuleError, ruleError } from "../../domain/rules/model.ts";
-import { rulesHash } from "../../domain/rules/policyDocument.ts";
-import { templates } from "../../domain/rules/templates.ts";
 import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
-import { createContinuitySupport, sealWithDeviceKey } from "./continuitySupport.ts";
-import { createdId } from "./createdItem.ts";
+import type { CommandDeps } from "./commandDeps.ts";
+import { createContinuitySupport } from "./continuitySupport.ts";
 import { createDealSupport } from "./dealSupport.ts";
 import { createDeviceKeySupport } from "./deviceKeySupport.ts";
 import { DiscussionThreads } from "./discussionThreads.ts";
 import { DueOrderRuns } from "./dueOrderRuns.ts";
 import { type HistoryCache, historyCache } from "./historyCache.ts";
+import { uploadImage } from "./imageUpload.ts";
 import { createLifelineSupport } from "./lifelineSupport.ts";
 import {
 	CONTRACT_ERROR_MESSAGES,
-	mapAsset,
 	mapOrganization,
-	mapRequest,
 	type OnchainSnapshot,
 } from "./mapOrganization.ts";
+import { createOrganizationCommands } from "./organizationCommands.ts";
 import {
 	type Profile,
 	readOrganization,
@@ -74,25 +64,12 @@ import { createPotSupport } from "./pot/potSupport.ts";
 import { createPrivateKeys, type PrivateKeys } from "./privacySupport.ts";
 import { decryptNote } from "./privateCrypto.ts";
 import { labelsFor } from "./privateLabels.ts";
-import { readContract } from "./readContract.ts";
-import { checkRecipient } from "./recipientCheck.ts";
 import { createRegistryNameSupport, createReleaseSupport } from "./registrySupport.ts";
+import { createRequestCommands } from "./requestCommands.ts";
 import { SchedulerAnnouncements } from "./schedulerAnnouncements.ts";
-import {
-	address,
-	batchLinesToScVal,
-	bool,
-	changeToScVal,
-	i128,
-	optionalSymbol,
-	text,
-	toStroops,
-	u32,
-	u64,
-} from "./scv.ts";
+import { address, text } from "./scv.ts";
 import { clearCachedSession, loadCachedSession, saveCachedSession } from "./sessionCache.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
-import { inspectToken } from "./tokenInspect.ts";
 import { createFundingSupport, createRampSupport } from "./walletSupport.ts";
 
 const EMPTY: Workspace = { people: [], accounts: [] };
@@ -109,8 +86,9 @@ const byteLength = (value: string) => new TextEncoder().encode(value).length;
  * an `ancora_organization` contract that holds the money, knows its members by address and
  * enforces the approval rules itself. Everything shown is read from the chain; every command
  * is a contract call signed with the person's passkey through their account, fees sponsored.
+ * This class is the signed-in session and what it reads; `open` adds the organizations' commands.
  */
-export class TestnetDataSource implements DataSource {
+export class TestnetDataSource {
 	readonly kind = "testnet" as const;
 	readonly supportsReserve = true;
 	readonly identity: IdentitySupport;
@@ -177,7 +155,41 @@ export class TestnetDataSource implements DataSource {
 	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
 	private readonly memo = new Map<string, { at: number; value: Promise<unknown> }>();
 
-	constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
+	/** The data source the app uses: the session together with its organizations' commands. */
+	static open(storage: KeyValueStorage | null, config: TestnetConfig): DataSource {
+		const source = new TestnetDataSource(storage, config);
+		const deps: CommandDeps = {
+			config,
+			availableAssets: source.availableAssets,
+			me: () => source.me?.id ?? null,
+			account: (orgId) => source.account(orgId),
+			invoke: (target, fn, args) => source.invoke(target, fn, args),
+			post: (path, body) => source.post(path, body),
+			refresh: () => source.refresh(),
+			protectNote: (orgId, actorId, note, onChain) =>
+				source.protectNote(orgId, actorId, note, onChain),
+			failed,
+			recordFailure: (where, error) =>
+				recordError(storage, {
+					at: Date.now(),
+					where,
+					message: error instanceof Error ? error.message : String(error),
+				}),
+		};
+		return Object.assign(
+			source,
+			createRequestCommands(deps),
+			createOrganizationCommands({
+				...deps,
+				protectLabel: (orgId, actorId, subject, label) =>
+					source.privateKeys
+						? source.privateKeys.protectLabel(orgId, actorId, subject, label)
+						: Promise.resolve(ok(label)),
+			}),
+		);
+	}
+
+	private constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
 		this.storage = storage;
 		this.announcements = new SchedulerAnnouncements(storage);
 		this.history = historyCache(storage);
@@ -302,7 +314,7 @@ export class TestnetDataSource implements DataSource {
 			signIn: () => this.signIn(),
 			signOut: () => this.signOut(),
 			saveProfile: (profile) => this.saveProfile(profile),
-			uploadAvatar: (image) => this.uploadAvatar(image),
+			uploadAvatar: uploadImage,
 			passkeyCount: () => this.passkeyCount(),
 			addPasskey: (label) => this.addPasskey(label),
 		};
@@ -690,343 +702,6 @@ export class TestnetDataSource implements DataSource {
 		return result;
 	}
 
-	private async uploadAvatar(image: Blob): Promise<Result<string, RuleError>> {
-		const response = await fetch("/api/image", {
-			method: "POST",
-			headers: { "Content-Type": image.type },
-			body: image,
-		}).catch(() => null);
-		const payload = (await response?.json().catch(() => null)) as {
-			success?: boolean;
-			data?: { url?: string };
-			error?: string;
-		} | null;
-		if (!payload?.success || typeof payload.data?.url !== "string") {
-			return failed(
-				payload?.error ?? "The picture couldn't be stored right now. Try again shortly.",
-			);
-		}
-		return ok(payload.data.url);
-	}
-
-	async createOrganization(input: Parameters<DataSource["createOrganization"]>[0]) {
-		if (!this.me) return failed("Sign in first.");
-		const template = templates[input.templateId];
-		const policyHash = await rulesHash(
-			template.id,
-			template.roles,
-			template.policy,
-			input.baseCurrency,
-		);
-		const response = await this.post<{ contractId: string }>("/api/create-organization", {
-			founder: this.me.id,
-			founderRole: input.founderRoleId,
-			template: input.templateId,
-			name: input.name.trim(),
-			policyHash,
-			baseCurrency: input.baseCurrency,
-			assets: input.assets,
-		});
-		if (!response.ok) return response;
-		await this.refresh();
-		return ok(response.value.contractId);
-	}
-
-	async requestPayment(orgId: string, actorId: PersonId, input: PaymentInput) {
-		const to = "id" in input.payee ? input.payee.id : input.payee.account.trim();
-		if (!StrKey.isValidEd25519PublicKey(to) && !StrKey.isValidContract(to)) {
-			return failed("Enter the recipient's Stellar address (starts with G or C).");
-		}
-		const recipient = await checkRecipient(this.config, input.token, to).catch((error: unknown) => {
-			// The check is a courtesy; if the RPC hiccups the contract still decides.
-			recordError(this.storage, {
-				at: Date.now(),
-				where: "recipient check",
-				message: error instanceof Error ? error.message : String(error),
-			});
-			return null;
-		});
-		if (recipient && !recipient.ok) return recipient;
-		const note = await this.protectNote(orgId, actorId, input.note.trim(), true);
-		if (!note.ok) return note;
-		const before = this.requestIds(orgId);
-		const result = await this.invoke(orgId, "propose_payment", [
-			address(actorId),
-			address(input.token),
-			address(to),
-			i128(toStroops(input.amount)),
-			text(note.value),
-			optionalSymbol(input.category ?? null),
-			bool(input.escrow ?? false),
-		]);
-		if (!result.ok) return result;
-		return ok(await this.created(() => this.requestIds(orgId), before));
-	}
-
-	async requestBatch(orgId: string, actorId: PersonId, input: BatchInput) {
-		const lines = input.lines.map((line) => ({
-			to: ("id" in line.payee ? line.payee.id : line.payee.account).trim(),
-			amount: line.amount,
-			note: line.note.trim(),
-		}));
-		const bad = lines.find(
-			(line) => !StrKey.isValidContract(line.to) && !StrKey.isValidEd25519PublicKey(line.to),
-		);
-		if (bad) return failed(`"${bad.to || "(empty)"}" isn't a Stellar address (G… or C…).`);
-		// Every recipient must be able to take the asset, or the whole batch fails at payout.
-		const checks = await Promise.all(
-			[...new Set(lines.map((line) => line.to))].map((to) =>
-				checkRecipient(this.config, input.token, to).catch(() => null),
-			),
-		);
-		const refused = checks.find((check) => check && !check.ok);
-		if (refused && !refused.ok) return refused;
-		const notes = await Promise.all(
-			[input.note.trim(), ...lines.map((line) => line.note)].map((note) =>
-				this.protectNote(orgId, actorId, note, true),
-			),
-		);
-		const failedNote = notes.find((note) => !note.ok);
-		if (failedNote && !failedNote.ok) return failedNote;
-		const stored = notes.map((note) => (note.ok ? note.value : ""));
-		const before = this.requestIds(orgId);
-		const result = await this.invoke(orgId, "propose_batch", [
-			address(actorId),
-			address(input.token),
-			batchLinesToScVal(lines.map((line, index) => ({ ...line, note: stored[index + 1] ?? "" }))),
-			text(stored[0] ?? ""),
-			optionalSymbol(input.category ?? null),
-		]);
-		if (!result.ok) return result;
-		return ok(await this.created(() => this.requestIds(orgId), before));
-	}
-
-	approve(orgId: string, requestId: string, actorId: PersonId) {
-		return this.invoke(orgId, "approve", [address(actorId), u64(Number(requestId))]);
-	}
-
-	seal(orgId: string, requestId: string, actorId: PersonId) {
-		// Organizations that named an ML-DSA verifier take seals signed by the device key only.
-		if (this.account(orgId)?.org.sealVerifier) {
-			const invoke = (target: string, fn: string, args: xdr.ScVal[]) =>
-				this.invoke(target, fn, args);
-			return sealWithDeviceKey(
-				{ network: this.config, invoke, failed },
-				orgId,
-				Number(requestId),
-				actorId,
-			);
-		}
-		return this.invoke(orgId, "seal", [address(actorId), u64(Number(requestId))]);
-	}
-
-	decline(orgId: string, requestId: string, actorId: PersonId) {
-		return this.invoke(orgId, "decline", [address(actorId), u64(Number(requestId))]);
-	}
-
-	async proposeChange(
-		orgId: string,
-		actorId: PersonId,
-		change: GovernanceChange,
-	): Promise<Result<ChangeOutcome, RuleError>> {
-		const account = this.account(orgId);
-		if (!account) return failed("This organization doesn't exist anymore. Reload the page.");
-		if (change.type === "addMember" && !StrKey.isValidContract(change.personId.trim())) {
-			return failed("Enter the person's ancora ID (their account address, starts with C).");
-		}
-		// Rule and role changes carry the fingerprint of the rules document they leave behind.
-		const policyHash =
-			change.type === "updatePolicy"
-				? await rulesHash(
-						account.org.templateId,
-						account.org.roles,
-						change.policy,
-						account.org.baseCurrency,
-					)
-				: change.type === "setRoles"
-					? await rulesHash(
-							account.org.templateId,
-							change.roles,
-							account.org.policy,
-							account.org.baseCurrency,
-						)
-					: undefined;
-		const encoded = changeToScVal(
-			change.type === "addMember" ? { ...change, personId: change.personId.trim() } : change,
-			policyHash,
-		);
-		if (!encoded) return failed("Switching templates isn't available on Stellar yet.");
-		const direct = account.onchain?.setupPhase && account.org.founderId === actorId;
-		const result = await this.invoke(orgId, direct ? "change_directly" : "propose_change", [
-			address(actorId),
-			encoded,
-		]);
-		return result.ok ? ok(direct ? "applied" : "requested") : result;
-	}
-
-	moveToReserve(orgId: string, actorId: PersonId, token: string, amount: Cents) {
-		return this.invoke(orgId, "move_to_reserve", [
-			address(actorId),
-			address(token),
-			i128(toStroops(amount)),
-		]);
-	}
-
-	withdrawFromReserve(orgId: string, actorId: PersonId, token: string, amount: Cents) {
-		return this.invoke(orgId, "withdraw_from_reserve", [
-			address(actorId),
-			address(token),
-			i128(toStroops(amount)),
-		]);
-	}
-
-	/** Stores the image in ancora's image store, then writes its URL on the organization. */
-	async setLogo(orgId: string, actorId: PersonId, logoDataUrl: string) {
-		const image = await fetch(logoDataUrl).then((r) => r.blob());
-		const uploaded = await this.uploadAvatar(image);
-		if (!uploaded.ok) return uploaded;
-		return this.invoke(orgId, "set_logo", [address(actorId), text(uploaded.value)]);
-	}
-
-	confirmEscrow(orgId: string, requestId: string, actorId: PersonId) {
-		return this.invoke(orgId, "confirm_escrow", [address(actorId), u64(Number(requestId))]);
-	}
-
-	cancelEscrow(orgId: string, requestId: string, actorId: PersonId) {
-		return this.invoke(orgId, "cancel_escrow", [address(actorId), u64(Number(requestId))]);
-	}
-
-	/** Reads one organization's request directly, so a recipient needs no membership. */
-	async escrowOf(orgId: string, requestId: string): Promise<Result<EscrowView, RuleError>> {
-		try {
-			const id = u64(Number(requestId));
-			const [info, native, assets, state] = await Promise.all([
-				readContract(this.config, orgId, "info") as Promise<Record<string, unknown>>,
-				readContract(this.config, orgId, "request", [id]) as Promise<Record<string, unknown>>,
-				readContract(this.config, orgId, "assets") as Promise<Record<string, unknown>[]>,
-				readContract(this.config, orgId, "escrow", [id]) as Promise<Record<string, unknown>>,
-			]);
-			const symbols = new Map(this.availableAssets.map((a) => [a.token, a.symbol]));
-			const mapped = assets.map((a) =>
-				mapAsset(a, (token, onchain) => symbols.get(token) ?? onchain),
-			);
-			const request = mapRequest(native, Date.now(), mapped, state);
-			if (request.kind !== "payment" || !request.escrow) {
-				return failed("This request isn't a held handover. Check the link.");
-			}
-			return ok({ orgName: String(info.name), currency: request.currency, request });
-		} catch (error) {
-			return failed(
-				error instanceof Error
-					? `This handover couldn't be read. ${error.message}`
-					: "This handover couldn't be read.",
-			);
-		}
-	}
-
-	async executeRequest(orgId: string, requestId: string) {
-		const response = await this.post("/api/due", {
-			organization: orgId,
-			requestId: Number(requestId),
-		});
-		if (!response.ok) return response;
-		await this.refresh();
-		return ok(undefined);
-	}
-
-	async setStandingOrder(orgId: string, actorId: PersonId, input: StandingOrderInput) {
-		const note = await this.protectNote(orgId, actorId, input.note.trim(), true);
-		if (!note.ok) return note;
-		const result = await this.invoke(orgId, "set_standing_order", [
-			address(actorId),
-			address(input.token),
-			address(input.to.trim()),
-			i128(toStroops(input.amount)),
-			text(note.value),
-			optionalSymbol(input.category ?? null),
-			u64(input.intervalSeconds),
-			u64(Math.floor(input.firstAt / 1000)),
-		]);
-		return result.ok ? ok(undefined) : result;
-	}
-
-	async savePayee(
-		orgId: string,
-		actorId: PersonId,
-		payee: { account: string; name: string; note: string },
-	) {
-		const to = payee.account.trim();
-		if (!StrKey.isValidContract(to) && !StrKey.isValidEd25519PublicKey(to)) {
-			return failed("Enter a Stellar address (starts with G or C).");
-		}
-		const label = { name: payee.name.trim(), note: payee.note.trim() };
-		const stored = this.privateKeys
-			? await this.privateKeys.protectLabel(orgId, actorId, to, label)
-			: ok(label);
-		if (!stored.ok) return stored;
-		return this.invoke(orgId, "set_payee", [
-			address(actorId),
-			address(to),
-			text(stored.value.name),
-			text(stored.value.note),
-		]);
-	}
-
-	removePayee(orgId: string, actorId: PersonId, account: string) {
-		return this.invoke(orgId, "remove_payee", [address(actorId), address(account)]);
-	}
-
-	async createLink(
-		orgId: string,
-		actorId: PersonId,
-		input: { token: string; amount: Cents; note: string; maxPayments: number },
-	) {
-		const linkIds = () => (this.account(orgId)?.paymentLinks ?? []).map((link) => link.id);
-		const before = linkIds();
-		const result = await this.invoke(orgId, "create_link", [
-			address(actorId),
-			address(input.token),
-			i128(toStroops(input.amount)),
-			text(input.note.trim()),
-			u32(input.maxPayments),
-		]);
-		if (!result.ok) return result;
-		return ok(await this.created(linkIds, before));
-	}
-
-	closeLink(orgId: string, actorId: PersonId, linkId: string) {
-		return this.invoke(orgId, "close_link", [address(actorId), u64(Number(linkId))]);
-	}
-
-	cancelStandingOrder(orgId: string, actorId: PersonId, orderId: string) {
-		return this.invoke(orgId, "cancel_standing_order", [address(actorId), u64(Number(orderId))]);
-	}
-
-	async runStandingOrder(orgId: string, orderId: string) {
-		const response = await this.post("/api/due", {
-			organization: orgId,
-			orderId: Number(orderId),
-		});
-		if (!response.ok) return response;
-		await this.refresh();
-		return ok(undefined);
-	}
-
-	canReceive(token: string, recipient: string) {
-		return checkRecipient(this.config, token, recipient.trim());
-	}
-
-	inspectToken(reference: string) {
-		return inspectToken(this.config, reference);
-	}
-
-	async addTestMoney(orgId: string, _actorId: PersonId, token: string) {
-		const response = await this.post("/api/test-money", { contractId: orgId, token });
-		if (!response.ok) return response;
-		await this.refresh();
-		return ok(undefined);
-	}
-
 	/**
 	 * Reads the discussions of the organizations that have requests (a discussion hangs on one)
 	 * from ancora's server, unless they were read a moment ago.
@@ -1066,15 +741,6 @@ export class TestnetDataSource implements DataSource {
 		this.threads.set(body.org, response.value.entries);
 		this.showThreads();
 		return ok(undefined);
-	}
-
-	private requestIds(orgId: string): string[] {
-		return (this.account(orgId)?.requests ?? []).map((request) => request.id);
-	}
-
-	/** The id of what a command just created; "" when the chain doesn't show it yet. */
-	private created(ids: () => readonly string[], before: readonly string[]): Promise<string> {
-		return createdId(ids, before, () => this.refresh());
 	}
 
 	private account(orgId: string): OrgAccount | undefined {

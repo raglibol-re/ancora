@@ -39,7 +39,7 @@ async function loadTestnet(): Promise<DataSource | null> {
 	if (!testnetConfig) return null;
 	if (!testnet) {
 		const { TestnetDataSource } = await import("../../adapters/testnet/testnetDataSource.ts");
-		testnet = new TestnetDataSource(storage, testnetConfig);
+		testnet = TestnetDataSource.open(storage, testnetConfig);
 	}
 	return testnet;
 }
