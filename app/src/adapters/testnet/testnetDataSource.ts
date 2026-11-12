@@ -237,8 +237,13 @@ export class TestnetDataSource implements DataSource {
 	 * requests opens (`discussions.load`), not with every refresh: they live on ancora's server.
 	 */
 	private readonly threads = new Map<string, { at: number; byRequest: Threads }>();
-	/** Standing orders already tried this visit, so a refused run isn't retried on every refresh. */
-	private readonly attemptedOrders = new Set<string>();
+	/**
+	 * How often each due standing order was tried this visit. A run can fail for a moment (the
+	 * RPC, a page reload in between), so it is tried again with a later refresh, a few times.
+	 */
+	private readonly orderAttempts = new Map<string, number>();
+	/** True while due standing orders are being run, so two refreshes don't run them twice. */
+	private runningOrders = false;
 	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
 	private readonly memo = new Map<string, { at: number; value: Promise<unknown> }>();
 
@@ -540,26 +545,29 @@ export class TestnetDataSource implements DataSource {
 	/**
 	 * Tells the server about each organization once per device, so the scheduler visits
 	 * organizations that predate its index. Best effort and silent: the server also indexes what
-	 * it deploys.
+	 * it deploys. At most one attempt per organization and refresh.
 	 */
 	private async indexOrganizations(orgIds: readonly string[]): Promise<void> {
 		for (const organization of orgIds) {
 			if (this.indexed.has(organization)) continue;
-			this.indexed.add(organization);
-			await fetch("/api/due", {
+			const response = await fetch("/api/due", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ organization }),
 			}).catch(() => null);
+			// Remembered only once the server has it; otherwise the next refresh announces again.
+			if (response?.ok) this.indexed.add(organization);
 		}
 		saveIndexed(this.indexed);
 	}
 
 	/**
 	 * Due standing orders run when the organization is opened (the contract lets anyone run
-	 * them; the operator pays the fee). Each is tried once per visit.
+	 * them; the operator pays the fee). One that fails is tried again with a later refresh, up
+	 * to ORDER_ATTEMPTS times per visit.
 	 */
 	private async runDueOrders(me: string): Promise<void> {
+		if (this.runningOrders) return;
 		const now = Date.now();
 		const due = this.snapshot.accounts.flatMap((account) =>
 			(account.standingOrders ?? [])
@@ -567,26 +575,36 @@ export class TestnetDataSource implements DataSource {
 					(order) =>
 						order.active &&
 						order.nextAt <= now &&
-						!this.attemptedOrders.has(`${account.org.id}:${order.id}`),
+						(this.orderAttempts.get(`${account.org.id}:${order.id}`) ?? 0) < ORDER_ATTEMPTS,
 				)
 				.map((order) => ({ orgId: account.org.id, id: order.id })),
 		);
 		if (due.length === 0 || this.me?.id !== me) return;
-		for (const order of due) {
-			this.attemptedOrders.add(`${order.orgId}:${order.id}`);
-			const result = await this.post("/api/due", {
-				organization: order.orgId,
-				orderId: Number(order.id),
-			});
-			if (!result.ok) {
-				recordError(this.storage, {
-					at: Date.now(),
-					where: "standing order",
-					message: result.error.message,
+		this.runningOrders = true;
+		let ran = false;
+		try {
+			for (const order of due) {
+				const key = `${order.orgId}:${order.id}`;
+				this.orderAttempts.set(key, (this.orderAttempts.get(key) ?? 0) + 1);
+				const result = await this.post("/api/due", {
+					organization: order.orgId,
+					orderId: Number(order.id),
 				});
+				if (result.ok) {
+					ran = true;
+				} else {
+					recordError(this.storage, {
+						at: Date.now(),
+						where: "standing order",
+						message: result.error.message,
+					});
+				}
 			}
+		} finally {
+			this.runningOrders = false;
 		}
-		await this.refresh();
+		// Only a run changes what the chain says; after a failure the next poll tries again.
+		if (ran) await this.refresh();
 	}
 
 	/** The workspace built from what was read, shown now and saved for the next visit. */
@@ -874,6 +892,7 @@ export class TestnetDataSource implements DataSource {
 		if (recipient && !recipient.ok) return recipient;
 		const note = await this.protectNote(orgId, actorId, input.note.trim(), true);
 		if (!note.ok) return note;
+		const before = this.requestIds(orgId);
 		const result = await this.invoke(orgId, "propose_payment", [
 			address(actorId),
 			address(input.token),
@@ -884,8 +903,7 @@ export class TestnetDataSource implements DataSource {
 			bool(input.escrow ?? false),
 		]);
 		if (!result.ok) return result;
-		const latest = this.account(orgId)?.requests[0];
-		return ok(latest?.id ?? "");
+		return ok(await this.created(() => this.requestIds(orgId), before));
 	}
 
 	async requestBatch(orgId: string, actorId: PersonId, input: BatchInput) {
@@ -914,6 +932,7 @@ export class TestnetDataSource implements DataSource {
 		const failedNote = notes.find((note) => !note.ok);
 		if (failedNote && !failedNote.ok) return failedNote;
 		const stored = notes.map((note) => (note.ok ? note.value : ""));
+		const before = this.requestIds(orgId);
 		const result = await this.invoke(orgId, "propose_batch", [
 			address(actorId),
 			address(input.token),
@@ -922,7 +941,7 @@ export class TestnetDataSource implements DataSource {
 			optionalSymbol(input.category ?? null),
 		]);
 		if (!result.ok) return result;
-		return ok(this.account(orgId)?.requests[0]?.id ?? "");
+		return ok(await this.created(() => this.requestIds(orgId), before));
 	}
 
 	approve(orgId: string, requestId: string, actorId: PersonId) {
@@ -1105,6 +1124,8 @@ export class TestnetDataSource implements DataSource {
 		actorId: PersonId,
 		input: { token: string; amount: Cents; note: string; maxPayments: number },
 	) {
+		const linkIds = () => (this.account(orgId)?.paymentLinks ?? []).map((link) => link.id);
+		const before = linkIds();
 		const result = await this.invoke(orgId, "create_link", [
 			address(actorId),
 			address(input.token),
@@ -1113,7 +1134,7 @@ export class TestnetDataSource implements DataSource {
 			u32(input.maxPayments),
 		]);
 		if (!result.ok) return result;
-		return ok(this.account(orgId)?.paymentLinks?.[0]?.id ?? "");
+		return ok(await this.created(linkIds, before));
 	}
 
 	closeLink(orgId: string, actorId: PersonId, linkId: string) {
@@ -1215,6 +1236,27 @@ export class TestnetDataSource implements DataSource {
 		this.threads.set(body.org, { at: Date.now(), byRequest: byRequest(response.value.entries) });
 		this.showThreads();
 		return ok(undefined);
+	}
+
+	private requestIds(orgId: string): string[] {
+		return (this.account(orgId)?.requests ?? []).map((request) => request.id);
+	}
+
+	/**
+	 * The id of what a command just created (a request, a payment link): the one that wasn't
+	 * there before. The read right after a transaction can come from an RPC node that hasn't
+	 * seen its ledger yet, so the chain is read again for a few seconds; "" when it still isn't
+	 * there, and the screen then opens the list instead of the new item.
+	 */
+	private async created(ids: () => readonly string[], before: readonly string[]): Promise<string> {
+		const known = new Set(before);
+		for (let read = 0; ; read++) {
+			const id = ids().find((candidate) => !known.has(candidate));
+			if (id !== undefined) return id;
+			if (read === CREATED_READS) return "";
+			await new Promise((resolve) => setTimeout(resolve, CREATED_WAIT_MS));
+			await this.refresh();
+		}
 	}
 
 	private account(orgId: string): OrgAccount | undefined {
@@ -1346,6 +1388,13 @@ const SIGNING = "Sending to Stellar… confirm with your passkey if asked.";
 const OFF_CHAIN_ROUTES = new Set(["/api/discussions", "/api/registry-name"]);
 
 type Threads = Readonly<Record<string, readonly DiscussionEntry[]>>;
+
+/** How often, and how far apart, the chain is read again for something just created. */
+const CREATED_READS = 6;
+const CREATED_WAIT_MS = 1_500;
+
+/** A due standing order is tried this often per visit: a refusal by the rules doesn't change. */
+const ORDER_ATTEMPTS = 3;
 
 /** Discussions read this recently aren't read again when another screen opens. */
 const DISCUSSIONS_FRESH_MS = 30_000;
