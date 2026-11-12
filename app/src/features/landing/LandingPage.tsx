@@ -76,12 +76,12 @@ export function LandingPage() {
 					</nav>
 					<div className={styles.navActions}>
 						<div className={styles.language}>
-							<LanguageSwitch />
+							<LanguageSwitch compact />
 						</div>
 						<Link to="/app" className={[styles.pillOutline, styles.navSignIn].join(" ")}>
 							{t("Sign in")}
 						</Link>
-						<Link to="/app" className={styles.pillSolid}>
+						<Link to="/app" className={[styles.pillSolid, styles.navStart].join(" ")}>
 							{t("Get started")}
 						</Link>
 					</div>
