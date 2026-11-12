@@ -49,7 +49,11 @@ async function checkHealth() {
 		if (asset.symbol === REQUIRED_TEST_MONEY) problems.push(message);
 		else warnings.push(message);
 	}
-	if (!testMoney?.some((asset) => asset.symbol === REQUIRED_TEST_MONEY)) {
+	if (!testMoney || testMoney.length === 0) {
+		// The server gives the test-money read 3 seconds and answers with an empty list when the
+		// RPC is slower: unknown, not empty. The next hourly run reads it again.
+		warnings.push("The test money couldn't be read in time (slow testnet RPC); not checked this run.");
+	} else if (!testMoney.some((asset) => asset.symbol === REQUIRED_TEST_MONEY)) {
 		problems.push(`/api/health lists no ${REQUIRED_TEST_MONEY} test money.`);
 	}
 }

@@ -22,8 +22,15 @@ function orgParam(value: unknown): string {
 
 const read = apiHandler("GET", async (request) => {
 	const org = orgParam(new URL(request.url).searchParams.get("org"));
-	const [row] = await sql()`select name from registry_names where org = ${org}`;
-	return { name: row ? String(row.name) : null };
+	try {
+		const [row] = await sql()`select name from registry_names where org = ${org}`;
+		return { name: row ? String(row.name) : null };
+	} catch (error) {
+		// The name is an extra on the organization's page: when the database doesn't answer, the
+		// page shows none (the app can't verify one it doesn't get) instead of an error.
+		console.error(`[registry name] ${error instanceof Error ? error.message : String(error)}`);
+		return { name: null };
+	}
 });
 
 const write = apiHandler("POST", async (request) => {
