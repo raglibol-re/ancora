@@ -1,4 +1,3 @@
-import type { xdr } from "@stellar/stellar-sdk";
 import {
 	type OrgAccount,
 	type Person,
@@ -17,13 +16,11 @@ import type {
 	LifelineSupport,
 	PotSupport,
 	PrivacySupport,
-	ProfileInput,
 	RampSupport,
 	RegistryNameSupport,
 	ReleaseSupport,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
-import { withWork } from "../../domain/pendingWork.ts";
 import {
 	type PayeeLabel,
 	PRIVATE_PAYEE_NAME,
@@ -42,13 +39,9 @@ import { createDeviceKeySupport } from "./deviceKeySupport.ts";
 import { DiscussionThreads } from "./discussionThreads.ts";
 import { DueOrderRuns } from "./dueOrderRuns.ts";
 import { type HistoryCache, historyCache } from "./historyCache.ts";
-import { uploadImage } from "./imageUpload.ts";
+import { createIdentitySupport } from "./identitySupport.ts";
 import { createLifelineSupport } from "./lifelineSupport.ts";
-import {
-	CONTRACT_ERROR_MESSAGES,
-	mapOrganization,
-	type OnchainSnapshot,
-} from "./mapOrganization.ts";
+import { mapOrganization, type OnchainSnapshot } from "./mapOrganization.ts";
 import { createOrganizationCommands } from "./organizationCommands.ts";
 import {
 	type Profile,
@@ -57,9 +50,7 @@ import {
 	readProfiles,
 } from "./organizationContract.ts";
 import { backfillTransfers, merge } from "./orgHistory.ts";
-import { passkeyKeys } from "./passkeyKeys.ts";
-import { describeKitError, passkeyKit } from "./passkeyKit.ts";
-import { passkeyUserName } from "./passkeyUserName.ts";
+import { PasskeySession } from "./passkeySession.ts";
 import { createPotSupport } from "./pot/potSupport.ts";
 import { createPrivateKeys, type PrivateKeys } from "./privacySupport.ts";
 import { decryptNote } from "./privateCrypto.ts";
@@ -67,20 +58,17 @@ import { labelsFor } from "./privateLabels.ts";
 import { createRegistryNameSupport, createReleaseSupport } from "./registrySupport.ts";
 import { createRequestCommands } from "./requestCommands.ts";
 import { SchedulerAnnouncements } from "./schedulerAnnouncements.ts";
-import { address, text } from "./scv.ts";
+import { postToServer } from "./serverRoutes.ts";
 import { clearCachedSession, loadCachedSession, saveCachedSession } from "./sessionCache.ts";
+import { SharedReads } from "./sharedReads.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
 import { createFundingSupport, createRampSupport } from "./walletSupport.ts";
 
 const EMPTY: Workspace = { people: [], accounts: [] };
-const MAX_NAME_BYTES = 64;
-const MAX_AVATAR_BYTES = 256;
 /** A session restore slower than this stops blocking the screen; a cached pass stays signed in. */
 const RESTORE_TIMEOUT_MS = 8_000;
 
 const failed = (message: string) => err(ruleError("not-allowed", message));
-const byteLength = (value: string) => new TextEncoder().encode(value).length;
-
 /**
  * Real on Stellar testnet. A person is their passkey-secured smart account; an organization is
  * an `ancora_organization` contract that holds the money, knows its members by address and
@@ -141,19 +129,16 @@ export class TestnetDataSource {
 	private restoringSession = true;
 	private syncingChain = false;
 	private profiles = new Map<string, Profile | null>();
-	/**
-	 * The passkey kit's reconnect started when the page loads. The app shows the cached session
-	 * at once, so a signed action can come before the kit is ready; it waits for this instead.
-	 */
-	private connecting: Promise<unknown> = Promise.resolve();
+	/** The passkey kit's connection and the calls signed through the person's account. */
+	private readonly session: PasskeySession;
 	/** Organizations this device already announced to the scheduler's index. */
 	private readonly announcements: SchedulerAnnouncements;
 	/** Discussion threads read so far; screens that show requests ask for them. */
 	private readonly threads = new DiscussionThreads();
 	/** Due standing orders tried this visit. */
 	private readonly orderRuns = new DueOrderRuns();
-	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
-	private readonly memo = new Map<string, { at: number; value: Promise<unknown> }>();
+	/** Reads several screens ask for at once (Lifeline, passkeys). */
+	private readonly reads = new SharedReads();
 
 	/** The data source the app uses: the session together with its organizations' commands. */
 	static open(storage: KeyValueStorage | null, config: TestnetConfig): DataSource {
@@ -163,8 +148,8 @@ export class TestnetDataSource {
 			availableAssets: source.availableAssets,
 			me: () => source.me?.id ?? null,
 			account: (orgId) => source.account(orgId),
-			invoke: (target, fn, args) => source.invoke(target, fn, args),
-			post: (path, body) => source.post(path, body),
+			invoke: source.session.invoke,
+			post: postToServer,
 			refresh: () => source.refresh(),
 			protectNote: (orgId, actorId, note, onChain) =>
 				source.protectNote(orgId, actorId, note, onChain),
@@ -191,6 +176,7 @@ export class TestnetDataSource {
 
 	private constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
 		this.storage = storage;
+		this.session = new PasskeySession(config, () => this.refresh());
 		this.announcements = new SchedulerAnnouncements(storage);
 		this.history = historyCache(storage);
 		this.config = config;
@@ -212,8 +198,7 @@ export class TestnetDataSource {
 			this.profiles = new Map(cached.profiles);
 			this.restoringSession = false;
 		}
-		const invoke: TestnetDataSource["invoke"] = (target, fn, args, describeContractError) =>
-			this.invoke(target, fn, args, describeContractError);
+		const invoke = this.session.invoke;
 		const refresh = () => this.refresh();
 		this.funding = createFundingSupport(config, refresh);
 		this.ramps = createRampSupport(config);
@@ -223,7 +208,7 @@ export class TestnetDataSource {
 					network: config,
 					registry,
 					invoke,
-					post: (path, body) => this.post(path, body),
+					post: postToServer,
 					failed,
 				})
 			: null;
@@ -231,13 +216,11 @@ export class TestnetDataSource {
 		this.lifeline = createLifelineSupport({
 			config,
 			invoke,
-			post: (path, body) => this.post(path, body),
+			post: postToServer,
 			failed,
 			refresh,
-			remember: (key, ttlMs, load) => this.remember(key, ttlMs, load),
-			forget: (prefix) => {
-				for (const key of this.memo.keys()) if (key.startsWith(prefix)) this.memo.delete(key);
-			},
+			remember: (key, ttlMs, load) => this.reads.remember(key, ttlMs, load),
+			forget: (prefix) => this.reads.forget(prefix),
 		});
 		this.deviceKeys = createDeviceKeySupport({
 			restore: {
@@ -248,7 +231,7 @@ export class TestnetDataSource {
 					this.snapshot.accounts
 						.filter((a) => a.org.members.some((m) => m.personId === person))
 						.map((a) => a.org.id),
-				passkeyKeys: this.passkeyKeys,
+				passkeyKeys: this.session.deviceKeys,
 			},
 			failed,
 			refresh,
@@ -258,12 +241,12 @@ export class TestnetDataSource {
 			? createPrivateKeys({
 					network: config,
 					keyring: config.keyringContract,
-					invoke: (target, fn, args) => this.invoke(target, fn, args),
+					invoke,
 					failed,
 					refresh: () => this.refresh(),
 					members: (orgId) => this.account(orgId)?.org.members.map((m) => m.personId) ?? [],
 					readAccount: (orgId) => this.readAccount(orgId),
-					passkeyKeys: this.passkeyKeys,
+					passkeyKeys: this.session.deviceKeys,
 				})
 			: null;
 		this.privacy = this.privateKeys?.support ?? null;
@@ -280,7 +263,7 @@ export class TestnetDataSource {
 						reads: this.privateKeys.reads,
 						account: (orgId) => this.account(orgId),
 						keyring: config.keyringContract,
-						invoke: (target, fn, args) => this.invoke(target, fn, args),
+						invoke,
 						failed,
 						refresh: () => this.refresh(),
 					})
@@ -288,16 +271,16 @@ export class TestnetDataSource {
 		this.continuity = createContinuitySupport({
 			network: config,
 			verifier: config.sealVerifier,
-			invoke: (target, fn, args) => this.invoke(target, fn, args),
+			invoke,
 			failed,
 			refresh: () => this.refresh(),
-			passkeyKeys: this.passkeyKeys,
+			passkeyKeys: this.session.deviceKeys,
 		});
 		this.deals = config.dealContract
 			? createDealSupport({
 					network: config,
 					contract: config.dealContract,
-					invoke: (target, fn, args) => this.invoke(target, fn, args),
+					invoke,
 					direct: (orgId, actorId) => {
 						const account = this.account(orgId);
 						return account?.onchain?.setupPhase === true && account.org.founderId === actorId;
@@ -306,18 +289,24 @@ export class TestnetDataSource {
 					refresh: () => this.refresh(),
 				})
 			: null;
-		this.identity = {
+		this.identity = createIdentitySupport({
+			registry: config.registryContract,
+			session: this.session,
+			reads: this.reads,
 			restoring: () => this.restoringSession,
 			syncing: () => this.syncingChain,
 			current: () => this.me,
-			createIdentity: (name) => this.createIdentity(name),
-			signIn: () => this.signIn(),
-			signOut: () => this.signOut(),
-			saveProfile: (profile) => this.saveProfile(profile),
-			uploadAvatar: uploadImage,
-			passkeyCount: () => this.passkeyCount(),
-			addPasskey: (label) => this.addPasskey(label),
-		};
+			become: (id) => this.becomeIdentity(id),
+			show: (identity) => {
+				this.me = identity;
+				this.notify();
+			},
+			leave: () => {
+				this.forget();
+				this.notify();
+			},
+			failed,
+		});
 		void this.restore();
 	}
 
@@ -328,20 +317,6 @@ export class TestnetDataSource {
 
 	getSnapshot = () => this.snapshot;
 
-	/** This pass's device keys derived from its passkey (PRF), or null when it can't. */
-	/**
-	 * Waits for the kit's reconnect first: without its credential id the browser is asked for any
-	 * passkey of the site, which can be the wrong one, or none that answers.
-	 */
-	private readonly passkeyKeys = async () => {
-		await this.ensureConnected();
-		return passkeyKeys(this.kit.credentialId);
-	};
-
-	private get kit() {
-		return passkeyKit(this.config);
-	}
-
 	private notify() {
 		for (const listener of this.listeners) listener();
 	}
@@ -350,8 +325,7 @@ export class TestnetDataSource {
 		const cachedId = this.me?.id ?? null;
 		try {
 			// The passkey session check and the chain reads don't depend on each other.
-			const connection = this.kit.connectWallet();
-			this.connecting = connection.catch(() => null);
+			const connection = this.session.reconnect();
 			const [outcome] = await Promise.all([
 				Promise.race([
 					connection.then((session) => ({ session })),
@@ -392,17 +366,8 @@ export class TestnetDataSource {
 		this.me = null;
 		this.snapshot = EMPTY;
 		this.profiles = new Map();
-		this.memo.clear();
+		this.reads.clear();
 		clearCachedSession(this.storage);
-	}
-
-	/** Reuses an in-flight or recent read for `ttlMs`, so parallel screens cost one request. */
-	private remember<T>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
-		const hit = this.memo.get(key);
-		if (hit && Date.now() - hit.at < ttlMs) return hit.value as Promise<T>;
-		const value = load();
-		this.memo.set(key, { at: Date.now(), value });
-		return value;
 	}
 
 	private async becomeIdentity(id: string) {
@@ -464,7 +429,7 @@ export class TestnetDataSource {
 		const ran = await this.orderRuns.run(
 			due,
 			async (order) => {
-				const result = await this.post("/api/due", {
+				const result = await postToServer("/api/due", {
 					organization: order.orgId,
 					orderId: Number(order.id),
 				});
@@ -622,86 +587,6 @@ export class TestnetDataSource {
 			: Promise.resolve(ok(text));
 	}
 
-	private async createIdentity(name: string): Promise<Result<Identity, RuleError>> {
-		const trimmed = name.trim();
-		if (!trimmed || byteLength(trimmed) > MAX_NAME_BYTES) {
-			return failed("Enter a name of up to 64 characters.");
-		}
-		try {
-			const wallet = await withWork(
-				"Creating your pass on Stellar… confirm with your passkey.",
-				() => this.kit.createWallet("ancora", passkeyUserName(trimmed), { autoSubmit: true }),
-			);
-			if (wallet.submitResult && !wallet.submitResult.success) {
-				return failed(
-					`Your account couldn't be created on Stellar: ${wallet.submitResult.error.message}`,
-				);
-			}
-			// The sign-in screen stays until the name is on-chain too: showing the app earlier let
-			// people leave while the name was still being written, and it was lost.
-			const named = await this.invoke(this.config.registryContract, "set_profile", [
-				address(wallet.contractId),
-				text(trimmed),
-				text(""),
-			]);
-			await this.becomeIdentity(wallet.contractId);
-			if (!named.ok) {
-				// The account exists either way; the name can be set again on the pass page.
-				return failed(
-					`Your pass was created, but your name couldn't be saved: ${named.error.message} Add it on your pass page.`,
-				);
-			}
-			return ok(this.me ?? { id: wallet.contractId, name: trimmed, avatarUrl: null });
-		} catch (error) {
-			return failed(describeKitError(error, "created"));
-		}
-	}
-
-	private async signIn(): Promise<Result<Identity, RuleError>> {
-		try {
-			const session = await withWork("Waiting for your passkey…", () =>
-				this.kit.connectWallet({ fresh: true }),
-			);
-			if (!session) return failed("No passkey was chosen.");
-			await this.becomeIdentity(session.contractId);
-			return this.me ? ok(this.me) : failed("Signing in didn't complete. Try again.");
-		} catch (error) {
-			return failed(describeKitError(error, "signed in"));
-		}
-	}
-
-	private async signOut(): Promise<void> {
-		await this.kit.disconnect();
-		this.forget();
-		this.notify();
-	}
-
-	private async saveProfile(profile: ProfileInput): Promise<Result<void, RuleError>> {
-		const name = profile.name.trim();
-		const avatarUrl = profile.avatarUrl?.trim() || null;
-		if (!this.me) return failed("Sign in first.");
-		if (!name || byteLength(name) > MAX_NAME_BYTES) {
-			return failed("Enter a name of up to 64 characters.");
-		}
-		if (
-			avatarUrl &&
-			(!avatarUrl.startsWith("https://") || byteLength(avatarUrl) > MAX_AVATAR_BYTES)
-		) {
-			return failed("The picture link isn't valid. Upload the picture again.");
-		}
-		const me = this.me.id;
-		const result = await this.invoke(this.config.registryContract, "set_profile", [
-			address(me),
-			text(name),
-			text(avatarUrl ?? ""),
-		]);
-		if (result.ok) {
-			this.me = { id: me, name, avatarUrl };
-			this.notify();
-		}
-		return result;
-	}
-
 	/**
 	 * Reads the discussions of the organizations that have requests (a discussion hangs on one)
 	 * from ancora's server, unless they were read a moment ago.
@@ -736,7 +621,7 @@ export class TestnetDataSource {
 	private async discuss(
 		body: Record<string, unknown> & { org: string },
 	): Promise<Result<void, RuleError>> {
-		const response = await this.post<{ entries: DiscussionEntry[] }>("/api/discussions", body);
+		const response = await postToServer<{ entries: DiscussionEntry[] }>("/api/discussions", body);
 		if (!response.ok) return response;
 		this.threads.set(body.org, response.value.entries);
 		this.showThreads();
@@ -746,113 +631,4 @@ export class TestnetDataSource {
 	private account(orgId: string): OrgAccount | undefined {
 		return this.snapshot.accounts.find((a) => a.org.id === orgId);
 	}
-
-	/** The kit creates one everyday rule per account; its External signers are the passkeys. */
-	private async everydayRule() {
-		const rules = await this.kit.rules.list();
-		const rule = rules[0];
-		if (!rule) throw new Error("Your account has no signing rule.");
-		return rule;
-	}
-
-	private passkeyCount(): Promise<Result<number, RuleError>> {
-		return this.remember("passkeys", 60_000, async () => {
-			try {
-				const rule = await this.everydayRule();
-				return ok(rule.signers.filter((signer) => signer.tag === "External").length);
-			} catch (error) {
-				return failed(describeKitError(error, "read"));
-			}
-		});
-	}
-
-	private async addPasskey(label: string): Promise<Result<void, RuleError>> {
-		try {
-			const rule = await this.everydayRule();
-			const { transaction } = await this.kit.signers.addPasskey(
-				rule.id,
-				"ancora",
-				passkeyUserName(label),
-				{ nickname: label },
-			);
-			if (!(await this.ensureConnected())) return failed(SESSION_ENDED);
-			const result = await withWork(SIGNING, () => this.kit.signAndSubmitAdmin(transaction));
-			if (!result.success) return failed(describeKitError(result.error, "added"));
-			this.memo.delete("passkeys");
-			return ok(undefined);
-		} catch (error) {
-			return failed(describeKitError(error, "added"));
-		}
-	}
-
-	/** Calls a contract through the person's account (passkey-signed, fee-sponsored). */
-	private async invoke(
-		target: string,
-		fn: string,
-		args: xdr.ScVal[],
-		describeContractError: (message: string) => string = contractMessage,
-	): Promise<Result<void, RuleError>> {
-		if (!(await this.ensureConnected())) return failed(SESSION_ENDED);
-		try {
-			const result = await withWork(SIGNING, () => this.kit.executeAndSubmit(target, fn, args));
-			if (!result.success) return failed(describeContractError(result.error.message));
-		} catch (error) {
-			return failed(describeKitError(error, "done"));
-		}
-		await this.refresh();
-		return ok(undefined);
-	}
-
-	/** Waits for the kit's reconnect after a page load; tries once more if it didn't connect. */
-	private async ensureConnected(): Promise<boolean> {
-		if (this.kit.isConnected) return true;
-		await withWork("Reconnecting your passkey…", async () => {
-			await this.connecting;
-			if (!this.kit.isConnected) await this.kit.connectWallet().catch(() => null);
-		});
-		return this.kit.isConnected;
-	}
-
-	/**
-	 * Calls one of ancora's own routes. Most of them submit a transaction for the organization
-	 * (creation, due requests, standing orders, test money, recovery), so the working bar shows
-	 * "Sending to Stellar"; the off-chain stores (discussions, registry names) only say "Saving".
-	 */
-	private async post<T = unknown>(
-		path: string,
-		body: Record<string, unknown>,
-	): Promise<Result<T, RuleError>> {
-		const label = OFF_CHAIN_ROUTES.has(path) ? "Saving…" : "Sending to Stellar…";
-		const response = await withWork(label, () =>
-			fetch(path, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(body),
-			}).catch(() => null),
-		);
-		const payload = (await response?.json().catch(() => null)) as {
-			success?: boolean;
-			data?: T;
-			error?: string;
-		} | null;
-		if (!payload?.success || payload.data === undefined) {
-			return failed(
-				payload?.error ?? "ancora's server is unreachable right now. Try again shortly.",
-			);
-		}
-		return ok(payload.data);
-	}
-}
-
-const SESSION_ENDED =
-	"Your passkey session on this device has ended, so nothing was done. Sign out and sign in again with your passkey.";
-
-/** Shown on the working bar while the passkey signs and the transaction travels to Stellar. */
-const SIGNING = "Sending to Stellar… confirm with your passkey if asked.";
-const OFF_CHAIN_ROUTES = new Set(["/api/discussions", "/api/registry-name"]);
-
-/** Turns the kit's "Error(Contract, #6)" into the organization contract's plain-language text. */
-function contractMessage(message: string): string {
-	const code = /Error\(Contract, #(\d+)\)/.exec(message)?.[1];
-	return (code && CONTRACT_ERROR_MESSAGES[Number(code)]) || `Nothing was changed: ${message}`;
 }

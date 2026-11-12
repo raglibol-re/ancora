@@ -10,7 +10,7 @@ import { type Network, readContract } from "./readContract.ts";
 import { address, u32, u64 } from "./scv.ts";
 
 // Reads of ancora's recovery contract (contracts/recovery) and the arguments of its commands.
-// Commands themselves go through the person's account (see TestnetDataSource.invoke).
+// Commands themselves go through the person's account (see PasskeySession.invoke).
 
 type Native = Record<string, unknown>;
 
