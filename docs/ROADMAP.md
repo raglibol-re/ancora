@@ -79,7 +79,7 @@ Approvers decide better when the reasons are visible next to the request.
 - **Who:** members of the organization only. Posting doesn't count as approving, so four-eyes and the approval rules stay untouched.
 - **UI:** discussion section on the request page; summary on request cards and in the inbox ("2 pro · 1 contra · 1 open question"); notice when someone replies to your request.
 - **Storage:** the text is off-chain (not money, should stay private to the org). It goes behind the `DataSource` interface: sample adapter first, then a minimal Vercel-integrated store justified in DECISIONS.md. Optionally each approval records the hash of the discussion it was given on, so later readers can prove what an approver saw.
-- **Later:** attachments (receipts, quotes) via Vercel Blob, @mentions, a requester-written decision summary.
+- **Later:** attachments (receipts, quotes), @mentions, a requester-written decision summary.
 
 ### Task 17 as built: Lifeline hands positions to a new pass
 
@@ -144,8 +144,8 @@ Weeks count from the award; the budget per milestone is set by the team in the a
 
 | Deliverable | Done when |
 |---|---|
-| External security review of the organization, registry, recovery, deal, keyring and pot contracts and of the pot's browser client, plus a threat model for the relayer, the wallet index and the Blob stores | Report published in `docs/`, every finding fixed or answered |
-| Mainnet profile: network settings per environment, operator key in a KMS, fee budget with alerts, backups of the Blob data | Mainnet deployment of the contracts from attested releases |
+| External security review of the organization, registry, recovery, deal, keyring and pot contracts and of the pot's browser client, plus a threat model for the relayer, the wallet index and the off-chain database | Report published in `docs/`, every finding fixed or answered |
+| Mainnet profile: network settings per environment, operator key in a KMS, fee budget with alerts, backups of the off-chain database | Mainnet deployment of the contracts from attested releases |
 | Licensed ramp partner (EUR IBAN/SEPA) in production mode, MoneyGram Access for cash as a second SEP-24 home domain in `anchorRamp.ts`; terms, privacy and the "not a bank" wording reviewed | A pilot organization moves euros in and out through the partner |
 | Pilot organizations (clubs, NGOs, small companies) on mainnet | Pilots run their real payments under their own rules; feedback folded into the roadmap |
 
@@ -156,8 +156,8 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 ### A. Trust and safety, before any mainnet
 
 1. **End-to-end tests with a virtual passkey.** Started 28 Oct: `app/e2e` drives production nightly (create a pass, sign out and in, found an organization, take test money, pay); its first runs found two bugs and a broken deploy. Since 1 Nov a second run has two passes on two devices: a payment waits for the board member's approval and goes out on it. Next: standing orders, Reserve, secure handover, Lifeline. Playwright with Chromium's WebAuthn virtual authenticator can create a pass, an organization, a payment, an approval, a standing order and a Lifeline claim against the testnet, nightly in CI. This is the single biggest quality lever.
-2. **External security review** of the organization, registry and recovery contracts, plus a threat model for the relayer (fee sponsorship), the wallet index and the Blob stores.
-3. **Mainnet profile.** Channel accounts for server transactions: done 1 Nov (eight channels derived from the operator key, the operator pays through fee bumps; three at once land in the same ledger, about 6 seconds, where four took about 35). Also network settings per environment, the operator key in a KMS rather than a Vercel secret, a fee budget with alerts, rate limits on every function, backups of the Blob data (discussions, registry names, organization index), an upgrade path for organizations (done 1 Nov for organizations created from then on: a governed move to the latest `ancora-organization` release; still open: storage migrations between releases).
+2. **External security review** of the organization, registry and recovery contracts, plus a threat model for the relayer (fee sponsorship), the wallet index and the off-chain database.
+3. **Mainnet profile.** Channel accounts for server transactions: done 1 Nov (eight channels derived from the operator key, the operator pays through fee bumps; three at once land in the same ledger, about 6 seconds, where four took about 35). Also network settings per environment, the operator key in a KMS rather than a Vercel secret, a fee budget with alerts, rate limits on every function, backups of the off-chain database (discussions, registry names, organization index), an upgrade path for organizations (done 1 Nov for organizations created from then on: a governed move to the latest `ancora-organization` release; still open: storage migrations between releases).
 4. **Monitoring.** Error tracking for app and functions, an uptime check on `/api/health`, alerts when the operator's XLM or stablecoin floats run low. Today: recent errors per browser, the admin health panel, and since 1 Nov an hourly live check in GitHub Actions (`scripts/check-live.mjs`: app and `/api/health` up, testnet RPC answering, BlendUSDC test money available, operator XLM above 3,000) that emails the team when it fails. Still open: error tracking for app and functions.
 5. **Legal and partners.** KYB and fiat through a licensed partner (euro SEPA anchor, MoneyGram Access for cash), terms and privacy, the "not a bank" wording reviewed per jurisdiction.
 
@@ -165,7 +165,7 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 6. **Notifications.** Web push done 28 Oct: approval needed, request done/approved/declined, Lifeline claim started. Next: money received (needs ledger events, not the relayer), standing order refused, email through a partner.
 7. **Address book.** Done 28 Oct: saved recipients on the organization contract with name, note, who saved them and last payment; save while paying. Next: recipient allowlists built on it (C14).
-8. **Statements and search.** Done 28 Oct: Activity page with search and filters, monthly statement (print/PDF) and CSV. Next: receipts and attachments per payment (Blob, hash on the request), opening balances once full history is indexed.
+8. **Statements and search.** Done 28 Oct: Activity page with search and filters, monthly statement (print/PDF) and CSV. Next: receipts and attachments per payment (off-chain store, hash on the request), opening balances once full history is indexed.
 9. **Batch payments.** Done 28 Oct: up to 50 lines in one asset, approved once on the total, paid atomically. CSV import of lines done 1 Nov (comma, semicolon or tab, decimal commas, header optional, saved names resolved). Next: reimbursement claims by members.
 10. **Payment requests and links.** Done 28 Oct: invoices and fees as links or QR codes, paid from any Stellar wallet, payers recorded on-chain. Next: reminders, card and bank payment through a ramp partner, a notification when a link is paid.
 11. **Sub-accounts.** Pots per project or team with their own budgets and views.
@@ -185,13 +185,14 @@ Measured against Revolut Business for everyday banking, Squads (Solana) and Safe
 
 Milestone escrow (`contracts/deal`, no admin): create, accept, fund, request a payout, approve or object, automatic payout after the objection period, cancel (both sides once funded), dispute and arbiter ruling. Each organization takes every step through its own rules (`DealCall` requests). Next: counterparties by ancora name, netting, delivery versus payment, shared pots (see contracts/deal/README.md).
 
-### Blob usage
+### Off-chain records
 
-The Vercel Blob store went over the Hobby quota in early November and was blocked. Done 12 Nov: discussions are one file per organization and load only where requests are shown; the site-wide default is an env var (see DECISIONS, 2026-11-12). Still open:
+The Vercel Blob store went over the Hobby quota in early November and was blocked. Done 12 Nov: discussions load only where requests are shown, the site-wide default is an env var, and every off-chain record moved to a Neon Postgres database (see DECISIONS, 2026-11-12). Still open:
 
-- the scheduler's organization list from the on-chain registry instead of one Blob marker per organization, and dropping the Blob copy of registry names (the registry is the source);
-- registry names and the organization index answer "unknown" instead of an error when Blob can't be read;
-- remove the reader for the old per-entry discussion layout (`readLegacyThreads` in `app/api/_lib/discussionStore.ts`) once no organization relies on it.
+- what was in Blob before 12 Nov was not carried over, because the store couldn't be read: discussions, recorded registry names and push subscriptions start empty (testnet preview data); pictures uploaded before keep their Blob URLs on-chain and show initials while that store is blocked;
+- the scheduler's organization list and the registry names from the on-chain registry instead of a table (the registry is the source);
+- registry names and the organization index answer "unknown" instead of an error when the database can't be reached;
+- database backups and a restore drill before mainnet (Neon keeps six hours of history on the free plan).
 
 ### D. Platform
 

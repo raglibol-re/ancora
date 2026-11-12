@@ -1,19 +1,17 @@
 import { StrKey } from "@stellar/stellar-sdk";
-import { get, put } from "@vercel/blob";
 import { isOrganization, readView } from "./_lib/contracts.js";
+import { sql } from "./_lib/database.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { serverConfig } from "./_lib/serverConfig.js";
 
 // The name an organization registered for its treasury on the Stellar Registry. The registry
 // resolves a name to a contract, not the other way round, so ancora remembers the name per
-// organization (`registry-names/<org>.json` in Vercel Blob) and the app verifies it against the
-// registry on every read. Only members may record it; the registration itself is on-chain.
+// organization (table `registry_names`) and the app verifies it against the registry on every
+// read. Only members may record it; the registration itself is on-chain.
 
 const NAME = /^[a-z0-9][a-z0-9-]{1,31}$/;
 
 export const config = { maxDuration: 30 };
-
-const pathOf = (org: string) => `registry-names/${org}.json`;
 
 function orgParam(value: unknown): string {
 	if (typeof value !== "string" || !StrKey.isValidContract(value)) {
@@ -24,10 +22,8 @@ function orgParam(value: unknown): string {
 
 const read = apiHandler("GET", async (request) => {
 	const org = orgParam(new URL(request.url).searchParams.get("org"));
-	const result = await get(pathOf(org), { access: "public", useCache: false });
-	if (result?.statusCode !== 200) return { name: null };
-	const parsed = JSON.parse(await new Response(result.stream).text()) as { name?: unknown };
-	return { name: typeof parsed.name === "string" ? parsed.name : null };
+	const [row] = await sql()`select name from registry_names where org = ${org}`;
+	return { name: row ? String(row.name) : null };
 });
 
 const write = apiHandler("POST", async (request) => {
@@ -49,13 +45,10 @@ const write = apiHandler("POST", async (request) => {
 	if (!members.some((m) => String(m.address) === person)) {
 		throw new RequestError("Only members of the organization record its registry name.", 403);
 	}
-	await put(pathOf(org), JSON.stringify({ name, by: person, at: Date.now() }), {
-		access: "public",
-		addRandomSuffix: false,
-		allowOverwrite: true,
-		cacheControlMaxAge: 0,
-		contentType: "application/json",
-	});
+	await sql()`
+		insert into registry_names (org, name, recorded_by) values (${org}, ${name}, ${person})
+		on conflict (org) do update
+			set name = excluded.name, recorded_by = excluded.recorded_by, recorded_at = now()`;
 	return { name };
 });
 

@@ -15,7 +15,7 @@
 - `scripts/`: testnet setup and ops. `docs/`: ROADMAP, ARCHITECTURE, DECISIONS. `design/`: Claude Design package (when it arrives).
 - `app/src` layering (strict):
   - `domain/`: pure logic (rules engine, money, request lifecycle). No React, network, or Stellar SDK. Fully unit-tested.
-  - `adapters/`: the only code touching the outside world (RPC, smart-account-kit, DeFindex, ramps, Blob), each behind an interface defined next to the domain. Sample-data and testnet implementations are interchangeable; the sample adapter stays as demo fallback.
+  - `adapters/`: the only code touching the outside world (RPC, smart-account-kit, DeFindex, ramps, ancora's own API), each behind an interface defined next to the domain. Sample-data and testnet implementations are interchangeable; the sample adapter stays as demo fallback.
   - `features/<name>/`: UI per feature with its components, hooks, styles.
   - `ui/`: shared presentational components only.
   - `styles/tokens.css`: the **only** place for colors, fonts, radii, spacing, shadows (light + dark via `light-dark()`). Components use tokens only.
@@ -32,7 +32,7 @@
 - Dependencies: minimal, exact versions (`.npmrc save-exact`). Remove unused ones immediately.
 - Rust: `cargo fmt`, `cargo clippy -- -D warnings`; no unwrap/expect in contract code; `#[contracterror]` errors; every public fn has a doc comment, an auth note, and tests incl. a strict-auth test without `mock_all_auths`.
 - Never guess APIs: check official docs/source (developers.stellar.org, OpenZeppelin/stellar-contracts, stellar/smart-account-kit, paltalabs/defindex, apidocs.bridge.xyz, vercel.com/docs). Pinned: smart-account-kit 0.8.x, @stellar/stellar-sdk 16.4.x (not 17; 16.4 reads protocol 30), OZ stellar-contracts 0.8.0 → soroban-sdk 28.
-- Default: no database. Anything stored off-chain needs a justification in `docs/DECISIONS.md`.
+- Stellar is the source of truth. The few off-chain records (discussions, pictures, push subscriptions, registry names, the scheduler's organization list) live in one Neon Postgres database: schema in `app/db/schema.sql` (apply with `pnpm db:schema`), access only through `app/api/_lib/database.ts`. No Vercel Blob. Anything new stored off-chain needs a justification in `docs/DECISIONS.md`.
 
 ## Workflow
 - Before every push: `cd app && pnpm verify` (biome ci, tsc, vitest, build) and, once crates exist, `cd contracts && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test`.

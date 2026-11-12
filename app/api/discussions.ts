@@ -1,11 +1,13 @@
 import { nativeToScVal, StrKey } from "@stellar/stellar-sdk";
 import { isOrganization, readView } from "./_lib/contracts.js";
 import {
+	addEntry,
 	type EntryKind,
+	findEntry,
 	listThreads,
+	markAnswered,
 	newEntryId,
-	type StoredEntry,
-	updateThreads,
+	setReaction,
 } from "./_lib/discussionStore.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { serverConfig } from "./_lib/serverConfig.js";
@@ -54,13 +56,6 @@ async function requireMember(org: string, person: string) {
 	return settings;
 }
 
-/** The entry a reaction or an "answered" mark is about, as stored at the moment of the write. */
-function entryIn(entries: readonly StoredEntry[], requestId: string, entryId: string): StoredEntry {
-	const entry = entries.find((e) => e.id === entryId && e.requestId === requestId);
-	if (!entry) throw new RequestError("This entry doesn't exist anymore.", 404);
-	return entry;
-}
-
 const handler = {
 	async fetch(request: Request): Promise<Response> {
 		return (request.method === "GET" ? read : write).fetch(request);
@@ -91,17 +86,15 @@ const write = apiHandler("POST", async (request) => {
 			// The request has to exist; the contract errors on unknown ids.
 			await readView(settings, org, "request", [nativeToScVal(BigInt(requestId), { type: "u64" })]);
 			const now = Date.now();
-			const entry = {
+			await addEntry(org, {
 				id: newEntryId(now),
 				requestId,
 				authorId: person,
 				at: now,
 				kind: kind as EntryKind,
 				text,
-				answered: false,
-				reactions: {},
-			};
-			return { entries: await updateThreads(org, (entries) => [...entries, entry]) };
+			});
+			break;
 		}
 		case "react": {
 			const entryId = String(body.entryId ?? "");
@@ -109,19 +102,18 @@ const write = apiHandler("POST", async (request) => {
 			if (reaction !== "up" && reaction !== "down" && reaction !== null) {
 				throw new RequestError("A reaction is up, down or none.");
 			}
-			const entries = await updateThreads(org, (entries) => {
-				const entry = entryIn(entries, requestId, entryId);
-				if (entry.authorId === person) throw new RequestError("You can't react to your own entry.");
-				const reactions: StoredEntry["reactions"] = Object.fromEntries(
-					Object.entries(entry.reactions).filter(([who]) => who !== person),
-				);
-				if (reaction) reactions[person] = reaction;
-				return entries.map((e) => (e === entry ? { ...entry, reactions } : e));
-			});
-			return { entries };
+			const entry = await findEntry(org, requestId, entryId);
+			if (!entry) throw new RequestError("This entry doesn't exist anymore.", 404);
+			if (entry.authorId === person) throw new RequestError("You can't react to your own entry.");
+			await setReaction(entryId, person, reaction);
+			break;
 		}
 		case "answer": {
 			const entryId = String(body.entryId ?? "");
+			const entry = await findEntry(org, requestId, entryId);
+			if (entry?.kind !== "question") {
+				throw new RequestError("Only questions can be marked answered.");
+			}
 			const onchain = (await readView(settings, org, "request", [
 				nativeToScVal(BigInt(requestId), { type: "u64" }),
 			])) as { requester: unknown };
@@ -131,18 +123,13 @@ const write = apiHandler("POST", async (request) => {
 					403,
 				);
 			}
-			const entries = await updateThreads(org, (entries) => {
-				const entry = entryIn(entries, requestId, entryId);
-				if (entry.kind !== "question") {
-					throw new RequestError("Only questions can be marked answered.");
-				}
-				return entries.map((e) => (e === entry ? { ...entry, answered: true } : e));
-			});
-			return { entries };
+			await markAnswered(entryId);
+			break;
 		}
 		default:
 			throw new RequestError("Unknown action.");
 	}
+	return { entries: await listThreads(org) };
 });
 
 export default handler;

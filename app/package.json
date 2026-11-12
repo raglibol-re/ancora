@@ -16,18 +16,19 @@
     "typecheck": "tsc -b",
     "check": "biome check .",
     "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "db:schema": "node --env-file=.env.local db/applySchema.mjs"
   },
   "dependencies": {
     "@aztec/bb.js": "0.87.0",
     "@creit.tech/stellar-wallets-kit": "2.7.1",
     "@fontsource/ibm-plex-sans": "5.3.0",
+    "@neondatabase/serverless": "1.2.0",
     "@noble/curves": "2.4.0",
     "@noble/post-quantum": "0.7.1",
     "@noir-lang/noir_js": "1.0.0-beta.11",
     "@simplewebauthn/browser": "13.3.0",
     "@stellar/stellar-sdk": "16.4.1",
-    "@vercel/blob": "2.8.2",
     "@vercel/functions": "3.10.4",
     "buffer": "6.0.3",
     "qrcode": "1.5.4",

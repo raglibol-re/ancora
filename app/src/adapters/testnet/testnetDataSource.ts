@@ -816,7 +816,7 @@ export class TestnetDataSource implements DataSource {
 	}
 
 	private async uploadAvatar(image: Blob): Promise<Result<string, RuleError>> {
-		const response = await fetch("/api/upload-image", {
+		const response = await fetch("/api/image", {
 			method: "POST",
 			headers: { "Content-Type": image.type },
 			body: image,
@@ -1366,7 +1366,8 @@ function contractMessage(message: string): string {
 	return (code && CONTRACT_ERROR_MESSAGES[Number(code)]) || `Nothing was changed: ${message}`;
 }
 
-const INDEXED_KEY = "ancora.indexed.v1";
+// v2: the index moved to a database on 12 Nov 2026, so every device announces once more.
+const INDEXED_KEY = "ancora.indexed.v2";
 
 function readIndexed(): string[] {
 	try {
