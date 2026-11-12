@@ -29,7 +29,6 @@ import type {
 	StandingOrderInput,
 } from "../../domain/dataSource.ts";
 import type { DiscussionEntry } from "../../domain/discussion.ts";
-import type { RecoveryPlan } from "../../domain/lifeline.ts";
 import type { Cents } from "../../domain/money.ts";
 import { withWork } from "../../domain/pendingWork.ts";
 import {
@@ -47,10 +46,13 @@ import { templates } from "../../domain/rules/templates.ts";
 import { recordError } from "../local/recentErrors.ts";
 import type { KeyValueStorage } from "../local/workspaceStore.ts";
 import { createContinuitySupport, sealWithDeviceKey } from "./continuitySupport.ts";
+import { createdId } from "./createdItem.ts";
 import { createDealSupport } from "./dealSupport.ts";
-import { exportDeviceKeys, importDeviceKeys } from "./deviceKeys.ts";
+import { createDeviceKeySupport } from "./deviceKeySupport.ts";
+import { DiscussionThreads } from "./discussionThreads.ts";
+import { DueOrderRuns } from "./dueOrderRuns.ts";
 import { type HistoryCache, historyCache } from "./historyCache.ts";
-import { readClaimStatus, readOverview, recoveryMessage, setPlanArgs } from "./lifelineContract.ts";
+import { createLifelineSupport } from "./lifelineSupport.ts";
 import {
 	CONTRACT_ERROR_MESSAGES,
 	mapAsset,
@@ -67,7 +69,6 @@ import {
 import { backfillTransfers, merge } from "./orgHistory.ts";
 import { passkeyKeys } from "./passkeyKeys.ts";
 import { describeKitError, passkeyKit } from "./passkeyKit.ts";
-import { restoreWithPasskey } from "./passkeyRestore.ts";
 import { passkeyUserName } from "./passkeyUserName.ts";
 import { createPotSupport } from "./pot/potSupport.ts";
 import { createPrivateKeys, type PrivateKeys } from "./privacySupport.ts";
@@ -75,8 +76,8 @@ import { decryptNote } from "./privateCrypto.ts";
 import { labelsFor } from "./privateLabels.ts";
 import { readContract } from "./readContract.ts";
 import { checkRecipient } from "./recipientCheck.ts";
-import { registerContractArgs, resolveRegistryName } from "./registryNames.ts";
-import { contractCodeHash, latestRelease } from "./releases.ts";
+import { createRegistryNameSupport, createReleaseSupport } from "./registrySupport.ts";
+import { SchedulerAnnouncements } from "./schedulerAnnouncements.ts";
 import {
 	address,
 	batchLinesToScVal,
@@ -92,6 +93,7 @@ import {
 import { clearCachedSession, loadCachedSession, saveCachedSession } from "./sessionCache.ts";
 import { type AssetOption, parseAssetOptions, type TestnetConfig } from "./testnetConfig.ts";
 import { inspectToken } from "./tokenInspect.ts";
+import { createFundingSupport, createRampSupport } from "./walletSupport.ts";
 
 const EMPTY: Workspace = { people: [], accounts: [] };
 const MAX_NAME_BYTES = 64;
@@ -99,7 +101,6 @@ const MAX_AVATAR_BYTES = 256;
 /** A session restore slower than this stops blocking the screen; a cached pass stays signed in. */
 const RESTORE_TIMEOUT_MS = 8_000;
 
-const describeError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const failed = (message: string) => err(ruleError("not-allowed", message));
 const byteLength = (value: string) => new TextEncoder().encode(value).length;
 
@@ -123,45 +124,7 @@ export class TestnetDataSource implements DataSource {
 	readonly continuity: ContinuitySupport;
 	readonly privacy: PrivacySupport | null;
 	readonly pot: PotSupport | null;
-	readonly deviceKeys: DeviceKeySupport = {
-		backupCode: async (personId) => {
-			try {
-				return ok(await exportDeviceKeys(personId));
-			} catch (error) {
-				return failed(`Couldn't read the keys on this device: ${describeError(error)}`);
-			}
-		},
-		restore: async (personId, code) => {
-			try {
-				const restored = await importDeviceKeys(personId, code);
-				await this.refresh();
-				return ok(restored);
-			} catch (error) {
-				return failed(describeError(error));
-			}
-		},
-		restoreWithPasskey: async (personId) => {
-			try {
-				const restored = await restoreWithPasskey(
-					{
-						network: this.config,
-						publishedKey: (person) =>
-							this.privateKeys?.reads.publicKey(person) ?? Promise.resolve(null),
-						organizations: (person) =>
-							this.snapshot.accounts
-								.filter((a) => a.org.members.some((m) => m.personId === person))
-								.map((a) => a.org.id),
-						passkeyKeys: this.passkeyKeys,
-					},
-					personId,
-				);
-				await this.refresh();
-				return ok(restored);
-			} catch (error) {
-				return failed(describeKitError(error, "restored"));
-			}
-		},
-	};
+	readonly deviceKeys: DeviceKeySupport;
 	private readonly privateKeys: PrivateKeys | null;
 	/** Accounts as read, before private notes are replaced by what this device can read. */
 	private raw: OrgAccount[] = [];
@@ -170,31 +133,7 @@ export class TestnetDataSource implements DataSource {
 	private readonly triedNotes = new Set<string>();
 	/** Private recipients' names and notes this device could open, per organization. */
 	private readonly payeeLabels = new Map<string, Map<string, PayeeLabel>>();
-	readonly lifeline: LifelineSupport = {
-		overview: (person) =>
-			this.remember(`lifeline:${person}`, 20_000, () =>
-				this.readLifeline((c) => readOverview(c, c.recoveryContract, person)),
-			),
-		claimOf: (person) => this.readLifeline((c) => readClaimStatus(c, c.recoveryContract, person)),
-		setPlan: (person, plan: RecoveryPlan) =>
-			this.invokeRecovery("set_plan", setPlanArgs(person, plan)),
-		clearPlan: (person) => this.invokeRecovery("clear_plan", [address(person)]),
-		startClaim: (person, guardian, successor) =>
-			this.invokeRecovery("start_claim", [address(person), address(guardian), address(successor)]),
-		approveClaim: (person, guardian) =>
-			this.invokeRecovery("approve_claim", [address(person), address(guardian)]),
-		cancelClaim: (person) => this.invokeRecovery("cancel_claim", [address(person)]),
-		finishClaim: async (person) => {
-			const result = await this.post<{
-				successor: string | null;
-				recovered: string[];
-				skipped: string[];
-			}>("/api/finish-recovery", { person });
-			if (!result.ok) return result;
-			await this.refresh();
-			return ok({ ...result.value, successor: result.value.successor ?? "" });
-		},
-	};
+	readonly lifeline: LifelineSupport;
 	readonly discussions: DiscussionSupport = {
 		load: (orgIds) => this.loadDiscussions(orgIds),
 		post: async (orgId, requestId, actorId, entry) => {
@@ -229,26 +168,18 @@ export class TestnetDataSource implements DataSource {
 	 * at once, so a signed action can come before the kit is ready; it waits for this instead.
 	 */
 	private connecting: Promise<unknown> = Promise.resolve();
-	/** Organizations already reported to the server's index this visit. */
-	/** Organizations this device already announced to the scheduler's index (kept across visits). */
-	private readonly indexed = new Set<string>(readIndexed());
-	/**
-	 * Discussion threads read so far, per organization. They are read when a screen that shows
-	 * requests opens (`discussions.load`), not with every refresh: they live on ancora's server.
-	 */
-	private readonly threads = new Map<string, { at: number; byRequest: Threads }>();
-	/**
-	 * How often each due standing order was tried this visit. A run can fail for a moment (the
-	 * RPC, a page reload in between), so it is tried again with a later refresh, a few times.
-	 */
-	private readonly orderAttempts = new Map<string, number>();
-	/** True while due standing orders are being run, so two refreshes don't run them twice. */
-	private runningOrders = false;
+	/** Organizations this device already announced to the scheduler's index. */
+	private readonly announcements: SchedulerAnnouncements;
+	/** Discussion threads read so far; screens that show requests ask for them. */
+	private readonly threads = new DiscussionThreads();
+	/** Due standing orders tried this visit. */
+	private readonly orderRuns = new DueOrderRuns();
 	/** Short-lived memo of reads several screens ask for at once (Lifeline, passkeys). */
 	private readonly memo = new Map<string, { at: number; value: Promise<unknown> }>();
 
 	constructor(storage: KeyValueStorage | null, config: TestnetConfig) {
 		this.storage = storage;
+		this.announcements = new SchedulerAnnouncements(storage);
 		this.history = historyCache(storage);
 		this.config = config;
 		this.availableAssets = parseAssetOptions(config.orgAssets);
@@ -260,7 +191,7 @@ export class TestnetDataSource implements DataSource {
 			this.raw = [...cached.workspace.accounts];
 			// Last visit's discussions show until a screen reads them again.
 			for (const account of this.raw) {
-				this.threads.set(account.org.id, { at: 0, byRequest: account.discussions ?? {} });
+				this.threads.remember(account.org.id, account.discussions ?? {});
 			}
 			this.snapshot = {
 				...cached.workspace,
@@ -269,72 +200,47 @@ export class TestnetDataSource implements DataSource {
 			this.profiles = new Map(cached.profiles);
 			this.restoringSession = false;
 		}
-		// Stellar Wallets Kit and the wallet SDKs load only when someone funds from a wallet.
-		const funding = () => import("./walletFunding.ts");
-		this.funding = {
-			connectWallet: (container) => funding().then((f) => f.connectWallet(container)),
-			disconnectWallet: () => funding().then((f) => f.disconnectWallet()),
-			walletBalance: (token, holder) =>
-				funding().then((f) => f.walletBalance(config, token, holder)),
-			assetName: (token) => funding().then((f) => f.assetName(config, token)),
-			depositFromWallet: async (orgId, token, from, amount) => {
-				const result = await (await funding()).depositFromWallet(
-					config,
-					token,
-					from,
-					orgId,
-					amount,
-				);
-				if (result.ok) await this.refresh();
-				return result;
-			},
-		};
+		const invoke: TestnetDataSource["invoke"] = (target, fn, args, describeContractError) =>
+			this.invoke(target, fn, args, describeContractError);
+		const refresh = () => this.refresh();
+		this.funding = createFundingSupport(config, refresh);
+		this.ramps = createRampSupport(config);
 		const registry = config.stellarRegistryContract;
 		this.registryNames = registry
-			? {
-					channel: () => "unverified",
-					current: async (orgId) => {
-						const name = await this.loadRegistryName(orgId);
-						if (!name) return ok({ name: null, verified: false });
-						const target = await resolveRegistryName(config, registry, name);
-						return ok({ name, verified: target === orgId });
-					},
-					isFree: async (name) => ok((await resolveRegistryName(config, registry, name)) === null),
-					register: async (orgId, actorId, name) => {
-						const result = await this.invoke(
-							registry,
-							"register_contract",
-							registerContractArgs(name, orgId, actorId),
-							(message) => `The registry refused the name: ${message}`,
-						);
-						if (!result.ok) return result;
-						const saved = await this.post("/api/registry-name", {
-							org: orgId,
-							person: actorId,
-							name,
-						});
-						return saved.ok ? ok(undefined) : saved;
-					},
-				}
+			? createRegistryNameSupport({
+					network: config,
+					registry,
+					invoke,
+					post: (path, body) => this.post(path, body),
+					failed,
+				})
 			: null;
-		this.releases = registry
-			? {
-					registry: () => registry,
-					status: async (orgId) => {
-						try {
-							const [running, latest] = await Promise.all([
-								contractCodeHash(config, orgId),
-								latestRelease(config, registry),
-							]);
-							return ok({ running, latest });
-						} catch (error) {
-							return failed(
-								`Couldn't read the organization's code from Stellar: ${error instanceof Error ? error.message : String(error)}`,
-							);
-						}
-					},
-				}
-			: null;
+		this.releases = registry ? createReleaseSupport({ network: config, registry, failed }) : null;
+		this.lifeline = createLifelineSupport({
+			config,
+			invoke,
+			post: (path, body) => this.post(path, body),
+			failed,
+			refresh,
+			remember: (key, ttlMs, load) => this.remember(key, ttlMs, load),
+			forget: (prefix) => {
+				for (const key of this.memo.keys()) if (key.startsWith(prefix)) this.memo.delete(key);
+			},
+		});
+		this.deviceKeys = createDeviceKeySupport({
+			restore: {
+				network: config,
+				publishedKey: (person) =>
+					this.privateKeys?.reads.publicKey(person) ?? Promise.resolve(null),
+				organizations: (person) =>
+					this.snapshot.accounts
+						.filter((a) => a.org.members.some((m) => m.personId === person))
+						.map((a) => a.org.id),
+				passkeyKeys: this.passkeyKeys,
+			},
+			failed,
+			refresh,
+		});
 		this.fxOracle = config.fxOracle || null;
 		this.privateKeys = config.keyringContract
 			? createPrivateKeys({
@@ -388,15 +294,6 @@ export class TestnetDataSource implements DataSource {
 					refresh: () => this.refresh(),
 				})
 			: null;
-		// The anchor client loads with the same laziness; it also needs the wallet kit to sign in.
-		const ramp = () => import("./anchorRamp.ts");
-		this.ramps = {
-			info: () => ramp().then((r) => r.anchorInfo(config)),
-			startDeposit: (token, wallet) => ramp().then((r) => r.startDeposit(config, token, wallet)),
-			startWithdrawal: (token, wallet) =>
-				ramp().then((r) => r.startWithdrawal(config, token, wallet)),
-			transaction: (wallet, id) => ramp().then((r) => r.anchorTransaction(config, wallet, id)),
-		};
 		this.identity = {
 			restoring: () => this.restoringSession,
 			syncing: () => this.syncingChain,
@@ -529,7 +426,7 @@ export class TestnetDataSource implements DataSource {
 			void this.revealPrivateNotes(me);
 			void this.backfillHistory(me, snapshots, everyone);
 			void this.runDueOrders(me);
-			void this.indexOrganizations(orgIds);
+			void this.announcements.announceNew(orgIds);
 		} catch (error) {
 			// A failed poll keeps the last snapshot; the health check handles a dead RPC.
 			recordError(this.storage, {
@@ -542,67 +439,27 @@ export class TestnetDataSource implements DataSource {
 		this.notify();
 	}
 
-	/**
-	 * Tells the server about each organization once per device, so the scheduler visits
-	 * organizations that predate its index. Best effort and silent: the server also indexes what
-	 * it deploys. At most one attempt per organization and refresh.
-	 */
-	private async indexOrganizations(orgIds: readonly string[]): Promise<void> {
-		for (const organization of orgIds) {
-			if (this.indexed.has(organization)) continue;
-			const response = await fetch("/api/due", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ organization }),
-			}).catch(() => null);
-			// Remembered only once the server has it; otherwise the next refresh announces again.
-			if (response?.ok) this.indexed.add(organization);
-		}
-		saveIndexed(this.indexed);
-	}
-
-	/**
-	 * Due standing orders run when the organization is opened (the contract lets anyone run
-	 * them; the operator pays the fee). One that fails is tried again with a later refresh, up
-	 * to ORDER_ATTEMPTS times per visit.
-	 */
+	/** Runs the due standing orders of my organizations (see dueOrderRuns.ts). */
 	private async runDueOrders(me: string): Promise<void> {
-		if (this.runningOrders) return;
 		const now = Date.now();
 		const due = this.snapshot.accounts.flatMap((account) =>
 			(account.standingOrders ?? [])
-				.filter(
-					(order) =>
-						order.active &&
-						order.nextAt <= now &&
-						(this.orderAttempts.get(`${account.org.id}:${order.id}`) ?? 0) < ORDER_ATTEMPTS,
-				)
-				.map((order) => ({ orgId: account.org.id, id: order.id })),
+				.filter((order) => order.active && order.nextAt <= now)
+				.map((order) => ({ orgId: account.org.id, id: order.id }))
+				.filter((order) => this.orderRuns.canTry(order)),
 		);
 		if (due.length === 0 || this.me?.id !== me) return;
-		this.runningOrders = true;
-		let ran = false;
-		try {
-			for (const order of due) {
-				const key = `${order.orgId}:${order.id}`;
-				this.orderAttempts.set(key, (this.orderAttempts.get(key) ?? 0) + 1);
+		const ran = await this.orderRuns.run(
+			due,
+			async (order) => {
 				const result = await this.post("/api/due", {
 					organization: order.orgId,
 					orderId: Number(order.id),
 				});
-				if (result.ok) {
-					ran = true;
-				} else {
-					recordError(this.storage, {
-						at: Date.now(),
-						where: "standing order",
-						message: result.error.message,
-					});
-				}
-			}
-		} finally {
-			this.runningOrders = false;
-		}
+				return result.ok ? { ok: true } : { ok: false, message: result.error.message };
+			},
+			(message) => recordError(this.storage, { at: Date.now(), where: "standing order", message }),
+		);
 		// Only a run changes what the chain says; after a failure the next poll tries again.
 		if (ran) await this.refresh();
 	}
@@ -623,7 +480,7 @@ export class TestnetDataSource implements DataSource {
 				(token, onchainSymbol) => symbols.get(token) ?? onchainSymbol,
 				this.pot?.asset() ?? null,
 			),
-			discussions: this.threads.get(snapshot.contractId)?.byRequest ?? {},
+			discussions: this.threads.of(snapshot.contractId) ?? {},
 		}));
 		this.raw = accounts;
 		const people: Person[] = [...everyone].map((id) => ({
@@ -1172,31 +1029,15 @@ export class TestnetDataSource implements DataSource {
 
 	/**
 	 * Reads the discussions of the organizations that have requests (a discussion hangs on one)
-	 * and weren't read in the last half minute, from ancora's server.
+	 * from ancora's server, unless they were read a moment ago.
 	 */
 	private async loadDiscussions(orgIds: readonly string[]): Promise<Result<void, RuleError>> {
-		const now = Date.now();
-		const wanted = orgIds.filter((orgId) => {
-			const account = this.raw.find((a) => a.org.id === orgId);
-			if (!account || account.requests.length === 0) return false;
-			return now - (this.threads.get(orgId)?.at ?? 0) > DISCUSSIONS_FRESH_MS;
-		});
-		const read = await Promise.all(
-			wanted.map(async (orgId) => {
-				const response = await fetch(`/api/discussions?org=${encodeURIComponent(orgId)}`).catch(
-					() => null,
-				);
-				const payload = (await response?.json().catch(() => null)) as {
-					success?: boolean;
-					data?: { entries?: DiscussionEntry[] };
-				} | null;
-				if (!payload?.success || !payload.data?.entries) return false;
-				this.threads.set(orgId, { at: Date.now(), byRequest: byRequest(payload.data.entries) });
-				return true;
-			}),
+		const withRequests = orgIds.filter(
+			(orgId) => (this.raw.find((a) => a.org.id === orgId)?.requests.length ?? 0) > 0,
 		);
-		if (read.some(Boolean)) this.showThreads();
-		return read.every(Boolean)
+		const { changed, complete } = await this.threads.load(withRequests);
+		if (changed) this.showThreads();
+		return complete
 			? ok(undefined)
 			: failed("The discussion couldn't be loaded from ancora's server. Try again shortly.");
 	}
@@ -1205,7 +1046,7 @@ export class TestnetDataSource implements DataSource {
 	private showThreads(): void {
 		this.raw = this.raw.map((account) => ({
 			...account,
-			discussions: this.threads.get(account.org.id)?.byRequest ?? account.discussions,
+			discussions: this.threads.of(account.org.id) ?? account.discussions,
 		}));
 		this.snapshot = {
 			...this.snapshot,
@@ -1216,24 +1057,13 @@ export class TestnetDataSource implements DataSource {
 		if (this.me) void this.revealPrivateNotes(this.me.id);
 	}
 
-	/** The name ancora remembered for the organization, from its server. */
-	private async loadRegistryName(orgId: string): Promise<string | null> {
-		const response = await fetch(`/api/registry-name?org=${encodeURIComponent(orgId)}`).catch(
-			() => null,
-		);
-		const payload = (await response?.json().catch(() => null)) as {
-			data?: { name?: unknown };
-		} | null;
-		return typeof payload?.data?.name === "string" ? payload.data.name : null;
-	}
-
 	/** A change to a discussion; the server answers with the organization's threads afterwards. */
 	private async discuss(
 		body: Record<string, unknown> & { org: string },
 	): Promise<Result<void, RuleError>> {
 		const response = await this.post<{ entries: DiscussionEntry[] }>("/api/discussions", body);
 		if (!response.ok) return response;
-		this.threads.set(body.org, { at: Date.now(), byRequest: byRequest(response.value.entries) });
+		this.threads.set(body.org, response.value.entries);
 		this.showThreads();
 		return ok(undefined);
 	}
@@ -1242,21 +1072,9 @@ export class TestnetDataSource implements DataSource {
 		return (this.account(orgId)?.requests ?? []).map((request) => request.id);
 	}
 
-	/**
-	 * The id of what a command just created (a request, a payment link): the one that wasn't
-	 * there before. The read right after a transaction can come from an RPC node that hasn't
-	 * seen its ledger yet, so the chain is read again for a few seconds; "" when it still isn't
-	 * there, and the screen then opens the list instead of the new item.
-	 */
-	private async created(ids: () => readonly string[], before: readonly string[]): Promise<string> {
-		const known = new Set(before);
-		for (let read = 0; ; read++) {
-			const id = ids().find((candidate) => !known.has(candidate));
-			if (id !== undefined) return id;
-			if (read === CREATED_READS) return "";
-			await new Promise((resolve) => setTimeout(resolve, CREATED_WAIT_MS));
-			await this.refresh();
-		}
+	/** The id of what a command just created; "" when the chain doesn't show it yet. */
+	private created(ids: () => readonly string[], before: readonly string[]): Promise<string> {
+		return createdId(ids, before, () => this.refresh());
 	}
 
 	private account(orgId: string): OrgAccount | undefined {
@@ -1329,26 +1147,6 @@ export class TestnetDataSource implements DataSource {
 		return this.kit.isConnected;
 	}
 
-	private async invokeRecovery(fn: string, args: xdr.ScVal[]): Promise<Result<void, RuleError>> {
-		const result = await this.invoke(this.config.recoveryContract, fn, args, recoveryMessage);
-		for (const key of this.memo.keys()) if (key.startsWith("lifeline:")) this.memo.delete(key);
-		return result;
-	}
-
-	private async readLifeline<T>(
-		reader: (config: TestnetConfig) => Promise<T>,
-	): Promise<Result<T, RuleError>> {
-		try {
-			return ok(await reader(this.config));
-		} catch (error) {
-			return failed(
-				error instanceof Error
-					? `Lifeline couldn't be read right now. ${error.message}`
-					: "Lifeline couldn't be read right now.",
-			);
-		}
-	}
-
 	/**
 	 * Calls one of ancora's own routes. Most of them submit a transaction for the organization
 	 * (creation, due requests, standing orders, test money, recovery), so the working bar shows
@@ -1387,51 +1185,8 @@ const SESSION_ENDED =
 const SIGNING = "Sending to Stellar… confirm with your passkey if asked.";
 const OFF_CHAIN_ROUTES = new Set(["/api/discussions", "/api/registry-name"]);
 
-type Threads = Readonly<Record<string, readonly DiscussionEntry[]>>;
-
-/** How often, and how far apart, the chain is read again for something just created. */
-const CREATED_READS = 6;
-const CREATED_WAIT_MS = 1_500;
-
-/** A due standing order is tried this often per visit: a refusal by the rules doesn't change. */
-const ORDER_ATTEMPTS = 3;
-
-/** Discussions read this recently aren't read again when another screen opens. */
-const DISCUSSIONS_FRESH_MS = 30_000;
-
-function byRequest(entries: readonly DiscussionEntry[]): Threads {
-	const threads: Record<string, DiscussionEntry[]> = {};
-	for (const entry of entries) {
-		const thread = threads[entry.requestId] ?? [];
-		thread.push(entry);
-		threads[entry.requestId] = thread;
-	}
-	return threads;
-}
-
 /** Turns the kit's "Error(Contract, #6)" into the organization contract's plain-language text. */
 function contractMessage(message: string): string {
 	const code = /Error\(Contract, #(\d+)\)/.exec(message)?.[1];
 	return (code && CONTRACT_ERROR_MESSAGES[Number(code)]) || `Nothing was changed: ${message}`;
-}
-
-// v2: the index moved to a database on 12 Nov 2026, so every device announces once more.
-const INDEXED_KEY = "ancora.indexed.v2";
-
-function readIndexed(): string[] {
-	try {
-		const parsed = JSON.parse(localStorage.getItem(INDEXED_KEY) ?? "[]") as unknown;
-		return Array.isArray(parsed) ? parsed.map(String) : [];
-	} catch {
-		// No storage or a damaged entry: announce again, which is harmless.
-		return [];
-	}
-}
-
-function saveIndexed(ids: ReadonlySet<string>): void {
-	try {
-		localStorage.setItem(INDEXED_KEY, JSON.stringify([...ids]));
-	} catch {
-		// No storage (private window): the next visit announces again.
-	}
 }
