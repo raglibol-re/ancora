@@ -1,4 +1,7 @@
-import type { Page } from "@playwright/test";
+import type { CDPSession, Page } from "@playwright/test";
+
+/** The virtual authenticator of a page, to inspect or remove its passkeys. */
+export type VirtualAuthenticator = { session: CDPSession; authenticatorId: string };
 
 /**
  * Pins the page to the testnet and gives it a virtual platform authenticator (Chromium's
@@ -6,11 +9,11 @@ import type { Page } from "@playwright/test";
  * with Face ID every time.
  * Resident keys let "Sign in with my passkey" find the pass again after signing out.
  */
-export async function addVirtualPasskey(page: Page): Promise<void> {
+export async function addVirtualPasskey(page: Page): Promise<VirtualAuthenticator> {
 	await preferTestnet(page);
 	const session = await page.context().newCDPSession(page);
 	await session.send("WebAuthn.enable");
-	await session.send("WebAuthn.addVirtualAuthenticator", {
+	const { authenticatorId } = await session.send("WebAuthn.addVirtualAuthenticator", {
 		options: {
 			protocol: "ctap2",
 			transport: "internal",
@@ -22,6 +25,24 @@ export async function addVirtualPasskey(page: Page): Promise<void> {
 			hasPrf: true,
 		},
 	});
+	return { session, authenticatorId };
+}
+
+/** The ids of the passkeys the virtual authenticator holds. */
+export async function passkeyIds({
+	session,
+	authenticatorId,
+}: VirtualAuthenticator): Promise<string[]> {
+	const { credentials } = await session.send("WebAuthn.getCredentials", { authenticatorId });
+	return credentials.map((credential) => credential.credentialId);
+}
+
+/** Removes one passkey from the device, as if it were lost. */
+export async function removePasskey(
+	{ session, authenticatorId }: VirtualAuthenticator,
+	credentialId: string,
+): Promise<void> {
+	await session.send("WebAuthn.removeCredential", { authenticatorId, credentialId });
 }
 
 /**
