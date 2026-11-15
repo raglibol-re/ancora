@@ -3,6 +3,7 @@ import { waitUntil } from "@vercel/functions";
 import { tokenBalance } from "../shared/tokenBalance.js";
 import { refillFromBlendFaucet } from "./_lib/blendFaucet.js";
 import { isOrganization } from "./_lib/contracts.js";
+import { refillFromTestnetDex } from "./_lib/dexRefill.js";
 import { apiHandler, RequestError, readJsonObject } from "./_lib/http.js";
 import { invokeAsServer } from "./_lib/ledger.js";
 import { required, serverConfig } from "./_lib/serverConfig.js";
@@ -13,6 +14,15 @@ import { grantFor, REFILL_BELOW, STROOPS_PER_UNIT } from "./_lib/testMoney.js";
 // give, not take.
 
 const MAX_BALANCE_FOR_GRANT = 5_000n * STROOPS_PER_UNIT;
+
+/**
+ * The floats a server can refill: BlendUSDC from Blend's faucet, Circle USDC from the testnet
+ * exchange. Circle's EURC has neither a claimable faucet nor liquidity, so it is filled by hand.
+ */
+const REFILLS: Record<string, typeof refillFromBlendFaucet> = {
+	BlendUSDC: refillFromBlendFaucet,
+	USDC: refillFromTestnetDex,
+};
 
 export const config = { maxDuration: 120 };
 
@@ -49,10 +59,10 @@ export default apiHandler("POST", async (request) => {
 			nativeToScVal(grant, { type: "i128" }),
 		),
 	);
-	// Only BlendUSDC has a faucet a server can claim; Circle's is captcha-gated.
-	if (asset.symbol === "BlendUSDC" && float - grant < REFILL_BELOW) {
+	const refill = REFILLS[asset.symbol];
+	if (refill && float - grant < REFILL_BELOW) {
 		waitUntil(
-			refillFromBlendFaucet(settings, asset.token, operator.publicKey()).catch((error: unknown) =>
+			refill(settings, asset.token, operator.publicKey()).catch((error: unknown) =>
 				console.error("[test-money] refill", error instanceof Error ? error.message : error),
 			),
 		);

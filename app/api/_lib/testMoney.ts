@@ -2,9 +2,9 @@ import { Keypair } from "@stellar/stellar-sdk";
 import { tokenBalance } from "../../shared/tokenBalance.js";
 import { required, type ServerConfig } from "./serverConfig.js";
 
-// Test money comes from the demo operator's float of each accepted stablecoin. The float is
-// hand-filled from the issuers' testnet faucets, which are not always handing anything out
-// (Circle's was down on 26 Oct 2026), so the app is told per asset whether a grant is possible.
+// Test money comes from the demo operator's float of each accepted stablecoin. BlendUSDC and
+// Circle USDC refill themselves (test-money.ts); EURC is hand-filled from a faucet that isn't
+// always handing anything out, so the app is told per asset whether a grant is possible.
 
 export const STROOPS_PER_UNIT = 10_000_000n;
 const FULL_GRANT = 100n * STROOPS_PER_UNIT;

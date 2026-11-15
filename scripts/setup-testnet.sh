@@ -33,7 +33,8 @@ DEPLOYER="ancora-deployer"
 # BlendUSDC: Stellar Asset Contract of USDC:GATALT… issued by Blend's testnet faucet (7 decimals).
 BLEND_USDC="CAQCFVLOBK5GIULPNZRGATJJMIZL5BSP7X5YJVMGCPTUEPFM4AVSRCJU"
 # Circle's testnet USDC and EURC (faucet.circle.com). Contract ids are derived below; the operator
-# holds trustlines and small floats that have to be topped up by hand (the faucet is captcha-gated).
+# holds trustlines. The faucet is captcha-gated: the USDC float refills itself from the testnet
+# exchange (app/api/_lib/dexRefill.ts); the EURC float is topped up by hand.
 CIRCLE_USDC_ISSUER="GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"
 CIRCLE_EURC_ISSUER="GB3Q6QDZYTHWT7E5PVS3W7FUT5GVAFC5KSZFFLPU25GO7VTC3NM2ZTVO"
 CIRCLE_USDC=""
