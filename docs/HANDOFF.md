@@ -1,55 +1,96 @@
-# Handoff (5 Nov 2026)
+# Maintainer handbook
 
-For the next person or agent picking up ancora. Read `CLAUDE.md` first (binding working rules), then this, then `docs/ROADMAP.md`. Last updated after commit `a5faa80`.
+What someone taking over ancora needs beyond the code: where it runs, how it is operated, how it is tested, and what is open. Read it after [CONTRIBUTING.md](../CONTRIBUTING.md) (working rules) and before [ROADMAP.md](ROADMAP.md). Design is in [ARCHITECTURE.md](ARCHITECTURE.md), the reasons behind it in [DECISIONS.md](DECISIONS.md), the history in [CHANGELOG.md](../CHANGELOG.md).
 
-## Where things stand
+State as of 15 Nov 2026.
 
-- **Live:** https://ancora-gray.vercel.app (Vercel project `ancora`, team `team_xirrUVu2J9SfwzpeKmFiMfK6`, project `prj_6voCmAG5QelT7MXNdc60kBoLwHHR`). Production deploys from `main`; check the GitHub commit status "Vercel" after each push.
-- **Network:** Stellar testnet, protocol 30. Every product feature runs on real contracts with test money; sample data is the labelled fallback.
-- **Product framing:** the landing page and README present ancora as an open-source product in public preview heading for mainnet (mission, vision, illustrative use cases, path to launch, pilot requests through GitHub issues, FAQ). The use cases are fictional and labelled "Illustrative"; keep it that way until there are real pilots (see DECISIONS, 2026-11-04).
-- **Next external milestone:** the Stellar Community Fund #46 application (8 Nov 2026); milestones in `docs/ROADMAP.md#scf-46-milestones`. The video script is `docs/DEMO.md`.
+## Current state
 
-## What changed 3–5 Nov (newest first)
+- **Live:** https://ancora-gray.vercel.app, public preview on the Stellar testnet (protocol 30). Every feature in the README table marked *Real on testnet* runs on ancora's contracts with test money; sample data is the labelled fallback when the testnet or ancora's server doesn't answer.
+- **Product framing:** an open-source product heading for mainnet. The use cases on the landing page are fictional and labelled *Illustrative* until there are real pilots (DECISIONS, 2026-11-04). Pilot applications go by email to the address in `PILOT_EMAIL` (`app/src/features/landing/landingContent.ts`).
+- **Health:** the hourly live check, CI and the nightly end-to-end suite were green on 15 Nov, except for one end-to-end stall described under [Known issues](#known-issues).
 
-| Commit | What |
+## Services and accounts
+
+| What | Where | Notes |
+|---|---|---|
+| Hosting | Vercel project `ancora` (team `team_xirrUVu2J9SfwzpeKmFiMfK6`, project `prj_6voCmAG5QelT7MXNdc60kBoLwHHR`), Pro plan | Root Directory `app`; production deploys from `main`. One daily cron: `/api/due` at 07:00 UTC (`app/vercel.json`). |
+| Off-chain records | Neon Postgres, project `ancora` (`twilight-breeze-67785613`), aws-eu-central-1 | Schema `app/db/schema.sql`; access only through `app/api/_lib/database.ts`. Holds discussions, pictures, push subscriptions, registry names and the scheduler's organization list. |
+| Source and CI | GitHub `raglibol-re/ancora` (public) | Workflows below. Failure emails come from these workflows, not from Vercel. |
+| Chain | Stellar testnet via `https://soroban-testnet.stellar.org` | Contract IDs: README, [Testnet contracts](../README.md#testnet-contracts). |
+| Operator key | `GC2BKJOG56UXZQKMV475BNHMEHUA54GPGY6W2FILRB4DHCOJFJXOYJE3` (Stellar CLI alias `ancora-deployer`) | Pays fees, deploys organizations, runs due requests, hands out test money. Holds no role in any organization. Server calls travel on eight channel accounts derived from its secret (`api/_lib/channels.ts`). |
+
+The old Vercel Blob store (`store_Ci77NprR2Bdf2Dh8`) is no longer used or connected; its token is removed and its useful records were copied to Neon. Deleting it is left to the account owner (`vercel blob delete-store`, interactive).
+
+### Secrets
+
+All documented in `app/.env.example`; local values live in the gitignored `app/.env.local`.
+
+| Secret | Where it is set |
 |---|---|
-| `a5faa80` | README reframed as an ongoing product (mission, status, get involved); stale lines fixed |
-| `6c41b99` | App waits 12 s (was 4 s) for `/api/health`; the server caps the optional test-money check at 3 s. A slow testnet RPC had sent visitors (and the E2E runs) to sample data |
-| `567148f` | Landing page: Preview bar, use cases, mission/vision/principles, path to launch, pilot invitation, FAQ, footer; English and German. Split into `landingContent.ts`, `CompanySections.tsx`, `LaunchSections.tsx`, `LandingSections.module.css` |
-| `f0a34f7` | Sample team renamed from "Meridian Hack Team" to "Ponte Product Team" (id `ponte-team`) |
-| `8549a61` | BlendUSDC test float refills itself from Blend's faucet (`api/_lib/blendFaucet.ts`, triggered in `api/test-money.ts` via `waitUntil` when a grant leaves it below 500) |
-| `9444efb` | Private-details key restore waits for the passkey reconnect before asking for PRF |
-| `695b163` | Every RPC client times out after 30 s (`app/shared/rpcServer.ts`; always use `rpcServer()` / `withRpcTimeout()`, never `new rpc.Server`) |
-| `6a84a9e` | Operator console shows the RPC health error text |
-| `a8b844f` | `@stellar/stellar-sdk` 16.4.1 (16.3.1 can't decode protocol 30 ledgers) |
+| `DEPLOYER_SECRET`, `ADMIN_PASSPHRASE`, `CRON_SECRET`, `VAPID_PRIVATE_KEY` | Vercel (production, preview), by `scripts/setup-testnet.sh --sync-vercel` |
+| `DATABASE_URL` | Vercel (production, preview) and GitHub Actions |
+| `BACKUP_PASSPHRASE` | GitHub Actions; keep a copy outside the repository, without it no backup can be read |
 
-## Open work, in priority order
+### GitHub workflows
 
-1. **E2E status.** Run `42034618737` was started on `a5faa80` (https://github.com/raglibol-re/ancora/actions/runs/42034618737). Read it first.
-   - The scheduled run `41836059498` (4 Nov, before `6c41b99`) failed all 8 flows waiting for "Welcome to ancora": the app had fallen back to sample data because `/api/health` took 4.5–6.5 s. Expected to be fixed by `6c41b99`; unverified until that run finishes.
-   - Before that, run `41743838145` had 6/8 green; **potFlow** and **privacyFlow** still failed after `9444efb` and `8549a61`. Not investigated yet. Its artifacts were downloaded to the previous session's scratchpad (gone); fetch them again with `gh run download <id> -D <dir>` and read the screenshots and `trace.zip` (the `error-context.md` can show another test's page).
-2. **Off-chain records are in Neon Postgres since 12 Nov** (project `ancora`, id `twilight-breeze-67785613`, Frankfurt; `DATABASE_URL` on Vercel and in `app/.env.local`; schema `app/db/schema.sql`, applied with `cd app && pnpm db:schema`). Vercel Blob is no longer used by the code: its store was blocked (every read 403) for exceeding the Hobby allowance, because every open app re-read all discussions twice a minute. On 15 Nov the team moved to Vercel Pro, the old store could be read again, and its organization list and one registry name were copied into the database; `BLOB_READ_WRITE_TOKEN` is removed from the project. Deleting the store itself (`store_Ci77NprR2Bdf2Dh8`) must be done by the user in a terminal (`vercel blob delete-store`); the CLI refuses it from an agent. The 12-function cap (`api/_lib/functionBudget.test.ts`) was a Hobby limit; it still holds in the code until someone decides to split functions again. Nightly encrypted backups since 15 Nov (`.github/workflows/backup.yml`, restore steps in ARCHITECTURE.md#backups); they need the GitHub secrets `DATABASE_URL` and `BACKUP_PASSPHRASE`, which the user sets (agents may not upload them). Left to do: `docs/ROADMAP.md#off-chain-records`. The failure emails come from the GitHub Actions `Live check` and `E2E`, not from Vercel deployments.
-3. **E2E flakiness.** Fixed on 12 Nov: pass creation failing with "The confirmed deployment transaction is unavailable" (the kit asks the RPC once; `passkeyKit.ts` now asks again on "not found"), the empty approvals address after paying (`created()` in `testnetDataSource.ts`) and standing orders tried only once per visit. Watch the nightly run; a new failure is a new cause. On 15 Nov the manual run `43728889451` (10 flows) failed only the deal flow: the page stopped painting for about 150 s around the "Propose the deal" click (the click alone took 154 s, the header stuck on "Updating from Stellar…"), so no transaction was sent. The same flow passed locally right after. Profiled the same day with the CPU slowed 4×: the Deals page has 1.8 s of long tasks in its first 5 s (largest 334 ms), then sits idle while refreshing, so the stall wasn't the app's own work; most likely the CI runner's browser. If it repeats on another flow too, suspect the runner (retries or a larger runner) before the code.
-4. **`testnetDataSource.ts` is down from 1,437 to about 460 lines** (rule: about 250). On 12 Nov the retry and loading logic and four support objects moved into tested modules next to it (`createdItem`, `dueOrderRuns`, `discussionThreads`, `freshTransactions`, `schedulerAnnouncements`, `registrySupport`, `walletSupport`, `lifelineSupport`, `deviceKeySupport`). On 13 Nov the organization commands followed: `requestCommands.ts` (requests, approvals, seals, handovers) and `organizationCommands.ts` (founding, changes, Reserve, recipients, links, standing orders), both built from `commandDeps.ts`; `TestnetDataSource.open()` joins them to the session. Then the passkey connection and signed calls (`passkeySession.ts`), the pass itself (`identitySupport.ts`), calls to ancora's own routes (`serverRoutes.ts`) and the shared short-lived reads (`sharedReads.ts`, tested). Last, restoring the session (`sessionRestore.ts`, tested), opened private details (`revealedDetails.ts`), building the workspace from chain data (`workspaceFromChain.ts`), the history backfill (`historyBackfill.ts`) and discussions (`discussionSupport.ts`). The class now holds the session's state, the refresh loop and the wiring of all these parts; about 135 of its lines are the constructor that hands each part what it needs. Splitting further would mean a second stateful object for the workspace; not worth it unless the class grows again. Lifeline and registry names, moved in that split, have end-to-end flows since 15 Nov (`e2e/lifelineFlow.spec.ts`, `e2e/registryFlow.spec.ts`); the second passkey too (`e2e/passkeyFlow.spec.ts`), which found that the passkey count was read before the kit reconnected (fixed in `0206c86`).
-5. **Legal pages:** imprint (Impressum), terms, privacy. Needs the legal entity, address and contact from the user; don't invent them.
-6. **Pilot contact:** since 15 Nov pilot requests go by email to rami.ezzeddine@outlook.de (`PILOT_EMAIL` in `landingContent.ts`, chosen by the user). Switch it to a pilot@ address once ancora has its own domain and mailbox.
-7. Circle EURC test float is empty (faucet captcha-gated, no testnet liquidity). Circle USDC refills itself since 15 Nov by selling Friendbot XLM on the testnet XLM/USDC pool (`api/_lib/dexRefill.ts`; filled once by hand to 7,141 that day).
+| Workflow | When | What it checks |
+|---|---|---|
+| CI (`ci.yml`) | every push | `pnpm verify`, contract fmt, clippy and tests |
+| Live check (`live-check.yml`) | hourly at :17 | production answers, can sponsor fees and hand out test money (`scripts/check-live.mjs`) |
+| E2E (`e2e.yml`) | nightly 05:30 UTC, or by hand | the eleven Playwright flows against production |
+| Backup (`backup.yml`) | nightly 03:15 UTC, or by hand | encrypted export of the Neon tables, kept 90 days |
 
-## How to work here (things that cost time)
+## Operating it
 
-- **Verify, push, confirm:** `cd app && pnpm verify` must exit 0 (gate on the exit code, not on grepping output), then push to `main`, then wait for the "Vercel" status `success`. Vitest has one occasionally flaky test; rerun once before digging.
-- **Windows line endings:** Python `open(..., 'w')` writes CRLF on Windows and Biome fails. Use `newline=''` when rewriting files, or run `npx biome check --write <files>` afterwards.
-- **Heredocs:** Git Bash heredocs break on backticks and sometimes on long quoted text; write content with the Write tool into the scratchpad and merge it in.
-- **German copy:** every `t()`/`msg()` literal needs an entry in `app/src/ui/messages/de.ts` (formal "Sie"); `src/ui/i18n.test.ts` lists what's missing.
-- **Screenshots:** Playwright's bundled Chromium isn't installed locally; launch with `chromium.launch({ channel: "msedge" })` against `npx vite preview --port 4317` (stop the server afterwards).
-- **Testnet RPC is often slow** (1–6 s per call on 4 Nov). When many flows fail at once, check `curl https://ancora-gray.vercel.app/api/health` (`rpc.ok`, `rpc.error`, response time) before blaming the code; after a protocol upgrade, look for a 16.x SDK release named after the protocol.
-- **Not available to agents here:** Vercel runtime logs through the MCP (403), `vercel env pull` of secrets, `curl | bash` installers, `cargo install stellar-registry-cli` (blocked by the permission classifier; don't work around it).
-- **Memory pressure:** background watchers get killed; prefer one-shot checks or short foreground loops.
-- **Stellar CLI:** `/c/Program Files (x86)/Stellar CLI` (not on PATH); operator key alias `ancora-deployer` (`GC2BKJ…YJE3`).
-- Commit messages end with the `Claude-Session:` line given by the session; small conventional commits; docs (CHANGELOG, README, ROADMAP, ARCHITECTURE, DECISIONS) in the same commit as the change.
+**Deploying.** Push to `main` after `cd app && pnpm verify` (and the contract checks when `contracts/` changed). Then confirm the GitHub commit status "Vercel" is `success` and the live site answers; a green CI does not mean production updated.
 
-## Real, simulated, unverified (as of this handoff)
+**Health.** `/api/health` reports the RPC (ledger, protocol, latency, error text) and which test stablecoins can be handed out. `/admin` (passphrase) shows the same plus contract presence, the operator's XLM and stablecoin floats and the relayer's allowed origins.
 
-- **Real on testnet:** everything in the README feature table marked so; the BlendUSDC auto-refill (claimed once live, float ~2,471 on 4 Nov); the health timeout fix (response ~3.4 s after deploy).
-- **Simulated:** sample data, the IBAN card, the fallback exchange-rate table, the use cases on the landing page (fictional, labelled).
-- **Unverified:** whether `6c41b99` brings the nightly E2E back to green; the cause of the pot and privacy flow failures; the automatic refill firing inside a live request (it triggers when the float drops below 500).
+**Fee float.** New passes, organizations and payments cost the operator roughly 100 test XLM per new visitor (testnet rent is high; ARCHITECTURE, *Testnet rent*). The XLM float does not refill on its own: top it up from Friendbot with the button in `/admin` when it runs low. It held about 34,000 XLM on 15 Nov.
+
+**Test money.** Grants come from the operator's float of each accepted stablecoin (`api/test-money.ts`, `api/_lib/testMoney.ts`). Below 500 a grant shrinks to a tenth of the float, and a refill starts in the background:
+
+| Asset | Refill |
+|---|---|
+| BlendUSDC | Blend's testnet faucet, claimed by a Friendbot-funded throwaway key and forwarded (`api/_lib/blendFaucet.ts`) |
+| Circle USDC | buys USDC with a throwaway key's Friendbot XLM on the testnet XLM/USDC pool, paid straight to the operator (`api/_lib/dexRefill.ts`) |
+| Circle EURC | none: the faucet needs a captcha and the testnet has no EURC liquidity; top up by hand at faucet.circle.com |
+
+**Testnet reset.** Stellar resets the testnet from time to time and announces it ahead. Every ancora contract disappears with it. Afterwards run `scripts/setup-testnet.sh --sync-vercel` (builds, uploads and deploys the contracts, writes `app/.env.testnet`, pushes the server variables and redeploys), then refill the floats and check `/admin`. Passes and organizations from before the reset are gone; so are the Neon records' references to them, which can be cleared.
+
+**Protocol upgrade.** When most flows fail at once and `/api/health` shows an RPC decoding error, the pinned `@stellar/stellar-sdk` (16.4.x) can't read the new protocol yet. Look for an SDK release named after the protocol and update the pin.
+
+**Backups and restore.** Steps in ARCHITECTURE, [Backups](ARCHITECTURE.md#backups). By hand: `pnpm db:backup <file>` and `pnpm db:restore <file>`.
+
+**Releases of the contracts.** Contract versions are published on the Stellar Registry by the operator (`scripts/publish-registry.sh --publish` after bumping `contracts/Cargo.toml`). Never redeploy the registry or recovery contract: every organization stores their addresses.
+
+## Testing
+
+- **Unit tests** (`pnpm verify`): the domain engine, adapters' pure parts, API helpers. One Vitest test is occasionally flaky; rerun once before investigating.
+- **Contracts** (`cd contracts && cargo test`): every public function, including strict-auth tests without `mock_all_auths`.
+- **End-to-end** (`cd app && pnpm e2e`): Playwright against production with Chromium's virtual WebAuthn authenticator (`e2e/virtualPasskey.ts`), so passkeys need no device. Locally it uses the installed Edge. The flows, one file each under `app/e2e/`: core path, approval, deal, German first path, Lifeline, money (standing order and Reserve), second passkey, confidential pots, private details, registry name, quantum-safe seal. Every run creates real passes and organizations whose fees the operator pays.
+- **Reading a failure:** `gh run download <run id>` gives screenshots, `error-context.md` (an accessibility snapshot of the failing page) and `trace.zip`. The trace's network log shows whether a transaction was sent at all; its action log shows how long each click took.
+
+## Open work
+
+In priority order. Product milestones are in ROADMAP.
+
+1. **Legal pages:** imprint (Impressum), terms and privacy, English and German. They need the legal entity, address and contact person; none of these exist in the repository yet and must not be invented.
+2. **Mainnet preparation:** the open items under ROADMAP, *SCF #46 milestones* and *Off-chain records* (an off-GitHub backup copy, a scheduled restore drill, registry names read from the registry instead of a table).
+3. **`app/src/adapters/testnet/testnetDataSource.ts`** is about 460 lines against the 250-line guideline. Commands, session, identity, reads and workspace building are already separate tested modules; what remains is the session state, the refresh loop and the wiring (about 135 lines of constructor). Splitting further means a second stateful object; worth it only if the class grows again.
+4. **Pilot contact:** move `PILOT_EMAIL` to a pilot@ address once ancora has its own domain and mailbox.
+5. **API function budget:** `api/_lib/functionBudget.test.ts` still caps the API at twelve functions, a limit of Vercel's Hobby plan; the project is on Pro now. Raise or remove the cap once Pro's limit is confirmed in Vercel's documentation. There are eleven functions today; related routes share one function by HTTP method, which is fine to keep.
+
+## Known issues
+
+- **End-to-end stall in CI (15 Nov, run `43728889451`):** the deal flow's "Propose the deal" click took 154 s while the page stopped painting, so no transaction was sent and the flow timed out. It passed locally right after, and profiling the Deals page with a 4× slower CPU showed 1.8 s of long tasks in the first 5 s and idle afterwards. The likely cause is the CI runner's browser. If stalls appear in other flows too, try retries or a larger runner before changing code.
+- **Testnet RPC latency** is often 1–6 s per call. The app waits 12 s for `/api/health` before falling back to sample data, and every RPC client times out after 30 s (`app/shared/rpcServer.ts`; always use `rpcServer()` or `withRpcTimeout()`).
+- **Pictures uploaded before 12 Nov** point at the old Blob store and show initials once it is deleted, until they are uploaded again.
+- **The automatic stablecoin refills** have run in tests and by hand but not yet inside a live request; they start when a float drops below 500.
+
+## Real, simulated, unverified
+
+- **Real on testnet:** everything marked so in the README feature table; both automatic stablecoin refills (mechanism exercised on 4 and 15 Nov); the nightly backup and its restore (drilled into an empty Neon branch on 15 Nov).
+- **Simulated:** sample data, the IBAN card, the fallback exchange-rate table, the landing page's use cases.
+- **Unverified:** the first scheduled run of the backup workflow; a restore of discussion rows (the tables were empty during the drill); the refills firing inside a live request.

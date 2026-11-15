@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-15: Documentation for maintainers: `docs/HANDOFF.md` is now a handbook (services and accounts, secrets, workflows, runbook for fees, test money, testnet resets, protocol upgrades and backups, testing, open work, known issues) and `CONTRIBUTING.md` holds the working rules for contributors. ARCHITECTURE describes Lifeline as built, the database and the scheduled jobs; stale counts and versions in README, ROADMAP and DEMO are corrected.
 - 2026-11-15: "Apply for the pilot" on the landing page now opens an email to rami.ezzeddine@outlook.de instead of a public GitHub issue, and the address is shown below the button (English and German); the FAQ and README say the same.
 - 2026-11-15: The off-chain records (organization list, registry names, discussions, push subscriptions, pictures) are backed up every night: exported to JSON, encrypted and kept for 90 days as a GitHub workflow artifact. `pnpm db:backup` and `pnpm db:restore` do the same by hand; a restore into an empty database was drilled. Restore steps in docs/ARCHITECTURE.md#backups.
 - 2026-11-15: Test USDC is available again and refills itself: when a grant leaves the operator's Circle USDC float below 500, the server sells a fresh Friendbot account's test XLM on the testnet exchange and the USDC goes to the float (about 7,100 per refill). EURC still has to be topped up by hand.

@@ -156,7 +156,7 @@ flowchart LR
 
 A person signs with their passkey through their own account; the organization contract checks its own rules and moves the money. ancora's server never holds a key that can act for an organization: the operator deploys organizations, sponsors fees and sends test money, nothing more.
 
-- **App**: Vite + React + TypeScript PWA with a strict layering: `domain/` (pure rules engine, money, request lifecycle, fully unit-tested), `adapters/` (the only code touching Stellar, the kit, DeFindex, anchors, Blob), `features/` (screens), `ui/` (shared components), one `tokens.css` for every colour and spacing.
+- **App**: Vite + React + TypeScript PWA with a strict layering: `domain/` (pure rules engine, money, request lifecycle, fully unit-tested), `adapters/` (the only code touching Stellar, the kit, DeFindex, anchors and ancora's own API), `features/` (screens), `ui/` (shared components), one `tokens.css` for every colour and spacing.
 - **Contracts**: a Rust workspace (`soroban-sdk` 28, OpenZeppelin `stellar-access` 0.8) with one crate per contract and shared test vectors, so the TypeScript engine and the contract agree on every rule.
 - **Functions**: `/api/relay` (fail-closed fee sponsorship), `/api/create-organization`, `/api/due` (requests past their objection window, standing orders, the daily scheduler, the organization index), `/api/notifications` (web-push subscriptions), `/api/test-money`, `/api/finish-recovery`, `/api/wallet-index` (the smart-account index the passkey kit verifies wallets with), `/api/registry-name`, `/api/discussions`, `/api/image` (stores and serves pictures), `/api/health`, `/api/admin`.
 
@@ -207,7 +207,7 @@ cargo test                                             # organization (77 tests)
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 ```
 
-Requirements: Node 24, pnpm 10. Contracts: Rust 1.91 with the `wasm32v1-none` target and the [Stellar CLI](https://developers.stellar.org/docs/tools/cli/install-cli) 28.x.
+Requirements: Node 24, pnpm 10. Contracts: Rust 1.92 (pinned in `contracts/rust-toolchain.toml`) with the `wasm32v1-none` target and the [Stellar CLI](https://developers.stellar.org/docs/tools/cli/install-cli) 28.x.
 
 ### Testnet setup
 
@@ -260,7 +260,7 @@ The operator cannot create, approve or alter requests, and cannot move organizat
 
 - **Pilot organizations.** Clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens: write to [rami.ezzeddine@outlook.de](mailto:rami.ezzeddine@outlook.de?subject=ancora%20pilot%20request). Pilots shape the product and get help moving their rules over.
 - **Issues and ideas.** Bugs, questions and proposals are welcome as [GitHub issues](https://github.com/raglibol-re/ancora/issues).
-- **Code.** Read [CLAUDE.md](CLAUDE.md) for the working rules (layering, money in minor units, English and German copy) and run `pnpm verify` (and the contract checks) before a pull request.
+- **Code.** Read [CONTRIBUTING.md](CONTRIBUTING.md) for the working rules (layering, money in minor units, English and German copy) and run `pnpm verify` (and the contract checks) before a pull request. Maintainers: [docs/HANDOFF.md](docs/HANDOFF.md) covers accounts, operations and open work.
 
 The roadmap with what was built and what comes next is in [docs/ROADMAP.md](docs/ROADMAP.md).
 

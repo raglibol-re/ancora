@@ -1,6 +1,6 @@
 # Architecture
 
-> Living document. Sections marked *(planned)* describe the target design and are filled in as each task lands.
+How ancora is built: what runs where, the layering of the app, the contracts and how they are called. The reasons for each choice are in [DECISIONS.md](DECISIONS.md); how it is operated is in [HANDOFF.md](HANDOFF.md).
 
 ## What runs where
 
@@ -8,13 +8,13 @@
 flowchart LR
   subgraph Vercel["One Vercel project (root: app/)"]
     SPA["PWA: landing /, app /app/*, /admin"]
-    API["Vercel Functions /api/*<br/>relay, create-organization, execute-request,<br/>test-money, image, health, admin"]
+    API["Vercel Functions /api/*<br/>relay, create-organization, due, test-money,<br/>finish-recovery, discussions, image, notifications,<br/>registry-name, wallet-index, health, admin"]
   end
   Browser["Browser / installed PWA<br/>passkeys (WebAuthn)"] --> SPA
   SPA --> API
   SPA --> RPC["Stellar testnet RPC"]
   API --> RPC
-  API --> Blob["Neon Postgres (pictures, discussions, push subscriptions,<br/>registry names, organization list)"]
+  API --> DB["Neon Postgres (pictures, discussions, push subscriptions,<br/>registry names, organization list)"]
   RPC --> Person["Person: OZ smart account<br/>(passkey signer) = ancora ID"]
   RPC --> Org["Organization: ancora_organization<br/>USDC, roles, rules, requests"]
   RPC --> Registry["ancora_registry<br/>profiles, organizations per person"]
@@ -22,7 +22,8 @@ flowchart LR
 
 - **Static app**: Vite build served by Vercel; every path except `/api/*` rewrites to `index.html` so deep links survive refresh. A Workbox service worker precaches the shell for installability and offline start.
 - **Server-side** (`app/api/`): thin handlers calling adapters. Secrets live only in Vercel environment variables. The operator key sponsors fees, deploys organization contracts and executes due requests; it is never a member or signer anywhere.
-- **Source of truth**: the Stellar testnet (identities, organizations, rules, requests, balances). No database (see DECISIONS.md).
+- **Source of truth**: the Stellar testnet (identities, organizations, rules, requests, balances). The few records that can't or shouldn't live on-chain (discussions, pictures, push subscriptions, registry names, the scheduler's organization list) are in one Neon Postgres database, reached only through `api/_lib/database.ts` (DECISIONS, 2026-11-12); see [Backups](#backups).
+- **Scheduled work**: a daily Vercel cron calls `/api/due`, which runs due standing orders, requests past their objection window and deal milestones for every organization in the scheduler's list; the app also triggers it for the open organization.
 
 ## Front-end layering
 
@@ -125,9 +126,11 @@ To restore (drilled 15 Nov 2026 into an empty database on a Neon branch: every r
 2. Decrypt: `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE -in backup.json.gz.enc | gunzip > backup.json`.
 3. Point `DATABASE_URL` at the target database, then `cd app && pnpm db:schema && pnpm db:restore backup.json`. Rows that already exist are kept, so restoring into a database that is still in use only fills in what is missing.
 
-## Recovery *(planned, task 17/18)*
+## Lifeline (recovery of a pass)
 
-A dedicated recovery contract per organization holds guardians and a threshold; guardians sign claims there, a waiting period runs, any current signer can cancel, then the claim swaps or adds a signer. Only the recovery contract is authorized on the account for that, through a `CallContract` context rule, so guardians never hold a rule on the account itself. Recovery devices (a second passkey on the person's own account) are added by the person's existing passkey after a QR pairing; see ROADMAP.md.
+A person's pass is an OpenZeppelin smart account with their passkey as signer; losing the passkey must not lose their positions. The recovery contract (`contracts/recovery`, one shared instance) holds each person's plan: one to five guardians (other ancora passes), how many must confirm, and a waiting period. A guardian starts a claim naming the person's new pass; the others confirm. While the claim waits, the old pass can cancel it. Once enough guardians have confirmed and the waiting period is over, anyone can finish it: `/api/finish-recovery` submits it for the person, and every organization built with the recovery contract hands the person's position and spending limit to the new pass (`recover_member`). Recovery never moves money. Organizations deployed before Lifeline can't take part and are reported to the person.
+
+A second passkey on the same account (`DevicesSection`, `kit.signers.addPasskey`) is the lighter alternative: it signs for the same pass, so nothing has to be handed over.
 
 ## Multi-tenancy
 

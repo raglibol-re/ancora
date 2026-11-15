@@ -44,3 +44,10 @@
 - Self-review the diff before committing (dead code, duplication, names).
 - After each task: report what's real, simulated, unverified, and the live URL.
 - Blocked > 30 min → stop and report options.
+
+## Working notes for agents
+- Start every session with `docs/HANDOFF.md` (state, accounts, runbook, open work); keep it current when state or open work changes. Human-facing rules are in `CONTRIBUTING.md`; keep both in step with this file.
+- Gate commits on `pnpm verify`'s exit code, never on grepping its output.
+- Git Bash heredocs break on backticks: write file content with the editor tools, not `cat <<EOF`.
+- Reserved for the account owner (prepare the exact command, hand it over): uploading production secrets to GitHub or Vercel, deleting stores or branches with data, `curl | bash` installers, `cargo install`. Don't work around a refusal.
+- Neon is reachable through its MCP server (project `twilight-breeze-67785613`); ask before any destructive call.
