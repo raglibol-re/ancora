@@ -1,225 +1,223 @@
 # Roadmap
 
-Status legend: **Real on testnet** · **Simulated** (labeled sample data in the UI) · **Roadmap**.
+ancora is a public preview on the Stellar testnet: every feature below runs on ancora's own contracts with test money. The next stage is mainnet with pilot organizations (clubs, NGOs, small companies), along the milestones under [Path to mainnet](#path-to-mainnet). Operational state and short-term open work are in [HANDOFF.md](HANDOFF.md); how it is built is in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## Now: toward mainnet
+Status legend: **Real on testnet** (ancora's contracts, test money) · **Preview** (real on testnet, labelled preview, not audited) · **Simulated** (labelled sample data in the UI).
 
-The plan from public preview to mainnet is the milestone plan prepared for the Stellar Community Fund #46 round (8 Nov 2026), under "SCF #46 milestones" below. Operational state and the short-term open work are in [HANDOFF.md](HANDOFF.md). The HackMeridian tasks that led here come first.
+## Where it stands
 
-## Done: HackMeridian 2026 (submitted 26 Oct 2026, 12:00 Lisbon)
+The first version was built for HackMeridian 2026 (submitted 26 Oct 2026). Everything since is listed in [CHANGELOG.md](../CHANGELOG.md); the README feature table has the details per module.
 
-| # | Task | Status |
-|---|------|--------|
-| 0 | Scaffold: PWA app shell, routing, tokens, CI, docs, Vercel | Done |
-| 1 | Approval rules engine (pure TS, tested) | Done |
-| 2 | App screens on sample data behind the data-source interface | Done |
-| 3 | Testnet setup script (keys, contract deploys, IDs) | Done |
-| 4 | Passkey smart accounts + fee-sponsoring relayer | Done |
-| 5 | Demo admin: data-source fallback switch + health panel | Done |
-| 6 | Approval rules on-chain: organization contract + registry, policy document hash, identities | Done (see below) |
-| 7 | Reserve on DeFindex testnet vault | Done for BlendUSDC (see below); confidential split moved to task 14 |
-| 8 | Security seal: ML-DSA verifier as OZ external signer (timebox 2h) | Verifier done and on testnet; device key + account wiring: next |
-| 9 | Crew / agent keys with spending limits | Done, natively in the organization contract (see DECISIONS: why not OZ `spending_limit`) |
-| 10 | Bank in/out: SEP-24 with the SDF test anchor (real on testnet); a licensed euro anchor or Bridge later | Done for deposits and the withdrawal request (see below) |
-| 11 | Organization logo stored off-chain (Neon since 12 Nov, Vercel Blob before) with the URL on the organization contract | Done |
-| 12 | Budgets and bookkeeping | Done: budgets are on-chain rules (soft or hard envelopes per category and period), CSV statement |
-| 13 | Demo admin: reset, top-up, retry stuck requests | Done: sample reset, XLM top-up from Friendbot in /admin, per-asset floats in health; due requests are sent with "Send now" by any member |
-| 14 | Confidential pot + auditor view stub | Documented only (no placeholder UI): see Later |
-| 15 | Integrate the Claude Design package | Done (brand, icons, tokens) |
-| 16 | Request discussions: pro/contra reasons, questions, comments, thumbs up/down (see below) | Done (notifications, attachments and signed entries: later) |
-| 17 | Recovery ("Lifeline"): guardians, claims with a waiting period, cancel by the current pass (see below) | Done for the position handover (see "as built"); inactivity path and succession plans: next |
-| 18 | Recovery device in onboarding: second device, hardware key, pairing by QR (see below) | Done: "Devices" on the pass page (count, "Add a passkey", the browser's own QR flow reaches another phone) and a reminder across the app until a second passkey or guardians exist |
-| 19 | Secure handover: escrowed payments released only when recipient and sender confirm | Done (organization contract + recipient link page) |
-| 20 | Standing orders: repeating payments under the rules | Done: organization contract, Send page, and a daily Vercel cron (`/api/standing-orders`) that visits every indexed organization |
-| — | Submission polish: README with a short GIF of the flow, screenshots, demo video link | GIF and screenshots done; the demo video link is added by the team at submission |
+| Area | Delivered | Status |
+|---|---|---|
+| Accounts and recovery | Passkey accounts (one OpenZeppelin smart account per person) | Real on testnet |
+| | Second passkey on the same account, reminder until one exists | Real on testnet |
+| | Lifeline: guardians hand a person's positions to a new pass | Real on testnet; Simulated in sample data |
+| | Succession per member after a quiet period | Real on testnet (release 0.9.0) |
+| Rules and approvals | Tiered approvals, four-eyes, objection windows, setup phase, lock-out guard | Real on testnet |
+| | Custom roles, spending limits for members and agent keys | Real on testnet |
+| | Budgets per category (soft or hard), allowances per asset or category, recipient allowlists | Real on testnet (allowances: release 0.8.0) |
+| | Reflector exchange rates for other-currency payments | Real on testnet (release 0.8.0) |
+| | Quantum-safe seal: ML-DSA-44 key on the approving device, checked on-chain | Real on testnet (release 0.9.0) |
+| Payments | Payments in several stablecoins, address book | Real on testnet |
+| | Batch payments (up to 50 lines, CSV import), standing orders | Real on testnet |
+| | Payment links and QR codes, paid from any Stellar wallet | Real on testnet |
+| | Secure handover (escrow released when both sides confirm) | Real on testnet |
+| | Deals between organizations (milestone escrow) | Real on testnet (release 0.8.0) |
+| | Bank in and out through SEP-24 with the SDF test anchor | Real on testnet; euro IBAN card Simulated |
+| Treasury | Multi-asset balances, any SEP-41 token by reference | Real on testnet |
+| | Reserve in a DeFindex vault | Real on testnet for BlendUSDC; Simulated in sample data |
+| | Money view in the home currency | Display rates real; fallback rate Simulated |
+| | Confidential pot (hidden amounts, OpenZeppelin confidential token) | Preview |
+| Privacy and security | Encrypted references, batch lines, standing orders, discussions and recipient names | Real on testnet |
+| | Auditors with a read-only Audit page and CSV | Real on testnet |
+| | Device keys from a backup code or the passkey (PRF) | Real on testnet |
+| | Fail-closed fee relayer for ancora's own contracts only | Real on testnet |
+| Collaboration | Discussions on requests (reasons, questions, reactions) | Real (off-chain, Postgres) |
+| | Web push notifications | Real on testnet |
+| | Activity, search, monthly statement, CSV | Real on testnet |
+| Platform and operations | Contract releases on the Stellar Registry, governed upgrades | Real on testnet (organizations from 1 Nov 2026) |
+| | Organization names on the Stellar Registry | Real on testnet |
+| | Channel accounts for server transactions | Real on testnet |
+| | Hourly live check, eleven end-to-end flows nightly, nightly encrypted backup | Real |
+| | English and German | Real |
+| | Sample data as fallback | Simulated |
 
-### Task 6 as built: one passkey per person, one contract per organization
+## Path to mainnet
 
-- **Person = OpenZeppelin smart account** created by smart-account-kit with the passkey as its WebAuthn signer; its address is the person's *ancora ID*. The same ID holds different positions in different organizations.
-- **Organization = `ancora_organization` contract** (`contracts/organization`): holds the USDC, roles with OZ AccessControl, the approval engine (ported from `app/src/domain/rules`, tested against the same `contracts/test-vectors`), requests, objection windows, the setup phase and the lock-out guard. The operator deploys it with the founder as its only member and holds no role.
-- **`ancora_registry`** (`contracts/registry`): profiles (name, picture URL) and the organizations per person, so any device finds everything with one read. Organizations update the membership index themselves (direct-invoker auth).
-- **Policy document**: each organization's rules are one canonical JSON document (`app/shared/policyDocument.ts`, with the rules' home currency); the contract stores its SHA-256 at creation and with every rule change, the Rules page verifies it.
-- **Several stablecoins**: an organization accepts a list of tokens (BlendUSDC, Circle USDC and Circle EURC on testnet, from the `ORG_ASSETS` allowlist), each with its own balance, payments and test money; accepting or dropping one is a governance change. Payments in an asset of another currency than the rules take the strictest tier and the seal.
-- **App**: passkey sign-in/sign-out, profile page ("your pass"), invites by ancora ID, commands signed through the person's account (`execute`), "Send now" for due requests via the operator, reads by simulation, 30 s refresh.
-- **Follow-ups**: live FX rate from the Reflector oracle (SEP-40) so payments in another currency hit the right tier; template switching on-chain; cumulative crew limits through OZ `spending_limit` installed on the organization's context (task 9); Perch-style IR for function-level constraints once needed.
+### SCF #46 milestones
 
-### Task 7 as built: the Reserve
+The plan prepared for the Stellar Community Fund #46 round (8 Nov 2026). Weeks count from the award; the budget per milestone is set in the application.
 
-- The organization contract deposits into and withdraws from the asset's DeFindex vault itself (`move_to_reserve`, `withdraw_from_reserve`); the top role or any strictest-tier approver may do it, no request needed. The vault's token pull is authorized as a sub-invocation.
-- `reserve(token)` reports shares, value and principal; the app shows the value and "earned so far" per asset. Assets without a vault (Circle USDC today) show "No Reserve yet".
-- Follow-ups: auto-sweep rules (keep X on the account, rest in the Reserve), more vaults as DeFindex adds them on testnet, the confidential split (task 14).
+Starting point (2 Nov 2026), real on testnet and open source under Apache-2.0:
 
-### Task 8 as built: the quantum-safe seal verifier
+- Everything in [Where it stands](#where-it-stands) that predates 2 Nov, including custom roles, the address book, push notifications, statements, batch payments and payment links.
+- Organizations move to new releases through their own rules (published on the Stellar Registry).
+- Channel accounts for server transactions.
+- Allowances, recipient allowlists and Reflector exchange rates.
+- Deals between organizations.
+- Lifeline succession and ML-DSA seals checked by the contract.
+- Private details: encrypted references and recipients, auditors, backup codes, passkey-derived keys.
+- A confidential pot preview on OpenZeppelin's confidential token, with ancora's own browser client.
+- Coverage: eleven end-to-end flows against production every night (core, approvals, deals, seals, privacy, pot, money, Lifeline, second passkey, registry name, first path in German).
 
-- `contracts/seal_verifier`: ML-DSA-44 (FIPS 204) verification in a 15 KB Soroban contract with OpenZeppelin's external-verifier interface; shared vector from `@noble/post-quantum`; deployed once by the setup script and checked on-chain (valid → true, tampered → false).
-- Done 2 Nov (release 0.9.0): the ML-DSA key is generated on the approving device (seed in IndexedDB), its public key registered with the organization (`set_seal_key`); once the organization names the verifier (`SetSealVerifier`), seals need `seal_with_key` with a signature over SHA-256(organization ‖ request id). Next: swap the verifier body for the native host function after Protocol 30; key backup and transfer to a new device.
-
-### Task 9 as built: spending limits for crew and agent keys
-
-A member can carry a spending limit: an amount per day, week or 30 days in the rules' currency, granted or removed through the governance change `SetSpendingLimit` (a request after the setup phase, like any rule change). A payment inside the requester's remaining allowance executes at once and is booked against a rolling window in the organization contract; beyond it, or in another currency, the normal rules apply. An agent is a member whose key has a limit: any address that can authorize can be added. The Rules page shows what is left per person and lets the top role edit limits; the Send page says when a payment fits.
-
-### Task 10 as built: bank in and out through a Stellar anchor
-
-`adapters/testnet/anchorRamp.ts` speaks SEP-1, SEP-10 and SEP-24 with the anchor named by `VITE_ANCHOR_HOME_DOMAIN` (the SDF test anchor, which pays out test USDC). The person's wallet signs the anchor's challenge; the anchor's hosted form takes the bank details; ancora follows the transaction status. Deposits land in the wallet and move on to the organization through the existing wallet funding; a withdrawal turns the anchor's instructions (account and reference) into a payment request from the organization, so it follows the rules. Verified: the protocol end-to-end with a keypair; not yet: the hosted form in a browser session and the anchor's payout after the organization pays. A euro anchor or Bridge needs KYB and comes with the licensed partner.
-
-### Task 12 as built: budgets are rules
-
-A budget is part of `Policy`: category, amount per rolling period in the home currency, and whether it is hard or soft. Changing budgets is a rule change (`UpdatePolicy`, document v3 hash). A payment carries an optional category; the contract books it against the budget's running window at proposal time and gives it back on decline. Inside what is left the payment follows its own tier; beyond it a soft budget forces the strictest tier and flags the request for approvers, a hard budget refuses it (`BudgetExceeded`). Payments in another currency can't be measured: soft flags them, hard refuses them. The Rules page edits budgets, the Overview shows the meters, the Send page previews the verdict. "Download statement (CSV)" exports executed payments with their categories.
-
-### Rules document v3 and perch
-
-The rules document now follows stellar-registry/perch's canonical form (CANON v1: no whitespace, sorted keys, `u32` numbers only, amounts as decimal strings, no null, no booleans) so the same bytes can later be read by that toolchain. Older organizations verified against document v2; the Rules page says which version matched. Perch itself (testnet beta, pre-audit) models per-signer rights on a smart account and can't express role tiers, asynchronous approvals or budgets, so the organization contract stays the evaluator; see DECISIONS.
-
-### Task 16: discussions on approval requests
-
-Approvers decide better when the reasons are visible next to the request.
-
-- **Thread per request** (payments and membership/rule changes). Entry types: *pro reason*, *contra reason*, *question*, *comment*. Questions can be marked answered by the requester.
-- **Reactions:** thumbs up / thumbs down on reasons; one reaction per person per entry, changeable; never on your own entry. Shows which arguments the group actually backs.
-- **Who:** members of the organization only. Posting doesn't count as approving, so four-eyes and the approval rules stay untouched.
-- **UI:** discussion section on the request page; summary on request cards and in the inbox ("2 pro · 1 contra · 1 open question"); notice when someone replies to your request.
-- **Storage:** the text is off-chain (not money, should stay private to the org). It goes behind the `DataSource` interface: sample adapter first, then a minimal Vercel-integrated store justified in DECISIONS.md. Optionally each approval records the hash of the discussion it was given on, so later readers can prove what an approver saw.
-- **Later:** attachments (receipts, quotes), @mentions, a requester-written decision summary.
-
-### Task 17 as built: Lifeline hands positions to a new pass
-
-The person's smart account itself is not recovered (that needs a contract signer on the OpenZeppelin account, which the kit's accounts don't accept yet); the positions are. `contracts/recovery` keeps, per person, a plan (one to five guardians, threshold, waiting period of at least a minute, two minutes to thirty days in the app) and at most one open claim (successor, confirmations, ready time). A guardian starts the claim with the person's new ancora ID, other guardians confirm, the person's old pass can cancel at any time before the end; `finish_claim` (no signature needed, ancora's server submits it) asks every registered organization built with the recovery contract to `recover_member(old, new)`: role, spending limit and founder flag move, the registry index follows. Money never moves; approvals already given stay under the old ID as history. Organizations deployed before this exist without `recover_member` and are shown as not recoverable. In the app: the Lifeline card on the pass page (status, plan editor, open-claim warning with cancel, banner across the app), "People you protect" for guardians, "Recover an old pass" for the new pass. Sample data simulates the same lifecycle.
-
-### Task 17: recovery ("Lifeline"), the full design
-
-Continuity for organizations when keys are lost or a person dies or is incapacitated. Recovery can **restore control, never move money**, and can **always be cancelled by any current signer**.
-
-- **Guardians:** people, second devices, an offline recovery kit, or professionals (auditor, tax advisor). Threshold per organization (e.g. 2 of 3). Onboarded by invite link with a passkey; fees sponsored.
-- **Claims:** guardians propose replacing or adding a signer → waiting period (default 7 days, configurable, longer for larger balances; 2 minutes in the testnet demo) → notifications to all signers → any current signer can cancel → after the delay the claim executes.
-- **Inactivity path:** a heartbeat policy on the everyday context rule records the last activity on every signature. After a configurable period (e.g. 180 days) and unanswered check-in reminders, named successors may start a claim; the waiting period still applies.
-- **Succession plan per role** (e.g. deputy chair for chair), so rules like 2-of-2 never deadlock when someone is gone.
-- **Security design:** OZ context rules scope by *contract*, not by function, so guardians must **not** get a rule on the account itself. A dedicated **recovery contract** is where guardians sign claims; only that contract is authorized on the account (a `CallContract` rule), and its code can only swap signers after the delay. Verify in the OZ docs how a contract signer authorizes calls on the account. Use OZ's governance timelock module or a ledger-based delay. Use context-rule expiry (`valid_until`) for temporary guardians and successors.
-- **Events:** all claims, cancellations and handovers emit events (activity feed, admin health panel).
-- **Build order:** (1) recovery contract (guardians, threshold, delay, cancel, execute), guardian invite + claim UI, owner warning banner with cancel; (2) document and build only if time allows: heartbeat policy, inactivity path, succession plans; (3) roadmap: offline ML-DSA recovery key, Perch function-level constraints, a professional guardian service.
-- **UI wording:** on-chain recovery supports, but doesn't replace, legal processes (board elections, register entries, proof of inheritance).
-
-### Task 18: recovery device in onboarding
-
-- **Onboarding steps:** 1) create passkey, 2) create or join an organization, 3) add a recovery device (recommended, skippable once), 4) choose guardians (optional), 5) done, with a visible recovery status ("Protected: 2 devices, 2 guardians" / "Not protected yet"). Today the profile page shows "Not protected yet" honestly.
-- **Recovery device options:** another device the person owns (recommend a different ecosystem: synced passkeys don't help when the Apple or Google account is lost), a hardware security key, or (roadmap) an offline recovery kit, later an ML-DSA key.
-- **Pairing without a server:** the existing device shows a link/QR → the new device opens it, creates a passkey for the same RP ID and shows its public key as a QR plus a short matching code → the existing device scans it, the person compares the matching code on both screens and confirms with Face ID, which signs adding the new key as a signer. Copy-paste fallback for devices without a camera.
-- **Personal level:** adding one's own recovery device needs only the person's existing passkey (a signer on their personal smart account); it is logged in the activity and the organizations are notified. Done once per person, it covers every organization.
-- **If skipped:** persistent reminder banner and the recovery status on the profile and overview until a recovery device exists.
-
-## SCF #46 milestones
-
-Starting point (2 Nov 2026), all real on testnet and open source under Apache-2.0:
-- **From HackMeridian:** everything in the table above, plus custom roles, the address book, push notifications, statements, batch payments and payment links.
-- **Since then:**
-  - organizations move to new releases through their own rules (published on the Stellar Registry);
-  - channel accounts for server transactions;
-  - allowances, recipient allowlists and Reflector exchange rates;
-  - deals between organizations;
-  - Lifeline succession and quantum-safe ML-DSA seals checked by the contract;
-  - private details: encrypted references and recipients, auditors, backup codes and passkey-derived keys;
-  - a confidential pot preview on OpenZeppelin's confidential token, with ancora's own browser client.
-- **Coverage:** eleven end-to-end flows run against production every night (core, approvals, deals, seals, privacy, pot, money, Lifeline, second passkey, registry name, and the first path in German).
-
-Weeks count from the award; the budget per milestone is set by the team in the application.
-
-### M1: proven on testnet (weeks 1–6)
+#### M1: proven on testnet (weeks 1–6)
 
 | Deliverable | Done when |
 |---|---|
-| Nightly end-to-end coverage of every flow: the six above, standing orders and the Reserve (added 2 Nov), plus secure handover, payment links paid by a payer, a Lifeline claim and a governed upgrade | Each flow green for 14 nights in a row against production |
-| Reproducible, attested builds: pinned toolchain, a build container, the Stellar Registry's GitHub attestation action; releases then carry the exact deployed bytes (today rebuilds give new hashes, so organizations see "upgrade available" for unchanged code) | Two independent builds of a release give the same hash; Settings shows the attestation |
+| Nightly end-to-end coverage of every flow: the eleven nightly flows (Lifeline claims included) plus secure handover, payment links paid by a payer and a governed upgrade | Each flow green for 14 nights in a row against production |
+| Reproducible, attested builds: pinned toolchain, a build container, the Stellar Registry's GitHub attestation action. Today rebuilds give new hashes, so organizations see "upgrade available" for unchanged code | Two independent builds of a release give the same hash; Settings shows the attestation |
 | Rate limits on every function, error tracking, an alert drill (uptime and float checks run hourly since 1 Nov) | Ten simultaneous server transactions settle within two ledgers; an alert fires in a drill |
-| History beyond RPC's week through a durable event archive (Mercury or SubQuery) behind `orgHistory.ts` and the pot's event reader (devices already keep encrypted snapshots) | A device away for a month, or a new one, sees the full activity and reads the pot |
+| History beyond the RPC's one-week window: a durable event archive (Mercury or SubQuery) behind `orgHistory.ts` and the pot's event reader | A device away for a month, or a new one, sees the full activity and reads the pot |
 
-### M2: privacy and keys, beyond preview (weeks 7–14)
+#### M2: privacy and keys beyond preview (weeks 7–14)
 
 | Deliverable | Done when |
 |---|---|
-| Confidential pot out of preview: the event archive above, the organization's pot auditor key shared with its outside auditors, spender delegation (a standing order paid from the pot), tracking OpenZeppelin's final proving recipe (zero-knowledge mode once the verifier supports it) | An auditor reads a pot's payments on the Audit page; the pot E2E runs on the final recipe |
-| Approval tiers for hidden amounts (privacy phase C, first step): a range proof that a confidential payment is below a tier's limit, checked by the organization, so it no longer always takes the strictest tier | A confidential payment under the first tier runs without approvals, proven, not revealed |
+| Confidential pot out of preview: the event archive, the pot auditor key shared with outside auditors, spender delegation (a standing order paid from the pot), OpenZeppelin's final proving recipe (zero-knowledge mode once the verifier supports it) | An auditor reads a pot's payments on the Audit page; the pot E2E runs on the final recipe |
+| Approval tiers for hidden amounts (privacy phase C, first step): a range proof that a confidential payment is below a tier's limit, checked by the organization | A confidential payment under the first tier runs without approvals, proven, not revealed |
 | Lifeline check-in reminders (push) on top of succession; the native ML-DSA host function replaces the in-contract verifier once Protocol 30 reaches testnet and mainnet | A quiet member is reminded before a successor can claim; seals verify through the host function |
-| Perch step 1: publish ancora's rules document in perch's IR where it fits | Document and mapping published; upstream proposal for `i128` range predicates and asynchronous approvals |
+| Perch step 1: ancora's rules document in perch's IR where it fits | Document and mapping published; upstream proposal for `i128` range predicates and asynchronous approvals |
 
-### M3: ready for mainnet (weeks 15–24)
+#### M3: ready for mainnet (weeks 15–24)
 
 | Deliverable | Done when |
 |---|---|
-| External security review of the organization, registry, recovery, deal, keyring and pot contracts and of the pot's browser client, plus a threat model for the relayer, the wallet index and the off-chain database | Report published in `docs/`, every finding fixed or answered |
-| Mainnet profile: network settings per environment, operator key in a KMS, fee budget with alerts, backups of the off-chain database | Mainnet deployment of the contracts from attested releases |
-| Licensed ramp partner (EUR IBAN/SEPA) in production mode, MoneyGram Access for cash as a second SEP-24 home domain in `anchorRamp.ts`; terms, privacy and the "not a bank" wording reviewed | A pilot organization moves euros in and out through the partner |
+| External security review of the organization, registry, recovery, deal, keyring and pot contracts and the pot's browser client; threat model for the relayer, the wallet index and the off-chain database | Report published in `docs/`; every finding fixed or answered |
+| Mainnet profile: network settings per environment, operator key in a KMS, fee budget with alerts, backups of the off-chain database | Contracts deployed on mainnet from attested releases |
+| Licensed ramp partner (EUR IBAN/SEPA) in production mode; MoneyGram Access for cash as a second SEP-24 home domain in `anchorRamp.ts`; terms, privacy and the "not a bank" wording reviewed | A pilot organization moves euros in and out through the partner |
 | Pilot organizations (clubs, NGOs, small companies) on mainnet | Pilots run their real payments under their own rules; feedback folded into the roadmap |
 
-## Production: what a real user app still needs (assessed 26 Oct 2026)
+## Before mainnet
 
-Measured against Revolut Business for everyday banking, Squads (Solana) and Safe (EVM) for treasury governance. Ordered by what blocks real use first; each item names what exists today.
+Gaps measured against Revolut Business for everyday banking and Squads (Solana) and Safe (EVM) for treasury governance. Each list is in priority order.
 
-### A. Trust and safety, before any mainnet
+### Trust and safety
 
-1. **End-to-end tests with a virtual passkey.** Started 28 Oct: `app/e2e` drives production nightly (create a pass, sign out and in, found an organization, take test money, pay); its first runs found two bugs and a broken deploy. Since 1 Nov a second run has two passes on two devices: a payment waits for the board member's approval and goes out on it. Next: standing orders, Reserve, secure handover, Lifeline. Playwright with Chromium's WebAuthn virtual authenticator can create a pass, an organization, a payment, an approval, a standing order and a Lifeline claim against the testnet, nightly in CI. This is the single biggest quality lever.
-2. **External security review** of the organization, registry and recovery contracts, plus a threat model for the relayer (fee sponsorship), the wallet index and the off-chain database.
-3. **Mainnet profile.** Channel accounts for server transactions: done 1 Nov (eight channels derived from the operator key, the operator pays through fee bumps; three at once land in the same ledger, about 6 seconds, where four took about 35). Also network settings per environment, the operator key in a KMS rather than a Vercel secret, a fee budget with alerts, rate limits on every function, backups of the off-chain database (discussions, registry names, organization index), an upgrade path for organizations (done 1 Nov for organizations created from then on: a governed move to the latest `ancora-organization` release; still open: storage migrations between releases).
-4. **Monitoring.** Error tracking for app and functions, an uptime check on `/api/health`, alerts when the operator's XLM or stablecoin floats run low. Today: recent errors per browser, the admin health panel, and since 1 Nov an hourly live check in GitHub Actions (`scripts/check-live.mjs`: app and `/api/health` up, testnet RPC answering, BlendUSDC test money available, operator XLM above 3,000) that emails the team when it fails. Still open: error tracking for app and functions.
-5. **Legal and partners.** KYB and fiat through a licensed partner (euro SEPA anchor, MoneyGram Access for cash), terms and privacy, the "not a bank" wording reviewed per jurisdiction.
+1. **External security review** of every contract and the pot client, with a threat model for the relayer, the wallet index and the off-chain database (M3).
+2. **End-to-end coverage** of the remaining flows (M1). Playwright with Chromium's virtual WebAuthn authenticator already drives eleven flows nightly; it is the main quality lever.
+3. **Mainnet profile:** network settings per environment, the operator key in a KMS instead of a Vercel secret, a fee budget with alerts, rate limits on every function, storage migrations between contract releases.
+4. **Monitoring:** error tracking for the app and the functions. The hourly live check (`scripts/check-live.mjs`) already covers uptime, the RPC, test money and the operator's XLM float.
+5. **Legal and partners:** KYB and fiat through a licensed partner (euro SEPA anchor, MoneyGram Access for cash), terms and privacy, the "not a bank" wording reviewed per jurisdiction.
 
-### B. Everyday banking parity (Revolut Business)
+### Everyday banking
 
-6. **Notifications.** Web push done 28 Oct: approval needed, request done/approved/declined, Lifeline claim started. Next: money received (needs ledger events, not the relayer), standing order refused, email through a partner.
-7. **Address book.** Done 28 Oct: saved recipients on the organization contract with name, note, who saved them and last payment; save while paying. Next: recipient allowlists built on it (C14).
-8. **Statements and search.** Done 28 Oct: Activity page with search and filters, monthly statement (print/PDF) and CSV. Next: receipts and attachments per payment (off-chain store, hash on the request), opening balances once full history is indexed.
-9. **Batch payments.** Done 28 Oct: up to 50 lines in one asset, approved once on the total, paid atomically. CSV import of lines done 1 Nov (comma, semicolon or tab, decimal commas, header optional, saved names resolved). Next: reimbursement claims by members.
-10. **Payment requests and links.** Done 28 Oct: invoices and fees as links or QR codes, paid from any Stellar wallet, payers recorded on-chain. Next: reminders, card and bank payment through a ramp partner, a notification when a link is paid.
-11. **Sub-accounts.** Pots per project or team with their own budgets and views.
-12. **Exchange inside the app.** EURC ↔ USDC through path payments with a quote (Reflector or SDEX) and a rule-aware preview; today another currency takes the strictest tier.
-13. **Languages and access.** German and Portuguese, a WCAG AA audit, onboarding tour, help pages, skeleton states while the chain is read.
+1. **Notifications:** money received (needs ledger events, not the relayer), a refused standing order, email through a partner.
+2. **Receipts and attachments** per payment (off-chain, hash on the request); opening balances once full history is indexed.
+3. **Reimbursement claims** by members, on top of batch payments.
+4. **Payment links:** reminders, card and bank payment through a ramp partner, a notification when a link is paid.
+5. **Sub-accounts:** pots per project or team with their own budgets and views.
+6. **Exchange in the app:** EURC to USDC through path payments with a quote (Reflector or SDEX) and a rule-aware preview.
+7. **Languages and access:** Portuguese, a WCAG AA audit, an onboarding tour, help pages, skeleton states while the chain is read.
 
-### C. Treasury governance parity (Squads, Safe)
+### Treasury governance
 
-14. **Custom roles**: done 28 Oct (add, reorder, drop through governance; templates are presets). Per-category and per-asset allowances and recipient allowlists done 1 Nov (release 0.8.0).
-15. **Any action under the rules.** Approve arbitrary calls to allowlisted contracts the way Safe's transaction builder does, with a simulation preview; today only payments and governance changes.
-16. **More policy.** Velocity limits per period for the whole organization, emergency freeze by a quorum, time locks per tier (the objection window exists).
-17. **Keys.** Hardware security keys through the passkey flow (exists, untested), the ML-DSA device key for the seal (done 2 Nov; still open: moving it to a new device, a backup), passkey re-authentication for sensitive actions.
-18. **Integrations.** Signed audit-log export, webhooks, an SDK, accounting exports (DATEV, QuickBooks).
-19. **Lifeline in full.** Inactivity path and succession plans: done 2 Nov inside the organization contract (the recovery contract can't change without orphaning organizations). Still open: reminders before a claim, professional guardians.
+1. **Any action under the rules:** approve calls to allowlisted contracts with a simulation preview, as in Safe's transaction builder. Today only payments, deals, pot actions and governance changes.
+2. **More policy:** velocity limits for the whole organization, emergency freeze by a quorum, time locks per tier (the objection window exists), template switching on-chain.
+3. **Keys:** hardware security keys tested through the passkey flow, moving and backing up the ML-DSA seal key, passkey re-authentication for sensitive actions.
+4. **Lifeline:** reminders before a claim (M2), professional guardians.
+5. **Integrations:** signed audit-log export, webhooks, an SDK, accounting exports (DATEV, QuickBooks).
 
-### Deals between organizations (release 0.8.0, 1 Nov)
+### Platform
 
-Milestone escrow (`contracts/deal`, no admin): create, accept, fund, request a payout, approve or object, automatic payout after the objection period, cancel (both sides once funded), dispute and arbiter ruling. Each organization takes every step through its own rules (`DealCall` requests). Next: counterparties by ancora name, netting, delivery versus payment, shared pots (see contracts/deal/README.md).
+1. **Releases:** attested builds (M1); organizations deployed by name from the Stellar Registry instead of the operator's uploaded hash.
+2. **Preferences across devices** through the profile store, and a settings page that explains every switch.
 
 ### Off-chain records
 
-The Vercel Blob store went over the Hobby quota in early November and was blocked. Done 12 Nov: discussions load only where requests are shown, the site-wide default is an env var, and every off-chain record moved to a Neon Postgres database (see DECISIONS, 2026-11-12). Still open:
+Since 12 Nov 2026 every off-chain record is in one Neon Postgres database (DECISIONS, 2026-11-12). Open:
 
-- what was in Blob before 12 Nov: the organization list and the one recorded registry name were copied into the database on 15 Nov, when the store could be read again on Vercel Pro; discussions and push subscriptions start empty (testnet preview data); pictures uploaded before keep their Blob URLs on-chain and show initials once that store is deleted, until they are uploaded again;
-- the scheduler's organization list and the registry names from the on-chain registry instead of a table (the registry is the source);
-- database backups: nightly encrypted JSON export to a GitHub workflow artifact since 15 Nov, restore drilled the same day (ARCHITECTURE.md#backups). Before mainnet: an off-GitHub copy and a drill on a schedule.
+1. **Backups:** a copy outside GitHub and a restore drill on a schedule. The nightly encrypted export and a first restore drill exist ([ARCHITECTURE, Backups](ARCHITECTURE.md#backups)).
+2. **Read from the chain instead of a table:** the scheduler's organization list and the registry names (the registry is the source).
+3. **Records from the former Blob store:** the organization list and the one recorded registry name were copied on 15 Nov. Discussions and push subscriptions started empty (testnet preview data). Pictures uploaded before 12 Nov keep their Blob URLs on-chain and show initials once that store is deleted, until uploaded again.
 
-### D. Platform
+### Privacy
 
-20. **Releases through the Stellar Registry**: every contract version published and named (done 1 Nov), organizations move to new releases through their rules (done 1 Nov), organizations deployed by name, attested builds.
-21. **Preferences across devices** through the profile store, and a settings page that explains every switch.
+What is public on Stellar stays public: amounts of ordinary stablecoin transfers, who pays whom, timing, the fee payer (research of 1 Nov 2026, see DECISIONS).
 
-Suggested order: A1, then C14, B7, B6, B8, B9, A3 and A4 in parallel with the rest, and A2 before mainnet.
-
-## Privacy
-
-Researched 1 Nov 2026 (see DECISIONS). What is public on Stellar stays public: amounts of ordinary stablecoin transfers, who pays whom, timing, the fee payer.
-
-| Phase | Scope | Status |
-|---|---|---|
-| A | Encrypted references, batch lines, standing orders and discussions with an organization key per epoch, wrapped per member in `contracts/keyring`; device-held X25519 keys | Done 2 Nov (real on testnet). Backup codes for the device keys done 2 Nov (your pass → Keys on this device; the app's cache keeps notes encrypted). Auditors (read-only page, added and removed by members) and private recipient names and notes (keyring labels) done 2 Nov. Reminders to share access (Overview) and the auditor's CSV statement done 2 Nov. Passkey PRF as a second way back done 2 Nov (new keys are made from the passkey where it supports PRF; keys made before stay with the backup code). Next: an auditor's view key |
-| B | A confidential pot with OpenZeppelin's confidential token (amounts hidden, auditor role), labelled preview | Preview live on testnet (2 Nov, release 0.11.1). OZ ships no JavaScript client, so ancora wrote one to the OZ SDK specification (`app/src/adapters/testnet/pot`: Grumpkin and Poseidon2 matching every OZ vector, key derivation from a raw root, witnesses, event replay); the npm builds of the pinned toolchain reproduce OZ's verification keys byte for byte; proofs take about 2 s in Node and cost about 77M instructions to verify (limit 400M). Contracts without admin (`pot`, `pot_verifier` with fixed keys, `pot_auditors` self-service). Organizations act through `propose_pot` (strictest tier for a hidden amount) or, for the founder during setup, `pot_directly`; the pot key travels in the keyring. Each device keeps an encrypted snapshot of the pot and replays only newer events (2 Nov). Open: a device that never read the pot still needs a payment within RPC's week (or a durable event archive); spender delegation; an audit; the organization's auditor key shared with outside auditors |
-| C | Approval rules over hidden amounts (custom circuits for tiers and budgets) | Research; months plus an audit |
-
-## Outlook
-
-- **Non-fungible holdings:** membership cards, certificates and tickets as OpenZeppelin NonFungible tokens held by the organization next to its stablecoins (the asset list already pairs a token address with what it stands for; NFTs need no amounts, so they bypass the tiers and use governance for transfers).
-- **Live FX for the rules:** Reflector oracle rates so a EURC payment in a USD organization is evaluated at today's rate instead of the strictest tier.
-- **Per-asset Reserve:** a DeFindex vault per stablecoin once they exist on testnet; today only BlendUSDC has one. Auto-sweep rules on top.
+| Phase | Scope | Status | Open |
+|---|---|---|---|
+| A | Encrypted details with an organization key per epoch, wrapped per member in `contracts/keyring`; auditors; device keys from a backup code or the passkey | Real on testnet | An auditor's view key |
+| B | Confidential pot on OpenZeppelin's confidential token | Preview | Durable event archive (a device that never read the pot needs a payment within the RPC's week), spender delegation, the organization's auditor key shared with outside auditors, an audit |
+| C | Approval rules over hidden amounts (custom circuits for tiers and budgets) | Research | Range proof for tiers first (M2); the full scope takes months plus an audit |
 
 ## Later
 
-- Confidential payments with auditor view (OZ Confidential Token, once zk proof verification is available).
-- x402 agent payments (open SCF RFP for an x402 facilitator).
-- Cards.
-- Sub-accounts via Protocol 30 muxed contract addresses.
-- Declarative policy IR in the style of stellar-registry/perch for per-call constraints (function, argument ranges), lowered onto the organization contract's rules.
+- **Non-fungible holdings:** membership cards, certificates and tickets as OpenZeppelin NonFungible tokens held next to the stablecoins. They have no amounts, so they bypass the tiers and transfers go through governance.
+- **Reserve:** a DeFindex vault per stablecoin as they appear on testnet (today only BlendUSDC has one); auto-sweep rules (keep an amount on the account, the rest in the Reserve).
+- **Deals:** counterparties by ancora name, netting, delivery versus payment, shared pots (`contracts/deal/README.md`).
+- **Discussions:** attachments (receipts, quotes), @mentions, a decision summary by the requester, passkey-signed entries, and approvals that record the hash of the discussion they were given on.
+- **Lifeline:** an offline recovery kit, later an offline ML-DSA recovery key; a professional guardian service.
+- **Declarative policy IR** in the style of stellar-registry/perch for per-call constraints (function, argument ranges), lowered onto the organization contract's rules.
+- **Sub-accounts** through Protocol 30 muxed contract addresses.
+- **x402 agent payments** (open SCF RFP for an x402 facilitator).
+- **Cards.**
+
+## Design notes
+
+Details of the current design that [ARCHITECTURE.md](ARCHITECTURE.md) does not cover.
+
+### Spending limits and agents
+
+- A payment inside the requester's remaining allowance executes at once; beyond it, or in another currency, the normal rules apply.
+- An agent is a member whose key has a limit. Any address that can authorize can be added.
+- The Rules page shows what is left per person and lets the top role edit limits; the Send page says when a payment fits.
+
+### Budgets and other currencies
+
+- Inside what is left, a payment follows its own tier.
+- Payments in another currency can't be measured against a budget: a soft budget flags them, a hard budget refuses them.
+
+### Rules document and perch
+
+- The rules document uses perch's canonical form so the same bytes can later be read by that toolchain. The Rules page says which document version matched (v3, or v2 for older organizations).
+- Perch (testnet beta, pre-audit) models per-signer rights on a smart account and can't express role tiers, asynchronous approvals or budgets, so the organization contract stays the evaluator (DECISIONS).
+
+### Bank in and out
+
+- Deposits land in the person's wallet and move on to the organization through the normal wallet funding.
+- A withdrawal turns the anchor's instructions (account and reference) into a payment request from the organization, so it follows the rules.
+- Verified: the protocol end to end with a keypair. Not yet verified: the anchor's hosted form in a browser session, and the anchor's payout after the organization pays.
+- A euro anchor or Bridge needs KYB and comes with the licensed partner.
+
+### Discussions
+
+- One thread per request (payments and membership or rule changes). Entry types: pro reason, contra reason, question, comment; the requester marks questions answered.
+- Thumbs up or down on reasons: one reaction per person per entry, changeable, never on one's own entry. It shows which arguments the group backs.
+- Members only. Posting doesn't count as approving, so four-eyes and the approval rules are untouched.
+- The text stays off-chain: it is not money and should stay private to the organization.
+
+### Lifeline
+
+As built:
+
+- The person's smart account itself is not recovered: that needs a contract signer on the OpenZeppelin account, which the kit's accounts don't accept yet. The positions are.
+- Waiting period: at least a minute in the contract, two minutes to thirty days in the app.
+- Money never moves. Approvals already given stay under the old ID as history.
+- In the app: the Lifeline card on the pass page (status, plan editor, open-claim warning with cancel, a banner across the app), "People you protect" for guardians, "Recover an old pass" on the new pass.
+
+Target design for the open parts:
+
+- Recovery restores control, never moves money, and any current signer can always cancel.
+- Guardians can be people, second devices, an offline recovery kit, or professionals (auditor, tax advisor). Onboarded by invite link with a passkey; fees sponsored.
+- Waiting period: default 7 days, configurable, longer for larger balances. All signers are notified when a claim starts.
+- OpenZeppelin context rules scope by contract, not by function, so guardians must not get a rule on the account itself. Only the recovery contract is authorized on the account (a `CallContract` rule), and its code can only swap signers after the delay. Temporary guardians and successors use context-rule expiry (`valid_until`).
+- Claims, cancellations and handovers emit events for the activity feed and the admin health panel.
+- UI wording: on-chain recovery supports, but doesn't replace, legal processes (board elections, register entries, proof of inheritance).
+
+### Recovery devices
+
+- Recommended order in onboarding: create a passkey, create or join an organization, add a recovery device, choose guardians, with a visible recovery status ("Protected: 2 devices, 2 guardians" / "Not protected yet").
+- Recommend a recovery device from a different ecosystem: synced passkeys don't help when the Apple or Google account is lost. A hardware security key also works.
+- Adding one's own recovery device needs only the existing passkey and covers every organization at once.
+
+### Seal verifier
+
+- `contracts/seal_verifier` is a 15 KB contract implementing OpenZeppelin's external-verifier interface, tested with a shared vector from `@noble/post-quantum` and checked on-chain (valid signature: true, tampered: false).
+
+### Confidential pot
+
+- OpenZeppelin ships no JavaScript client, so ancora wrote one to the OZ SDK specification; Grumpkin and Poseidon2 match every OZ vector.
+- The npm builds of the pinned toolchain reproduce OZ's verification keys byte for byte.
+- A proof takes about 2 s in Node and about 77M instructions to verify (limit 400M).
+- The pot key travels in the keyring, like private details.
