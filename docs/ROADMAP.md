@@ -189,7 +189,7 @@ Milestone escrow (`contracts/deal`, no admin): create, accept, fund, request a p
 
 The Vercel Blob store went over the Hobby quota in early November and was blocked. Done 12 Nov: discussions load only where requests are shown, the site-wide default is an env var, and every off-chain record moved to a Neon Postgres database (see DECISIONS, 2026-11-12). Still open:
 
-- what was in Blob before 12 Nov was not carried over, because the store couldn't be read: discussions, recorded registry names and push subscriptions start empty (testnet preview data); pictures uploaded before keep their Blob URLs on-chain and show initials while that store is blocked;
+- what was in Blob before 12 Nov: the organization list and the one recorded registry name were copied into the database on 15 Nov, when the store could be read again on Vercel Pro; discussions and push subscriptions start empty (testnet preview data); pictures uploaded before keep their Blob URLs on-chain and show initials once that store is deleted, until they are uploaded again;
 - the scheduler's organization list and the registry names from the on-chain registry instead of a table (the registry is the source);
 - database backups and a restore drill before mainnet (Neon keeps six hours of history on the free plan).
 

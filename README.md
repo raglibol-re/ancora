@@ -42,7 +42,7 @@ Give every organization one shared account where the rules its members agree on 
 
 ancora is an open-source product in active development, built in the open towards a mainnet launch with pilot organizations.
 
-- **Today: public preview on the testnet.** Every feature below works against real contracts with test money, and eight end-to-end flows run against the live site every night.
+- **Today: public preview on the testnet.** Every feature below works against real contracts with test money, and ten end-to-end flows run against the live site every night.
 - **Next: proven on testnet.** Reproducible, attested releases, monitoring with alerts, and account history beyond the RPC's one-week window.
 - **Then: privacy and keys.** The confidential pot out of preview, approval tiers over hidden amounts, succession reminders.
 - **Then: mainnet.** An external security review of every contract, a licensed partner for euro bank transfers (KYB and fiat stay with the licensed partner), and the first pilot organizations with real money.
@@ -197,7 +197,7 @@ pnpm verify       # format/lint, typecheck, tests, build: same as CI
 
 ```bash
 cd app
-pnpm e2e         # the core path, a two-pass approval, a quantum-safe seal, private details, a deal and confidential pots between two organizations, a standing order, the Reserve and the whole first path in German on the real testnet with virtual passkeys (Playwright; nightly in CI)
+pnpm e2e         # the core path, a two-pass approval, a quantum-safe seal, private details, a deal and confidential pots between two organizations, a standing order, the Reserve, Lifeline recovery to a new pass, a Stellar Registry name and the whole first path in German on the real testnet with virtual passkeys (Playwright; nightly in CI)
 node ../scripts/check-live.mjs   # is production up and able to sponsor fees and hand out test money? (hourly in CI)
 ```
 
