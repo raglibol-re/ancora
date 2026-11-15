@@ -17,7 +17,9 @@
     "check": "biome check .",
     "verify": "biome ci . && tsc -b && vitest run && vite build --mode testnet",
     "e2e": "playwright test",
-    "db:schema": "node --env-file=.env.local db/applySchema.mjs"
+    "db:schema": "node --env-file=.env.local db/applySchema.mjs",
+    "db:backup": "node --env-file=.env.local db/backup.mjs",
+    "db:restore": "node --env-file=.env.local db/restore.mjs"
   },
   "dependencies": {
     "@aztec/bb.js": "0.87.0",

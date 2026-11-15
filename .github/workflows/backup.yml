@@ -1,0 +1,51 @@
+name: Backup
+
+# Nightly copy of ancora's off-chain records (Neon Postgres; money, rules and requests are on
+# Stellar). The rows are exported to JSON, compressed and encrypted with BACKUP_PASSPHRASE, since
+# workflow artifacts of a public repository can be downloaded by any GitHub user. Restore steps:
+# docs/ARCHITECTURE.md#backups. See docs/DECISIONS.md (2026-11-15).
+
+on:
+  schedule:
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: node db/backup.mjs backup.json
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Encrypt
+        run: |
+          test -n "$BACKUP_PASSPHRASE"
+          gzip -c backup.json | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -pass env:BACKUP_PASSPHRASE -out backup.json.gz.enc
+          rm backup.json
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ancora-backup-${{ github.run_id }}
+          path: app/backup.json.gz.enc
+          retention-days: 90
+          if-no-files-found: error

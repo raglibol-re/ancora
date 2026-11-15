@@ -191,7 +191,7 @@ The Vercel Blob store went over the Hobby quota in early November and was blocke
 
 - what was in Blob before 12 Nov: the organization list and the one recorded registry name were copied into the database on 15 Nov, when the store could be read again on Vercel Pro; discussions and push subscriptions start empty (testnet preview data); pictures uploaded before keep their Blob URLs on-chain and show initials once that store is deleted, until they are uploaded again;
 - the scheduler's organization list and the registry names from the on-chain registry instead of a table (the registry is the source);
-- database backups and a restore drill before mainnet (Neon keeps six hours of history on the free plan).
+- database backups: nightly encrypted JSON export to a GitHub workflow artifact since 15 Nov, restore drilled the same day (ARCHITECTURE.md#backups). Before mainnet: an off-GitHub copy and a drill on a schedule.
 
 ### D. Platform
 

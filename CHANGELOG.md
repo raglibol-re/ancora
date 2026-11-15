@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-11-15: The off-chain records (organization list, registry names, discussions, push subscriptions, pictures) are backed up every night: exported to JSON, encrypted and kept for 90 days as a GitHub workflow artifact. `pnpm db:backup` and `pnpm db:restore` do the same by hand; a restore into an empty database was drilled. Restore steps in docs/ARCHITECTURE.md#backups.
 - 2026-11-15: Test USDC is available again and refills itself: when a grant leaves the operator's Circle USDC float below 500, the server sells a fresh Friendbot account's test XLM on the testnet exchange and the USDC goes to the float (about 7,100 per refill). EURC still has to be topped up by hand.
 - 2026-11-15: A nightly end-to-end flow for a second passkey: add one, lose the first, then sign in and found an organization with the second alone.
 - 2026-11-15: Fixed: after a page load, "Your pass → Devices" could stay on "Reading your passkeys…" and "Add a passkey" could fail, because the passkeys were read before the passkey had reconnected. Both now wait for the reconnect; when the read fails, the row says why and offers "Try again" instead of waiting forever.

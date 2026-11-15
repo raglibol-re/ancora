@@ -115,6 +115,16 @@ Languages: English and German. The English text is the key; `t()` from `ui/i18n.
 
 Measured 25 Oct 2026: testnet's live Soroban state is above its 4 GB rent target (4.10 GB and rising), so rent is 2,271,304 stroops/KB (mainnet: 1,000). The OZ smart account extends every persistent entry to a 30-day TTL on each read (`SMART_ACCOUNT_EXTEND_AMOUNT`). Together: deploy 22 XLM, first deposit 22 XLM, first passkey payment 46 XLM on testnet; the same on mainnet is well under 1 XLM. The relayer therefore sponsors from a Friendbot-refilled operator key instead of OpenZeppelin Relayer Channels (100 XLM/day cap).
 
+## Backups
+
+The off-chain records in Neon are copied every night by `.github/workflows/backup.yml` (03:15 UTC, or by hand): `app/db/backup.mjs` exports every table of `db/schema.sql` to JSON (rows only; the table list is `db/tables.mjs`), the workflow compresses it and encrypts it with `BACKUP_PASSPHRASE` (AES-256-CBC, PBKDF2 with 200,000 rounds) and keeps it as a workflow artifact for 90 days. The repository is public and its artifacts can be downloaded by any GitHub user, hence the encryption. Needs the GitHub secrets `DATABASE_URL` and `BACKUP_PASSPHRASE`.
+
+To restore (drilled 15 Nov 2026 into an empty database on a Neon branch: every row back, a second run adds nothing):
+
+1. Download the artifact (`gh run download <run id> -n ancora-backup-<run id>`).
+2. Decrypt: `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE -in backup.json.gz.enc | gunzip > backup.json`.
+3. Point `DATABASE_URL` at the target database, then `cd app && pnpm db:schema && pnpm db:restore backup.json`. Rows that already exist are kept, so restoring into a database that is still in use only fills in what is missing.
+
 ## Recovery *(planned, task 17/18)*
 
 A dedicated recovery contract per organization holds guardians and a threshold; guardians sign claims there, a waiting period runs, any current signer can cancel, then the claim swaps or adds a signer. Only the recovery contract is authorized on the account for that, through a `CallContract` context rule, so guardians never hold a rule on the account itself. Recovery devices (a second passkey on the person's own account) are added by the person's existing passkey after a QR pairing; see ROADMAP.md.
