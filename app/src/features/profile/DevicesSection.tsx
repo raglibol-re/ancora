@@ -15,12 +15,15 @@ export function DevicesSection({ identity }: { identity: IdentitySupport }) {
 	const t = useT();
 	const { run, busy } = useCommand();
 	const [count, setCount] = useState<number | null>(null);
+	const [error, setError] = useState<string | null>(null);
 	const [adding, setAdding] = useState(false);
 	const [label, setLabel] = useState("");
 
 	const load = useCallback(() => {
+		setError(null);
 		void identity.passkeyCount().then((result) => {
 			if (result.ok) setCount(result.value);
+			else setError(result.error.message);
 		});
 	}, [identity]);
 
@@ -44,8 +47,15 @@ export function DevicesSection({ identity }: { identity: IdentitySupport }) {
 		<div>
 			<dt>{t("Devices")}</dt>
 			<dd>
-				{count === null ? (
-					"Reading your passkeys…"
+				{error ? (
+					<>
+						<span className={styles.error}>{t(error)}</span>{" "}
+						<button type="button" className={styles.linkButton} onClick={load}>
+							{t("Try again")}
+						</button>
+					</>
+				) : count === null ? (
+					t("Reading your passkeys…")
 				) : count > 1 ? (
 					<>
 						<span className={styles.protected}>{t("{count} passkeys", { count })}</span>{" "}

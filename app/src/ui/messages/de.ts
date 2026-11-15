@@ -544,6 +544,7 @@ export const de: Readonly<Record<string, string>> = {
 	"Marked as answered.": "Als beantwortet markiert.",
 	"Loading the discussion…": "Die Diskussion wird geladen …",
 	"Try again": "Erneut versuchen",
+	"Reading your passkeys…": "Ihre Passkeys werden gelesen…",
 	"The discussion couldn't be loaded, so newer entries may be missing. Check your connection.":
 		"Die Diskussion konnte nicht geladen werden, neuere Beiträge fehlen möglicherweise. Prüfen Sie Ihre Verbindung.",
 	Discussion: "Diskussion",

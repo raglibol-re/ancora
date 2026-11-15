@@ -19,6 +19,12 @@ const PASSKEYS_KEEP_MS = 60_000;
 
 const byteLength = (value: string) => new TextEncoder().encode(value).length;
 
+/** The kit's error in plain words; an ended session says so as it is. */
+const describePasskeyError = (error: unknown, action: string) =>
+	error instanceof Error && error.message === SESSION_ENDED
+		? SESSION_ENDED
+		: describeKitError(error, action);
+
 type Deps = {
 	/** ancora's registry, which keeps every pass's name and picture. */
 	registry: string;
@@ -42,8 +48,12 @@ export function createIdentitySupport(deps: Deps): IdentitySupport {
 	const setProfile = (id: string, name: string, avatarUrl: string) =>
 		session.invoke(deps.registry, "set_profile", [address(id), text(name), text(avatarUrl)]);
 
-	/** The kit creates one everyday rule per account; its External signers are the passkeys. */
+	/**
+	 * The kit creates one everyday rule per account; its External signers are the passkeys. The
+	 * kit reads rules only once connected, and after a page load it reconnects in the background.
+	 */
 	const everydayRule = async () => {
+		if (!(await session.ensureConnected())) throw new Error(SESSION_ENDED);
 		const rule = (await session.kit.rules.list())[0];
 		if (!rule) throw new Error("Your account has no signing rule.");
 		return rule;
@@ -130,7 +140,9 @@ export function createIdentitySupport(deps: Deps): IdentitySupport {
 					const rule = await everydayRule();
 					return ok(rule.signers.filter((signer) => signer.tag === "External").length);
 				} catch (error) {
-					return failed(describeKitError(error, "read"));
+					// Only a count is worth sharing: the next caller (a retry) reads again.
+					deps.reads.forget(PASSKEYS_KEY);
+					return failed(describePasskeyError(error, "read"));
 				}
 			}),
 
@@ -149,7 +161,7 @@ export function createIdentitySupport(deps: Deps): IdentitySupport {
 				deps.reads.forget(PASSKEYS_KEY);
 				return ok(undefined);
 			} catch (error) {
-				return failed(describeKitError(error, "added"));
+				return failed(describePasskeyError(error, "added"));
 			}
 		},
 	};
