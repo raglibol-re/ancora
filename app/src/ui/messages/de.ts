@@ -1887,8 +1887,8 @@ export const de: Readonly<Record<string, string>> = {
 	"Nothing during the preview, and network fees are sponsored. Pricing will be published before the mainnet launch.":
 		"Während der Vorschau nichts, und die Netzwerkgebühren werden übernommen. Die Preise veröffentlichen wir vor dem Start im Mainnet.",
 	"How do we join the pilot?": "Wie nehmen wir am Pilotprogramm teil?",
-	"Tell us about your organization on GitHub. We are looking for clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens.":
-		"Erzählen Sie uns auf GitHub von Ihrer Organisation. Wir suchen Vereine, NGOs und kleine Unternehmen, die echte Zahlungen nach ihren eigenen Regeln abwickeln möchten, sobald das Mainnet startet.",
+	"Write to us by email about your organization. We are looking for clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens.":
+		"Schreiben Sie uns per E-Mail über Ihre Organisation. Wir suchen Vereine, NGOs und kleine Unternehmen, die echte Zahlungen nach ihren eigenen Regeln abwickeln möchten, sobald das Mainnet startet.",
 	"ancora runs on the Stellar test network with test money while we prepare for launch.":
 		"ancora läuft im Stellar-Testnetz mit Testgeld, während wir den Start vorbereiten.",
 	"Path to launch": "Weg zum Start",
@@ -1901,5 +1901,6 @@ export const de: Readonly<Record<string, string>> = {
 	"We are preparing the first mainnet pilots with clubs, NGOs and small companies. Pilots shape the product, get help moving their rules over, and are first to use real money once the security review is done.":
 		"Wir bereiten die ersten Mainnet-Piloten mit Vereinen, NGOs und kleinen Unternehmen vor. Piloten gestalten das Produkt mit, erhalten Hilfe beim Übertragen ihrer Regeln und nutzen als Erste echtes Geld, sobald die Sicherheitsprüfung abgeschlossen ist.",
 	"Apply for the pilot": "Für das Pilotprogramm bewerben",
+	"Or write to {email}.": "Oder schreiben Sie an {email}.",
 	"Try the preview": "Vorschau ausprobieren",
 };

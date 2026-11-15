@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { useT } from "../../ui/useLanguage.ts";
 import page from "./LandingPage.module.css";
 import styles from "./LandingSections.module.css";
-import { faqs, milestones, PILOT_REQUEST, ROADMAP } from "./landingContent.ts";
+import { faqs, milestones, PILOT_EMAIL, PILOT_REQUEST, ROADMAP } from "./landingContent.ts";
 
 /** Where ancora stands today and what has to happen before real money. */
 export function LaunchPathSection() {
@@ -42,13 +42,14 @@ export function PilotSection() {
 				)}
 			</p>
 			<div className={page.ctas}>
-				<a className={page.pillSolid} href={PILOT_REQUEST} target="_blank" rel="noreferrer">
+				<a className={page.pillSolid} href={PILOT_REQUEST}>
 					{t("Apply for the pilot")}
 				</a>
 				<Link to="/app" className={page.pillOutline}>
 					{t("Try the preview")}
 				</Link>
 			</div>
+			<p>{t("Or write to {email}.", { email: PILOT_EMAIL })}</p>
 		</section>
 	);
 }

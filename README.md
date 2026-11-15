@@ -258,7 +258,7 @@ The operator cannot create, approve or alter requests, and cannot move organizat
 
 ## Get involved
 
-- **Pilot organizations.** Clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens: [open a pilot request](https://github.com/raglibol-re/ancora/issues/new?title=Pilot%20request%3A%20). Pilots shape the product and get help moving their rules over.
+- **Pilot organizations.** Clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens: write to [rami.ezzeddine@outlook.de](mailto:rami.ezzeddine@outlook.de?subject=ancora%20pilot%20request). Pilots shape the product and get help moving their rules over.
 - **Issues and ideas.** Bugs, questions and proposals are welcome as [GitHub issues](https://github.com/raglibol-re/ancora/issues).
 - **Code.** Read [CLAUDE.md](CLAUDE.md) for the working rules (layering, money in minor units, English and German copy) and run `pnpm verify` (and the contract checks) before a pull request.
 

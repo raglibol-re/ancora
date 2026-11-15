@@ -206,11 +206,13 @@ export const faqs = [
 	{
 		question: msg("How do we join the pilot?"),
 		answer: msg(
-			"Tell us about your organization on GitHub. We are looking for clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens.",
+			"Write to us by email about your organization. We are looking for clubs, NGOs and small companies that want to run real payments under their own rules once mainnet opens.",
 		),
 	},
 ];
 
 export const REPOSITORY = "https://github.com/raglibol-re/ancora";
 export const ROADMAP = `${REPOSITORY}/blob/main/docs/ROADMAP.md`;
-export const PILOT_REQUEST = `${REPOSITORY}/issues/new?title=${encodeURIComponent("Pilot request: ")}`;
+/** Where pilot applications go: a private mailbox, not a public issue. */
+export const PILOT_EMAIL = "rami.ezzeddine@outlook.de";
+export const PILOT_REQUEST = `mailto:${PILOT_EMAIL}?subject=${encodeURIComponent("ancora pilot request")}`;
